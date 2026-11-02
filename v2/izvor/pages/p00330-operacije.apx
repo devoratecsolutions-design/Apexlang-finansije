@@ -270,7 +270,14 @@ page 330 (
                         WHEN v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => id, p_clear_cache => 331)
                         ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => id)
                     END AS url,
-                    mjesto_troska_naziv
+                    mjesto_troska_naziv,
+                    CASE vrsta_sifra
+                        WHEN 'MPR' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'MPP' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                    END AS prenos_info,
+                    zaduzeni_radnik_naziv
                 FROM
                     vw_rm_dokumenti
                 WHERE
@@ -385,7 +392,7 @@ page 330 (
             reportColumnQueryId: 5
             derivedColumn: N
             heading {
-                heading: Dobavljač / mjesto troška
+                heading: Dobavljač / veza
             }
             layout {
                 sequence: 30
@@ -393,7 +400,7 @@ page 330 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}{if MJESTO_TROSKA_NAZIV/}<span class="fin-sub">mjesto troška #MJESTO_TROSKA_NAZIV#</span>{endif/}
+                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}{if MJESTO_TROSKA_NAZIV/}<span class="fin-sub">mjesto troška #MJESTO_TROSKA_NAZIV#</span>{endif/}{if ZADUZENI_RADNIK_NAZIV/}<span class="fin-sub">zadužen #ZADUZENI_RADNIK_NAZIV#</span>{endif/}{if PRENOS_INFO/}<span class="fin-sub"><span class="fa fa-exchange" aria-hidden="true"></span> #PRENOS_INFO#</span>{endif/}
                     ```
             }
             sorting {
@@ -590,6 +597,24 @@ page 330 (
             type: hidden
             layout {
                 sequence: 530
+            }
+        )
+
+        column PRENOS_INFO (
+            reportColumnQueryId: 24
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 540
+            }
+        )
+
+        column ZADUZENI_RADNIK_NAZIV (
+            reportColumnQueryId: 25
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 550
             }
         )
 

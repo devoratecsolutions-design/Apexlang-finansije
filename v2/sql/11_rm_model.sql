@@ -16,6 +16,7 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R12 (02.11.2026): OPERACIJE.ZADUZENI_RADNIK_ID; brojači IOS, ISI, MPR, MPP.
   R11 (02.11.2026): OPERACIJE.MJESTO_TROSKA_ID (izdatnica, izlaz na investiciju u
   toku; SIF.ACC_MJESTA_TROSKA) i brojači IZD / IIN za firme koje imaju te vrste
   (vrste dodaje 16_rm_vrste_izlaz.sql, kao SIF - pokrenuti prije ove skripte).
@@ -68,6 +69,7 @@ begin
     kolona('OPERACIJE', 'otpremnica_datum', 'date');
     kolona('OPERACIJA_STAVKE', 'redni_broj', 'number');
     kolona('OPERACIJE', 'mjesto_troska_id', 'number');
+    kolona('OPERACIJE', 'zaduzeni_radnik_id', 'number');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -76,6 +78,8 @@ begin
     indeks('OPERACIJE_VRSTA_I', 'create index operacije_vrsta_i on operacije (vrsta_dokumenta_id)');
     indeks('OPERACIJE_KLIJENT_I', 'create index operacije_klijent_i on operacije (klijent_id)');
     indeks('OPERACIJE_MT_I', 'create index operacije_mt_i on operacije (mjesto_troska_id)');
+    indeks('OPERACIJE_VEZA_I', 'create index operacije_veza_i on operacije (veza_id)');
+    indeks('OPERACIJE_SKL_PRENOS_I', 'create index operacije_skl_prenos_i on operacije (skladiste_prenos_id)');
     indeks('OPERACIJA_STAVKE_SB_SB_I', 'create index operacija_stavke_sb_sb_i on operacija_stavke_sb (serijski_broj)');
     indeks('OPERACIJA_STAVKE_SB_UK',
         'create unique index operacija_stavke_sb_uk on operacija_stavke_sb (operacija_stavka_id, serijski_broj)');
@@ -87,9 +91,10 @@ comment on column operacije.status is 'P = u pripremi, Z = zaključen (v2; prije
 comment on column operacije.otpremnica_broj is 'Broj otpremnice / dokumenta dobavljača (v2)';
 comment on column operacije.otpremnica_datum is 'Datum otpremnice / dokumenta dobavljača (v2)';
 comment on column operacija_stavke.redni_broj is 'Redni broj stavke u dokumentu (v2)';
+comment on column operacije.zaduzeni_radnik_id is 'Zaduženi radnik (SIF.ACC_RADNICI) - izlaz na osnovno sredstvo i sitni inventar (v2)';
 comment on column operacije.mjesto_troska_id is 'Mjesto troška (SIF.ACC_MJESTA_TROSKA) - izdatnica, izlaz na investiciju u toku (v2)';
 
--- 2a) brojači IZD (Izdatnica) i IIN (Izlaz na investiciju u toku) -------------------------
+-- 2a) brojači izlaznih i međuskladišnih dokumenata (IZD, IIN, IOS, ISI, MPR, MPP) --------
 declare
     l_modul number;
     l_novih number := 0;
@@ -98,7 +103,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop
@@ -118,7 +123,7 @@ begin
         end loop;
     end loop;
     commit;
-    dbms_output.put_line('Novi brojači IZD / IIN: ' || l_novih);
+    dbms_output.put_line('Novi brojači IZD / IIN / IOS / ISI / MPR / MPP: ' || l_novih);
 end;
 /
 

@@ -55,6 +55,13 @@ select o.id,
        ug.broj || nvl2(nvl(ug.predmet, ug.naziv), ' - ' || nvl(ug.predmet, ug.naziv), null) as ugovor_naziv,
        o.mjesto_troska_id,
        nvl2(mt.id, mt.sifra || ' - ' || mt.naziv, null)                 as mjesto_troska_naziv,
+       o.zaduzeni_radnik_id,
+       nvl2(rad.id, rad.ime || ' ' || rad.prezime, null)               as zaduzeni_radnik_naziv,
+       nvl2(skp.id, skp.sifra || ' - ' || skp.naziv, null)             as skladiste_prenos_naziv,
+       o.veza_id,
+       vz.naziv                                                         as veza_naziv,
+       (select max(p.naziv) from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
+         where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N') as preuzeto_naziv,
        o.opis,
        nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
        o.zakljucano,
@@ -80,6 +87,9 @@ select o.id,
   left join sec_klijenti kl on kl.id = o.klijent_id
   left join ugovori ug on ug.id = o.ugovor_id
   left join sif.acc_mjesta_troska mt on mt.id = o.mjesto_troska_id
+  left join sif.acc_radnici rad on rad.id = o.zaduzeni_radnik_id
+  left join skladista skp on skp.id = o.skladiste_prenos_id
+  left join operacije vz on vz.id = o.veza_id
   outer apply (select max(ko.kalkulacija_id) as kalkulacija_id
                  from kalkulacija_operacije ko
                 where ko.operacija_id = o.id) kk
@@ -146,3 +156,32 @@ select o.ooj_id,
  where nvl(o.stornirano, 'N') = 'N'
    and o.storniran_id is null
  group by o.ooj_id, o.skladiste_id, os.stavka_id, sb.serijski_broj;
+
+-- R12: međuskladišni prenosi koji čekaju prijem (zaključeni, nepreuzeti), sa stavkama
+create or replace force view vw_rm_prenosi_cekanje as
+select o.id,
+       o.ooj_id,
+       o.naziv,
+       o.datum,
+       o.skladiste_id,
+       sk.sifra || ' - ' || sk.naziv                                    as sa_skladista,
+       o.skladiste_prenos_id,
+       o.opis,
+       (select count(*) from operacija_stavke os where os.operacija_id = o.id) as stavki,
+       (select round(sum(os.kolicina * os.nabavna_cijena), 2) from operacija_stavke os where os.operacija_id = o.id) as iznos,
+       (select listagg(st.sifra || ' ' || st.naziv || ': ' || rtrim(to_char(os.kolicina, 'FM999G999G990D999999'), '.,')
+                       || nvl2(jm.naziv, ' ' || jm.naziv, '') || ' × ' || to_char(os.nabavna_cijena, 'FM999G999G990D00'), '; '
+                       on overflow truncate '…' with count)
+                       within group (order by os.redni_broj, os.id)
+          from operacija_stavke os
+          join sec_stavke st on st.id = os.stavka_id
+          left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id
+         where os.operacija_id = o.id)                                  as stavke_opis
+  from operacije o
+  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'MPR'
+  left join skladista sk on sk.id = o.skladiste_id
+ where nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
+   and nvl(o.stornirano, 'N') = 'N'
+   and o.storniran_id is null
+   and not exists (select 1 from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
+                    where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N');

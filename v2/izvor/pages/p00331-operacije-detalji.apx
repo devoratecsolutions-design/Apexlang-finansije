@@ -23,6 +23,12 @@ page 331 (
         executeWhenPageLoads:
             ```javascript-browser
             finRmStavke.init('rm_stavke', 'P331');
+            /* međuskladišni prijem: preuzimanje prenosa na čekanju */
+            apex.jQuery(document).on("click", ".fin-preuzmi", function () {
+                var b$ = apex.jQuery(this);
+                apex.page.confirm("Preuzeti prenos " + b$.data("naziv") + "? Prijem se pravi sa količinama i cijenama iz prenosa i odmah se zaključuje (bez mogućnosti izmjena).",
+                    { request: "PREUZMI", set: { "P331_PRENOS_ID": String(b$.data("id")) } });
+            });
             ```
     }
     css {
@@ -125,6 +131,185 @@ page 331 (
             type: expression
             plsqlExpression: :P331_IZMJENJIVA = 'N'
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: not (nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null)
+        }
+    )
+
+    region prenosi-cekanje (
+        name: Prenosi na čekanju
+        title: Prenosi na čekanju za ovo skladište
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    p.id,
+                    p.naziv,
+                    to_char(p.datum, 'DD.MM.YYYY') AS datum,
+                    p.sa_skladista,
+                    p.opis,
+                    p.stavki,
+                    to_char(p.iznos, 'FM999G999G999G990D00') AS iznos,
+                    p.stavke_opis
+                FROM vw_rm_prenosi_cekanje p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND p.skladiste_prenos_id = :A_SKLADISTE_ID
+                ORDER BY p.datum, p.id
+                ```
+        }
+        layout {
+            sequence: 9
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nema zaključenih prenosa upućenih na ovo skladište koji čekaju prijem.
+        }
+        advanced {
+            htmlDomId: rm_prenosi
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: &nbsp;
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <button type="button" class="t-Button t-Button--hot t-Button--small t-Button--iconLeft fin-preuzmi" data-id="#ID#" data-naziv="#NAZIV#"><span class="t-Icon t-Icon--left fa fa-download" aria-hidden="true"></span>Preuzmi</button>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Prenos
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#DATUM# · sa skladišta #SA_SKLADISTA#</span><span class="fin-sub">#OPIS#</span></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column SA_SKLADISTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column STAVKI (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Stavki
+                alignment: center
+            }
+            layout {
+                sequence: 30
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKE_OPIS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Stavke (količina × cijena)
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
     )
 
     region dokument (
@@ -170,13 +355,39 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: nvl(:P331_TIP_KRETANJA, 'U') = 'U'
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
+        }
+    )
+
+    region skladiste-prenosa (
+        name: Međuskladišni prenos
+        title: Međuskladišni prenos
+        type: staticContent
+        layout {
+            sequence: 22
+            parentRegion: @dokument-detalji
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 7
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.ima_skladiste_prenosa(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
     region mjesto-troska (
-        name: Mjesto troška
-        title: Mjesto troška
+        name: Mjesto troška i zaduženje
+        title: Mjesto troška i zaduženje
         type: staticContent
         layout {
             sequence: 25
@@ -196,7 +407,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA) = 'Y'
+            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y' or rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -1107,6 +1318,158 @@ page 331 (
         help {
             helpText: Mjesto troška na koje se knjiži izlaz materijala (obavezno za dvojno knjigovodstvo).
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y'
+        }
+    )
+
+    pageItem P331_ZADUZENI_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Zaduženi radnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT r.ime || ' ' || r.prezime || nvl2(r.interni_broj, ' (' || r.interni_broj || ')', '') AS d,
+                       r.id AS r
+                FROM sif.acc_radnici r
+                WHERE r.ooj_id = :APP_OOJ_ID
+                  AND (r.valid = 'Y' OR r.id = :P331_ZADUZENI_RADNIK_ID)
+                ORDER BY r.prezime, r.ime
+                ```
+        }
+        layout {
+            sequence: 20
+            region: @mjesto-troska
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Radnik koji se zadužuje osnovnim sredstvom / sitnim inventarom.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+        }
+    )
+
+    pageItem P331_SKLADISTE_PRENOS_ID (
+        type: selectOne
+        label {
+            label: Na skladište
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT s.sifra || ' - ' || s.naziv AS d, s.id AS r
+                FROM skladista s
+                WHERE s.ooj_id = :APP_OOJ_ID
+                  AND (s.valid = 'Y' OR s.id = :P331_SKLADISTE_PRENOS_ID)
+                  AND s.id <> nvl(:P331_SKLADISTE_ID, -1)
+                ORDER BY s.sifra
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @skladiste-prenosa
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Skladište firme na koje se roba prenosi. Prijem na tom skladištu nastaje preuzimanjem ovog prenosa kad se prenos zaključi.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_VRSTA_SIFRA = 'MPR'
+        }
+    )
+
+    pageItem P331_SKLADISTE_PRENOS (
+        type: displayOnly
+        label {
+            label: Sa skladišta
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 20
+            region: @skladiste-prenosa
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_VRSTA_SIFRA = 'MPP'
+        }
+    )
+
+    pageItem P331_VEZA_INFO (
+        type: displayOnly
+        label {
+            label: Veza
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 30
+            region: @skladiste-prenosa
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P331_VEZA_INFO
+        }
+    )
+
+    pageItem P331_PRENOS_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @prenosi-cekanje
+            slot: regionBody
+        }
     )
 
     pageItem P331_ADMIN (
@@ -1223,7 +1586,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_IZMJENJIVA = 'Y' and not (nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null)
         }
     )
 
@@ -1325,7 +1688,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_TIP_KRETANJA, 'U') = 'U'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
         }
     )
 
@@ -1344,7 +1707,45 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA) = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y'
+        }
+    )
+
+    validation radnik-obavezno (
+        name: P331_ZADUZENI_RADNIK_ID obavezno
+        execution {
+            sequence: 32
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_ZADUZENI_RADNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_ZADUZENI_RADNIK_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+        }
+    )
+
+    validation skladiste-prenosa-obavezno (
+        name: P331_SKLADISTE_PRENOS_ID obavezno
+        execution {
+            sequence: 34
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_SKLADISTE_PRENOS_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_SKLADISTE_PRENOS_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'MPR'
         }
     )
 
@@ -1368,7 +1769,9 @@ page 331 (
                     p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
                     p_ugovor_id          => :P331_UGOVOR_ID,
                     p_mjesto_troska_id   => :P331_MJESTO_TROSKA_ID,
-                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA
+                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA,
+                    p_radnik_id          => :P331_ZADUZENI_RADNIK_ID,
+                    p_skladiste_prenos_id => :P331_SKLADISTE_PRENOS_ID
                 );
                 ```
         }
@@ -1475,6 +1878,13 @@ page 331 (
                     :P331_OTPREMNICA_DATUM   := d.otpremnica_datum;
                     :P331_UGOVOR_ID          := d.ugovor_id;
                     :P331_MJESTO_TROSKA_ID   := d.mjesto_troska_id;
+                    :P331_ZADUZENI_RADNIK_ID := d.zaduzeni_radnik_id;
+                    :P331_SKLADISTE_PRENOS_ID := d.skladiste_prenos_id;
+                    :P331_SKLADISTE_PRENOS   := d.skladiste_prenos_naziv;
+                    :P331_VEZA_INFO          := case when d.vrsta_sifra = 'MPP' then 'Preuzet prenos ' || d.veza_naziv
+                                                     when d.vrsta_sifra = 'MPR' and d.preuzeto_naziv is not null then 'Preuzeto prijemom ' || d.preuzeto_naziv
+                                                     when d.vrsta_sifra = 'MPR' and d.status = 'Z' then 'Čeka prijem na skladištu ' || d.skladiste_prenos_naziv
+                                                end;
                     :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv end;
                     :P331_STATUS_KLASA       := case when d.stornirano = 'Y' then 'storno'
                                                      when d.glavna_knjiga_id is not null then 'proknjizena'
@@ -1533,7 +1943,7 @@ page 331 (
                     :P331_TIP_KRETANJA := rm_dokument_pkg.tip_kretanja(v.sifra);
                     :P331_ZBIR := '0,00';
                     :P331_VRSTA_NAZIV := v.naziv;
-                    :P331_NAZIV       := 'Nova ' || lower(v.naziv);
+                    :P331_NAZIV       := case when upper(v.sifra) = 'PRI' then 'Nova prijemnica' when upper(v.sifra) = 'IZD' then 'Nova izdatnica' else 'Novi dokument: ' || v.naziv end;
                 end loop;
                 ```
         }
@@ -1566,7 +1976,9 @@ page 331 (
                     p_opis               => :P331_OPIS,
                     p_ugovor_id          => :P331_UGOVOR_ID,
                     p_mjesto_troska_id   => :P331_MJESTO_TROSKA_ID,
-                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA
+                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA,
+                    p_radnik_id          => :P331_ZADUZENI_RADNIK_ID,
+                    p_skladiste_prenos_id => :P331_SKLADISTE_PRENOS_ID
                 );
                 ```
         }
@@ -1626,6 +2038,43 @@ page 331 (
             executionScope: allSubmittedRows
             type: expression
             plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process preuzmi-prenos (
+        name: Preuzmi međuskladišni prenos
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    :P331_ID := rm_dokument_pkg.preuzmi_prenos(
+                        p_prenos_id    => kuf_pkg.broj(:P331_PRENOS_ID),
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_godina       => :APP_GODINA,
+                        p_skladiste_id => :A_SKLADISTE_ID
+                    );
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 35
+        }
+        successMessage {
+            successMessage: Prenos je preuzet - međuskladišni prijem je napravljen i zaključen.
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: PREUZMI
         }
     )
 
@@ -1737,7 +2186,7 @@ page 331 (
         }
         serverSideCondition {
             type: requestIsContainedInValue
-            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,PREUZMI
         }
     )
 
