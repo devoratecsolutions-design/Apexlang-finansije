@@ -85,44 +85,6 @@ page 1 (
         }
     )
 
-    region menu-skladista (
-        name: Menu - Skladista
-        type: list
-        source {
-            list: @menu-skladista
-        }
-        layout {
-            sequence: 60
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-        advanced {
-            htmlDomId: skladista
-        }
-        serverSideCondition {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    vw_skladiste_korisnici
-                WHERE
-                    korisnik_id = :APP_USER_ID
-                ```
-        }
-        componentAppearance {
-            listTemplate: @menu-popup
-            templateOptions: [
-                #DEFAULT#
-                js-addActions
-            ]
-        }
-    )
-
     region navigation-menu-početna (
         name: Navigation Menu - Početna
         title: Brzi pristup
@@ -595,24 +557,6 @@ page 1 (
         }
     )
 
-    pageItem P1_SKLADISTE_ID (
-        type: hidden
-        layout {
-            sequence: 20
-            region: @početna
-            slot: regionBody
-        }
-    )
-
-    pageItem P1_SKLADISTE_SIFRA (
-        type: hidden
-        layout {
-            sequence: 30
-            region: @početna
-            slot: regionBody
-        }
-    )
-
     button godina (
         buttonName: GODINA
         label: &APP_GODINA.
@@ -714,44 +658,6 @@ page 1 (
         }
     )
 
-    button skladiste (
-        buttonName: SKLADISTE
-        label: &P1_SKLADISTE_SIFRA.
-        layout {
-            sequence: 20
-            region: @početna
-            slot: next
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            hot: true
-            templateOptions: [
-                #DEFAULT#
-                t-Button--simple
-                t-Button--iconLeft
-            ]
-            icon: fa-angle-down
-        }
-        behavior {
-            action: definedByDynamicAction
-        }
-        advanced {
-            customAttributes: data-menu="skladista_menu"
-        }
-        serverSideCondition {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    vw_skladiste_korisnici
-                WHERE
-                    korisnik_id = :APP_USER_ID
-                ```
-        }
-    )
-
     computation p1-kasa-naziv (
         itemName: P1_KASA_NAZIV
         execution {
@@ -760,17 +666,6 @@ page 1 (
         computation {
             type: functionBody
             plsqlFunctionBody: RETURN sec_pkg.get_kasa_naziv(:APP_KASA_ID);
-        }
-    )
-
-    computation p1-skladiste-sifra (
-        itemName: P1_SKLADISTE_SIFRA
-        execution {
-            sequence: 20
-        }
-        computation {
-            type: functionBody
-            plsqlFunctionBody: RETURN skladista_pkg.get_skladiste_sifra(:A_SKLADISTE_ID);
         }
     )
 
@@ -795,28 +690,6 @@ page 1 (
         serverSideCondition {
             type: request=Value
             value: readAllNotification
-        }
-    )
-
-    process set-skladiste (
-        name: Set skladiste
-        type: executeCode
-        source {
-            plsqlCode: :A_SKLADISTE_ID := :P1_SKLADISTE_ID;
-        }
-        execution {
-            sequence: 30
-            point: beforeHeader
-        }
-        successMessage {
-            successMessage: Uspješno ste promijenili skladište.
-        }
-        advanced {
-            executionMappingIdentifier: 192198142923878423
-        }
-        serverSideCondition {
-            type: request=Value
-            value: set_skladiste
         }
     )
 

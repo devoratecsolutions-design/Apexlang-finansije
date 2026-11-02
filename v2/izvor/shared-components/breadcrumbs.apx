@@ -1,6 +1,38 @@
 breadcrumb breadcrumb (
     name: Breadcrumb
 
+    entry kalkulacija (
+        name: &P341_NAZIV.
+        pageNumber: 341
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @kalkulacije-robe
+        }
+        link {
+            target: {
+                page: 341
+            }
+        }
+    )
+
+    entry stanje-skladista (
+        name: Stanje skladišta
+        pageNumber: 313
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @skladišta
+        }
+        link {
+            target: {
+                page: 313
+            }
+        }
+    )
+
     entry administracija (
         name: Administracija
         pageNumber: 10000
@@ -386,7 +418,7 @@ breadcrumb breadcrumb (
     )
 
     entry kalkulacije-robe (
-        name: Kalkulacije robe
+        name: Kalkulacije
         pageNumber: 340
         execution {
             sequence: 10
@@ -879,7 +911,7 @@ breadcrumb breadcrumb (
     )
 
     entry robno-materijalno (
-        name: Robno - materijalno
+        name: &A_RM_NAZIV.
         pageNumber: 300
         execution {
             sequence: 10

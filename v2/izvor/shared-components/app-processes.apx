@@ -301,3 +301,120 @@ appProcess kuf-dokument (
         authorizationScheme: mustNotBePublicUser
     }
 )
+
+appProcess rm-kontekst (
+    name: RM_KONTEKST
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            -- kontekst modula: ROB = Zalihe robe (i izlazne fakture), MAT = Materijal i oprema
+            declare
+                l_ctx  varchar2(3);
+                l_zelj number;
+            begin
+                if :APP_PAGE_ID between 50 and 59 then
+                    l_ctx := 'ROB';
+                else
+                    l_ctx := coalesce(:A_RM_MODUL, rm_skladiste_pkg.modul(:A_SKLADISTE_ID), 'ROB');
+                    :A_RM_MODUL := l_ctx;
+                end if;
+                l_zelj := case l_ctx when 'ROB' then to_number(:A_SKL_ROB) else to_number(:A_SKL_MAT) end;
+                if l_zelj is null and rm_skladiste_pkg.modul(:A_SKLADISTE_ID) = l_ctx then
+                    l_zelj := to_number(:A_SKLADISTE_ID);
+                end if;
+                :A_SKLADISTE_ID := rm_skladiste_pkg.izaberi(:APP_OOJ_ID, :APP_USER_ID, l_ctx, l_zelj);
+                if l_ctx = 'ROB' then :A_SKL_ROB := :A_SKLADISTE_ID; else :A_SKL_MAT := :A_SKLADISTE_ID; end if;
+                :A_RM_NAZIV := case l_ctx when 'ROB' then 'Zalihe robe' else 'Materijal i oprema' end;
+                :A_SKLADISTE_NAZIV := 'Nije dodijeljeno';
+                for s in (select sifra || ' · ' || naziv as n from skladista where id = :A_SKLADISTE_ID) loop
+                    :A_SKLADISTE_NAZIV := s.n;
+                end loop;
+            end;
+            ```
+    }
+    execution {
+        sequence: 50
+        point: beforeHeader
+    }
+    serverSideCondition {
+        type: expression
+        plsqlExpression: :APP_PAGE_ID between 50 and 59 or :APP_PAGE_ID between 300 and 379
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+)
+
+appProcess rm-skladista (
+    name: RM_SKLADISTA
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            sys.htp.p(rm_skladiste_pkg.lista_json(
+                p_ooj_id      => :APP_OOJ_ID,
+                p_korisnik_id => :APP_USER_ID,
+                p_modul       => case when :APP_PAGE_ID between 50 and 59 then 'ROB' else nvl(:A_RM_MODUL, 'ROB') end
+            ));
+            ```
+    }
+    execution {
+        sequence: 20
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+)
+
+appProcess rm-skladiste-izbor (
+    name: RM_SKLADISTE_IZBOR
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            declare
+                l_ctx varchar2(3) := case when :APP_PAGE_ID between 50 and 59 then 'ROB' else nvl(:A_RM_MODUL, 'ROB') end;
+                l_id  number := to_number(apex_application.g_x01);
+            begin
+                -- samo skladište koje je korisniku dodijeljeno u tekućoj firmi i modulu
+                if rm_skladiste_pkg.izaberi(:APP_OOJ_ID, :APP_USER_ID, l_ctx, l_id) = l_id then
+                    :A_SKLADISTE_ID := l_id;
+                    if l_ctx = 'ROB' then :A_SKL_ROB := l_id; else :A_SKL_MAT := l_id; end if;
+                    sys.htp.p('{"ok":true}');
+                else
+                    sys.htp.p('{"ok":false}');
+                end if;
+            end;
+            ```
+    }
+    execution {
+        sequence: 30
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+)
+
+appProcess rm-modul (
+    name: RM_MODUL
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            if apex_application.g_x01 in ('ROB', 'MAT') then
+                :A_RM_MODUL := apex_application.g_x01;
+            end if;
+            sys.htp.p('{"ok":true}');
+            ```
+    }
+    execution {
+        sequence: 40
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+)

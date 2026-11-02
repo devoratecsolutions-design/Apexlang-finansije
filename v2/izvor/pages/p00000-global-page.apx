@@ -2,6 +2,49 @@ page 0 (
     name: Global Page
     pageGroup: @erp-globalne-stranice
 
+    region izbor-skladista (
+        name: Izbor skladišta
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div id="finSkl" class="fin-skl" data-id="&A_SKLADISTE_ID." hidden><button type="button" class="fin-skl__chip" aria-haspopup="listbox" aria-expanded="false" title="Promijeni skladište"><span class="fin-skl__ikona"><span class="fa fa-cubes" aria-hidden="true"></span></span><span class="fin-skl__tekst"><span class="fin-skl__lbl">Skladište</span><span class="fin-skl__naziv">&A_SKLADISTE_NAZIV.</span></span><span class="fa fa-chevron-down fin-skl__strelica" aria-hidden="true"></span></button><div class="fin-skl__meni" hidden><div class="fin-skl__trazi"><input type="search" placeholder="Pretraga skladišta…" aria-label="Pretraga skladišta"></div><div class="fin-skl__lista" role="listbox"></div></div></div>
+                ```
+        }
+        layout {
+            sequence: 1
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :APP_PAGE_ID in (50, 300, 320, 330, 340, 350, 360, 370, 371, 372)
+        }
+    )
+
+    region osvjezi-po-zatvaranju (
+        name: Osvježavanje po zatvaranju dijaloga
+        type: staticContent
+        source {
+            htmlCode: <span id="finRmOsvjezi" hidden></span>
+        }
+        layout {
+            sequence: 2
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :APP_PAGE_ID in (300, 310, 311, 313, 320, 330, 340, 350, 360, 370, 371, 372)
+        }
+    )
+
     region danger (
         name: Danger
         type: staticContent

@@ -1,7 +1,7 @@
 page 311 (
     name: Skladište / Detalji
     alias: SKLADIŠTE-DETALJI
-    title: Skladište / Detalji
+    title: Skladište
     pageGroup: @robno-materijalno
     appearance {
         pageMode: modalDialog
@@ -9,16 +9,26 @@ page 311 (
         templateOptions: [
             #DEFAULT#
             js-dialog-class-t-Drawer--pullOutEnd
-            js-dialog-class-t-Drawer--lg
+            js-dialog-class-t-Drawer--md
         ]
     }
     dialog {
         chained: false
+        resizable: false
     }
     navigation {
         cursorFocus: doNotFocusCursor
     }
+    css {
+        inline:
+            ```css
+            .ui-dialog-titlebar-close {
+                display: none !important;
+            }
+            ```
+    }
     security {
+        authorizationScheme: @robno-materijalno-konfiguracija-skladišta
         pageAccessProtection: argumentsMustHaveChecksum
         formAutoComplete: false
     }
@@ -39,8 +49,34 @@ page 311 (
         }
     )
 
-    region skladista (
-        name: Skladista
+    region zakljucano (
+        name: Skladište ima dokumente
+        type: staticContent
+        source {
+            htmlCode: Skladište ima dokumente – mogu se mijenjati samo zaduženi radnik, adresa, fax, napomena i aktivnost. Skladište se ne može deaktivirati dok ima robe na stanju.
+        }
+        layout {
+            sequence: 5
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
+        }
+    )
+
+    region skladiste-detalji (
+        name: Skladište / Detalji
         type: staticContent
         layout {
             sequence: 10
@@ -48,29 +84,324 @@ page 311 (
         }
         appearance {
             template: @blank-with-attributes
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
         }
     )
 
-    pageItem P311_ADRESA (
-        type: textField
-        label {
-            label: Adresa
-            alignment: left
-        }
+    region osnovno (
+        name: Osnovni podaci
+        title: Osnovni podaci
+        type: staticContent
         layout {
-            sequence: 130
-            region: @skladista
-            slot: regionBody
-            alignment: left
+            sequence: 10
+            parentRegion: @skladiste-detalji
+            slot: subRegions
         }
         appearance {
-            template: @optional-floating
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region organizacija (
+        name: Organizacija i odgovornost
+        title: Organizacija i odgovornost
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @skladiste-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region kontakt (
+        name: Adresa i napomena
+        title: Adresa i napomena
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @skladiste-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region korisnici (
+        name: Korisnici skladišta
+        title: Korisnici skladišta
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    k.id,
+                    k.korisnik_naziv,
+                    k.korisnicko_ime
+                FROM vw_skladiste_korisnici k
+                WHERE k.skladiste_id = :P311_ID
+                ORDER BY k.korisnik_naziv
+                ```
+            pageItemsToSubmit: P311_ID
+        }
+        layout {
+            sequence: 40
+            parentRegion: @skladiste-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nijedan korisnik nema pristup ovom skladištu. Dodajte korisnike koji će raditi sa dokumentima skladišta.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P311_ID
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column KORISNIK_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Korisnik
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-sb-red"><span><span class="fa fa-user-circle-o" aria-hidden="true"></span> #KORISNIK_NAZIV#<span class="fin-sub">#KORISNICKO_IME#</span></span><a class="fin-act fin-act--danger fin-korisnik-brisi" href="javascript:void(0)" data-id="#ID#" title="Ukloni" aria-label="Ukloni"><span class="fa fa-times" aria-hidden="true"></span></a></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KORISNICKO_IME (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+    )
+
+    pageItem P311_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P311_ZAKLJUCANO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 2
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P311_RAZLOG_BRISANJA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P311_ROB_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P311_DVOJNO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P311_KORISNIK_DEL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @skladiste-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P311_SIFRA (
+        type: textField
+        label {
+            label: Šifra
+            alignment: left
+        }
+        validation {
+            maxLength: 64
+        }
+        layout {
+            sequence: 10
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 32
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
+        }
+    )
+
+    pageItem P311_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
         }
         validation {
             maxLength: 255
+        }
+        layout {
+            sequence: 20
+            region: @osnovno
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
+        }
+    )
+
+    pageItem P311_TIP_SKLADISTA_ID (
+        type: selectOne
+        label {
+            label: Tip skladišta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT naziv AS d, id AS r
+                FROM sif.acc_tipovi_skladista
+                WHERE valid = 'Y'
+                  AND (CASE WHEN upper(sifra) = 'ROB' THEN 'ROB' ELSE 'MAT' END = nvl(:A_RM_MODUL, 'ROB')
+                       OR id = :P311_TIP_SKLADISTA_ID)
+                ORDER BY CASE WHEN upper(sifra) IN ('ROB', 'MAT') THEN 0 ELSE 1 END, naziv
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Robno skladište služi za robu namijenjenu prodaji i radi po cjenovniku. Ostali tipovi su materijalna skladišta (prosječna nabavna cijena).
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
         }
     )
 
@@ -84,197 +415,56 @@ page 311 (
             infiniteScroll: false
         }
         lov {
-            type: sharedComponent
-            lov: @cjenovnici
-        }
-        layout {
-            sequence: 100
-            region: @skladista
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 30
-        }
-    )
-
-    pageItem P311_FAX (
-        type: textField
-        label {
-            label: Fax
-            alignment: left
-        }
-        layout {
-            sequence: 140
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
-        }
-    )
-
-    pageItem P311_ID (
-        type: hidden
-        layout {
-            sequence: 10
-            region: @skladista
-            slot: regionBody
-        }
-        security {
-            sessionStateProtection: checksumRequiredSessionLevel
-        }
-    )
-
-    pageItem P311_KONTNA_KLASA_ID (
-        type: selectOne
-        label {
-            label: Kontna klasa
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @kontni-okvir-klase-ooj
-        }
-        layout {
-            sequence: 110
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
-        }
-        readOnly {
-            type: rowsReturned
+            type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
+                SELECT sifra || ' - ' || naziv || CASE tip WHEN 'M' THEN ' (maloprodaja)' WHEN 'V' THEN ' (veleprodaja)' END AS d,
+                       id AS r
+                FROM cjenovnici
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND (valid = 'Y' OR id = :P311_CJENOVNIK_ID)
+                ORDER BY sifra
                 ```
-        }
-    )
-
-    pageItem P311_NADREDJENO_ID (
-        type: selectOne
-        label {
-            label: Nadređeno skladište
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @skladista
-        }
-        layout {
-            sequence: 30
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
-        }
-        readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
-        }
-    )
-
-    pageItem P311_NAPOMENA (
-        type: textarea
-        label {
-            label: Napomena
-            alignment: left
-        }
-        settings {
-            autoHeight: true
-            charCounter: true
-        }
-        layout {
-            sequence: 150
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 60
-            height: 4
-        }
-        validation {
-            maxLength: 1000
-        }
-    )
-
-    pageItem P311_NAZIV (
-        type: textField
-        label {
-            label: Naziv
-            alignment: left
         }
         layout {
             sequence: 40
-            region: @skladista
+            region: @osnovno
             slot: regionBody
-            alignment: left
+            startNewRow: false
+            columnSpan: 8
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 32
         }
-        validation {
-            maxLength: 255
+        help {
+            helpText: Cjenovnik određuje način rada robnog skladišta: maloprodajni (stanje po MP cijeni, nivelacije) ili veleprodajni (prosječna nabavna cijena).
         }
         readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
+        }
+    )
+
+    pageItem P311_VALID (
+        type: switch
+        label {
+            label: Skladište je aktivno
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+        layout {
+            sequence: 50
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
         }
     )
 
@@ -292,110 +482,95 @@ page 311 (
             lov: @oj
         }
         layout {
-            sequence: 60
-            region: @skladista
+            sequence: 10
+            region: @organizacija
             slot: regionBody
-            alignment: left
+            columnSpan: 6
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
         }
         readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
         }
     )
 
-    pageItem P311_OOJ_ID (
-        type: hidden
+    pageItem P311_NADREDJENO_ID (
+        type: selectOne
+        label {
+            label: U sastavu skladišta (nadređeno)
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT sifra || ' - ' || naziv AS d, id AS r
+                FROM skladista
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND id <> nvl(:P311_ID, -1)
+                ORDER BY sifra
+                ```
+        }
         layout {
             sequence: 20
-            region: @skladista
+            region: @organizacija
             slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
         }
     )
 
     pageItem P311_RADNIK_ID (
         type: selectOne
         label {
-            label: Zaduženi radnik
+            label: Zaduženi radnik (skladištar)
             alignment: left
         }
         settings {
             infiniteScroll: false
         }
         lov {
-            type: sharedComponent
-            lov: @hr-radnici
-        }
-        layout {
-            sequence: 120
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
-        }
-    )
-
-    pageItem P311_SIFRA (
-        type: textField
-        label {
-            label: Šifra
-            alignment: left
-        }
-        layout {
-            sequence: 50
-            region: @skladista
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 64
-        }
-        readOnly {
-            type: rowsReturned
+            type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
+                SELECT r.ime || ' ' || r.prezime || CASE WHEN r.naziv_oj IS NOT NULL THEN ' (' || r.naziv_oj || ')' END AS d,
+                       r.id AS r
+                FROM sif.vw_acc_radnici r
+                WHERE r.ooj_id = :APP_OOJ_ID
+                  AND (r.valid = 'Y' OR r.id = :P311_RADNIK_ID)
+                ORDER BY r.ime, r.prezime
                 ```
+        }
+        layout {
+            sequence: 30
+            region: @organizacija
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
         }
     )
 
-    pageItem P311_TIP_CIJENE_ID (
+    pageItem P311_KONTNA_KLASA_ID (
         type: selectOne
         label {
-            label: Tip cijene
+            label: Konto skladišta
             alignment: left
         }
         settings {
@@ -403,172 +578,100 @@ page 311 (
         }
         lov {
             type: sharedComponent
-            lov: @sif-acc-tipovi-cijene
+            lov: @kontni-okvir-klase-ooj
         }
         layout {
-            sequence: 90
-            region: @skladista
+            sequence: 40
+            region: @organizacija
             slot: regionBody
-            alignment: left
             startNewRow: false
+            columnSpan: 6
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 32
         }
-        validation {
-            maxLength: 255
+        help {
+            helpText: Konto zaliha na koji se knjiže dokumenti skladišta (samo dvojno knjigovodstvo).
         }
         readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
-        }
-    )
-
-    pageItem P311_TIP_SKLADISTA_ID (
-        type: selectOne
-        label {
-            label: Tip skladišta
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sif-acc-tipovi-skladista
-        }
-        layout {
-            sequence: 80
-            region: @skladista
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 255
-        }
-        readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
-        }
-    )
-
-    pageItem P311_VALID (
-        type: radioGroup
-        label {
-            label: Aktivno
-            alignment: left
-        }
-        settings {
-            noOfCols: 2
-        }
-        lov {
-            type: sharedComponent
-            lov: @da-ne
-            displayExtraValues: false
-            displayNullValue: false
-        }
-        layout {
-            sequence: 160
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: [
-                #DEFAULT#
-                t-Form-fieldContainer--stretchInputs
-                t-Form-fieldContainer--large
-                t-Form-fieldContainer--radioButtonGroup
-            ]
+            type: expression
+            plsqlExpression: :P311_ZAKLJUCANO = 'Y'
         }
         serverSideCondition {
-            type: itemIsNotNull
-            item: P311_ID
-        }
-        readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    vw_skladiste_stavke
-                WHERE
-                    skladiste_id = :P311_ID
-                    AND stanje_kolicina > 0
-                ```
+            type: expression
+            plsqlExpression: :APP_TIP_PREDUZETNIKA_SIFRA in ('doo', 'ad', 'vsp_dvojno')
         }
     )
 
-    pageItem P311_VALUTA_ID (
-        type: selectOne
+    pageItem P311_ADRESA (
+        type: textField
         label {
-            label: Valuta
+            label: Adresa
             alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sif-valute
-        }
-        layout {
-            sequence: 70
-            region: @skladista
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
         }
         validation {
             maxLength: 255
         }
-        readOnly {
-            type: rowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
+        layout {
+            sequence: 10
+            region: @kontakt
+            slot: regionBody
+            columnSpan: 8
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P311_FAX (
+        type: textField
+        label {
+            label: Telefon / fax
+            alignment: left
+        }
+        validation {
+            maxLength: 255
+        }
+        layout {
+            sequence: 20
+            region: @kontakt
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P311_NAPOMENA (
+        type: textarea
+        label {
+            label: Napomena
+            alignment: left
+        }
+        validation {
+            maxLength: 1000
+        }
+        layout {
+            sequence: 30
+            region: @kontakt
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            height: 2
         }
     )
 
     button cancel (
-        buttonName: CANCEL
-        label: Odustani
+        buttonName: ZATVORI
+        label: Zatvori
         layout {
             sequence: 10
             region: @buttons
@@ -579,41 +682,14 @@ page 311 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
+                t-Button--simple
                 t-Button--iconLeft
             ]
-            icon: fa-box-arrow-in-west
+            icon: fa-times
         }
         behavior {
-            action: definedByDynamicAction
-        }
-    )
-
-    button create (
-        buttonName: CREATE
-        label: Kreiraj
-        layout {
-            sequence: 40
-            region: @buttons
-            slot: next
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            hot: true
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--large
-                t-Button--iconLeft
-            ]
-            icon: fa-plus-circle-o
-        }
-        behavior {
+            executeValidations: false
             warnOnUnsavedChanges: doNotCheck
-        }
-        serverSideCondition {
-            type: itemIsNull
-            item: P311_ID
         }
     )
 
@@ -623,14 +699,14 @@ page 311 (
         layout {
             sequence: 20
             region: @buttons
-            slot: delete
+            slot: close
         }
         appearance {
             buttonTemplate: @text-with-icon
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
+                t-Button--simple
                 t-Button--iconLeft
             ]
             cssClasses: u-color-9
@@ -642,35 +718,18 @@ page 311 (
             requiresConfirmation: true
         }
         confirmation {
-            message: &APP_TEXT$DELETE_MSG!RAW.
+            message: Obrisati skladište?
             style: danger
         }
         serverSideCondition {
-            type: noRowsReturned
-            sqlQuery:
-                ```sql
-                SELECT
-                    1
-                FROM
-                    operacije
-                WHERE
-                    skladiste_id = :P311_ID
-                   
-                UNION ALL
-                
-                SELECT
-                    1
-                FROM
-                    skladiste_korisnici
-                WHERE
-                    skladiste_id = :P311_ID
-                ```
+            type: expression
+            plsqlExpression: :P311_ID is not null and :P311_RAZLOG_BRISANJA is null
         }
     )
 
     button save (
         buttonName: SAVE
-        label: Ažuriraj
+        label: Snimi
         layout {
             sequence: 30
             region: @buttons
@@ -682,165 +741,50 @@ page 311 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
                 t-Button--iconLeft
             ]
-            icon: fa-edit
+            icon: fa-save
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
         }
-        serverSideCondition {
-            type: itemIsNotNull
-            item: P311_ID
+    )
+
+    button dodaj-korisnike (
+        buttonName: DODAJ_KORISNIKE
+        label: Dodaj korisnike
+        layout {
+            sequence: 10
+            region: @korisnici
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-user-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 312
+                items: {
+                    P312_SKLADISTE_ID: &P311_ID.
+                }
+                clearCache: 312
+            }
+            warnOnUnsavedChanges: doNotCheck
         }
     )
 
-    dynamicAction cancel-dialog (
-        name: Cancel Dialog
+    validation sifra-obavezno (
+        name: P311_SIFRA obavezno
         execution {
             sequence: 10
-        }
-        when {
-            event: click
-            selectionType: button
-            button: @cancel
-        }
-
-        action native-dialog-cancel (
-            action: cancelDialog
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
-
-    )
-
-    dynamicAction toggle (
-        name: Toggle
-        execution {
-            sequence: 20
-        }
-        when {
-            selectionType: items
-            items: P311_TIP_CIJENE_ID
-        }
-        clientSideCondition {
-            type: item=value
-            item: P311_TIP_CIJENE_ID
-            value: 1
-        }
-
-        action native-hide (
-            action: hide
-            affectedElements {
-                selectionType: items
-                items: P311_CJENOVNIK_ID
-            }
-            execution {
-                sequence: 10
-                fireWhenEventResultIs: false
-            }
-        )
-
-        action native-show (
-            action: show
-            affectedElements {
-                selectionType: items
-                items: P311_CJENOVNIK_ID
-            }
-            execution {
-                sequence: 10
-            }
-        )
-
-    )
-
-    validation cjenovnik-not-null (
-        name: Cjenovnik NOT NULL
-        execution {
-            sequence: 70
-        }
-        validation {
-            type: itemIsNotNull
-            item: P311_CJENOVNIK_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_CJENOVNIK_ID
-        }
-        serverSideCondition {
-            type: item=value
-            item: P311_TIP_CIJENE_ID
-            value: 1
-        }
-    )
-
-    validation kontna-klasa (
-        name: KONTNA KLASA
-        execution {
-            sequence: 80
-        }
-        validation {
-            type: itemIsNotNull
-            item: P311_KONTNA_KLASA_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_KONTNA_KLASA_ID
-        }
-    )
-
-    validation naziv-not-null (
-        name: NAZIV NOT NULL
-        execution {
-            sequence: 10
-        }
-        validation {
-            type: itemIsNotNull
-            item: P311_NAZIV
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_NAZIV
-        }
-    )
-
-    validation oj-not-null (
-        name: OJ NOT NULL
-        execution {
-            sequence: 30
-        }
-        validation {
-            type: itemIsNotNull
-            item: P311_OJ_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_OJ_ID
-        }
-    )
-
-    validation radnik (
-        name: RADNIK
-        execution {
-            sequence: 90
-        }
-        validation {
-            type: itemIsNotNull
-            item: P311_RADNIK_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_RADNIK_ID
-        }
-    )
-
-    validation sifra-not-null (
-        name: SIFRA NOT NULL
-        execution {
-            sequence: 20
         }
         validation {
             type: itemIsNotNull
@@ -850,27 +794,35 @@ page 311 (
             errorMessage: #LABEL# je obavezno polje za unos.
             associatedItem: @P311_SIFRA
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
+        }
     )
 
-    validation tip-cijene-not-null (
-        name: TIP CIJENE NOT NULL
+    validation naziv-obavezno (
+        name: P311_NAZIV obavezno
         execution {
-            sequence: 60
+            sequence: 20
         }
         validation {
             type: itemIsNotNull
-            item: P311_TIP_CIJENE_ID
+            item: P311_NAZIV
         }
         error {
             errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_TIP_CIJENE_ID
+            associatedItem: @P311_NAZIV
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
         }
     )
 
-    validation tip-skladista-not-null (
-        name: TIP SKLADISTA NOT NULL
+    validation tip-obavezno (
+        name: P311_TIP_SKLADISTA_ID obavezno
         execution {
-            sequence: 50
+            sequence: 30
         }
         validation {
             type: itemIsNotNull
@@ -880,91 +832,190 @@ page 311 (
             errorMessage: #LABEL# je obavezno polje za unos.
             associatedItem: @P311_TIP_SKLADISTA_ID
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
+        }
     )
 
-    validation valuta-not-null (
-        name: VALUTA NOT NULL
+    validation oj-obavezno (
+        name: P311_OJ_ID obavezno
         execution {
             sequence: 40
         }
         validation {
             type: itemIsNotNull
-            item: P311_VALUTA_ID
+            item: P311_OJ_ID
         }
         error {
             errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P311_VALUTA_ID
-        }
-    )
-
-    process close-dialog (
-        name: Close Dialog
-        type: closeDialog
-        execution {
-            sequence: 90
-        }
-        advanced {
-            executionMappingIdentifier: 188934957639390865
+            associatedItem: @P311_OJ_ID
         }
         serverSideCondition {
-            whenButtonPressed: @save
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
         }
     )
 
-    process delete (
-        name: Delete
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                skladista_pkg.delete_skladiste (
-                    p_id => :P311_ID
-                );
-                ```
-        }
+    validation skladiste (
+        name: Provjera skladišta (RM_SKLADISTE_PKG)
         execution {
             sequence: 80
         }
-        advanced {
-            executionMappingIdentifier: 188716514550453020
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                return rm_skladiste_pkg.provjeri(
+                    p_id               => :P311_ID,
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_sifra            => :P311_SIFRA,
+                    p_naziv            => :P311_NAZIV,
+                    p_tip_skladista_id => :P311_TIP_SKLADISTA_ID,
+                    p_cjenovnik_id     => case when :P311_TIP_SKLADISTA_ID = :P311_ROB_ID then :P311_CJENOVNIK_ID end,
+                    p_oj_id            => :P311_OJ_ID,
+                    p_nadredjeno_id    => :P311_NADREDJENO_ID,
+                    p_kontna_klasa_id  => :P311_KONTNA_KLASA_ID,
+                    p_radnik_id        => :P311_RADNIK_ID,
+                    p_valid            => :P311_VALID,
+                    p_dvojno           => :P311_DVOJNO
+                );
+                ```
         }
         serverSideCondition {
-            whenButtonPressed: @delete
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
         }
     )
 
-    process get-data (
-        name: Get data
+    dynamicAction tip-skladista (
+        name: Cjenovnik samo za robno skladište
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P311_TIP_SKLADISTA_ID
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: $('#P311_CJENOVNIK_ID_CONTAINER').toggle($v('P311_TIP_SKLADISTA_ID') !== '' && $v('P311_TIP_SKLADISTA_ID') === $v('P311_ROB_ID'));
+            }
+            execution {
+                sequence: 10
+                fireOnInit: true
+            }
+        )
+
+    )
+
+    dynamicAction korisnik-brisi (
+        name: Ukloni korisnika
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .fin-korisnik-brisi
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P311_KORISNIK_DEL
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: rm_skladiste_pkg.obrisi_korisnika(p_id => :P311_KORISNIK_DEL);
+                itemsToSubmit: P311_KORISNIK_DEL
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @korisnici
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction korisnici-dodati (
+        name: Korisnici dodati - osvježi
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @dodaj-korisnike
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @korisnici
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process ucitaj (
+        name: Učitavanje skladišta
         type: executeCode
         source {
             plsqlCode:
                 ```plsql
-                skladista_pkg.get_skladiste (
-                    p_id               => :P311_ID,
-                    p_ooj_id           => :P311_OOJ_ID,
-                    p_nadredjeno_id    => :P311_NADREDJENO_ID,
-                    p_valuta_id        => :P311_VALUTA_ID,
-                    p_tip_skladista_id => :P311_TIP_SKLADISTA_ID,
-                    p_tip_cijene_id    => :P311_TIP_CIJENE_ID,
-                    p_cjenovnik_id     => :P311_CJENOVNIK_ID,
-                    p_kontna_klasa_id  => :P311_KONTNA_KLASA_ID,
-                    p_radnik_id        => :P311_RADNIK_ID,
-                    p_oj_id            => :P311_OJ_ID,
-                    p_naziv            => :P311_NAZIV,
-                    p_sifra            => :P311_SIFRA,
-                    p_adresa           => :P311_ADRESA,
-                    p_fax              => :P311_FAX,
-                    p_napomena         => :P311_NAPOMENA,
-                    p_valid            => :P311_VALID
-                );
+                for s in (select * from skladista where id = :P311_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P311_SIFRA            := s.sifra;
+                    :P311_NAZIV            := s.naziv;
+                    :P311_TIP_SKLADISTA_ID := s.tip_skladista_id;
+                    :P311_CJENOVNIK_ID     := s.cjenovnik_id;
+                    :P311_VALID            := s.valid;
+                    :P311_OJ_ID            := s.oj_id;
+                    :P311_NADREDJENO_ID    := s.nadredjeno_id;
+                    :P311_RADNIK_ID        := s.radnik_id;
+                    :P311_KONTNA_KLASA_ID  := s.kontna_klasa_id;
+                    :P311_ADRESA           := s.adresa;
+                    :P311_FAX              := s.fax;
+                    :P311_NAPOMENA         := s.napomena;
+                end loop;
+                :P311_ZAKLJUCANO := rm_skladiste_pkg.ima_dokumenata(:P311_ID);
+                :P311_RAZLOG_BRISANJA := rm_skladiste_pkg.razlog_zabrane_brisanja(:P311_ID);
                 ```
         }
         execution {
             sequence: 10
             point: beforeHeader
-        }
-        advanced {
-            executionMappingIdentifier: 188716263004453017
         }
         serverSideCondition {
             type: itemIsNotNull
@@ -972,113 +1023,116 @@ page 311 (
         }
     )
 
-    process insert (
-        name: Insert
+    process pripremi (
+        name: Pomoćne vrijednosti
         type: executeCode
         source {
             plsqlCode:
                 ```plsql
-                :P311_ID := skladista_pkg.insert_skladiste (
-                    p_ooj_id           => :APP_OOJ_ID,
-                    p_nadredjeno_id    => :P311_NADREDJENO_ID,
-                    p_valuta_id        => :P311_VALUTA_ID,
-                    p_tip_skladista_id => :P311_TIP_SKLADISTA_ID,
-                    p_tip_cijene_id    => :P311_TIP_CIJENE_ID,
-                    p_cjenovnik_id     => :P311_CJENOVNIK_ID,
-                    p_kontna_klasa_id  => :P311_KONTNA_KLASA_ID,
-                    p_radnik_id        => :P311_RADNIK_ID,
-                    p_oj_id            => :P311_OJ_ID,
-                    p_naziv            => :P311_NAZIV,
-                    p_sifra            => :P311_SIFRA,
-                    p_adresa           => :P311_ADRESA,
-                    p_fax              => :P311_FAX,
-                    p_napomena         => :P311_NAPOMENA
-                );
+                select max(id) into :P311_ROB_ID from sif.acc_tipovi_skladista where upper(sifra) = 'ROB';
+                :P311_DVOJNO := case when :APP_TIP_PREDUZETNIKA_SIFRA in ('doo', 'ad', 'vsp_dvojno') then 'Y' else 'N' end;
+                if :P311_ID is null then
+                    :P311_ZAKLJUCANO := 'N';
+                    :P311_VALID := nvl(:P311_VALID, 'Y');
+                    if :P311_TIP_SKLADISTA_ID is null then
+                        select max(id) into :P311_TIP_SKLADISTA_ID from sif.acc_tipovi_skladista
+                         where upper(sifra) = case nvl(:A_RM_MODUL, 'ROB') when 'ROB' then 'ROB' else 'MAT' end;
+                    end if;
+                end if;
                 ```
         }
         execution {
-            sequence: 60
-        }
-        advanced {
-            executionMappingIdentifier: 188716335513453018
-        }
-        serverSideCondition {
-            whenButtonPressed: @create
+            sequence: 20
+            point: beforeHeader
         }
     )
 
-    process update (
-        name: Update
+    process snimi (
+        name: Snimi skladište
         type: executeCode
         source {
             plsqlCode:
                 ```plsql
-                skladista_pkg.update_skladiste (
+                :P311_ID := rm_skladiste_pkg.snimi(
                     p_id               => :P311_ID,
                     p_ooj_id           => :APP_OOJ_ID,
-                    p_nadredjeno_id    => :P311_NADREDJENO_ID,
-                    p_valuta_id        => :P311_VALUTA_ID,
+                    p_sifra            => :P311_SIFRA,
+                    p_naziv            => :P311_NAZIV,
                     p_tip_skladista_id => :P311_TIP_SKLADISTA_ID,
-                    p_tip_cijene_id    => :P311_TIP_CIJENE_ID,
-                    p_cjenovnik_id     => :P311_CJENOVNIK_ID,
+                    p_cjenovnik_id     => case when :P311_TIP_SKLADISTA_ID = :P311_ROB_ID then :P311_CJENOVNIK_ID end,
+                    p_oj_id            => :P311_OJ_ID,
+                    p_nadredjeno_id    => :P311_NADREDJENO_ID,
                     p_kontna_klasa_id  => :P311_KONTNA_KLASA_ID,
                     p_radnik_id        => :P311_RADNIK_ID,
-                    p_oj_id            => :P311_OJ_ID,
-                    p_naziv            => :P311_NAZIV,
-                    p_sifra            => :P311_SIFRA,
                     p_adresa           => :P311_ADRESA,
                     p_fax              => :P311_FAX,
                     p_napomena         => :P311_NAPOMENA,
-                    p_valid            => :P311_VALID
+                    p_valid            => :P311_VALID,
+                    p_dvojno           => :P311_DVOJNO
                 );
                 ```
         }
         execution {
-            sequence: 70
-        }
-        advanced {
-            executionMappingIdentifier: 188716429523453019
-        }
-        serverSideCondition {
-            whenButtonPressed: @save
-        }
-    )
-
-    branch (
-        name: Redirect to new
-        execution {
             sequence: 10
         }
-        behavior {
-            target: {
-                page: 310
-                items: {
-                    P310_ID: &P311_ID.
-                }
-                action: resetPagination
-            }
+        successMessage {
+            successMessage: Skladište je snimljeno.
         }
         serverSideCondition {
-            whenButtonPressed: @create
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE'
         }
     )
 
-    branch (
-        name: Redirect to all
+    process obrisi (
+        name: Obriši skladište
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_skladiste_pkg.obrisi(p_id => :P311_ID);
+                ```
+        }
         execution {
             sequence: 20
         }
-        behavior {
-            target: {
-                page: 310
-                clearCache: 310
-                action: resetPagination
-            }
+        successMessage {
+            successMessage: Skladište je obrisano.
         }
         serverSideCondition {
             whenButtonPressed: @delete
         }
     )
 
-)
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE,ZATVORI
+        }
+    )
 
+    branch (
+        name: Ostani na skladištu
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 311
+                items: {
+                    P311_ID: &P311_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE
+        }
+    )
+
+)

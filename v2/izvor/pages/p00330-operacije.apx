@@ -236,9 +236,11 @@ page 330 (
                     otpremnica_broj,
                     to_char(otpremnica_datum, 'DD.MM.YYYY') AS otpremnica_datum,
                     stavki,
-                    to_char(kolicina, 'FM999G999G999G990D999') AS kolicina,
+                    rtrim(to_char(kolicina, 'FM999G999G999G990D999999'), '.,') AS kolicina,
+                    to_char(iznos, 'FM999G999G999G990D00') AS iznos,
                     sb_nedostaje,
                     kalkulacija_naziv,
+                    ugovor_naziv,
                     opis,
                     vrsta_sifra,
                     status,
@@ -390,7 +392,7 @@ page 330 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}
+                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}
                     ```
             }
             sorting {
@@ -419,23 +421,9 @@ page 330 (
         column STAVKI (
             reportColumnQueryId: 8
             derivedColumn: N
-            heading {
-                heading: Stavki
-                alignment: end
-            }
+            type: hidden
             layout {
-                sequence: 40
-                columnAlignment: end
-            }
-            columnFormatting {
-                cssClasses: fin-num
-                htmlExpression:
-                    ```html
-                    #STAVKI#<span class="fin-num-sub">kol. #KOLICINA#</span>
-                    ```
-            }
-            sorting {
-                sortable: false
+                sequence: 380
             }
         )
 
@@ -448,16 +436,30 @@ page 330 (
             }
         )
 
-        column SB_NEDOSTAJE (
+        column IZNOS (
             reportColumnQueryId: 10
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Iznos
+                alignment: end
+            }
             layout {
-                sequence: 400
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num fin-num--strong
+                htmlExpression:
+                    ```html
+                    #IZNOS#<span class="fin-num-sub">#STAVKI# stavki · kol. #KOLICINA#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column KALKULACIJA_NAZIV (
+        column SB_NEDOSTAJE (
             reportColumnQueryId: 11
             derivedColumn: N
             type: hidden
@@ -466,8 +468,26 @@ page 330 (
             }
         )
 
-        column OPIS (
+        column KALKULACIJA_NAZIV (
             reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 420
+            }
+        )
+
+        column UGOVOR_NAZIV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 430
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 14
             derivedColumn: N
             heading {
                 heading: Opis
@@ -481,24 +501,6 @@ page 330 (
         )
 
         column VRSTA_SIFRA (
-            reportColumnQueryId: 13
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 430
-            }
-        )
-
-        column STATUS (
-            reportColumnQueryId: 14
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 440
-            }
-        )
-
-        column KLIJENT_ID (
             reportColumnQueryId: 15
             derivedColumn: N
             type: hidden
@@ -507,7 +509,7 @@ page 330 (
             }
         )
 
-        column DOK_STATUS (
+        column STATUS (
             reportColumnQueryId: 16
             derivedColumn: N
             type: hidden
@@ -516,8 +518,26 @@ page 330 (
             }
         )
 
-        column DOK_STATUS_NAZIV (
+        column KLIJENT_ID (
             reportColumnQueryId: 17
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 470
+            }
+        )
+
+        column DOK_STATUS (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 480
+            }
+        )
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 19
             derivedColumn: N
             heading {
                 heading: Status
@@ -537,29 +557,29 @@ page 330 (
         )
 
         column DOK_STATUS_IKONA (
-            reportColumnQueryId: 18
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 480
-            }
-        )
-
-        column SB_UPOZORENJE (
-            reportColumnQueryId: 19
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 490
-            }
-        )
-
-        column URL (
             reportColumnQueryId: 20
             derivedColumn: N
             type: hidden
             layout {
                 sequence: 500
+            }
+        )
+
+        column SB_UPOZORENJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 510
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 520
             }
         )
 

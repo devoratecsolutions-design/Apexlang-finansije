@@ -55,7 +55,7 @@ app FINANSIJE (
         fileUrls: [
             #WORKSPACE_FILES#highlight_required#MIN#.css
             #APP_FILES#css/nav-icons#MIN#.css
-            #APP_FILES#css/finansije-ui#MIN#.css?v=f0fe3a5e
+            #APP_FILES#css/finansije-ui#MIN#.css?v=b73d30bf
         ]
     }
     authentication {
