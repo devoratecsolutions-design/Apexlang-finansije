@@ -11,6 +11,12 @@ page 330 (
         cursorFocus: doNotFocusCursor
         warnOnUnsavedChanges: false
     }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmVrsta.init('P330_NOVA_VRSTA');
+            ```
+    }
     security {
         authorizationScheme: @robno-materijalno-dokumenti
         pageAccessProtection: argumentsMustHaveChecksum
@@ -68,30 +74,24 @@ page 330 (
         }
     )
 
-    region menu-dokumenti-novi (
-        name: Menu - Dokumenti - Novi
-        type: list
-        source {
-            list: @menu-dokumenti-ulaz
-        }
+    region vrsta-izbor (
+        name: Izbor vrste dokumenta
+        type: staticContent
         layout {
-            sequence: 50
+            sequence: 4
             slot: body
         }
         appearance {
             template: @blank-with-attributes
             templateOptions: #DEFAULT#
+            cssClasses: fin-vrsta-izbor
         }
         advanced {
-            htmlDomId: novi
+            htmlDomId: fin_vrsta_izbor
         }
-        componentAppearance {
-            listTemplate: @menu-popup
-            templateOptions: [
-                #DEFAULT#
-                js-addActions
-                js-menu-callout
-            ]
+        serverSideCondition {
+            type: itemIsNotNull
+            item: A_SKLADISTE_ID
         }
     )
 
@@ -501,7 +501,7 @@ page 330 (
                 heading: Opis
             }
             layout {
-                sequence: 60
+                sequence: 35
             }
             sorting {
                 sortable: false
@@ -620,6 +620,43 @@ page 330 (
 
     )
 
+    pageItem P330_NOVA_VRSTA (
+        type: selectList
+        label {
+            label: Vrsta dokumenta
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT vd.naziv AS d,
+                       apex_page.get_url(p_page        => 331,
+                                         p_items       => 'P331_VRSTA_DOKUMENTA_ID',
+                                         p_values      => vd.id,
+                                         p_clear_cache => 331) AS r
+                FROM sif.vrste_dokumenata vd
+                JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
+                WHERE vd.ooj_id = :APP_OOJ_ID
+                  AND vd.valid = 'Y'
+                  AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                  AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
+                ORDER BY CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END, vd.naziv
+                ```
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @vrsta-izbor
+            slot: regionBody
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
     pageItem P330_SKLADISTE (
         type: hidden
         settings {
@@ -680,7 +717,7 @@ page 330 (
             action: definedByDynamicAction
         }
         advanced {
-            customAttributes: data-menu="novi_menu"
+            customAttributes: data-novi-dokument="Y"
         }
         serverSideCondition {
             type: itemIsNotNull

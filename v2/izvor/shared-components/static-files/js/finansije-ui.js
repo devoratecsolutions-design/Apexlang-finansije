@@ -783,6 +783,44 @@ window.finSkl = (function ($) {
     return { init: init };
 })(apex.jQuery);
 
+/* =====================================================================
+   Lista dokumenata skladišta (str. 330): izbor vrste dokumenta pored
+   izbora skladišta; "Novi dokument" otvara izabranu vrstu.
+   Vrijednost stavke je URL forme dokumenta (apex_page.get_url).
+   Poziv: finRmVrsta.init('P330_NOVA_VRSTA')
+   ===================================================================== */
+window.finRmVrsta = (function ($) {
+    "use strict";
+    var KLJUC = "finRmVrsta";
+    function otvori(url) {
+        if (!url) { return; }
+        if (/^javascript:/i.test(url)) { window.location.href = url; } else { apex.navigation.redirect(url); }
+    }
+    function init(item) {
+        var $r = $("#fin_vrsta_izbor"), $s = $("#" + item), $cilj, $skl, zapamceno = null;
+        if (!$r.length || !$s.length) { return; }
+        $skl = $("#finSkl");
+        $cilj = $(".t-Body-title .t-BreadcrumbRegion-buttons").first();
+        if ($skl.length && $skl.parent().length) { $r.insertAfter($skl); } else if ($cilj.length) { $cilj.prepend($r); }
+        $r.addClass("is-ready");
+        /* zapamćena vrsta (po nazivu) */
+        try { zapamceno = localStorage.getItem(KLJUC); } catch (e) { zapamceno = null; }
+        if (zapamceno) {
+            $s.find("option").each(function () {
+                if ($(this).text() === zapamceno) { $s.val($(this).val()); }
+            });
+        }
+        $s.on("change", function () {
+            try { localStorage.setItem(KLJUC, $s.find("option:selected").text()); } catch (e) { /* ništa */ }
+        });
+        $(document).on("click", "[data-novi-dokument]", function (e) {
+            e.preventDefault();
+            otvori($s.val());
+        });
+    }
+    return { init: init };
+})(apex.jQuery);
+
 /* Navigacija u modul (Zalihe robe / Materijal i oprema): modul se postavlja
    AJAX-om (RM_MODUL), pa se otvara stranica bez argumenata u URL-u. */
 window.finRm = (function () {

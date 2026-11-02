@@ -185,3 +185,60 @@ select o.id,
    and o.storniran_id is null
    and not exists (select 1 from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
                     where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N');
+
+-- R14: preostale količine po reversima (zaključeni reversi partnera; povrati se raspoređuju
+-- na najstarije reverse - FIFO). Partner: REV = zaduženi radnik, RSV = komitent.
+create or replace force view vw_rm_revers_preostalo as
+with rev as (
+    select o.id as revers_id, o.ooj_id, upper(vd.sifra) as revers_sifra,
+           case when upper(vd.sifra) = 'REV' then o.zaduzeni_radnik_id else o.klijent_id end as partner_id,
+           o.naziv as revers_naziv, o.datum, o.skladiste_id, os.stavka_id,
+           sum(os.kolicina) as izdato,
+           round(sum(os.kolicina * nvl(os.nabavna_cijena, 0)) / nullif(sum(os.kolicina), 0), 6) as cijena
+      from operacije o
+      join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+      join operacija_stavke os on os.operacija_id = o.id
+     where upper(vd.sifra) in ('REV', 'RSV')
+       and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
+       and nvl(o.stornirano, 'N') = 'N'
+       and o.storniran_id is null
+     group by o.id, o.ooj_id, upper(vd.sifra), case when upper(vd.sifra) = 'REV' then o.zaduzeni_radnik_id else o.klijent_id end,
+              o.naziv, o.datum, o.skladiste_id, os.stavka_id
+), pov as (
+    select o.ooj_id, case upper(vd.sifra) when 'REVP' then 'REV' else 'RSV' end as revers_sifra,
+           case when upper(vd.sifra) = 'REVP' then o.zaduzeni_radnik_id else o.klijent_id end as partner_id,
+           os.stavka_id, sum(os.kolicina) as vraceno
+      from operacije o
+      join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+      join operacija_stavke os on os.operacija_id = o.id
+     where upper(vd.sifra) in ('REVP', 'RSVP')
+       and nvl(o.stornirano, 'N') = 'N'
+       and o.storniran_id is null
+     group by o.ooj_id, case upper(vd.sifra) when 'REVP' then 'REV' else 'RSV' end,
+              case when upper(vd.sifra) = 'REVP' then o.zaduzeni_radnik_id else o.klijent_id end, os.stavka_id
+), x as (
+    select r.*,
+           sum(r.izdato) over (partition by r.ooj_id, r.revers_sifra, r.partner_id, r.stavka_id
+                               order by r.datum, r.revers_id rows unbounded preceding) as kumulativno,
+           nvl(p.vraceno, 0) as vraceno_ukupno
+      from rev r
+      left join pov p
+        on p.ooj_id = r.ooj_id and p.revers_sifra = r.revers_sifra and p.partner_id = r.partner_id and p.stavka_id = r.stavka_id
+)
+select x.revers_id,
+       x.ooj_id,
+       x.revers_sifra,
+       x.partner_id,
+       x.revers_naziv,
+       x.datum,
+       x.skladiste_id,
+       x.stavka_id,
+       st.sifra,
+       st.naziv,
+       jm.naziv                                                         as jm_naziv,
+       x.izdato,
+       x.cijena,
+       x.izdato - greatest(0, least(x.izdato, x.vraceno_ukupno - (x.kumulativno - x.izdato))) as preostalo
+  from x
+  join sec_stavke st on st.id = x.stavka_id
+  left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id;

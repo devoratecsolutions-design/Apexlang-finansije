@@ -24,6 +24,19 @@ page 331 (
             ```javascript-browser
             finRmStavke.init('rm_stavke', 'P331');
             finRmSbUnos.init('P331');
+            /* međuskladišni prijem: izbor prenosa prikazuje njegove stavke */
+            apex.jQuery(document).on("click", ".fin-prenos-izbor", function () {
+                var id = String(apex.jQuery(this).data("id"));
+                apex.jQuery(".fin-prenos-izbor").closest("tr").removeClass("is-izabran");
+                apex.jQuery(this).closest("tr").addClass("is-izabran");
+                $s("P331_PRENOS_ID", id);
+                apex.region("rm_prenos_stavke").refresh();
+            });
+            if (apex.jQuery(".fin-prenos-izbor").length) { apex.jQuery(".fin-prenos-izbor").first().trigger("click"); }
+            /* povrat: promjena radnika / komitenta osvježava preostalo po reversima */
+            apex.jQuery("#P331_ZADUZENI_RADNIK_ID, #P331_KOMITENT_ID").on("change", function () {
+                if (apex.region("rm_revers_preostalo")) { apex.region("rm_revers_preostalo").refresh(); }
+            });
             /* međuskladišni prijem: preuzimanje prenosa na čekanju */
             apex.jQuery(document).on("click", ".fin-preuzmi", function () {
                 var b$ = apex.jQuery(this);
@@ -140,7 +153,7 @@ page 331 (
 
     region prenosi-cekanje (
         name: Prenosi na čekanju
-        title: Prenosi na čekanju za ovo skladište
+        title: Prenosi na čekanju za ovo skladište (zaglavlja)
         type: classicReport
         source {
             location: localDatabase
@@ -154,8 +167,7 @@ page 331 (
                     p.sa_skladista,
                     p.opis,
                     p.stavki,
-                    to_char(p.iznos, 'FM999G999G999G990D00') AS iznos,
-                    p.stavke_opis
+                    to_char(p.iznos, 'FM999G999G999G990D00') AS iznos
                 FROM vw_rm_prenosi_cekanje p
                 WHERE p.ooj_id = :APP_OOJ_ID
                   AND p.skladiste_prenos_id = :A_SKLADISTE_ID
@@ -163,7 +175,7 @@ page 331 (
                 ```
         }
         layout {
-            sequence: 9
+            sequence: 8
             slot: contentBody
         }
         appearance {
@@ -227,7 +239,7 @@ page 331 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#DATUM# · sa skladišta #SA_SKLADISTA#</span><span class="fin-sub">#OPIS#</span></span>
+                    <a href="javascript:void(0)" class="fin-doc fin-prenos-izbor" data-id="#ID#"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#DATUM# · sa skladišta #SA_SKLADISTA#</span><span class="fin-sub">#OPIS#</span></a>
                     ```
             }
             sorting {
@@ -297,14 +309,360 @@ page 331 (
             }
         )
 
-        column STAVKE_OPIS (
-            reportColumnQueryId: 8
+
+    )
+
+    region prenos-stavke (
+        name: Stavke izabranog prenosa
+        title: Stavke izabranog prenosa
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.redni_broj,
+                    s.sifra,
+                    s.naziv,
+                    s.jm_naziv,
+                    rtrim(to_char(s.kolicina, 'FM999G999G999G990D999999'), '.,') AS kolicina,
+                    to_char(s.cijena, 'FM999G999G999G990D00') AS cijena,
+                    to_char(s.iznos, 'FM999G999G999G990D00') AS iznos,
+                    CASE WHEN s.prati_sb = 'Y' THEN to_char(s.sb_uneseno) END AS sb
+                FROM vw_rm_dokument_stavke s
+                WHERE s.operacija_id = :P331_PRENOS_ID
+                  AND EXISTS (SELECT 1 FROM vw_rm_prenosi_cekanje p
+                               WHERE p.id = s.operacija_id AND p.ooj_id = :APP_OOJ_ID AND p.skladiste_prenos_id = :A_SKLADISTE_ID)
+                ORDER BY s.redni_broj, s.id
+                ```
+            pageItemsToSubmit: P331_PRENOS_ID
+        }
+        layout {
+            sequence: 9
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Izaberite prenos u tabeli iznad da vidite njegove stavke.
+        }
+        advanced {
+            htmlDomId: rm_prenos_stavke
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null
+        }
+
+        column REDNI_BROJ (
+            reportColumnQueryId: 1
             derivedColumn: N
             heading {
-                heading: Stavke (količina × cijena)
+                heading: R.br.
+                alignment: center
+            }
+            layout {
+                sequence: 10
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Šifra
             }
             layout {
                 sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SB (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Serijskih br.
+                alignment: center
+            }
+            layout {
+                sequence: 80
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region revers-preostalo (
+        name: Preostalo po reversima
+        title: Preostalo za povrat po reversima
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    r.revers_naziv,
+                    to_char(r.datum, 'DD.MM.YYYY') AS datum,
+                    r.sifra,
+                    r.naziv,
+                    r.jm_naziv,
+                    rtrim(to_char(r.izdato, 'FM999G999G999G990D999999'), '.,') AS izdato,
+                    rtrim(to_char(r.preostalo, 'FM999G999G999G990D999999'), '.,') AS preostalo
+                FROM vw_rm_revers_preostalo r
+                WHERE r.ooj_id = :APP_OOJ_ID
+                  AND r.revers_sifra = rm_dokument_pkg.revers_za_povrat(:P331_VRSTA_SIFRA)
+                  AND r.partner_id = CASE WHEN rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+                                          THEN to_number(:P331_ZADUZENI_RADNIK_ID) ELSE to_number(:P331_KOMITENT_ID) END
+                  AND r.preostalo > 0
+                ORDER BY r.datum, r.revers_id, r.sifra
+                ```
+            pageItemsToSubmit: [
+                P331_VRSTA_SIFRA
+                P331_ZADUZENI_RADNIK_ID
+                P331_KOMITENT_ID
+            ]
+        }
+        layout {
+            sequence: 50
+            parentRegion: @dokument-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Izaberite radnika / komitenta - prikazuju se zaključeni reversi sa preostalom količinom (povrati se raspoređuju na najstarije reverse).
+        }
+        advanced {
+            htmlDomId: rm_revers_preostalo
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_POVRAT = 'Y'
+        }
+
+        column REVERS_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Revers
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-doc"><span class="fin-doc__no">#REVERS_NAZIV#</span><span class="fin-sub">#DATUM#</span></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZDATO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Izdato
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PREOSTALO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Preostalo
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
             }
             sorting {
                 sortable: false

@@ -1270,3 +1270,18 @@ body .t-TreeNav .a-TreeView-node--topLevel ul,
 body .t-TreeNav .a-TreeView-node--topLevel.is-collapsible > .a-TreeView-row:not(.is-hover):not(.is-current):not(.is-selected) {
     background-color: transparent !important;
 }
+
+/* R14: izbor vrste dokumenta pored izbora skladišta; meni skladišta se otvara udesno (ne ispod navigacije) */
+.fin-vrsta-izbor { display: none; }
+.fin-vrsta-izbor.is-ready { display: inline-flex; align-items: center; margin-right: 8px; }
+.fin-vrsta-izbor .t-Form-fieldContainer { margin: 0; padding: 0; }
+.fin-vrsta-izbor .t-Form-labelContainer { display: none; }
+.fin-vrsta-izbor .t-Form-inputContainer { padding: 0; }
+.fin-vrsta-izbor select { min-width: 220px; height: 40px; border: 1px solid #dfe3e8; border-radius: 10px; background-color: #fff; font-weight: 600; font-size: 13px; }
+.fin-skl__chip { max-width: 520px; }
+.fin-skl__meni { left: 0; right: auto; z-index: 1100; width: 420px; }
+.fin-skl__sifra { white-space: nowrap; }
+.fin-skl__ime { white-space: normal; }
+#rm_prenosi tr.is-izabran td { background: #e8f1fb; }
+#rm_prenosi .fin-prenos-izbor { text-decoration: none; }
+

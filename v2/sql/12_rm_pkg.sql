@@ -14,7 +14,8 @@
   R13: revers REV / povrat REVP (zaduženi radnik), revers servis RSV / povrat RSVP
   (komitent); povrat najviše do dostupnog sa zaključenih reversa partnera, po cijeni
   reversa; unos izlaza po serijskom broju (artikal se prepoznaje, količina raste);
-  zaključavanje povrata; ispravka ORA-04091 pri zaključavanju izlaza).
+  zaključavanje povrata; ispravka ORA-04091 pri zaključavanju izlaza;
+  R14: reversi samo u materijalnom modulu).
   Sva pravila su u bazi; stranice 330/331/337 samo pozivaju paket.
     - vrsta dokumenta iz SIF.VRSTE_DOKUMENATA (modul MAT); tip kretanja po šifri
     - prijemnica: zaglavlje, stavke, serijski brojevi; zaključava je kalkulacija
@@ -201,7 +202,8 @@ create or replace package body rm_dokument_pkg as
 
     function u_modulu (p_vrsta_sifra in varchar2, p_modul in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI') and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N' else 'Y' end;
+        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'REV', 'REVP', 'RSV', 'RSVP')
+                         and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N' else 'Y' end;
     end u_modulu;
 
     function ima_mjesto_troska (p_vrsta_sifra in varchar2) return varchar2 is
