@@ -1,0 +1,2032 @@
+page 51 (
+    name: Detalji fakture
+    alias: DETALJI-FAKTURE
+    title: Detalji fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Ugovori se kreiraju ukoliko postoji potreba za evidencijom ugovora u sistemu.</br>
+            Nakon kreiranja ugovora, pristupa se kreiranju fakture.</br>
+            U dijalogu za kreiranje faktura, 
+            pored referentnog ugovora potrebno je unijeti sljedeće informacije:
+            <ul>
+                <li>Organizaciona jedinica – organizacija koja vrši fakturisanje.</li>
+                <li>Klijent – prema kome se kreira izlazna faktura.</li>
+            </ul>
+            U slučaju da se fakturisanje radi za novoga klijenta (kupca), 
+            potrebno je da se unesu osnovne informacije o kupcu kako bi se 
+            ispravno kreirala faktura. </br>
+            Nakon unosa klijenta sistem generiše osnovne podatke koje je potrebno 
+            iskazati na fakturi.</br> 
+            Na osnovu odabrane vrste fakture i odabranog klijenta 
+            sistem određuje PDV indikator i tip dokumenta za kreiranje. </br>
+            Da bi sistem prikazao vrste fakture, neophodno je da se u konfiguraciji sistema 
+            konfigurišu vrste fakture, tj. način <b><em>numeracije dokumenta</em></b>.
+            Dodatno se definiše dospijeće u danima (moguće je ručno unijeti broj dana 
+            dospijeća ukoliko je drugačije od ponuđenih).v
+            Datum fakture određuje se ručno i moguće je kreirati fakturu 
+            samo u otvorenom poreskom periodu.</br>
+            Datum valute se automatski popunjava na osnovu definisanog dospijeća.</br>
+            Prilikom odabira tipa plaćanja, dostupne su različite opcije među kojima 
+            birate onu koja vam odgovara, a obavezno je i navođenje valute u kojoj će se izvršiti fakturisanje.
+            
+            ```
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @zaglavlje
+            slot: wizardSubRegions
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region klijent-wrapper (
+        name: Klijent Wrapper
+        type: staticContent
+        layout {
+            sequence: 100
+            parentRegion: @zaglavlje-2
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region zaglavlje (
+        name: ZAGLAVLJE
+        type: list
+        source {
+            list: @wizard-izlazna-faktura
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @wizard-container
+            templateOptions: [
+                #DEFAULT#
+                t-Wizard--hideStepsXSmall
+            ]
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    region zaglavlje-2 (
+        name: Zaglavlje
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @zaglavlje
+            slot: wizardSubRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P51_ADRESA (
+        type: textField
+        label {
+            label: Adresa
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 120
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_CJENOVNIK (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_COPY_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_DANI (
+        type: combobox
+        label {
+            label: Dospijeće u danima
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+            manualEntriesItem: P51_DANI_NEW
+        }
+        lov {
+            type: sharedComponent
+            lov: @dani-dospijeca
+        }
+        layout {
+            sequence: 250
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 30
+        }
+    )
+
+    pageItem P51_DANI_NEW (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 260
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_DATUM_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum fakture
+            alignment: left
+        }
+        settings {
+            minDate: item
+            minItem: P51_MIN_DATUM
+        }
+        layout {
+            sequence: 270
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: functionBody
+            plsqlFunctionBody: RETURN sysdate;
+        }
+    )
+
+    pageItem P51_DATUM_FAKTURE_ORIGINAL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 240
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+        default {
+            type: functionBody
+            plsqlFunctionBody: RETURN sysdate;
+        }
+    )
+
+    pageItem P51_DATUM_VALUTE (
+        type: textField
+        label {
+            label: Datum valute
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 290
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_ENTITET_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 180
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_FAKTURA_BROJ (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 190
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_FAKTURA_ID (
+        type: popupLov
+        label {
+            label: Referenca na fakturu
+            alignment: left
+        }
+        settings {
+            popupWidth: 800
+            popupHeight: 400
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-vezane-if-51
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        cascadingLov {
+            parentItems: [
+                P51_KLIJENT_ID
+                P51_VRSTA_FAKTURE_SIFRA
+            ]
+            itemsToSubmit: [
+                P51_KLIJENT_ID
+                P51_VRSTA_FAKTURE_SIFRA
+            ]
+        }
+        layout {
+            sequence: 230
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_GRAD (
+        type: textField
+        label {
+            label: Grad
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 110
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_JIB (
+        type: textField
+        label {
+            label: JIB
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 130
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti-kupci
+        }
+        layout {
+            sequence: 10
+            region: @klijent-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_KURS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 320
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P51_MIN_DATUM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 50
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_NAZIV_FAKTURE (
+        type: textField
+        label {
+            label: Naziv fakture
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 80
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P51_OJ_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 90
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+        help {
+            helpText: Osnovnu jedinicu možete kreirati na aplikaciji <b><em>"Administracija --> Organizacione jedinice."</em></b>
+        }
+    )
+
+    pageItem P51_ORIG (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_PDV (
+        type: numberField
+        label {
+            label: PDV ( % )
+            alignment: left
+        }
+        layout {
+            sequence: 160
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    pageItem P51_PDV_INDIKATOR_ID (
+        type: selectList
+        label {
+            label: PDV indikator
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @uio-td-pi-52
+        }
+        cascadingLov {
+            parentItems: P51_ENTITET_ID
+        }
+        layout {
+            sequence: 150
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    pageItem P51_PIB (
+        type: textField
+        label {
+            label: PIB
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 140
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_TIP_CIJENE (
+        type: hidden
+        layout {
+            sequence: 220
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_TIP_DOKUMENTA_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 200
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P51_TIP_DOKUMENTA_NAZIV (
+        type: textField
+        label {
+            label: Tip dokumenta
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 170
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    pageItem P51_TIP_PLACANJA_ID (
+        type: selectOne
+        label {
+            label: Tip plaćanja
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-tip-placanja
+        }
+        layout {
+            sequence: 300
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 3
+        }
+    )
+
+    pageItem P51_UGOVOR_ID (
+        type: selectOne
+        label {
+            label: Ugovor
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @ugovori-narucioc
+        }
+        layout {
+            sequence: 60
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 310
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 1
+        }
+    )
+
+    pageItem P51_VRSTA_FAKTURE_ID (
+        type: selectOne
+        label {
+            label: Vrsta fakture
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-faktura
+        }
+        layout {
+            sequence: 70
+            region: @zaglavlje-2
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P51_VRSTA_FAKTURE_SIFRA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 210
+            region: @zaglavlje-2
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @zaglavlje
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 50
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button new-client (
+        buttonName: NEW_CLIENT
+        label: Novi klijent
+        layout {
+            sequence: 10
+            region: @klijent-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-user-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button next (
+        buttonName: NEXT_2
+        label: Sljedeći korak
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+                t-Button--padTop
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    button next-2 (
+        buttonName: NEXT_1
+        label: Sljedeći korak
+        layout {
+            sequence: 30
+            region: @zaglavlje
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction avansna-faktura-zatvaranje (
+        name: AVZ, KO, KZ - disable pdv items
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+
+        action avz-ko-kz-disable-pdv-iteme (
+            name: AVZ, KO, KZ - disable pdv iteme
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P51_PDV_INDIKATOR_ID
+            }
+            execution {
+                sequence: 20
+            }
+            clientSideCondition {
+                type: itemIsInList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: [
+                    AVZ
+                    KO
+                    KZ
+                ]
+            }
+        )
+
+    )
+
+    dynamicAction avz (
+        name: AVZ disable items
+        execution {
+            sequence: 110
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action avz-disable (
+            name: AVZ - disable items
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: [
+                    P51_DANI
+                    P51_TIP_PLACANJA_ID
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: item=value
+                item: P51_VRSTA_FAKTURE_SIFRA
+                value: AVZ
+            }
+        )
+
+    )
+
+    dynamicAction avz-enable-items (
+        name: Not AVZ -  enable items
+        execution {
+            sequence: 120
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action avz-disable (
+            name: Not AVZ -enable items
+            action: enable
+            affectedElements {
+                selectionType: items
+                items: [
+                    P51_DANI
+                    P51_TIP_PLACANJA_ID
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: item!=value
+                item: P51_VRSTA_FAKTURE_SIFRA
+                value: AVZ
+            }
+        )
+
+    )
+
+    dynamicAction avz-ko-kz-diseble-valuta (
+        name: AVZ, KO, KZ - diseble valuta
+        execution {
+            sequence: 100
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action avz-disable-items (
+            name: AVZ - disable items
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P51_VALUTA_ID
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: itemIsInList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: [
+                    AVZ
+                    KO
+                    KZ
+                ]
+            }
+        )
+
+    )
+
+    dynamicAction calculate-datum-valute (
+        name: Calculate - Datum valute
+        execution {
+            sequence: 150
+        }
+        when {
+            selectionType: items
+            items: [
+                P51_DANI
+                P51_DATUM_FAKTURE
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    IF :P51_DANI_NEW IS NOT null THEN
+                        :P51_DANI := :P51_DANI_NEW;
+                        :P51_DATUM_VALUTE := trunc(to_date(:P51_DATUM_FAKTURE,'DD.MM.YYYY')) + numtodsinterval(:P51_DANI_NEW, 'day');
+                    
+                    ELSE
+                        :P51_DATUM_VALUTE := trunc(to_date(:P51_DATUM_FAKTURE,'DD.MM.YYYY')) + numtodsinterval(:P51_DANI, 'day');
+                    
+                    END IF;
+                    ```
+                itemsToSubmit: [
+                    P51_DANI
+                    P51_DATUM_FAKTURE
+                    P51_DATUM_VALUTE
+                    P51_DANI_NEW
+                ]
+                itemsToReturn: P51_DATUM_VALUTE
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-set-item (
+        name: Dialog Closed - Set item
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @new-client
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P51_KLIJENT_ID
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P11_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P51_KLIJENT_ID
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction not-avz-ko-kz-enable-pdv-items (
+        name: Not AVZ, KO, KZ -enable pdv items
+        execution {
+            sequence: 131
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+
+        action not-avz-ko-kz-enable-pdv-iteme (
+            name: not AVZ, KO, KZ - enable pdv iteme
+            action: enable
+            affectedElements {
+                selectionType: items
+                items: P51_PDV_INDIKATOR_ID
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: itemIsNotInList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: [
+                    AVZ
+                    KO
+                    KZ
+                ]
+            }
+        )
+
+    )
+
+    dynamicAction not-avz-ko-kz-enable-valuta (
+        name: Not AVZ, KO, KZ - enable valuta
+        execution {
+            sequence: 130
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action avz-disable-items (
+            name: Not AVZ, KO, KZ - enable valuta
+            action: enable
+            affectedElements {
+                selectionType: items
+                items: P51_VALUTA_ID
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: itemIsNotInList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: [
+                    AVZ
+                    KO
+                    KZ
+                ]
+            }
+        )
+
+    )
+
+    dynamicAction prikazi-dodatne-atribute (
+        name: Prikazi dodatne atribute
+        execution {
+            sequence: 180
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    var vrstaFakture=apex.item("P51_VRSTA_FAKTURE_SIFRA").getValue();
+                    
+                    
+                    if (vrstaFakture.toUpperCase()=='KO' || vrstaFakture.toUpperCase()=='KZ' || vrstaFakture.toUpperCase()=='AVZ' ) {
+                        apex.item("P51_FAKTURA_ID").show();
+                    }else{
+                        apex.item("P51_FAKTURA_ID").hide();
+                    }
+                    
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction set-oj-klijent (
+        name: Set - OJ, Klijent
+        execution {
+            sequence: 160
+        }
+        when {
+            selectionType: items
+            items: P51_UGOVOR_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    ugovori_pkg.get_ugovor (
+                        p_id         => :P51_UGOVOR_ID,
+                        p_klijent_id => :P51_KLIJENT_ID,
+                        p_oj_id      => :P51_OJ_ID
+                    );
+                    ```
+                itemsToSubmit: [
+                    P51_UGOVOR_ID
+                    P51_OJ_ID
+                    P51_KLIJENT_ID
+                ]
+                itemsToReturn: [
+                    P51_OJ_ID
+                    P51_KLIJENT_ID
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-pdv-0-ili (
+        name: set pdv 0 ili 17
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P51_VALUTA_ID
+        }
+        clientSideCondition {
+            type: item!=value
+            item: P51_VALUTA_ID
+            value: 1
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P52_PDV := 0;
+                itemsToSubmit: P52_PDV
+                itemsToReturn: P52_PDV
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P52_PDV := 17;
+                itemsToSubmit: P52_PDV
+                itemsToReturn: P52_PDV
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-tip-dokumenta (
+        name: Set TIP DOKUMENTA
+        execution {
+            sequence: 170
+        }
+        when {
+            selectionType: items
+            items: P51_PDV_INDIKATOR_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select v.uio_tip_dokumenta_id, v.tp_code||' - '||v.tp_naziv
+                    from sif.vw_uio_tip_dokumenta_pdv_indikatori v
+                    where v.pdv_indikator_id=:P51_PDV_INDIKATOR_ID
+                    ```
+                itemsToSubmit: P51_PDV_INDIKATOR_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: [
+                    P51_TIP_DOKUMENTA_ID
+                    P51_TIP_DOKUMENTA_NAZIV
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction set-valuta (
+        name: set KURS
+        execution {
+            sequence: 59
+        }
+        when {
+            selectionType: items
+            items: P51_VALUTA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    if :P51_VRSTA_FAKTURE_SIFRA!='AVZ' then 
+                    
+                        :P51_KURS:=sif.acc_pkg.get_kurs_na_dan (:P51_VALUTA_ID,:APP_OOJ_ID,:P51_DATUM_FAKTURE);
+                    
+                    else
+                    
+                        :P51_KURS:=sif.acc_pkg.get_kurs_na_dan (:P51_VALUTA_ID,:APP_OOJ_ID,:P51_DATUM_FAKTURE_ORIGINAL);
+                    end if;
+                    ```
+                itemsToSubmit: P51_VALUTA_ID
+                itemsToReturn: P51_KURS
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-vrsta-dokumenta-sifra (
+        name: Set  VRSTA DOKUMENTA SIFRA
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select sifra from sif.vrste_dokumenata vd
+                    where vd.id=:P51_VRSTA_FAKTURE_ID
+                    ```
+                itemsToSubmit: P51_VRSTA_FAKTURE_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P51_VRSTA_FAKTURE_SIFRA
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-items (
+        name: Setup items
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P51_KLIJENT_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P51_KLIJENT_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    sec_pkg.get_klijent (
+                        p_id     => :P51_KLIJENT_ID,
+                        p_adresa => :P51_ADRESA,
+                        p_grad   => :P51_GRAD,
+                        p_jib    => :P51_JIB,
+                        p_pib    => :P51_PIB
+                    );
+                    
+                    sec_pkg.get_klijent_entitet (
+                            p_id     => :P51_KLIJENT_ID,
+                            p_entitet_id => :P51_ENTITET_ID
+                    );
+                    
+                    
+                    ```
+                itemsToSubmit: P51_KLIJENT_ID
+                itemsToReturn: [
+                    P51_ADRESA
+                    P51_GRAD
+                    P51_JIB
+                    P51_PIB
+                    P51_ENTITET_ID
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P51_ADRESA := null;
+                    :P51_GRAD := null;
+                    :P51_JIB := null;
+                    :P51_PIB := null;
+                    :P51_ENTITET_ID:= null;
+                    ```
+                itemsToSubmit: P51_KLIJENT_ID
+                itemsToReturn: [
+                    P51_ADRESA
+                    P51_GRAD
+                    P51_JIB
+                    P51_PIB
+                    P51_ENTITET_ID
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-pdv (
+        name: Setup PDV
+        execution {
+            sequence: 140
+        }
+        when {
+            selectionType: items
+            items: P51_KLIJENT_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P51_KLIJENT_ID
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                    AND pdv_sistem = 'Y'
+                    AND :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno')
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    finansije_pkg.get_kif_pdv (
+                        p_ooj_id     => :APP_OOJ_ID,
+                        p_klijent_id => :P51_KLIJENT_ID,
+                        p_pdv        => :P51_PDV
+                    );
+                    ```
+                itemsToSubmit: [
+                    P51_KLIJENT_ID
+                    P51_PDV
+                ]
+                itemsToReturn: P51_PDV
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction vezana-faktura-avans-zatvaranje (
+        name: Vezana faktura - Avans zatvaranje
+        execution {
+            sequence: 190
+        }
+        when {
+            selectionType: items
+            items: P51_FAKTURA_ID
+        }
+        clientSideCondition {
+            type: item=value
+            item: P51_VRSTA_FAKTURE_SIFRA
+            value: AVZ
+        }
+
+        action avans-zatvaranje-set-value (
+            name: Avans zatvaranje - set value
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select k.pdv_indikator_id, k.valuta_id,0 as dani,0 dani_new, k.tip_placanja_id, k.datum_fakture
+                    from kif k
+                    where k.id=:P51_FAKTURA_ID
+                    ```
+                itemsToSubmit: P51_FAKTURA_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: [
+                    P51_PDV_INDIKATOR_ID
+                    P51_VALUTA_ID
+                    P51_DANI
+                    P51_DANI_NEW
+                    P51_TIP_PLACANJA_ID
+                    P51_DATUM_FAKTURE_ORIGINAL
+                ]
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction vrsta-fakture-brojac (
+        name: Set broj i naziv fakture
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: P51_VRSTA_FAKTURE_SIFRA
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P51_VRSTA_FAKTURE_SIFRA
+        }
+
+        action native-execute-plsql-code (
+            name: Broj i naziv dokumenta
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_sifra VARCHAR2(255);
+                    BEGIN
+                    
+                        core.protokoli_pkg.get_brojac (
+                            p_ooj_id             => :APP_OOJ_ID,
+                            p_vrsta_naloga_sifra => :P51_VRSTA_FAKTURE_SIFRA,
+                            p_godina             => :APP_GODINA,
+                            p_broj               => :P51_FAKTURA_BROJ,
+                            p_naziv              => :P51_NAZIV_FAKTURE
+                        );
+                    END;
+                    ```
+                itemsToSubmit: P51_VRSTA_FAKTURE_SIFRA
+                itemsToReturn: [
+                    P51_FAKTURA_BROJ
+                    P51_NAZIV_FAKTURE
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation dani-not-null (
+        name: Dani NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_DANI
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_DANI
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    validation datum-fakture-not-null (
+        name: Datum fakture NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_DATUM_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_DATUM_FAKTURE
+        }
+    )
+
+    validation datum-valute-must-be-a-date (
+        name: Datum valute MUST BE A DATE
+        execution {
+            sequence: 170
+        }
+        validation {
+            type: itemIsAValidDate
+            item: P51_DATUM_VALUTE
+        }
+        error {
+            errorMessage: #LABEL# mora biti datum.
+            associatedItem: @P51_DATUM_VALUTE
+        }
+    )
+
+    validation faktura-id-not-null (
+        name: Faktura ID NOT NULL
+        execution {
+            sequence: 120
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_FAKTURA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_FAKTURA_ID
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :P51_VRSTA_FAKTURE_SIFRA IN ('KO','KZ','AVZ')  THEN
+                    return true;
+                
+                else 
+                
+                    return false;
+                
+                END IF;
+                ```
+        }
+    )
+
+    validation klijent-not-null (
+        name: Klijent NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_KLIJENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_KLIJENT_ID
+        }
+    )
+
+    validation kurs-not-null (
+        name: Kurs NOT NULL
+        execution {
+            sequence: 190
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_KURS
+        }
+        error {
+            errorMessage: Ne postoji definisan kurs za izabranu valutu na datum fakture.
+            associatedItem: @P51_KURS
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 150
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_NAZIV_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_NAZIV_FAKTURE
+        }
+    )
+
+    validation pdv-indikator-not-null (
+        name: PDV indikator NOT NULL
+        execution {
+            sequence: 140
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_PDV_INDIKATOR_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :P51_VRSTA_FAKTURE_SIFRA NOT IN ('KO','KZ','AVZ') and :APP_PDV_SISTEM='Y' then 
+                
+                    return true;
+                
+                else 
+                
+                    return false;
+                
+                END IF;
+                ```
+        }
+    )
+
+    validation tip-cijene-not-null (
+        name: Tip cijene NOT NULL
+        execution {
+            sequence: 110
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_TIP_CIJENE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_TIP_CIJENE
+        }
+    )
+
+    validation tip-placanja-not-null (
+        name: Tip placanja NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_TIP_PLACANJA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_TIP_PLACANJA_ID
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P51_VRSTA_FAKTURE_SIFRA
+            value: AVZ
+        }
+    )
+
+    validation valuta-not-null (
+        name: Valuta NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_VALUTA_ID
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P51_VRSTA_FAKTURE_SIFRA
+            value: AVZ
+        }
+    )
+
+    validation vrsta-fakture-not-null (
+        name: Vrsta fakture NOT NULL
+        execution {
+            sequence: 130
+        }
+        validation {
+            type: itemIsNotNull
+            item: P51_VRSTA_FAKTURE_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P51_VRSTA_FAKTURE_ID
+        }
+    )
+
+    computation p51-min-datum (
+        itemName: P51_MIN_DATUM
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    period_zakljucan_do + 1
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    process clear-collection (
+        name: Clear collection
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'FAKTURA_STAVKE'
+                );
+                
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'FAKTURA_AVANS'
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157161295122756916
+        }
+        serverSideCondition {
+            type: request=Value
+            value: new
+        }
+    )
+
+    process copy (
+        name: Copy
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_stavke IS (
+                        SELECT
+                            stavka_id,
+                            jm_id,
+                            kolicina,
+                            cijena,
+                            rabat,
+                            pdv,
+                            iznos,
+                            pdv_indikator_id
+                        FROM
+                            kif_stavke
+                        WHERE
+                            kif_id = :P51_COPY_ID
+                    );
+                BEGIN
+                    apex_collection.create_or_truncate_collection (
+                        p_collection_name => 'FAKTURA_STAVKE'
+                    );
+                
+                    finansije_pkg.get_kif (
+                        p_id                   => :P51_COPY_ID,
+                        p_klijent_id           => :P51_KLIJENT_ID,
+                        p_vrsta_fakture_id     => :P51_VRSTA_FAKTURE_ID,
+                        p_uio_tip_dokumenta_id => :P51_TIP_DOKUMENTA_ID,
+                        p_faktura_id           => :P51_FAKTURA_ID,
+                        p_tip_placanja_id      => :P51_TIP_PLACANJA_ID,
+                        p_valuta_id            => :P51_VALUTA_ID,
+                        p_print_pn             => :P53_PRINT_PN,
+                        p_posebne_napomene     => :P53_POSEBNE_NAPOMENE,
+                        p_tip_cijene           => :P51_TIP_CIJENE
+                    );
+                
+                    FOR c1 IN c_stavke LOOP
+                        apex_collection.add_member (
+                            p_collection_name => 'FAKTURA_STAVKE',
+                            p_c001            => c1.stavka_id,
+                            p_c002            => c1.jm_id,
+                            p_c003            => c1.kolicina,
+                            p_c004            => c1.cijena,
+                            p_c005            => c1.rabat,
+                            p_c006            => c1.pdv,
+                            p_c007            => c1.iznos,
+                            p_c008            => c1.iznos + (c1.iznos * c1.pdv / 100),
+                            p_c010            => c1.pdv_indikator_id
+                        );
+                
+                    END LOOP;
+                
+                    :P52_SEQ_ID := null;
+                END;
+                ```
+        }
+        execution {
+            sequence: 30
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157161652207756916
+        }
+        serverSideCondition {
+            type: request=Value
+            value: copy
+        }
+    )
+
+    process setup-default (
+        name: Setup default
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P51_TIP_CIJENE := core.ooj_pkg.get_tip_cijene (
+                    p_ooj_id => :APP_OOJ_ID
+                );
+                
+                accounting.skladista_pkg.get_skladiste_cjenovnik(:A_SKLADISTE_ID, :P51_CJENOVNIK);
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 101099244627362011
+        }
+    )
+
+    process submit-items (
+        name: Submit items
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                
+                
+                l_dani number;
+                l_tip_placanja_id number;
+                
+                begin 
+                
+                    IF :P51_VRSTA_FAKTURE_SIFRA  IN ('KO','KZ','AVZ')  then 
+                
+                
+                        select k.pdv_indikator_id, k.valuta_id,0, k.tip_placanja_id
+                        into :P51_PDV_INDIKATOR_ID, :P51_VALUTA_ID,l_dani,l_tip_placanja_id
+                        from kif k
+                        where k.id=:P51_FAKTURA_ID;
+                
+                        if :P51_VRSTA_FAKTURE_SIFRA  IN ('AVZ')  then
+                
+                            :P51_TIP_PLACANJA_ID:= l_tip_placanja_id;
+                            :P51_DANI_NEW:=l_dani;
+                            :P51_DATUM_VALUTE:=:P51_DATUM_FAKTURE;
+                
+                        end if;
+                
+                    END IF;
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 79186848356964032
+        }
+    )
+
+    branch (
+        name: Go To Page 52
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 52
+                items: {
+                    P53_KLIJENT_ID: &P51_KLIJENT_ID.
+                    P53_NAZIV_FAKTURE: &P51_NAZIV_FAKTURE.
+                    P53_DANI: &P51_DANI.
+                    P53_DATUM_FAKTURE: &P51_DATUM_FAKTURE.
+                    P53_DATUM_VALUTE: &P51_DATUM_VALUTE.
+                    P53_TIP_PLACANJA_ID: &P51_TIP_PLACANJA_ID.
+                    P53_VALUTA_ID: &P51_VALUTA_ID.
+                    P53_FAKTURA_BROJ: &P51_FAKTURA_BROJ.
+                    P53_ORIG: &P51_ORIG.
+                    P52_VALUTA_ID: &P51_VALUTA_ID.
+                    P53_FISKAL_BR: &P51_FISKAL_BR.
+                    P53_TIP_DOKUMENTA_ID: &P51_TIP_DOKUMENTA_ID.
+                    P53_VRSTA_FAKTURE_ID: &P51_VRSTA_FAKTURE_ID.
+                    P52_TIP_CIJENE: &P51_TIP_CIJENE.
+                    P52_PDV_HIDDEN: &P51_PDV.
+                    P52_SEQ_ID: 0
+                    P52_KURS: &P51_KURS.
+                    P53_PDV_INDIKATOR_ID: &P51_PDV_INDIKATOR_ID.
+                    P52_TIP_DOKUMENTA_ID: &P51_TIP_DOKUMENTA_ID.
+                    P52_PDV_INDIKATOR_DOKUMENT_ID: &P51_PDV_INDIKATOR_ID.
+                    P52_PDV_INDIKATOR_ID: &P51_PDV_INDIKATOR_ID.
+                }
+                request: stavke
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: NEXT_1,NEXT_2
+        }
+    )
+
+)
+

@@ -1,0 +1,193 @@
+page 1852 (
+    name: Stavka GK - Komentar
+    alias: STAVKA-GK-KOMENTAR
+    title: " Komentar"
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        width: 500
+        height: 300
+        maxWidth: 300
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region dodjela (
+        name: Dodjela
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1852_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    pageItem P1852_KOMENTAR (
+        type: textarea
+        label {
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+        }
+        layout {
+            sequence: 10
+            region: @dodjela
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 30
+            region: @dodjela
+            slot: regionBody
+            startNewRow: false
+            column: 1
+            columnSpan: 1
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Sačuvaj
+        layout {
+            sequence: 20
+            region: @dodjela
+            slot: regionBody
+            column: 11
+            columnSpan: 1
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process close-dialog (
+        name: Close dialog
+        type: closeDialog
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 274280271742843434
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                select gks.dodjela
+                into :P1852_KOMENTAR
+                from accounting.glavna_knjiga_stavke gks
+                where gks.id=:P1852_ID;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 274280391031843435
+        }
+    )
+
+    process odustani (
+        name: Odustani
+        type: closeDialog
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 274279826772843430
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancel
+        }
+    )
+
+    process sačuvaj (
+        name: Sačuvaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                update accounting.glavna_knjiga_stavke st
+                set st.dodjela=:P1852_KOMENTAR
+                where st.id=:P1852_ID;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Komentar sačuvan!
+        }
+        advanced {
+            executionMappingIdentifier: 274279946632843431
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

@@ -1,0 +1,362 @@
+page 274 (
+    name: Osnovno sredstvo / Zaduživanje
+    alias: OSNOVNO-SREDSTVO-ZADUŽIVANJE
+    title: Osnovno sredstvo / Zaduživanje
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P274_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P274_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P274_OSNOVNO_SREDSTVO_ID (
+        type: displayOnly
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva-aktivirana
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P274_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Transfer na radnika
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P274_RADNIK_ID_DISPLAY (
+        type: displayOnly
+        label {
+            label: Radnik
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P274_RADNIK_ID_DISPLAY
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button transfer (
+        buttonName: TRANSFER
+        label: Transfer
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrows-h
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction get-oj (
+        name: Get OJ
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P274_RADNIK_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    hrm.evidencija_pkg.get_radnik (
+                        p_radnik_id => :P274_RADNIK_ID,
+                        p_oj_id     => :P274_OJ_ID
+                    );
+                    ```
+                itemsToSubmit: [
+                    P274_RADNIK_ID
+                    P274_OJ_ID
+                ]
+                itemsToReturn: P274_OJ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P274_HISTORY_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P274_HISTORY_KOMENTAR
+        }
+    )
+
+    validation radnik-not-null (
+        name: Radnik NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P274_RADNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P274_RADNIK_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 183772418925495222
+        }
+        serverSideCondition {
+            whenButtonPressed: @transfer
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P274_OSNOVNO_SREDSTVO_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P274_RADNIK_ID_DISPLAY := l_os.radnik_id;
+                    :P274_OJ_ID := l_os.oj_id;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 183774039504495238
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P274_OSNOVNO_SREDSTVO_ID
+        }
+    )
+
+    process transfer (
+        name: Transfer
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P274_OSNOVNO_SREDSTVO_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    l_os.radnik_id := :P274_RADNIK_ID;
+                    l_os.oj_id := :P274_OJ_ID;
+                    l_os.history_komentar := :P274_HISTORY_KOMENTAR;
+                
+                    os_pkg.update_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 183772337040495221
+        }
+        serverSideCondition {
+            whenButtonPressed: @transfer
+        }
+    )
+
+)
+

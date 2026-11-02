@@ -1,0 +1,415 @@
+page 269 (
+    name: Osnovno sredstvo / Otpis
+    alias: OSNOVNO-SREDSTVO-OTPIS
+    title: Osnovno sredstvo / Otpis
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P269_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P269_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+        help {
+            helpText: Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+        }
+    )
+
+    pageItem P269_KOLICINA (
+        type: numberField
+        label {
+            label: Količina koja ostaje
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText:
+                ```html
+                Unesite količinu koja je preostala.
+                
+                ```
+        }
+    )
+
+    pageItem P269_NALOG_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P269_OTPIS_DATUM (
+        type: datePicker
+        label {
+            label: Datum otpisa
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P269_OTPIS_ODGOVORNA_OSOBA (
+        type: textField
+        label {
+            label: Odgovorna osoba za otpis
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P269_OTPIS_RAZLOG (
+        type: textarea
+        label {
+            label: Razlog otpisa
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button otpis (
+        buttonName: OTPIS
+        label: Otpis osnovnog sredstva
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-remove
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P269_OTPIS_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P269_OTPIS_DATUM
+        }
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P269_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P269_KNJIZI_YN
+        }
+    )
+
+    validation kolicina-lower (
+        name: Kolicina LOWER
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P269_ID
+                    AND kolicina > to_number(:P269_KOLICINA)
+                ```
+        }
+        error {
+            errorMessage: #LABEL# ne može biti veća ili jednaka trenutnoj količini.
+            associatedItem: @P269_KOLICINA
+        }
+    )
+
+    validation kolicina-not-null (
+        name: Kolicina NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P269_KOLICINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P269_KOLICINA
+        }
+    )
+
+    validation odgovorna-osoba-not-null (
+        name: Odgovorna osoba NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P269_OTPIS_ODGOVORNA_OSOBA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P269_OTPIS_ODGOVORNA_OSOBA
+        }
+    )
+
+    validation razlog-not-null (
+        name: Razlog NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P269_OTPIS_RAZLOG
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P269_OTPIS_RAZLOG
+        }
+    )
+
+    computation p269-kolicina (
+        itemName: P269_KOLICINA
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT kolicina
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P269_ID
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P269_NALOG_ID
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 110261850792239540
+        }
+        serverSideCondition {
+            whenButtonPressed: @otpis
+        }
+    )
+
+    process otpis (
+        name: Otpis
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P269_NALOG_ID := os_pkg.otpis_osnovno_sredstvo (
+                    p_id                    => :P269_ID,
+                    p_godina                => :APP_GODINA,
+                    p_proknjizeno           => :P269_KNJIZI_YN,
+                    p_otpis_razlog          => :P269_OTPIS_RAZLOG,
+                    p_otpis_datum           => to_date(:P269_OTPIS_DATUM, 'DD.MM.YYYY'),
+                    p_otpis_odgovorna_osoba => :P269_OTPIS_ODGOVORNA_OSOBA,
+                    p_kolicina              => :P269_KOLICINA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 110261766008239539
+        }
+        serverSideCondition {
+            whenButtonPressed: @otpis
+        }
+    )
+
+)
+

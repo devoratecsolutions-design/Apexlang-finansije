@@ -1,0 +1,288 @@
+page 262 (
+    name: Osnovno sredstvo / Vrijednosti
+    alias: OSNOVNO-SREDSTVO-VRIJEDNOSTI
+    title: Osnovno sredstvo / Vrijednosti
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region search (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @vrijednosti-history-gk
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P262_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P262_TRANSAKCIJA_ID (
+            type: checkboxGroup
+            label {
+                label: Transakcija
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-transakcije-os
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: TRANSAKCIJA_ID
+            }
+        )
+
+    )
+
+    region vrijednosti-history-gk (
+        name: Vrijednosti - History - GK
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    lpad(glavna_knjiga_broj, 6, '0') as broj,
+                    vrsta_naloga_naziv,
+                    transakcija_naziv,
+                    transakcija_id,
+                    glavna_knjiga_datum_knjizenja as datum,
+                    iznos as vrijednost
+                FROM
+                    vw_glavna_knjiga_stavke
+                WHERE
+                    osnovno_sredstvo_id = :P262_ID
+                ORDER BY
+                    datum ASC
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column BROJ (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TRANSAKCIJA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column TRANSAKCIJA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Transakcija
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_NALOGA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Nalog
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #VRSTA_NALOGA_NAZIV# / #BROJ#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P262_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

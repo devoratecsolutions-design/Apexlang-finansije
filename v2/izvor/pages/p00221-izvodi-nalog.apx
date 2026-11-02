@@ -1,0 +1,975 @@
+page 221 (
+    name: Izvodi / Nalog
+    alias: IZVODI-NALOG
+    title: Izvodi / Nalog
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region izvodi-nalog (
+        name: Izvodi / Nalog
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P221_BROJ (
+        type: displayOnly
+        label {
+            label: Broj
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P221_BROJ_IZVODA (
+        type: numberField
+        label {
+            label: Broj izvoda
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P221_DATUM_DOKUMENTA (
+        type: datePicker
+        label {
+            label: Datum dokumenta
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 110
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P221_DATUM_KNJIZENJA (
+        type: datePicker
+        label {
+            label: Datum knjiženja
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 120
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P221_GODINA (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @izvodi-nalog
+            slot: regionBody
+        }
+    )
+
+    pageItem P221_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @izvodi-nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P221_OOJ_BANKA_ID (
+        type: selectOne
+        label {
+            label: Banka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @ooj-banke
+        }
+        layout {
+            sequence: 70
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P221_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @izvodi-nalog
+            slot: regionBody
+        }
+    )
+
+    pageItem P221_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 130
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P221_POCETNO_STANJE (
+        type: numberField
+        label {
+            label: Početno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P221_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 140
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P221_ID
+        }
+    )
+
+    pageItem P221_VRSTA_NALOGA_ID (
+        type: displayOnly
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga
+        }
+        layout {
+            sequence: 40
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P221_ZAKLJUCNO_STANJE (
+        type: numberField
+        label {
+            label: Zaključno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @izvodi-nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P221_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P221_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P221_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-broj-izvoda-pocetno-stanje (
+        name: Setup broj izvoda / pocetno stanje
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P221_OOJ_BANKA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P221_OOJ_BANKA_ID
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P221_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P221_BROJ_IZVODA := glavna_knjiga_pkg.get_broj_izvoda (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_godina       => :APP_GODINA,
+                        p_ooj_banka_id => :P221_OOJ_BANKA_ID
+                    );
+                    
+                    :P221_POCETNO_STANJE := glavna_knjiga_pkg.get_pocetno_stanje_izvoda (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_ooj_banka_id => :P221_OOJ_BANKA_ID,
+                        p_godina       => :APP_GODINA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P221_BROJ_IZVODA
+                    P221_POCETNO_STANJE
+                    P221_OOJ_BANKA_ID
+                ]
+                itemsToReturn: [
+                    P221_BROJ_IZVODA
+                    P221_POCETNO_STANJE
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P221_BROJ_IZVODA := null;
+                    :P221_POCETNO_STANJE := null;
+                    ```
+                itemsToSubmit: [
+                    P221_BROJ_IZVODA
+                    P221_POCETNO_STANJE
+                    P221_OOJ_BANKA_ID
+                ]
+                itemsToReturn: [
+                    P221_BROJ_IZVODA
+                    P221_POCETNO_STANJE
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-opis (
+        name: Setup opis
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: [
+                P221_OOJ_BANKA_ID
+                P221_DATUM_DOKUMENTA
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P221_OOJ_BANKA_ID') !== "" && 
+                $v('P221_DATUM_DOKUMENTA') !== ""
+                ```
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P221_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P221_OPIS := glavna_knjiga_pkg.get_opis_izvoda (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_godina       => :APP_GODINA,
+                        p_ooj_banka_id => :P221_OOJ_BANKA_ID,
+                        p_datum        => :P221_DATUM_DOKUMENTA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P221_OPIS
+                    P221_OOJ_BANKA_ID
+                    P221_DATUM_DOKUMENTA
+                ]
+                itemsToReturn: P221_OPIS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P221_OPIS := null;
+                itemsToSubmit: [
+                    P221_OPIS
+                    P221_OOJ_BANKA_ID
+                    P221_DATUM_DOKUMENTA
+                ]
+                itemsToReturn: P221_OPIS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+    )
+
+    validation banka-not-null (
+        name: Banka NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_OOJ_BANKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_OOJ_BANKA_ID
+        }
+    )
+
+    validation broj-izvoda-not-null (
+        name: Broj izvoda NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_BROJ_IZVODA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_BROJ_IZVODA
+        }
+    )
+
+    validation broj-izvoda-unique (
+        name: Broj izvoda UNIQUE
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    vw_glavna_knjiga
+                WHERE
+                    lower(vrsta_naloga_sifra) = 'iz'
+                    AND godina = :APP_GODINA
+                    AND ooj_banka_id = :P221_OOJ_BANKA_ID
+                    AND broj_izvoda = :P221_BROJ_IZVODA
+                ```
+        }
+        error {
+            errorMessage: Već postoji ovaj broj izvoda. (godina, banka, broj izvoda)
+            associatedItem: @P221_BROJ_IZVODA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+            type: itemIsNull
+            item: P221_ID
+        }
+    )
+
+    validation datum-dokumeta-not-null (
+        name: Datum dokumeta NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_DATUM_DOKUMENTA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_DATUM_DOKUMENTA
+        }
+    )
+
+    validation datum-knjizenja-not-null (
+        name: Datum knjizenja NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_DATUM_KNJIZENJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_DATUM_KNJIZENJA
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_OPIS
+        }
+    )
+
+    validation opis-unique (
+        name: Opis UNIQUE
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    vw_glavna_knjiga
+                WHERE
+                    lower(vrsta_naloga_sifra) = 'iz'
+                    AND godina = :APP_GODINA
+                    AND ooj_banka_id = :P221_OOJ_BANKA_ID
+                    AND opis = :P221_OPIS
+                ```
+        }
+        error {
+            errorMessage: Već postoji ovaj opis. (godina, banka, opis)
+            associatedItem: @P221_OPIS
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+            type: itemIsNull
+            item: P221_ID
+        }
+    )
+
+    validation pocetno-not-null (
+        name: Pocetno NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_POCETNO_STANJE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_POCETNO_STANJE
+        }
+    )
+
+    validation zakljucno-not-null (
+        name: Zakljucno NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P221_ZAKLJUCNO_STANJE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P221_ZAKLJUCNO_STANJE
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 50051449320319745
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.delete_glavna_knjiga (
+                    p_id => :P221_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 49870367236262945
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.get_glavna_knjiga (
+                    p_id               => :P221_ID,
+                    p_ooj_id           => :P221_OOJ_ID,
+                    p_vrsta_naloga_id  => :P221_VRSTA_NALOGA_ID,
+                    p_godina           => :P221_GODINA,
+                    p_broj             => :P221_BROJ,
+                    p_datum_dokumenta  => :P221_DATUM_DOKUMENTA,
+                    p_datum_knjizenja  => :P221_DATUM_KNJIZENJA,
+                    p_opis             => :P221_OPIS,
+                    p_ooj_banka_id     => :P221_OOJ_BANKA_ID,
+                    p_broj_izvoda      => :P221_BROJ_IZVODA,
+                    p_pocetno_stanje   => :P221_POCETNO_STANJE,
+                    p_zakljucno_stanje => :P221_ZAKLJUCNO_STANJE,
+                    p_valid            => :P221_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 49869970248262941
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P221_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P221_ID := glavna_knjiga_pkg.insert_glavna_knjiga (
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_vrsta_naloga_id  => :P221_VRSTA_NALOGA_ID,
+                    p_godina           => :APP_GODINA,
+                    p_broj             => :P221_BROJ,
+                    p_datum_dokumenta  => :P221_DATUM_DOKUMENTA,
+                    p_datum_knjizenja  => :P221_DATUM_KNJIZENJA,
+                    p_opis             => :P221_OPIS,
+                    p_ooj_banka_id     => :P221_OOJ_BANKA_ID,
+                    p_broj_izvoda      => :P221_BROJ_IZVODA,
+                    p_pocetno_stanje   => to_number(:P221_POCETNO_STANJE, '999G999G999G999G990D00'),
+                    p_zakljucno_stanje => to_number(:P221_ZAKLJUCNO_STANJE, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 49870107085262943
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup-new (
+        name: Setup NEW
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P221_VRSTA_NALOGA_ID := 66;
+                
+                :P221_BROJ := glavna_knjiga_pkg.get_broj_naloga (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_vrsta_naloga_id => :P221_VRSTA_NALOGA_ID,
+                    p_godina          => :APP_GODINA
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 50068884722111809
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P221_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.update_glavna_knjiga (
+                    p_id               => :P221_ID,
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_vrsta_naloga_id  => :P221_VRSTA_NALOGA_ID,
+                    p_godina           => :APP_GODINA,
+                    p_broj             => :P221_BROJ,
+                    p_datum_dokumenta  => :P221_DATUM_DOKUMENTA,
+                    p_datum_knjizenja  => :P221_DATUM_KNJIZENJA,
+                    p_opis             => :P221_OPIS,
+                    p_ooj_banka_id     => :P221_OOJ_BANKA_ID,
+                    p_broj_izvoda      => :P221_BROJ_IZVODA,
+                    p_pocetno_stanje   => to_number(:P221_POCETNO_STANJE, '999G999G999G999G990D00'),
+                    p_zakljucno_stanje => to_number(:P221_ZAKLJUCNO_STANJE, '999G999G999G999G990D00'),
+                    p_valid            => :P221_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 49870233080262944
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 220
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 220
+                items: {
+                    P220_ID: &P221_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 220
+                clearCache: 220
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+)
+

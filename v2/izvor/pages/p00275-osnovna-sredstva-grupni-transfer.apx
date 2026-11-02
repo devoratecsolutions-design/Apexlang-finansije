@@ -1,0 +1,383 @@
+page 275 (
+    name: Osnovna sredstva / Grupni transfer
+    alias: OSNOVNA-SREDSTVA-GRUPNI-TRANSFER
+    title: Osnovna sredstva / Grupni transfer
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P275_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P275_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P275_OS_LIST (
+        type: selectMany
+        label {
+            label: Lista osnovnih sredstava
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                    id as r
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    valid = 'Y'
+                    AND ooj_id = :APP_OOJ_ID
+                    AND radnik_id = :P275_RADNIK_ID
+                    AND aktivirano = 'Y'
+                    AND history_id IS null
+                ```
+        }
+        cascadingLov {
+            parentItems: P275_RADNIK_ID
+            itemsToSubmit: P275_RADNIK_ID
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P275_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Sa radnika
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P275_TRANSFER_ID (
+        type: selectOne
+        label {
+            label: Na radnika
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button transfer (
+        buttonName: TRANSFER
+        label: Transfer
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrows-h
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-cancel-event (
+            action: cancelEvent
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-oj (
+        name: Get OJ
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P275_TRANSFER_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    hrm.evidencija_pkg.get_radnik (
+                        p_radnik_id => :P275_TRANSFER_ID,
+                        p_oj_id     => :P275_OJ_ID
+                    );
+                    ```
+                itemsToSubmit: [
+                    P275_TRANSFER_ID
+                    P275_OJ_ID
+                ]
+                itemsToReturn: P275_OJ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation oj-not-null (
+        name: OJ NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P275_OJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P275_OJ_ID
+        }
+    )
+
+    validation os-list-not-null (
+        name: OS_LIST NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P275_OS_LIST
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P275_OS_LIST
+        }
+    )
+
+    validation radnik-not-null (
+        name: RADNIK NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P275_RADNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P275_RADNIK_ID
+        }
+    )
+
+    validation transfer-not-null (
+        name: TRANSFER NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P275_TRANSFER_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P275_TRANSFER_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 183775299128495250
+        }
+        serverSideCondition {
+            whenButtonPressed: @transfer
+        }
+    )
+
+    process transfer (
+        name: Transfer
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                os_pkg.grupni_transfer (
+                    p_radnik_id        => :P275_RADNIK_ID,
+                    p_os_list          => :P275_OS_LIST,
+                    p_transfer_id      => :P275_TRANSFER_ID,
+                    p_oj_id            => :P275_OJ_ID,
+                    p_history_komentar => :P275_HISTORY_KOMENTAR
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 183775121723495249
+        }
+        serverSideCondition {
+            whenButtonPressed: @transfer
+        }
+    )
+
+)
+

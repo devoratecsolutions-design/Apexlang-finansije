@@ -1,0 +1,949 @@
+page 1850 (
+    name: Nalozi - Pregled
+    alias: NALOZI
+    title: Nalozi
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: [
+            #WORKSPACE_FILES#left-side-toggle#MIN#.js
+            #WORKSPACE_FILES#jasper-server#MIN#.js
+        ]
+    }
+    css {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.css
+    }
+    security {
+        authorizationScheme: @glavna-knjiga-nalozi
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+    help {
+        helpText:
+            ```html
+            Na lijevoj strani prikazuje se lista parametara pomoću kojih je moguće filtrirati kreirane naloge. 
+            Unos novog naloga za knjiženje vrši se klikom na dugme <b><em>"Novi unos"</em></b> gdje se otvara stranica 
+            <b><em>"Glavna knjiga / Nalog"</em></b>. </br>
+            </br>
+            Na osnovu poslovne promjene koja se knjiži, potrebno je odrediti vrstu naloga. </br>
+            Ručni nalozi glavne knjige imaju vrstu naloga GK. 
+            Datum dokumenta je informativnog karaktera i predstavlja datum iskazan na dokumentu koji se unosi. </br>
+            Datum knjiženja je datum pod kojim se nalog knjiži i koji je osnov za izvještavanje. </br>
+            Polje <b><em>"Opis"</em></b> služi za unos broja ili opisa dokumenta.</br>
+            </br>
+            Nakon unosa podataka zaglavlja naloga, klikom na dugme <b><em>"Kreiraj"</em></b> formira se nalog. 
+            Za formirani nalog potrebno je unijeti stavke naloga. </br>
+            U stavkama naloga unose se konta, iznosi i ključevi knjiženja (dugovna ili potržna strana konta).  </br>
+            U koliko konto ima subanalitiku (konta kupaca i dobaljača), neophodan je unos polja klijent. </br>
+            </br>
+            Za konta osnovnih sredstava potrebno je unijeti subanalitiku broj osnovnog sredstva. </br>
+            Polja PDV indikator obavezna su za svaki konto. </br>
+            Polje <b><em>"Organizaciona jedinica"</em></b> obavezna je kod unosa konta prihoda i rashoda, dok se polje 
+            <b><em>"Radnik"</em></b> unosi za konta potraživanja i obaveza od zaposlenih. </br>
+            Sistem kontroliše da zbir stavki naloga bude jednak nuli, jer bez toga nalog ne može biti proknjižen. </br>
+            
+            ```
+    }
+
+    region nalozi (
+        name: Nalozi
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select gk.*, gk.nalog_id as štampa
+                from vw_nalozi_gk gk
+                where  gk.ooj_id = :APP_OOJ_ID
+                and gk.datum_naloga between :P1850_DATUM_OD and :P1850_DATUM_DO
+                and (:P1850_STORNO='-' or gk.stornirano=:P1850_STORNO)
+                and (:P1850_MODUL is null or gk.modul_id=:P1850_MODUL)
+                and (:P1850_VRSTA_NALOGA is null or gk.vrsta_naloga_id=:P1850_VRSTA_NALOGA)
+                order by gk.datum_naloga desc, gk.broj desc
+                
+                ```
+            pageItemsToSubmit: [
+                P1850_DATUM_OD
+                P1850_DATUM_DO
+                P1850_MODUL
+                P1850_STORNO
+                P1850_VRSTA_NALOGA
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @pregled-naloga
+            slot: subRegions
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+                margin-top-lg
+            ]
+            cssClasses: [
+                search-results
+                fin-ir
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZ
+        }
+        performance {
+            lazyLoading: true
+            maxRowsToProcess: 100000
+        }
+        advanced {
+            savedReportMappingIdentifier: 274064581222449610
+        }
+
+        column BROJ (
+            type: plainText
+            heading {
+                heading: Broj
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column DATUM_NALOGA (
+            type: plainText
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column DUGUJE (
+            type: plainText
+            heading {
+                heading: Duguje
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column GODINA (
+            type: plainText
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column MODUL (
+            type: plainText
+            heading {
+                heading: Modul
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: M
+            }
+        )
+
+        column MODUL_ID (
+            type: plainText
+            heading {
+                heading: Modul Id
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column NALOG_ID (
+            type: link
+            heading {
+                heading: Detalji
+                alignment: center
+            }
+            layout {
+                sequence: 160
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    page: 1851
+                    items: {
+                        P1851_NALOG_ID: #NALOG_ID#
+                    }
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+            enableUsersTo {
+                hide: false
+            }
+        )
+
+        column NALOG_KREIRAO (
+            type: plainText
+            heading {
+                heading: Nalog Kreirao
+            }
+            layout {
+                sequence: 150
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: N
+            }
+        )
+
+        column NAZIV (
+            type: plainText
+            heading {
+                heading: Nalog
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column OOJ_ID (
+            type: hidden
+            heading {
+                heading: Ooj Id
+            }
+            layout {
+                sequence: 170
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: O
+            }
+        )
+
+        column OPIS (
+            type: plainText
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column POTRAZUJE (
+            type: plainText
+            heading {
+                heading: Potražuje
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column PROKNJIZENO (
+            type: hidden
+            heading {
+                heading: Proknjizeno
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column SIFRA (
+            type: plainText
+            heading {
+                heading: Oznaka naloga
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column STORNIRANO (
+            type: hidden
+            heading {
+                heading: Stornirano
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column STORNO (
+            type: plainText
+            heading {
+                heading: Storno nalog
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column VRSTA_NALOGA_ID (
+            type: plainText
+            heading {
+                heading: Vrsta Naloga Id
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: P
+            }
+        )
+
+        column ŠTAMPA (
+            type: link
+            heading {
+                heading: Štampa
+                alignment: center
+            }
+            layout {
+                sequence: 200
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: javascript:void(0)
+                }
+                linkText: <img  src="#APP_FILES#icons/printer.png" class="apex-edit-view"   style="height:22px !important; width:22px !important" alt="" >
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: R
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2740877 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn BROJ (
+                sequence: 4
+            )
+
+            displayColumn DATUM_NALOGA (
+                sequence: 5
+            )
+
+            displayColumn DUGUJE (
+                sequence: 7
+            )
+
+            displayColumn GODINA (
+                sequence: 1
+            )
+
+            displayColumn NALOG_ID (
+                sequence: 11
+            )
+
+            displayColumn NALOG_KREIRAO (
+                sequence: 10
+            )
+
+            displayColumn NAZIV (
+                sequence: 3
+            )
+
+            displayColumn OPIS (
+                sequence: 6
+            )
+
+            displayColumn POTRAZUJE (
+                sequence: 8
+            )
+
+            displayColumn SIFRA (
+                sequence: 2
+            )
+
+            displayColumn STORNO (
+                sequence: 9
+            )
+
+            displayColumn ŠTAMPA (
+                sequence: 12
+            )
+
+            aggregate (
+                column: DUGUJE
+            )
+
+            aggregate (
+                column: POTRAZUJE
+            )
+
+            highlight ir-condition (
+                name: Storno
+                condition {
+                    column: STORNO
+                    operator: isNotNull
+                }
+                colors {
+                    background: #ffefef
+                }
+                execution {
+                    sequence: 10
+                }
+            )
+
+        )
+
+    )
+
+    region pregled-naloga (
+        name: Pregled  naloga
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P1850_DATUM_DO (
+        type: datePicker
+        label {
+            label: Datum do
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @pregled-naloga
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+            width: 30
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(sysdate)
+        }
+    )
+
+    pageItem P1850_DATUM_OD (
+        type: datePicker
+        label {
+            label: Datum od
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @pregled-naloga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+            width: 30
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(sysdate,'YYYY')
+        }
+    )
+
+    pageItem P1850_MODUL (
+        type: popupLov
+        label {
+            label: Modul
+            alignment: left
+        }
+        settings {
+            popupWidth: 400
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-moduli
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 40
+            region: @pregled-naloga
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 2
+        }
+    )
+
+    pageItem P1850_MODUL_POM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 50
+            region: @pregled-naloga
+            slot: regionBody
+        }
+        default {
+            type: static
+            staticValue: 2
+        }
+    )
+
+    pageItem P1850_PRINT_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: body
+        }
+    )
+
+    pageItem P1850_STORNO (
+        type: radioGroup
+        label {
+            label: Storniran
+            alignment: left
+        }
+        settings {
+            noOfCols: 3
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:DA;Y,NE;N,SVE;-
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            region: @pregled-naloga
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--large
+                margin-left-lg
+            ]
+        }
+        default {
+            type: expression
+            plsqlExpression: '-'
+        }
+    )
+
+    pageItem P1850_VRSTA_NALOGA (
+        type: popupLov
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga-moduli
+            displayExtraValues: false
+            nullDisplayValue: SVE
+        }
+        cascadingLov {
+            parentItems: P1850_MODUL
+        }
+        layout {
+            sequence: 60
+            region: @pregled-naloga
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+            width: 30
+        }
+    )
+
+    pageItem P1850_VRSTA_NALOGA_POM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 70
+            region: @pregled-naloga
+            slot: regionBody
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 20
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 202
+                clearCache: 202
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create-2 (
+        buttonName: CREATE_2
+        label: Dokumenti na čekanju
+        layout {
+            sequence: 10
+            region: @nalozi
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 1854
+                items: {
+                    P1854_MODUL_ID: &P1850_MODUL.
+                    P1854_VRSTA_NALOGA_ID: &P1850_VRSTA_NALOGA.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button pretraga (
+        buttonName: PRETRAGA
+        label: <span title="Pretraži">     <img src="#APP_IMAGES#icons/search.png" alt="Obriši" style="width:32px; height:32px; vertical-align:middle;"> </span>
+        layout {
+            sequence: 10
+            region: @pregled-naloga
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+            ]
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction pretraga (
+        name: Pretraga
+        execution {
+            sequence: 50
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @pretraga
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nalozi
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print (
+        name: Print
+        execution {
+            sequence: 70
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .nalog-print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                        filename = 'nalog.pdf',
+                        report_path = '/reports/ACCOUNTING/glavna_knjiga/nalog_knjizenje', 
+                        report_parameters = {
+                            ID: $v("P1850_PRINT_ID")
+                        },
+                        new_tab = false
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P1850_PRINT_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-pom-value-m (
+        name: Set pom value m
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P1850_MODUL
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: plsqlExpression
+                plsqlExpression: :P1850_MODUL
+                itemsToSubmit: P1850_MODUL
+            }
+            affectedElements {
+                selectionType: items
+                items: P1850_MODUL_POM
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction set-pom-value-vn (
+        name: Set pom value vn
+        execution {
+            sequence: 90
+        }
+        when {
+            selectionType: items
+            items: P1850_VRSTA_NALOGA
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: plsqlExpression
+                plsqlExpression: :P1850_VRSTA_NALOGA
+                itemsToSubmit: P1850_VRSTA_NALOGA
+            }
+            affectedElements {
+                selectionType: items
+                items: P1850_VRSTA_NALOGA_POM
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+)
+

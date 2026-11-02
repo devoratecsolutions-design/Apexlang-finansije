@@ -1,0 +1,565 @@
+page 340 (
+    name: Kalkulacije robe
+    alias: KALKULACIJE-ROBE
+    title: Kalkulacije robe
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.js
+    }
+    css {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.css
+    }
+    security {
+        authorizationScheme: @robno-materijalno-kalkulacije-robe
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region kalkulacija-report (
+        name: Kalkulacija Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    datum,
+                    zakljucano,
+                    
+                    (
+                        SELECT 
+                            listagg(operacija_naziv, '~') WITHIN GROUP (ORDER BY id)
+                        FROM 
+                            vw_kalkulacija_operacije ko
+                        WHERE
+                            ko.kalkulacija_id = k.id
+                
+                    ) AS operacije_list,
+                    
+                    (
+                        SELECT 
+                            listagg(tip_kalkulacije || ': ' || kuf_naziv_fakture, '~') WITHIN GROUP (ORDER BY id)
+                        FROM 
+                            vw_kalkulacija_kuf kf
+                        WHERE
+                            kf.kalkulacija_id = k.id
+                
+                    ) AS kuf_list,
+                
+                    CASE
+                        WHEN zakljucano = 'N' THEN
+                            apex_page.get_url (
+                                p_page        => 342,
+                                p_items       => 'P342_ID',
+                                p_values      => id,
+                                p_clear_cache => 342
+                            )
+                        ELSE
+                            null
+                    END AS kalkulacija_link,
+                
+                    CASE
+                        WHEN zakljucano = 'N' THEN
+                            apex_page.get_url (
+                                p_page        => 343,
+                                p_items       => 'P343_ID',
+                                p_values      => id,
+                                p_clear_cache => 343
+                            )
+                        ELSE
+                            null
+                    END AS operacija_link,
+                
+                    CASE
+                        WHEN zakljucano = 'N' THEN
+                            apex_page.get_url (
+                                p_page        => 344,
+                                p_items       => 'P344_ID',
+                                p_values      => id,
+                                p_clear_cache => 344
+                            )
+                        ELSE
+                            null
+                    END AS kuf_link
+                FROM
+                    kalkulacije k
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                ORDER BY
+                    broj DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'kalk', :APP_GODINA);
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--staticRowColors
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD.MM.YYYY HH24:MI:SS
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 0
+            }
+            link {
+                target: {
+                    page: 345
+                    items: {
+                        P345_ID: #ID#
+                    }
+                    clearCache: 345
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KALKULACIJA_LINK (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Kalkulacija
+            }
+            layout {
+                sequence: 130
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?KALKULACIJA_LINK/}
+                    <a href="#KALKULACIJA_LINK#">
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-calculator"></span>
+                    </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 64
+            }
+        )
+
+        column KUF_LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Dodaj KUF
+            }
+            layout {
+                sequence: 120
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?KUF_LINK/}
+                    <a href="#KUF_LINK#">
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-plus-circle-o"></span>
+                    </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 128
+            }
+        )
+
+        column KUF_LIST (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: KUF
+            }
+            layout {
+                sequence: 100
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <ul>
+                        {loop "~" KUF_LIST/}
+                            <li>&APEX$ITEM.</li>
+                        {endloop/}
+                    </ul>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPERACIJA_LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Dodaj operaciju
+            }
+            layout {
+                sequence: 110
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?OPERACIJA_LINK/}
+                    <a href="#OPERACIJA_LINK#">
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-plus-circle-o"></span>
+                    </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 128
+            }
+        )
+
+        column OPERACIJE_LIST (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Operacije
+            }
+            layout {
+                sequence: 80
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <ul>
+                        {loop "~" OPERACIJE_LIST/}
+                            <li>&APEX$ITEM.</li>
+                        {endloop/}
+                    </ul>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZAKLJUCANO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Zaključano
+            }
+            layout {
+                sequence: 140
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ZAKLJUCANO/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 64
+            }
+        )
+
+    )
+
+    region kalkulacije-robe (
+        name: Kalkulacije robe
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region potrebna-konfiguracija (
+        name: Potrebna konfiguracija
+        type: staticContent
+        source {
+            htmlCode: Neophodno je da konfigurišete formu numeracije dokumenata.
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN NOT core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'kalk', :APP_GODINA);
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @kalkulacija-report
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'kalk', :APP_GODINA);
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P340_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button configuration (
+        buttonName: CONFIGURATION
+        label: Numeracija dokumenata
+        layout {
+            sequence: 10
+            region: @potrebna-konfiguracija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-file-wrench
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 103
+                clearCache: 103
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @kalkulacije-robe
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 341
+                clearCache: 341
+                request: setup_new
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'kalk', :APP_GODINA);
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @kalkulacija-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @kalkulacija-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @kalkulacija-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

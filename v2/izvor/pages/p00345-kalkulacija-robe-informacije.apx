@@ -1,0 +1,642 @@
+page 345 (
+    name: Kalkulacija robe / Informacije
+    alias: KALKULACIJA-ROBE-INFORMACIJE
+    title: Kalkulacija robe / Informacije
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region kuf (
+        name: KUF
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    kuf_naziv,
+                    kuf_naziv_fakture,
+                    tip_kalkulacije
+                FROM
+                    vw_kalkulacija_kuf
+                WHERE
+                    kalkulacija_id = :P345_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column KUF_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Interni naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KUF_NAZIV_FAKTURE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv/broj fakture
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_KALKULACIJE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Tip kalkulacije
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipovi-kalkulacije
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region operacije (
+        name: Operacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    operacija_naziv
+                FROM
+                    vw_kalkulacija_operacije
+                WHERE
+                    kalkulacija_id = :P345_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column OPERACIJA_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region osnovne-informacije (
+        name: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    godina,
+                    datum,
+                    opis,
+                    zakljucano
+                FROM
+                    kalkulacije
+                WHERE
+                    id = :P345_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 5
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 6
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 0
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 7
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column ZAKLJUCANO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Zakljucano
+            }
+            layout {
+                sequence: 8
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ZAKLJUCANO/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+    )
+
+    region stavke (
+        name: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_sifra,
+                    stavka_naziv,
+                    kolicina,
+                    cijena,
+                    iznos
+                FROM
+                    vw_kalkulacija_stavke
+                WHERE
+                    kalkulacija_id = :P345_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Stavka Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #STAVKA_SIFRA# - #STAVKA_NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region tabs (
+        name: Tabs
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: contentBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                t-TabsRegion-mod--fillLabels
+                t-TabsRegion-mod--pill
+                t-TabsRegion-mod--large
+            ]
+        }
+    )
+
+    pageItem P345_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite obrisati kalkulaciju?
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    kalkulacije
+                WHERE
+                    id = :P345_ID
+                    AND zakljucano = 'N'
+                ```
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 219746018325553513
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.delete_kalkulacija (
+                    p_id => :P345_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 219745976592553512
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+)
+

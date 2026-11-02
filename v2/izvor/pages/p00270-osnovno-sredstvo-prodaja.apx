@@ -1,0 +1,420 @@
+page 270 (
+    name: Osnovno sredstvo / Prodaja
+    alias: OSNOVNO-SREDSTVO-PRODAJA
+    title: Osnovno sredstvo / Prodaja
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P270_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P270_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P270_KNJIGOVODSTVENA_VRIJEDNOST (
+        type: displayOnly
+        label {
+            label: Knjigovodstvena vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P270_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+        help {
+            helpText: Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+        }
+    )
+
+    pageItem P270_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText: Unesite količinu koja je preostala.
+        }
+    )
+
+    pageItem P270_NABAVNA_VRIJEDNOST (
+        type: displayOnly
+        label {
+            label: Nabavna vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P270_NALOG_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P270_PRODAJNA_VRIJEDNOST (
+        type: numberField
+        label {
+            label: Prodajna vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button prodaja (
+        buttonName: PRODAJA
+        label: Prodaja
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-badge-dollar
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P270_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P270_DATUM
+        }
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P270_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P270_KNJIZI_YN
+        }
+    )
+
+    validation kolicina-lower (
+        name: Kolicina LOWER
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P270_ID
+                    AND kolicina > :P270_KOLICINA
+                ```
+        }
+        error {
+            errorMessage: #LABEL# ne može biti veća ili jednaka trenutnoj količini.
+            associatedItem: @P270_KOLICINA
+        }
+    )
+
+    validation kolicina-not-null (
+        name: Kolicina NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P270_KOLICINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P270_KOLICINA
+        }
+    )
+
+    validation prodajna-vrijednost-not-null (
+        name: Prodajna vrijednost NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P270_PRODAJNA_VRIJEDNOST
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P270_PRODAJNA_VRIJEDNOST
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P270_NALOG_ID
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 110503226289941617
+        }
+        serverSideCondition {
+            whenButtonPressed: @prodaja
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P270_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P270_KOLICINA := l_os.kolicina;
+                    :P270_NABAVNA_VRIJEDNOST := os_pkg.get_vrijednost_nabavka(:P270_ID, sysdate);
+                    :P270_KNJIGOVODSTVENA_VRIJEDNOST := os_pkg.get_knjigovodstvena_vrijednost(:P270_ID);
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 110502933917941614
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P270_ID
+        }
+    )
+
+    process prodaja (
+        name: Prodaja
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P270_NALOG_ID := os_pkg.prodaja_osnovno_sredstvo (
+                    p_id                  => :P270_ID,
+                    p_godina              => :APP_GODINA,
+                    p_proknjizeno         => :P270_KNJIZI_YN,
+                    p_prodajna_vrijednost => to_number(:P270_PRODAJNA_VRIJEDNOST, '999G999G999G999G990D00'),
+                    p_kolicina            => :P270_KOLICINA,
+                    p_datum               => :P270_DATUM
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 110503187890941616
+        }
+        serverSideCondition {
+            whenButtonPressed: @prodaja
+        }
+    )
+
+)
+

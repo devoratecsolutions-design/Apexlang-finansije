@@ -1,0 +1,518 @@
+page 126 (
+    name: Klasa stavke / Detalji
+    alias: KLASA-STAVKE-DETALJI
+    title: Klasa stavke / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region klasa-stavke-detalji (
+        name: Klasa stavke / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region stavke-sa-ovom-klasom (
+        name: Stavke sa ovom klasom
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    sifra,
+                    naziv
+                FROM
+                    sec_stavke
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND klasa_id = :P126_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            parentRegion: @klasa-stavke-detalji
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P126_ID
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P126_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @klasa-stavke-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P126_NADREDJENO_ID (
+        type: popupLov
+        label {
+            label: Nadređena klasa
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 600
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klase-stavki
+            displayExtraValues: false
+        }
+        layout {
+            sequence: 30
+            region: @klasa-stavke-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText:
+                ```html
+                Prilikom definisanja hijerarhije, neophodno je prvo kreirati osnovnu stavku 
+                kako bi ona postala dostupna za izbor kao nadređena kategorija ostalim stavkama.
+                ```
+        }
+    )
+
+    pageItem P126_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @klasa-stavke-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P126_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @klasa-stavke-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P126_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            region: @klasa-stavke-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                margin-bottom-lg
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P126_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P126_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P126_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P126_ID
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P126_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P126_NAZIV
+        }
+    )
+
+    validation bez-petlje (
+        name: Nadređena nije podređena
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_klase_stavki
+                WHERE id = :P126_NADREDJENO_ID
+                  AND :P126_ID IS NOT NULL
+                START WITH id = :P126_ID
+                CONNECT BY NOCYCLE PRIOR id = nadredjeno_id
+                ```
+        }
+        error {
+            errorMessage: Nadređena klasa ne može biti ova klasa ni jedna od njenih podklasa.
+            associatedItem: @P126_NADREDJENO_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 189338292030872983
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_broj NUMBER;
+                BEGIN
+                    SELECT count(*) INTO l_broj FROM sec_klase_stavki WHERE nadredjeno_id = :P126_ID;
+                    IF l_broj = 0 THEN
+                        SELECT count(*) INTO l_broj FROM sec_stavke WHERE klasa_id = :P126_ID;
+                    END IF;
+                    IF l_broj > 0 THEN
+                        raise_application_error(-20103,
+                            'Klasa ima podklase ili stavke i ne može se obrisati. Premjestite ih ili deaktivirajte klasu.');
+                    END IF;
+                    stavke_pkg.delete_klasa(p_id => :P126_ID);
+                END;
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        successMessage {
+            successMessage: Klasa stavki obrisana!
+        }
+        advanced {
+            executionMappingIdentifier: 189245726055409641
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.get_klasa (
+                    p_id            => :P126_ID,
+                    p_ooj_id        => :P126_OOJ_ID,
+                    p_nadredjeno_id => :P126_NADREDJENO_ID,
+                    p_naziv         => :P126_NAZIV,
+                    p_valid         => :P126_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 189245819413409642
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P126_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.insert_klasa (
+                    p_ooj_id        => :APP_OOJ_ID,
+                    p_nadredjeno_id => :P126_NADREDJENO_ID,
+                    p_naziv         => :P126_NAZIV
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Klasa stavki uspješno kreirana!
+        }
+        advanced {
+            executionMappingIdentifier: 189245531710409639
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.update_klasa (
+                    p_id            => :P126_ID,
+                    p_ooj_id        => :APP_OOJ_ID,
+                    p_nadredjeno_id => :P126_NADREDJENO_ID,
+                    p_naziv         => :P126_NAZIV,
+                    p_valid         => :P126_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Izmjene sačuvane!
+        }
+        advanced {
+            executionMappingIdentifier: 189245620935409640
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

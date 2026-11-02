@@ -1,0 +1,4127 @@
+list activity-reports (
+    name: Activity Reports
+    config {
+        buildOption: @feature-activity-reporting
+    }
+
+    entry application-error-log (
+        label: Application Error Log
+        icon {
+            imageIconCssClasses: fa-exclamation
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 10022
+                clearCache: 10022
+            }
+        }
+        userDefinedAttributes {
+            1: Report of errors logged by this application
+        }
+    )
+
+    entry automations-log (
+        label: Automations Log
+        icon {
+            imageIconCssClasses: fa-gears
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 10025
+                clearCache: 10025
+                action: resetRegions
+            }
+        }
+        userDefinedAttributes {
+            1: Report of automation executions and messages logged by this application
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                select 1
+                from apex_appl_automations a, apex_automation_log l
+                where a.automation_id = l.automation_id
+                and l.application_id = :APP_ID
+                ```
+        }
+    )
+
+    entry dashboard (
+        label: Dashboard
+        icon {
+            imageIconCssClasses: fa-area-chart
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 10020
+                clearCache: 10020
+            }
+        }
+        userDefinedAttributes {
+            1: View application activity metrics
+        }
+    )
+
+    entry page-performance (
+        label: Page Performance
+        icon {
+            imageIconCssClasses: fa-file-chart
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 10023
+                clearCache: 10023
+            }
+        }
+        userDefinedAttributes {
+            1: Report of activity and performance by application page
+        }
+    )
+
+    entry page-views (
+        label: Page Views
+        icon {
+            imageIconCssClasses: fa-file-search
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 10024
+                clearCache: 10024
+                action: resetRegions
+            }
+        }
+        userDefinedAttributes {
+            1: Report of each page view by user including date of access and elapsed time
+        }
+    )
+
+    entry top-users (
+        label: Top Users
+        icon {
+            imageIconCssClasses: fa-user-chart
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 10021
+                clearCache: 10021
+            }
+        }
+        userDefinedAttributes {
+            1: Report of page views aggregated by user
+        }
+    )
+
+)
+
+list application-configuration (
+    name: Application Configuration
+    config {
+        buildOption: @feature-configuration-options
+    }
+
+    entry configuration-options (
+        label: Configuration Options
+        icon {
+            imageIconCssClasses: fa-sliders
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 10010
+                clearCache: 10010
+            }
+        }
+        userDefinedAttributes {
+            1: Enable or disable application features
+        }
+        config {
+            buildOption: @feature-configuration-options
+        }
+    )
+
+)
+
+list menu-dokumenti-ulaz (
+    name: Menu - Dokumenti - Novi
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                vd.naziv AS label,
+                apex_page.get_url (
+                    p_page        => 331,
+                    p_items       => 'P331_VRSTA_DOKUMENTA_ID',
+                    p_values      => vd.id,
+                    p_clear_cache => 331
+                ) target,
+                null AS image,
+                null AS image_attribute,
+                null AS image_alt_attribute,
+                null AS attribute1,
+                null AS attribute2,
+                null AS attribute3,
+                null AS attribute4,
+                null AS attribute5,
+                null AS attribute6,
+                null AS attribute7,
+                null AS attribute8,
+                null AS attribute9,
+                null AS attribute10
+            FROM
+                sif.vrste_dokumenata vd
+                JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
+            WHERE
+                vd.ooj_id = :APP_OOJ_ID
+                AND vd.valid = 'Y'
+                AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+            ORDER BY
+                vd.naziv
+            ```
+    }
+)
+
+list menu-godine (
+    name: Menu - Godine
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT DISTINCT
+                1,
+                godina as label,
+                apex_page.get_url (
+                    p_page        => 1,
+                    p_items       => 'APP_GODINA',
+                    p_values      => godina,
+                    p_clear_cache => 1,
+                    p_request     => 'set_year'
+                ) as target,
+                null AS is_current_list_entry,
+                null AS image, 
+                null AS image_attribute,
+                null AS image_alt_attribute,
+                null AS attribute1,
+                null AS attribute2,
+                null AS attribute3,
+                null AS attribute4,
+                null AS attribute5,
+                null AS attribute6,
+                null AS attribute7,
+                null AS attribute8,
+                null AS attribute9,
+                null AS attribute10
+            FROM (
+                SELECT DISTINCT
+                    godina
+                FROM
+                    core.protokoli
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+            
+                UNION
+            
+                SELECT DISTINCT
+                    godina
+                FROM
+                    glavna_knjiga
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+            
+                UNION
+            
+                SELECT
+                    extract(year from sysdate)
+                FROM
+                    dual
+            )
+            ```
+    }
+)
+
+list menu-kase (
+    name: Menu - Kase
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv AS label,
+                CASE
+                    WHEN id = :APP_KASA_ID THEN
+                        null
+                    ELSE
+                        apex_page.get_url (
+                            p_page        => 3,
+                            p_items       => 'P3_KASA_ID',
+                            p_values      => id,
+                            p_clear_cache => 3
+                        )
+            
+                END AS target,
+                null AS image,
+                null AS image_attribute,
+                null AS image_alt_attribute,
+                
+                null AS attribute1,
+                null AS attribute2,
+                null AS attribute3,
+                null AS attribute4,
+                null AS attribute5,
+                null AS attribute6,
+                null AS attribute7,
+                null AS attribute8,
+                null AS attribute9,
+                null AS attribute10
+            FROM
+                accounting.sec_kase
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+            ```
+    }
+)
+
+list menu-robno-materijalno-izvještaji (
+    name: Menu - Robno - materijalno - Izvještaji
+
+    entry materijalni-izvještaji (
+        label: Materijalni izvještaji
+        icon {
+            imageIconCssClasses: fa-tools
+        }
+        layout {
+            sequence: 10
+            subentriesList: @navigation-menu-materijalno-izvještaji
+        }
+        link {
+            target: {
+                page: 371
+                clearCache: 371
+            }
+        }
+    )
+
+    entry robni-izvještaji (
+        label: Robni izvještaji
+        icon {
+            imageIconCssClasses: fa-truck
+        }
+        layout {
+            sequence: 20
+            subentriesList: @navigation-menu-robno-izvještaji
+        }
+        link {
+            target: {
+                page: 372
+                clearCache: 372
+            }
+        }
+    )
+
+)
+
+list navigation-bar (
+    name: Navigation Bar
+    subscription {
+        master: @/200/navigation-bar
+    }
+
+    entry app-app-name (
+        label: App: &APP_NAME.
+        icon {
+            imageIconCssClasses: fa-globe
+        }
+        layout {
+            sequence: 900
+            subentriesList: @navigation-bar-applications
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry app-user (
+        label: &APP_USER.
+        icon {
+            imageIconCssClasses: fa-user
+        }
+        layout {
+            sequence: 1000
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+        userDefinedAttributes {
+            2: has-username
+        }
+    )
+
+    entry dodaj-u-brzi-pristup (
+        label: Dodaj u brzi pristup
+        icon {
+            imageIconCssClasses: fa-copy
+        }
+        layout {
+            sequence: 1030
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 20052
+                items: {
+                    P20052_PAGE_ID: &APP_PAGE_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                RETURN core.korisnik_pkg.can_add_brzi_pristup (
+                    p_korisnik_id => :APP_USER_ID,
+                    p_app_id      => :APP_ID,
+                    p_page_id     => :APP_PAGE_ID
+                );
+                ```
+        }
+    )
+
+    entry instaliraj-aplikaciju (
+        label: Instaliraj aplikaciju
+        icon {
+            imageIconCssClasses: fa-cloud-download
+        }
+        layout {
+            sequence: 20
+        }
+        isCurrent {
+            type: never
+        }
+        link {
+            target: {
+                type: url
+                url: #action$a-pwa-install
+            }
+        }
+        userDefinedAttributes {
+            2: a-pwaInstall
+        }
+    )
+
+    entry list_item (
+        label: ---
+        layout {
+            sequence: 1040
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: separator
+            }
+        }
+    )
+
+    entry list_item-2 (
+        label: ---
+        icon {
+            imageIconCssClasses: fa-question-circle-o
+        }
+        layout {
+            sequence: 1080
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: separator
+            }
+        }
+        config {
+            buildOption: @feature-about-page
+        }
+    )
+
+    entry list_item-3 (
+        label: ---
+        layout {
+            sequence: 1120
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: separator
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
+    entry o-aplikaciji (
+        label: O aplikaciji
+        icon {
+            imageIconCssClasses: fa-info-circle-o
+        }
+        layout {
+            sequence: 1110
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 10040
+                clearCache: 10040
+            }
+        }
+        userDefinedAttributes {
+            2: icon-only
+        }
+        config {
+            buildOption: @feature-about-page
+        }
+    )
+
+    entry odjavi-se (
+        label: Odjavi se
+        icon {
+            imageIconCssClasses: fa-sign-out
+        }
+        layout {
+            sequence: 1130
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: &LOGOUT_URL.
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
+    entry osnovna-org-jedinica-app-ooj-name (
+        label: Osnovna org. jedinica: &APP_OOJ_NAME.
+        icon {
+            imageIconCssClasses: fa-badges
+        }
+        layout {
+            sequence: 800
+            subentriesList: @navigation-bar-ooj
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+        security {
+            authorizationScheme: @admin-preuzimanje-sesije
+        }
+    )
+
+    entry otvori-tiket (
+        label: Otvori tiket
+        icon {
+            imageIconCssClasses: fa-comment-o
+        }
+        layout {
+            sequence: 1060
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 20091
+                items: {
+                    P20091_PAGE_ID: &APP_PAGE_ID.
+                }
+                clearCache: 20091
+            }
+        }
+    )
+
+    entry podešavanja (
+        label: Podešavanja
+        icon {
+            imageIconCssClasses: fa-gears
+        }
+        layout {
+            sequence: 1020
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 20000
+            }
+        }
+    )
+
+    entry pomoć-na-stranici (
+        label: Pomoć na stranici
+        icon {
+            imageIconCssClasses: fa-question-circle-o
+        }
+        layout {
+            sequence: 1090
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 10041
+                items: {
+                    P10041_PAGE_ID: &APP_PAGE_ID.
+                }
+            }
+        }
+        config {
+            buildOption: @feature-about-page
+        }
+    )
+
+    entry pošalji-povratne-informacije (
+        label: Pošalji povratne informacije
+        icon {
+            imageIconCssClasses: fa-comment-o
+        }
+        layout {
+            sequence: 1050
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 10030
+                items: {
+                    P10030_PAGE_ID: &APP_PAGE_ID.
+                }
+                clearCache: 10030
+                action: resetPagination
+            }
+        }
+        userDefinedAttributes {
+            2: icon-only
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: apex_util.feedback_enabled
+        }
+        config {
+            buildOption: @feature-feedback
+        }
+    )
+
+    entry pregled-uputstva (
+        label: Pregled uputstva
+        icon {
+            imageIconCssClasses: fa-file-pdf-o
+        }
+        layout {
+            sequence: 1100
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 10045
+                clearCache: 10045
+            }
+        }
+    )
+
+    entry profil (
+        label: Profil
+        icon {
+            imageIconCssClasses: fa-user
+        }
+        layout {
+            sequence: 1010
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                type: url
+                url: &A_PROFIL_URL.
+            }
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: A_PROFIL_URL
+        }
+        security {
+            authorizationScheme: @radnik-osnovna
+        }
+    )
+
+    entry reset-sesije (
+        label: Reset sesije
+        icon {
+            imageIconCssClasses: fa-alert
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: &APP_PAGE_ID.
+                items: {
+                    APP_SESSION_CHANGED: 0
+                    APP_OOJ_ID: &APP_OOJ_ID_BACK.
+                    APP_FIRMA_ID: &APP_FIRMA_ID_BACK.
+                    APP_USER_ID: &APP_USER_ID_BACK.
+                    APP_RADNIK_ID: &APP_RADNIK_ID_BACK.
+                }
+            }
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_SESSION_CHANGED
+            value: 1
+        }
+    )
+
+    entry vaši-klijenti (
+        label: Vaši klijenti
+        icon {
+            imageIconCssClasses: fa-arrows-h
+        }
+        layout {
+            sequence: 700
+            subentriesList: @navigation-bar-klijenti
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    core.firme
+                WHERE
+                    biro_id = :APP_FIRMA_ID
+                    AND biro_status = 1
+                    AND valid = 'Y'
+                    AND active_to > sysdate
+                ```
+        }
+        security {
+            authorizationScheme: @admin-preuzimanje-sesije
+        }
+    )
+
+    entry vaši-tiketi (
+        label: Vaši tiketi
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 1070
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 20090
+                clearCache: 20090
+            }
+        }
+    )
+
+)
+
+list navigation-bar-applications (
+    name: Navigation Bar - Applications
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            WITH apps AS (
+                SELECT
+                    a.grupa,
+                    decode(a.grupa, 'CORP', 0, 'HR', 10, 'FIN', 20, 'ADD_ON', 30, 'ADMIN', 40) AS grupa_sort,
+                    a.sequence,
+                    a.naziv AS label,
+                    apex_page.get_url(
+                        p_application => a.application_id,
+                        p_page        => 1
+                    ) AS target,
+                    a.icon AS image_attribute,
+                    ROW_NUMBER() OVER (PARTITION BY a.grupa ORDER BY a.sequence) rn,
+                    COUNT(*)    OVER (PARTITION BY a.grupa) cnt
+                FROM sif.sif_aplikacije a
+                WHERE
+                    a.hub = 'Y'
+                    OR EXISTS (
+                        SELECT 1
+                        FROM sif.sif_aplikacija_role ar
+                        WHERE ar.sif_application_id = a.id
+                          AND ar.rola_id IN (
+                              SELECT kr.rola_id
+                              FROM core.korisnik_role kr
+                              WHERE kr.korisnik_id = :APP_USER_ID
+                          )
+                    )
+            ),
+            unioned AS (
+                SELECT
+                    1 AS lvl,
+                    label,
+                    target,
+                    NULL AS image,
+                    image_attribute,
+                    grupa_sort,
+                    sequence
+                FROM apps
+            
+                UNION ALL
+            
+                SELECT
+                    1,
+                    '---',
+                    'separator',
+                    NULL,
+                    NULL,
+                    grupa_sort,
+                    sequence + 0.5
+                FROM apps
+                WHERE rn = cnt
+            )
+            SELECT
+                lvl,
+                label,
+                target,
+                image,
+                image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                null as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM unioned
+            ORDER BY
+                grupa_sort,
+                sequence;
+            
+            ```
+    }
+    subscription {
+        master: @/200/navigation-bar-applications
+    }
+)
+
+list navigation-bar-klijenti (
+    name: Navigation Bar - Klijenti
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 20061,
+                    p_items  => 'P20061_PAGE_ID,P20061_FIRMA_ID',
+                    p_values => '' || :APP_PAGE_ID || ',' || id || ''
+                ) as target,
+                null as image,
+                'fa fa-building-o' as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                null as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                core.firme
+            WHERE
+                biro_id = :APP_FIRMA_ID
+                AND biro_status = 1
+                AND valid = 'Y'
+                AND active_to > sysdate
+            ```
+    }
+    subscription {
+        master: @/200/navigation-bar-klijenti
+    }
+)
+
+list navigation-bar-ooj (
+    name: Navigation Bar - OOJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 20060,
+                    p_items  => 'P20060_PAGE_ID,P20060_OOJ_ID',
+                    p_values => '' || :APP_PAGE_ID || ',' || id || ''
+                ) as target,
+                null as image,
+                'fa fa-badges' as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                null as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                core.ooj
+            WHERE
+                firma_id = :APP_FIRMA_ID
+            ORDER BY
+                id
+            ```
+    }
+    subscription {
+        master: @/200/navigation-bar-ooj
+    }
+)
+
+list navigation-menu (
+    name: Navigation Menu
+
+    entry blagajna (
+        label: Blagajna
+        icon {
+            imageIconCssClasses: fa-money
+        }
+        layout {
+            sequence: 80
+            subentriesList: @navigation-menu-blagajna
+        }
+        isCurrent {
+            type: pages
+            pages: 450
+        }
+        link {
+            target: {
+                page: 450
+            }
+        }
+        userDefinedAttributes {
+            3: 450
+        }
+        security {
+            authorizationScheme: @blagajna-osnovni-pristup
+        }
+    )
+
+    entry budžet (
+        label: Budžet
+        icon {
+            imageIconCssClasses: fa-pie-chart
+        }
+        layout {
+            sequence: 130
+            subentriesList: @navigation-menu-budžet
+        }
+        isCurrent {
+            type: pages
+            pages: 500
+        }
+        link {
+            target: {
+                page: 500
+            }
+        }
+        userDefinedAttributes {
+            3: 500
+        }
+        security {
+            authorizationScheme: @budžet-osnovna
+        }
+    )
+
+    entry fakture-računi (
+        label: Fakture
+        icon {
+            imageIconCssClasses: fa-receipt
+        }
+        layout {
+            sequence: 20
+            subentriesList: @navigation-menu-fakture
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+        userDefinedAttributes {
+            3: 2
+        }
+        security {
+            authorizationScheme: @fakture-osnovna
+        }
+    )
+
+    entry glavna-knjiga (
+        label: Glavna knjiga
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 60
+            subentriesList: @navigation-menu-glavna-knjiga
+        }
+        isCurrent {
+            type: pages
+            pages: 199
+        }
+        link {
+            target: {
+                page: 199
+            }
+        }
+        userDefinedAttributes {
+            3: 199
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-osnovna
+        }
+    )
+
+    entry izvodi (
+        label: Izvodi i banke
+        icon {
+            imageIconCssClasses: fa-bank
+        }
+        layout {
+            sequence: 70
+            subentriesList: @navigation-menu-izvodi
+        }
+        link {
+            target: {
+                page: 1010
+            }
+        }
+        security {
+            authorizationScheme: @izvodi-osnovna
+        }
+    )
+
+    entry klijenti (
+        label: Klijenti
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 30
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                10
+                11
+            ]
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+        userDefinedAttributes {
+            3: 10
+        }
+        security {
+            authorizationScheme: @finansije-klijenti
+        }
+    )
+
+    entry konfiguracija (
+        label: Konfiguracija
+        icon {
+            imageIconCssClasses: fa-gears
+        }
+        layout {
+            sequence: 1000
+            subentriesList: @navigation-menu-konfiguracija
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+        userDefinedAttributes {
+            3: 100
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry osnovna-sredstva (
+        label: Osnovna sredstva
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 100
+            subentriesList: @navigation-menu-osnovna-sredstva
+        }
+        isCurrent {
+            type: pages
+            pages: 250
+        }
+        link {
+            target: {
+                page: 250
+            }
+        }
+        userDefinedAttributes {
+            3: 250
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+                vsp_prosto
+            ]
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-osnovna
+        }
+    )
+
+    entry početna (
+        label: Početna
+        icon {
+            imageIconCssClasses: fa-home
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+        userDefinedAttributes {
+            3: 1
+        }
+    )
+
+    entry proizvodnja (
+        label: Proizvodnja
+        icon {
+            imageIconCssClasses: fa-industry
+        }
+        layout {
+            sequence: 120
+            subentriesList: @navigation-menu-proizvodnja
+        }
+        link {
+            target: {
+                page: 400
+            }
+        }
+        userDefinedAttributes {
+            3: 400
+        }
+        security {
+            authorizationScheme: @proizvodnja-osnovni-pristup
+        }
+    )
+
+    entry zalihe-robe (
+        label: Zalihe robe
+        icon {
+            imageIconCssClasses: fa-shopping-basket
+        }
+        layout {
+            sequence: 110
+            subentriesList: @navigation-menu-zalihe-robe
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 300);
+            }
+        }
+        userDefinedAttributes {
+            3: 300
+        }
+        security {
+            authorizationScheme: @robno-materijalno-osnovni-pristup
+        }
+    )
+
+    entry materijal-oprema (
+        label: Materijal i oprema
+        icon {
+            imageIconCssClasses: fa-wrench
+        }
+        layout {
+            sequence: 111
+            subentriesList: @navigation-menu-materijal-oprema
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 300);
+            }
+        }
+        userDefinedAttributes {
+            3: 300
+        }
+        security {
+            authorizationScheme: @robno-materijalno-osnovni-pristup
+        }
+    )
+
+    entry stavke (
+        label: Stavke i cjenovnici
+        icon {
+            imageIconCssClasses: fa-tags
+        }
+        layout {
+            sequence: 50
+            subentriesList: @navigation-menu-stavke
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+        userDefinedAttributes {
+            3: 20
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+    entry system-administracija (
+        label: Administracija sistema
+        icon {
+            imageIconCssClasses: fa-user-wrench
+        }
+        layout {
+            sequence: 10000
+        }
+        link {
+            target: {
+                page: 10000
+            }
+        }
+        userDefinedAttributes {
+            3: 10000
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+    )
+
+    entry ugovori (
+        label: Ugovori
+        icon {
+            imageIconCssClasses: fa-file-signature
+        }
+        layout {
+            sequence: 40
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                70
+                71
+            ]
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+        userDefinedAttributes {
+            3: 70
+        }
+        security {
+            authorizationScheme: @finansije-ugovori
+        }
+    )
+
+    entry uio-dokumentacija (
+        label: PDV / UIO
+        icon {
+            imageIconCssClasses: fa-percent
+        }
+        layout {
+            sequence: 90
+            subentriesList: @navigation-menu-uio
+        }
+        isCurrent {
+            type: pages
+            pages: 80
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+        userDefinedAttributes {
+            3: 80
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                    AND pdv_sistem = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @uio-osnovna
+        }
+    )
+
+)
+
+list navigation-menu-blagajna (
+    name: Navigation Menu - Blagajna
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 450
+        }
+        link {
+            target: {
+                page: 450
+            }
+        }
+        userDefinedAttributes {
+            3: 450
+        }
+    )
+
+    entry blagajne (
+        label: Blagajne
+        icon {
+            imageIconCssClasses: fa-hand-money-bag
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 451
+            }
+        }
+        userDefinedAttributes {
+            3: 451
+        }
+        security {
+            authorizationScheme: @blagajna-konfiguracija
+        }
+    )
+
+    entry dnevnik (
+        label: Dnevnik
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 455
+                clearCache: 455
+            }
+        }
+        userDefinedAttributes {
+            3: 455
+        }
+        security {
+            authorizationScheme: @blagajna-dnevnik-blagajne
+        }
+    )
+
+    entry izvještaji (
+        label: Izvještaji
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 40
+            subentriesList: @navigation-menu-blagajna-izvještaji
+        }
+        link {
+            target: {
+                page: 459
+                clearCache: 459
+            }
+        }
+        userDefinedAttributes {
+            3: 459
+        }
+        security {
+            authorizationScheme: @blagajna-izvještaji
+        }
+    )
+
+    entry tipovi-promjena (
+        label: Tipovi promjena
+        icon {
+            imageIconCssClasses: fa-handshake-o
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 453
+            }
+        }
+        userDefinedAttributes {
+            3: 453
+        }
+        security {
+            authorizationScheme: @blagajna-konfiguracija
+        }
+    )
+
+)
+
+list navigation-menu-blagajna-izvještaji (
+    name: Navigation Menu - Blagajna - Izvještaji
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 459,
+                    p_items  => 'P459_IZVJESTAJ_ID',
+                    p_values => id
+                ) as target,
+                null as image,
+                icon as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                210 as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'BL'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+)
+
+list navigation-menu-budžet (
+    name: Navigation Menu - Budžet
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 500
+        }
+        link {
+            target: {
+                page: 500
+            }
+        }
+        userDefinedAttributes {
+            3: 500
+        }
+    )
+
+    entry budžetiranje (
+        label: Budžetiranje
+        icon {
+            imageIconCssClasses: fa-calendar
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 503
+            }
+        }
+        userDefinedAttributes {
+            3: 503
+        }
+    )
+
+    entry budžetske-stavke (
+        label: Budžetske stavke
+        icon {
+            imageIconCssClasses: fa-align-justify
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 501
+            }
+        }
+        userDefinedAttributes {
+            3: 501
+        }
+    )
+
+)
+
+list navigation-menu-fakture (
+    name: Navigation Menu - Fakture
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 2
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+        userDefinedAttributes {
+            3: 2
+        }
+    )
+
+    entry izlazne-fakture (
+        label: Izlazne fakture
+        icon {
+            imageIconCssClasses: fa-arrow-left-alt
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+        userDefinedAttributes {
+            3: 50
+        }
+        security {
+            authorizationScheme: @fakture-kif
+        }
+    )
+
+    entry ulazne-fakture (
+        label: Ulazne fakture
+        icon {
+            imageIconCssClasses: fa-arrow-right-alt
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+        userDefinedAttributes {
+            3: 40
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+                vsp_prosto
+            ]
+        }
+        security {
+            authorizationScheme: @fakture-kuf
+        }
+    )
+
+)
+
+list navigation-menu-glavna-knjiga (
+    name: Navigation Menu - Glavna knjiga
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 199
+        }
+        link {
+            target: {
+                page: 199
+            }
+        }
+        userDefinedAttributes {
+            3: 199
+        }
+    )
+
+    entry izvještaji (
+        label: Izvještaji
+        icon {
+            imageIconCssClasses: fa-clipboard-list
+        }
+        layout {
+            sequence: 40
+            subentriesList: @navigation-menu-glavna-knjiga-izvještaji
+        }
+        isCurrent {
+            type: pages
+            pages: 210
+        }
+        link {
+            target: {
+                page: 210
+                clearCache: 210
+            }
+        }
+        userDefinedAttributes {
+            3: 210
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-izvještaji
+        }
+    )
+
+    entry izvodi (
+        label: Izvodi
+        icon {
+            imageIconCssClasses: fa-receipt
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 220
+                clearCache: 220
+            }
+        }
+        userDefinedAttributes {
+            3: 220
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-izvodi
+        }
+    )
+
+    entry nalozi (
+        label: " Nalozi"
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-task
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 1850
+            }
+        }
+    )
+
+    entry nalozi-za-knjiženje (
+        label: Nalozi za knjiženje
+        icon {
+            imageIconCssClasses: fa-tasks-alt
+        }
+        layout {
+            sequence: 10
+        }
+        isCurrent {
+            type: pages
+            pages: 200
+        }
+        link {
+            target: {
+                page: 200
+            }
+        }
+        userDefinedAttributes {
+            3: 200
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+            ]
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-nalozi
+        }
+    )
+
+    entry otvorene-stavke (
+        label: " Otvorene stavke"
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-file-exchange
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 1890
+            }
+        }
+    )
+
+    entry pdv-prijava (
+        label: PDV Prijava
+        icon {
+            imageIconCssClasses: fa-calendar
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 230
+            }
+        }
+        userDefinedAttributes {
+            3: 230
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                    AND pdv_sistem = 'Y'
+                    AND :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno')
+                ```
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-pdv-prijava
+        }
+    )
+
+)
+
+list navigation-menu-glavna-knjiga-izvještaji (
+    name: Navigation Menu - Glavna knjiga - Izvještaji
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 210,
+                    p_items  => 'P210_IZVJESTAJ_ID',
+                    p_values => id
+                ) as target,
+                null as image,
+                icon as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                210 as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'GK'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+)
+
+list navigation-menu-izvodi (
+    name: Navigation menu  - Izvodi
+
+    entry izvještaji (
+        label: " Izvještaji"
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-chart
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 1010
+            }
+        }
+    )
+
+    entry kursne-liste (
+        label: Kursne liste
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-money-exchange
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 1900
+            }
+        }
+    )
+
+    entry obrada-izvoda (
+        label: Obrada izvoda
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-money
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1010
+            }
+        }
+    )
+
+    entry otvorene-stavke (
+        label: " Otvorene stavke"
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-file-exchange
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 1890
+                items: {
+                    P1890_O_IZV: 0
+                    P1890_U_IZV: 0
+                }
+            }
+        }
+    )
+
+    entry žiro-računi (
+        label: Žiro računi
+        icon {
+            imageIconCssClasses: custom-nav-icon icon-custom-bank
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 1001
+            }
+        }
+    )
+
+)
+
+list navigation-menu-konfiguracija (
+    name: Navigation Menu - Konfiguracija
+
+    entry banke (
+        label: Banke
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 110
+        }
+        link {
+            target: {
+                page: 121
+            }
+        }
+        userDefinedAttributes {
+            3: 121
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry fiskalizacija (
+        label: Fiskalizacija
+        icon {
+            imageIconCssClasses: fa-user-chart
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 105
+            }
+        }
+        userDefinedAttributes {
+            3: 105
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry izgled-faktura (
+        label: Izgled faktura
+        icon {
+            imageIconCssClasses: fa-layout-1row-2row
+        }
+        layout {
+            sequence: 10
+        }
+        isCurrent {
+            type: pages
+            pages: 101
+        }
+        link {
+            target: {
+                page: 101
+            }
+        }
+        userDefinedAttributes {
+            3: 101
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry klase-osnovnih-sredstava (
+        label: Klase osnovnih sredstava
+        icon {
+            imageIconCssClasses: fa-bookmark
+        }
+        layout {
+            sequence: 90
+        }
+        link {
+            target: {
+                page: 116
+            }
+        }
+        userDefinedAttributes {
+            3: 116
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+                vsp_prosto
+            ]
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry kontni-okvir (
+        label: Kontni okvir
+        icon {
+            imageIconCssClasses: fa-accordion
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 109
+            }
+        }
+        userDefinedAttributes {
+            3: 109
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+            ]
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry mjesta-troška (
+        label: " Mjesta troška"
+        icon {
+            imageIconCssClasses: fa-sitemap
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 130
+            }
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry numeracija-dokumenata (
+        label: Numeracija dokumenata
+        icon {
+            imageIconCssClasses: fa-file-wrench
+        }
+        layout {
+            sequence: 30
+        }
+        isCurrent {
+            type: pages
+            pages: 103
+        }
+        link {
+            target: {
+                page: 103
+            }
+        }
+        userDefinedAttributes {
+            3: 103
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry osnovna-konfiguracija (
+        label: Osnovna konfiguracija
+        icon {
+            imageIconCssClasses: fa-table-wrench
+        }
+        layout {
+            sequence: 120
+        }
+        link {
+            target: {
+                page: 118
+            }
+        }
+        userDefinedAttributes {
+            3: 118
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry potpisi (
+        label: Potpisi
+        icon {
+            imageIconCssClasses: fa-signature
+        }
+        layout {
+            sequence: 130
+        }
+        link {
+            target: {
+                page: 123
+            }
+        }
+        userDefinedAttributes {
+            3: 123
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry radnici (
+        label: Radnici
+        icon {
+            imageIconCssClasses: fa-clipboard-user
+        }
+        layout {
+            sequence: 65
+        }
+        link {
+            target: {
+                page: 140
+            }
+        }
+    )
+
+    entry šabloni-za-knjiženje (
+        label: Šabloni za knjiženje
+        icon {
+            imageIconCssClasses: fa-refresh
+        }
+        layout {
+            sequence: 100
+        }
+        link {
+            target: {
+                page: 119
+            }
+        }
+        userDefinedAttributes {
+            3: 119
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+            ]
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+)
+
+list navigation-menu-materijalno-izvještaji (
+    name: Navigation Menu - Materijalno - Izvještaji
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 371,
+                    p_items  => 'P371_IZVJESTAJ_ID',
+                    p_values => id
+                ) as target,
+                null as image,
+                icon as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                210 as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'MAT'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+)
+
+list navigation-menu-osnovna-sredstva (
+    name: Navigation Menu - Osnovna sredstva
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 250
+        }
+        link {
+            target: {
+                page: 250
+            }
+        }
+        userDefinedAttributes {
+            3: 250
+        }
+    )
+
+    entry amortizacija (
+        label: Amortizacija
+        icon {
+            imageIconCssClasses: fa-refresh
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 263
+            }
+        }
+        userDefinedAttributes {
+            3: 263
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-amortizacija
+        }
+    )
+
+    entry lista (
+        label: Lista
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 251
+            }
+        }
+        userDefinedAttributes {
+            3: 251
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-pregled
+        }
+    )
+
+    entry održavanja (
+        label: Održavanja
+        icon {
+            imageIconCssClasses: fa-wrench
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 271
+            }
+        }
+        userDefinedAttributes {
+            3: 271
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-pregled
+        }
+    )
+
+    entry popis (
+        label: Popis
+        icon {
+            imageIconCssClasses: fa-layout-list-left
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 261
+            }
+        }
+        userDefinedAttributes {
+            3: 261
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-popis
+        }
+    )
+
+    entry zaduživanje (
+        label: Zaduživanje
+        icon {
+            imageIconCssClasses: fa-user-md
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 273
+            }
+        }
+        userDefinedAttributes {
+            3: 273
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-pregled
+        }
+    )
+
+    entry zajednički-indikatori (
+        label: Zajednički indikatori
+        icon {
+            imageIconCssClasses: fa-layouts-grid-2x
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 277
+            }
+        }
+        userDefinedAttributes {
+            3: 277
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-pregled
+        }
+    )
+
+)
+
+list navigation-menu-početna (
+    name: Navigation Menu - Početna
+
+    entry blagajnički-dnevnik (
+        label: Blagajnički dnevnik
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 455
+            }
+        }
+        userDefinedAttributes {
+            3: 455
+        }
+        security {
+            authorizationScheme: @blagajna-dnevnik-blagajne
+        }
+    )
+
+    entry izlazne-fakture (
+        label: Izlazne fakture
+        icon {
+            imageIconCssClasses: fa-arrow-left-alt
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+        userDefinedAttributes {
+            3: 50
+        }
+        security {
+            authorizationScheme: @fakture-kif
+        }
+    )
+
+    entry izvodi (
+        label: Izvodi
+        icon {
+            imageIconCssClasses: fa-receipt
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 220
+            }
+        }
+        userDefinedAttributes {
+            3: 220
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-izvodi
+        }
+    )
+
+    entry nalozi-za-knjiženje (
+        label: Nalozi za knjiženje
+        icon {
+            imageIconCssClasses: fa-tasks
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 200
+            }
+        }
+        userDefinedAttributes {
+            3: 200
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-nalozi
+        }
+    )
+
+    entry osnovna-sredstva (
+        label: Osnovna sredstva
+        icon {
+            imageIconCssClasses: fa-database-bookmark
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 251
+            }
+        }
+        userDefinedAttributes {
+            3: 251
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-pregled
+        }
+    )
+
+    entry radni-nalozi (
+        label: Radni nalozi
+        icon {
+            imageIconCssClasses: fa-tools
+        }
+        layout {
+            sequence: 90
+        }
+        link {
+            target: {
+                page: 401
+            }
+        }
+        userDefinedAttributes {
+            3: 401
+        }
+        security {
+            authorizationScheme: @proizvodnja-kreiranje-radnih-naloga
+        }
+    )
+
+    entry ulazne-fakture (
+        label: Ulazne fakture
+        icon {
+            imageIconCssClasses: fa-arrow-right-alt
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+        userDefinedAttributes {
+            3: 40
+        }
+        security {
+            authorizationScheme: @fakture-kuf
+        }
+    )
+
+)
+
+list navigation-menu-proizvodnja (
+    name: Navigation Menu - Proizvodnja
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 400
+        }
+        link {
+            target: {
+                page: 400
+            }
+        }
+        userDefinedAttributes {
+            3: 400
+        }
+    )
+
+    entry cjenovnik (
+        label: Cjenovnik
+        icon {
+            imageIconCssClasses: fa-money-check-pen
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 431
+            }
+        }
+        userDefinedAttributes {
+            3: 431
+        }
+        security {
+            authorizationScheme: @proizvodnja-cjenovnik
+        }
+    )
+
+    entry normativi (
+        label: Normativi
+        icon {
+            imageIconCssClasses: fa-balance-scale
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 421
+            }
+        }
+        userDefinedAttributes {
+            3: 421
+        }
+        security {
+            authorizationScheme: @proizvodnja-normativi
+        }
+    )
+
+    entry radni-nalozi (
+        label: Radni nalozi
+        icon {
+            imageIconCssClasses: fa-tools
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 401
+            }
+        }
+        userDefinedAttributes {
+            3: 401
+        }
+        security {
+            authorizationScheme: @proizvodnja-kreiranje-radnih-naloga
+        }
+    )
+
+)
+
+list navigation-menu-robno-izvještaji (
+    name: Navigation Menu - Robno - Izvještaji
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                1,
+                naziv as label,
+                apex_page.get_url (
+                    p_page   => 372,
+                    p_items  => 'P372_IZVJESTAJ_ID',
+                    p_values => id
+                ) as target,
+                null as image,
+                icon as image_attribute,
+                null as image_alt_attribute,
+                
+                null as attribute1,
+                null as attribute2,
+                210 as attribute3,
+                null as attribute4,
+                null as attribute5,
+                null as attribute6,
+                null as attribute7,
+                null as attribute8,
+                null as attribute9,
+                null as attribute10
+            
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'ROB'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+)
+
+list navigation-menu-zalihe-robe (
+    name: Navigation Menu - Zalihe robe
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 300
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 300);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+    )
+
+    entry dokumenti (
+        label: Dokumenti
+        icon {
+            imageIconCssClasses: fa-arrows-h
+        }
+        layout {
+            sequence: 10
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                330
+                331
+                332
+                334
+                335
+                336
+                337
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 330);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-dokumenti
+        }
+    )
+
+    entry kalkulacije (
+        label: Kalkulacije
+        icon {
+            imageIconCssClasses: fa-calculator
+        }
+        layout {
+            sequence: 20
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                340
+                341
+                342
+                343
+                344
+                345
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 340);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-kalkulacije-robe
+        }
+    )
+
+    entry nivelacije (
+        label: Nivelacije cijena
+        icon {
+            imageIconCssClasses: fa-sliders
+        }
+        layout {
+            sequence: 30
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                350
+                351
+                352
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 350);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-nivelacije-cijene
+        }
+    )
+
+    entry popis (
+        label: Popis
+        icon {
+            imageIconCssClasses: fa-list-ol
+        }
+        layout {
+            sequence: 40
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                360
+                361
+                362
+                363
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 360);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-popis
+        }
+    )
+
+    entry skladista (
+        label: Skladišta
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 50
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                310
+                311
+                312
+                313
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 310);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-konfiguracija-skladišta
+        }
+    )
+
+    entry izvjestaji (
+        label: Izvještaji
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 60
+            subentriesList: @navigation-menu-robno-izvještaji
+        }
+        isCurrent {
+            type: pages
+            pages: 372
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 372);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:A_RM_MODUL, 'ROB') = 'ROB'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-izvještaji
+        }
+    )
+
+)
+
+list navigation-menu-materijal-oprema (
+    name: Navigation Menu - Materijal i oprema
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 300
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 300);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+    )
+
+    entry dokumenti (
+        label: Dokumenti
+        icon {
+            imageIconCssClasses: fa-arrows-h
+        }
+        layout {
+            sequence: 10
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                330
+                331
+                332
+                334
+                335
+                336
+                337
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 330);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-dokumenti
+        }
+    )
+
+    entry trebovanja (
+        label: Trebovanja
+        icon {
+            imageIconCssClasses: fa-file-signature
+        }
+        layout {
+            sequence: 20
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                320
+                321
+                322
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 320);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-trebovanja
+        }
+    )
+
+    entry kalkulacije (
+        label: Kalkulacije
+        icon {
+            imageIconCssClasses: fa-calculator
+        }
+        layout {
+            sequence: 30
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                340
+                341
+                342
+                343
+                344
+                345
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 340);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-kalkulacije-robe
+        }
+    )
+
+    entry popis (
+        label: Popis
+        icon {
+            imageIconCssClasses: fa-list-ol
+        }
+        layout {
+            sequence: 40
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                360
+                361
+                362
+                363
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 360);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-popis
+        }
+    )
+
+    entry skladista (
+        label: Skladišta
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 50
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                310
+                311
+                312
+                313
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 310);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-konfiguracija-skladišta
+        }
+    )
+
+    entry izvjestaji (
+        label: Izvještaji
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 60
+            subentriesList: @navigation-menu-materijalno-izvještaji
+        }
+        isCurrent {
+            type: pages
+            pages: 371
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 371);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-izvještaji
+        }
+    )
+
+)
+
+list navigation-menu-stavke (
+    name: Navigation Menu - Stavke
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+        userDefinedAttributes {
+            3: 20
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+    entry lista-stavki (
+        label: Stavke
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 21
+            }
+        }
+        userDefinedAttributes {
+            3: 21
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+    entry lista-cjenovnika (
+        label: Cjenovnici
+        icon {
+            imageIconCssClasses: fa-list
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 27
+            }
+        }
+        userDefinedAttributes {
+            3: 27
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+    entry cjenovnik (
+        label: Cijene
+        icon {
+            imageIconCssClasses: fa-money
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 25
+            }
+        }
+        userDefinedAttributes {
+            3: 25
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+    entry klase-stavki (
+        label: Klase stavki
+        icon {
+            imageIconCssClasses: fa-sitemap
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 125
+            }
+        }
+        userDefinedAttributes {
+            3: 125
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry grupe-stavki (
+        label: Grupe za knjiženje
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 114
+            }
+        }
+        userDefinedAttributes {
+            3: 114
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+            ]
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+)
+
+list navigation-menu-uio (
+    name: Navigation Menu - UIO
+
+    entry pregled (
+        label: Pregled
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 1
+        }
+        isCurrent {
+            type: pages
+            pages: 80
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+        userDefinedAttributes {
+            3: 80
+        }
+    )
+
+    entry automatski-unos-kif-kuf (
+        label: Automatski unos KIF / KUF
+        icon {
+            imageIconCssClasses: fa-upload-alt
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 86
+            }
+        }
+        userDefinedAttributes {
+            3: 86
+        }
+        security {
+            authorizationScheme: @uio-automatski-unos
+        }
+    )
+
+    entry uio-kif (
+        label: UIO - KIF
+        icon {
+            imageIconCssClasses: fa-arrow-left-alt
+        }
+        layout {
+            sequence: 10
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                81
+                82
+            ]
+        }
+        link {
+            target: {
+                page: 81
+                clearCache: 81
+            }
+        }
+        userDefinedAttributes {
+            3: 81
+        }
+        security {
+            authorizationScheme: @uio-kif
+        }
+    )
+
+    entry uio-kuf (
+        label: UIO - KUF
+        icon {
+            imageIconCssClasses: fa-arrow-right-alt
+        }
+        layout {
+            sequence: 20
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                83
+                84
+            ]
+        }
+        link {
+            target: {
+                page: 83
+                clearCache: 83
+            }
+        }
+        userDefinedAttributes {
+            3: 83
+        }
+        security {
+            authorizationScheme: @uio-kuf
+        }
+    )
+
+    entry uio-portal (
+        label: UIO - Portal
+        icon {
+            imageIconCssClasses: fa-globe
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                type: url
+                url: "javascript:void(window.open('https://e-porezi.uino.gov.ba:4443/Account/LogOn?ReturnUrl=%2f'));"
+            }
+        }
+        security {
+            authorizationScheme: @uio-osnovna
+        }
+    )
+
+)
+
+list user-settings (
+    name: User Settings
+    config {
+        buildOption: @feature-user-settings
+    }
+    subscription {
+        master: @/200/user-settings
+    }
+
+    entry brzi-pristup (
+        label: Brzi pristup
+        icon {
+            imageIconCssClasses: fa-copy
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 20050
+            }
+        }
+        userDefinedAttributes {
+            1: Konfigurišite stranice prema kojima želite da imate brzi pristup.
+        }
+    )
+
+    entry mejlovi (
+        label: Mejlovi
+        icon {
+            imageIconCssClasses: fa-mail-forward
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 20020
+            }
+        }
+        userDefinedAttributes {
+            1: Konfigurišite da li želite da primate mejlovi na ovom uređaju.
+        }
+    )
+
+    entry obaveštenja (
+        label: Obaveštenja
+        icon {
+            imageIconCssClasses: fa-bell-o
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 20010
+            }
+        }
+        userDefinedAttributes {
+            1: Konfigurišite da li želite da primate obaviještenja na ovom uređaju.
+            2:
+                ```
+                <span class="t-Button t-Button u-hot">
+                    <span class="a-pwaPush--state"></span>
+                </span>
+                ```
+        }
+        config {
+            buildOption: @feature-push-notifications
+        }
+    )
+
+    entry podrazumijevana-aplikacija (
+        label: Podrazumijevana aplikacija
+        icon {
+            imageIconCssClasses: fa-network-hub
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 20070
+            }
+        }
+        userDefinedAttributes {
+            1: Konfigurišite osnovnu aplikaciju prilikom logovanja na aplikaciju.
+        }
+    )
+
+    entry promjena-lozinke (
+        label: Promjena lozinke
+        icon {
+            imageIconCssClasses: fa-key
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 20030
+            }
+        }
+        userDefinedAttributes {
+            1: Promijenite lozinku vašeg korisničkog profila.
+        }
+    )
+
+    entry promjena-teme (
+        label: Promjena teme
+        icon {
+            imageIconCssClasses: fa-paint-brush
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 20040
+            }
+        }
+        userDefinedAttributes {
+            1: Promijenite izgled aplikacije u tamnu ili svijetlu temu.
+        }
+    )
+
+    entry sekretarica (
+        label: Sekretarica
+        icon {
+            imageIconCssClasses: fa-envelope-user
+        }
+        layout {
+            sequence: 70
+        }
+        link {
+            target: {
+                page: 20080
+            }
+        }
+        userDefinedAttributes {
+            1: Konfigurišite da li se mejlovi iz ERP sistema prosljeđuju zaduženoj osobi.
+        }
+        security {
+            authorizationScheme: @sekretarica-ima-sekretaricu
+        }
+    )
+
+)
+
+list wizard-budžet (
+    name: Wizard - Budžet
+
+    entry budžet-x2f-konfiguracija-org-jedinica (
+        label: Budžet &#x2F; Konfiguracija org. jedinica
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 505
+            }
+        }
+    )
+
+    entry budžet-x2f-osnovne-informacije (
+        label: Budžet &#x2F; Osnovne informacije
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 504
+            }
+        }
+    )
+
+)
+
+list wizard-izlazna-faktura (
+    name: Wizard - Izlazna faktura
+
+    entry osnovne-informacije (
+        label: Osnovne informacije
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 51
+            }
+        }
+    )
+
+    entry pregled (
+        label: Pregled
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 53
+            }
+        }
+    )
+
+    entry stavke (
+        label: Stavke
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 52
+            }
+        }
+    )
+
+)
+
+list wizard-osnovna-sredstva (
+    name: Wizard - Osnovna sredstva
+
+    entry amortizacija (
+        label: Amortizacija
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 254
+            }
+        }
+    )
+
+    entry dodatne-informacije (
+        label: Dodatne informacije
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 255
+            }
+        }
+    )
+
+    entry opšti-podaci (
+        label: Opšti podaci
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 252
+            }
+        }
+    )
+
+    entry organizaciona-pripadnost (
+        label: Organizaciona pripadnost
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 253
+            }
+        }
+    )
+
+)
+
+list wizard-radni-nalog (
+    name: Wizard - Radni nalog
+
+    entry radni-nalog-x2f-osnovne-informacije (
+        label: Radni nalog &#x2F; Osnovne informacije
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 402
+            }
+        }
+    )
+
+    entry radni-nalog-x2f-pregled (
+        label: Radni nalog &#x2F; Pregled
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 406
+            }
+        }
+    )
+
+    entry radni-nalog-x2f-radna-snaga (
+        label: Radni nalog &#x2F; Radna snaga
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 404
+            }
+        }
+    )
+
+    entry radni-nalog-x2f-stavke (
+        label: Radni nalog &#x2F; Stavke
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 403
+            }
+        }
+    )
+
+    entry radni-nalog-x2f-troškovi (
+        label: Radni nalog &#x2F; Troškovi
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 405
+            }
+        }
+    )
+
+)
+
+list dashboard-moduli-poslovanje (
+    name: Dashboard - Moduli - Poslovanje
+
+    entry fakture-računi (
+        label: Fakture
+        icon {
+            imageIconCssClasses: fa-receipt
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+        userDefinedAttributes {
+            1: Izlazne i ulazne fakture, fiskalizacija i naplata
+            6: u-color-1
+        }
+        security {
+            authorizationScheme: @fakture-osnovna
+        }
+    )
+
+    entry klijenti (
+        label: Klijenti
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+        userDefinedAttributes {
+            1: Kupci i dobavljači, konta i kontakt podaci
+            6: u-color-3
+        }
+        security {
+            authorizationScheme: @finansije-klijenti
+        }
+    )
+
+    entry ugovori (
+        label: Ugovori
+        icon {
+            imageIconCssClasses: fa-file-signature
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+        userDefinedAttributes {
+            1: Ugovori, aneksi, rokovi i dokumentacija
+            6: u-color-5
+        }
+        security {
+            authorizationScheme: @finansije-ugovori
+        }
+    )
+
+    entry stavke (
+        label: Stavke i cjenovnici
+        icon {
+            imageIconCssClasses: fa-tags
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+        userDefinedAttributes {
+            1: Artikli, usluge i cjenovnici
+            6: u-color-7
+        }
+        security {
+            authorizationScheme: @fakture-stavke
+        }
+    )
+
+)
+
+list dashboard-moduli-finansije (
+    name: Dashboard - Moduli - Finansije
+
+    entry glavna-knjiga (
+        label: Glavna knjiga
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 199
+            }
+        }
+        userDefinedAttributes {
+            1: Nalozi za knjiženje, izvještaji, PDV prijava
+            6: u-color-2
+        }
+        security {
+            authorizationScheme: @glavna-knjiga-osnovna
+        }
+    )
+
+    entry izvodi (
+        label: Izvodi i banke
+        icon {
+            imageIconCssClasses: fa-bank
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 1010
+            }
+        }
+        userDefinedAttributes {
+            1: Bankovni izvodi, žiro računi, kursne liste
+            6: u-color-4
+        }
+        security {
+            authorizationScheme: @izvodi-osnovna
+        }
+    )
+
+    entry blagajna (
+        label: Blagajna
+        icon {
+            imageIconCssClasses: fa-money
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 450
+            }
+        }
+        userDefinedAttributes {
+            1: Blagajnički dnevnik i izvještaji
+            6: u-color-6
+        }
+        security {
+            authorizationScheme: @blagajna-osnovni-pristup
+        }
+    )
+
+    entry uio-dokumentacija (
+        label: PDV / UIO
+        icon {
+            imageIconCssClasses: fa-percent
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+        userDefinedAttributes {
+            1: KIF / KUF evidencija za UIO
+            6: u-color-8
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                    AND pdv_sistem = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @uio-osnovna
+        }
+    )
+
+)
+
+list dashboard-moduli-imovina (
+    name: Dashboard - Moduli - Imovina i zalihe
+
+    entry osnovna-sredstva (
+        label: Osnovna sredstva
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 250
+            }
+        }
+        userDefinedAttributes {
+            1: Evidencija, amortizacija, popis i zaduživanje
+            6: u-color-9
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+                vsp_dvojno
+                vsp_prosto
+            ]
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-osnovna
+        }
+    )
+
+    entry zalihe-robe (
+        label: Zalihe robe
+        icon {
+            imageIconCssClasses: fa-shopping-basket
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('ROB', 300);
+            }
+        }
+        userDefinedAttributes {
+            1: Robna skladišta, kalkulacije, nivelacije i popis
+            6: u-color-10
+        }
+        security {
+            authorizationScheme: @robno-materijalno-osnovni-pristup
+        }
+    )
+
+    entry materijal-oprema (
+        label: Materijal i oprema
+        icon {
+            imageIconCssClasses: fa-wrench
+        }
+        layout {
+            sequence: 21
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 300);
+            }
+        }
+        userDefinedAttributes {
+            1: Skladišta materijala, opreme i sitnog inventara, trebovanja
+            6: u-color-10
+        }
+        security {
+            authorizationScheme: @robno-materijalno-osnovni-pristup
+        }
+    )
+
+    entry proizvodnja (
+        label: Proizvodnja
+        icon {
+            imageIconCssClasses: fa-industry
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 400
+            }
+        }
+        userDefinedAttributes {
+            1: Radni nalozi, normativi i cjenovnik rada
+            6: u-color-11
+        }
+        security {
+            authorizationScheme: @proizvodnja-osnovni-pristup
+        }
+    )
+
+)
+
+list dashboard-moduli-planiranje (
+    name: Dashboard - Moduli - Planiranje i podešavanja
+
+    entry budžet (
+        label: Budžet
+        icon {
+            imageIconCssClasses: fa-pie-chart
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 500
+            }
+        }
+        userDefinedAttributes {
+            1: Nacrti, rebalans, realokacija i realizacija
+            6: u-color-12
+        }
+        security {
+            authorizationScheme: @budžet-osnovna
+        }
+    )
+
+    entry konfiguracija (
+        label: Konfiguracija
+        icon {
+            imageIconCssClasses: fa-gears
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+        userDefinedAttributes {
+            1: Kontni okvir, numeracija, šabloni, banke
+            6: u-color-14
+        }
+        security {
+            authorizationScheme: @finansije-konfiguracija
+        }
+    )
+
+    entry system-administracija (
+        label: Administracija sistema
+        icon {
+            imageIconCssClasses: fa-user-wrench
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 10000
+            }
+        }
+        userDefinedAttributes {
+            1: Korisnici, logovi i performanse aplikacije
+            6: u-color-15
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+    )
+
+)

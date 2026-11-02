@@ -1,0 +1,483 @@
+page 502 (
+    name: Budžetska stavka / Detalji
+    alias: BUDŽETSKA-STAVKA-DETALJI
+    title: Budžetska stavka / Detalji
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžetska-stavka-detalji (
+        name: Budžetska stavka / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P502_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P502_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P502_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 40
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P502_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P502_STAVKA_ID (
+        type: selectOne
+        label {
+            label: Stavka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @budzetske-stavke
+        }
+        layout {
+            sequence: 30
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P502_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 60
+            region: @budžetska-stavka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P502_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P502_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P502_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P502_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-oj-id (
+        name: Get OJ ID
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P502_STAVKA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P502_STAVKA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P502_OJ_ID := budzet_pkg.get_budzetska_stavka_oj_id (:P502_STAVKA_ID);
+                itemsToSubmit: [
+                    P502_STAVKA_ID
+                    P502_OJ_ID
+                ]
+                itemsToReturn: P502_OJ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P502_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P502_NAZIV
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 144230245708573775
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.delete_budzetska_stavka (
+                    p_id => :P502_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 143311387151227340
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzetska_stavka (
+                    p_id        => :P502_ID,
+                    p_ooj_id    => :P502_OOJ_ID,
+                    p_stavka_id => :P502_STAVKA_ID,
+                    p_oj_id     => :P502_OJ_ID,
+                    p_naziv     => :P502_NAZIV,
+                    p_valid     => :P502_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 143311013558227337
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P502_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.insert_budzetska_stavka (
+                    p_ooj_id    => :APP_OOJ_ID,
+                    p_stavka_id => :P502_STAVKA_ID,
+                    p_oj_id     => :P502_OJ_ID,
+                    p_naziv     => :P502_NAZIV
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 143311115792227338
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.update_budzetska_stavka (
+                    p_id        => :P502_ID,
+                    p_ooj_id    => :APP_OOJ_ID,
+                    p_stavka_id => :P502_STAVKA_ID,
+                    p_oj_id     => :P502_OJ_ID,
+                    p_naziv     => :P502_NAZIV,
+                    p_valid     => :P502_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 143311257819227339
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

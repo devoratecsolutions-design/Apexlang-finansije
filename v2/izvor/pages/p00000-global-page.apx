@@ -1,0 +1,725 @@
+page 0 (
+    name: Global Page
+    pageGroup: @erp-globalne-stranice
+
+    region danger (
+        name: Danger
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <center>
+                    <b>Prije početka rada, obavezno izaberite godinu.</b>
+                </center>
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: banner
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: u-color-9
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: APP_GODINA
+        }
+    )
+
+    region danger-оој (
+        name: Danger ООЈ
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <center style="border-bottom: 1px grey solid">
+                    <b>Prije početka rada, obavezno izaberite osnovnu organizacionu jedinicu.</b>
+                </center>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: banner
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: u-color-9
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: APP_OOJ_ID
+        }
+    )
+
+    region footer (
+        name: FOOTER
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p style="font-size: 12px">
+                    <a href="mailto:support@esscom.ba">Kontaktiraj podršku</a>
+                    <br>
+                    <a href="#action$a-pwa-install">Instaliraj aplikaciju</a>
+                    <br>
+                    Powered by ESSCOM.
+                </p>
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: footer
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region quick-navigation (
+        name: Quick Navigation
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogsDrawersAndPopups
+        }
+        appearance {
+            template: @inline-popup
+            templateOptions: [
+                #DEFAULT#
+                js-dialog-autoheight
+                js-dialog-size720x480
+                js-popup-pos-above
+            ]
+        }
+        advanced {
+            htmlDomId: quick_navigation_popup
+        }
+        config {
+            buildOption: @feature-quick-navigation
+        }
+    )
+
+    region quick-navigation-report (
+        name: Quick Navigation Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    p.application_name,
+                    p.page_name,
+                    p.page_alias,
+                    
+                    -- Aggregate breadcrumbs as comma-separated string
+                    (
+                        SELECT 
+                            b.full_breadcrumb
+                        FROM 
+                            apex_application_page_map b
+                        WHERE 
+                            b.application_id = p.application_id
+                            AND b.page_id = p.page_id
+                    ) AS breadcrumb,
+                
+                    apex_page.get_url(
+                        p_application => p.application_id,
+                        p_page        => p.page_id
+                    ) as link,
+                    'u-hot' as icon_color_class,
+                    s.icon as icon_class
+                
+                FROM
+                    apex_application_pages p
+                    LEFT JOIN sif.sif_aplikacije s ON p.application_id = s.application_id
+                    LEFT JOIN apex_applications a ON p.application_id = a.application_id
+                WHERE
+                    (
+                        lower(page_name) LIKE '%' || lower(:P0_QUICK_NAVIGATION) || '%'
+                        OR
+                        lower(p.application_name) LIKE '%' || lower(:P0_QUICK_NAVIGATION) || '%'
+                        OR
+                        lower(page_alias) LIKE '%' || lower(:P0_QUICK_NAVIGATION) || '%'
+                
+                    )
+                    AND :P0_QUICK_NAVIGATION IS NOT null
+                    AND page_mode = 'Normal'
+                    AND sif.utils_pkg.is_authorized_wrapper(coalesce(p.authorization_scheme, a.authorization_scheme)) = 1
+                    AND p.application_id > 101
+                    AND p.page_id > 1
+                    AND p.page_id IN (
+                        SELECT 
+                            entry_attribute_03
+                        FROM
+                            apex_application_list_entries e
+                        WHERE
+                            lower(list_name) LIKE '%navigation menu%'
+                            AND p.application_id = e.application_id
+                    )
+                ORDER BY
+                    p.application_id,
+                    p.page_id
+                ```
+            pageItemsToSubmit: P0_QUICK_NAVIGATION
+        }
+        layout {
+            sequence: 20
+            parentRegion: @quick-navigation
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 5
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+
+        column APPLICATION_NAME (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Application Name
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BREADCRUMB (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Breadcrumb
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression: #PAGE_ALIAS#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #BREADCRUMB#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #APPLICATION_NAME#: #PAGE_NAME#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PAGE_ALIAS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Page Alias
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PAGE_NAME (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Page Name
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P0_QUICK_NAVIGATION (
+        type: textField
+        label {
+            label: Quick Navigation
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @quick-navigation
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button guide (
+        buttonName: GUIDE
+        label: Vodič
+        layout {
+            sequence: 10
+            slot: beforeNavigationBar
+        }
+        appearance {
+            buttonTemplate: @icon
+            hot: true
+            templateOptions: #DEFAULT#
+            icon: fa-glasses
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sif.sif_guide
+                WHERE
+                    application_id = :APP_ID
+                    AND page_id = :APP_PAGE_ID
+                ```
+        }
+    )
+
+    dynamicAction highlight-required-items (
+        name: Highlight Required Items
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: jQuerySelector
+            jquerySelector: .t-Form-fieldContainer.is-required
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: highlight_required_empty_items();
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction notification-menu (
+        name: Notification menu
+        execution {
+            sequence: 10
+        }
+        when {
+            event: ready
+        }
+        security {
+            authorizationScheme: mustNotBePublicUser
+        }
+
+        action hide-side-navigation-menu (
+            name: Hide Side Navigation Menu
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    const body = document.querySelector(".t-Body-main");
+                    const button = document.querySelector("#t_Button_navControl");
+                    if (body !== null) {
+                        body.addEventListener("click", function(event) {
+                            const nav = document.querySelector(".t-Body-nav");
+                    
+                            if (document.body.classList.contains("js-navExpanded")) {
+                                if (nav && !nav.contains(event.target)) {
+                                    // Close the side nav by removing the expanded class
+                                    document.querySelector("#t_Button_navControl").click();
+                                    document.activeElement.blur();
+                                }
+                                
+                            }
+                        });
+                    }
+                    ```
+            }
+            execution {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM apex_application_pages
+                    WHERE
+                        lower(page_mode) = 'normal'
+                        AND page_id = :APP_PAGE_ID
+                        AND application_id = :APP_ID
+                    ```
+            }
+        )
+
+        action plugin-apex-notification (
+            action: plugin/apexNotificationMenu
+            settings {
+                sqlSource:
+                    ```sql
+                    SELECT
+                        note_icon,
+                        note_icon_color,
+                        note_header,
+                        note_text || '
+                            <br>
+                            <span class="anm-date"><i>' || note_time || '</i></span>    
+                        
+                        ' as note_text,
+                    
+                        apex_page.get_url(
+                            p_application => app_id,
+                            p_page        => note_page,
+                            p_items       => page_item,
+                            p_values      => id,
+                            p_request     => 'notification'
+                        ) as note_link,
+                        note_color,
+                        null as note_accept,
+                        null as note_decline,
+                        1 as order_no,
+                        created as note_time
+                    FROM
+                        core.vw_notifikacije
+                    WHERE
+                        korisnik_id = :APP_USER_ID
+                        AND read = 'N'
+                    
+                    UNION 
+                    
+                    SELECT
+                        'fa fa-eye' as note_icon,
+                        '#2271b1' as note_icon_color,
+                    
+                        'Pročitaj sve notifikacije' as note_header,
+                        'Klikom na ovu notifikaciju pročitaćete sve notifikacije i vratićete se nazad na početnu stranicu' as note_text,
+                    
+                        apex_page.get_url(
+                            p_page    => 1,
+                            p_request => 'readAllNotification'
+                        ) as note_link,
+                    
+                        '#2271b1' as note_color,
+                        null as note_accept,
+                        null as note_decline,
+                        0 as order_no,
+                        sysdate as note_time
+                    FROM
+                        core.vw_notifikacije
+                    WHERE
+                        korisnik_id = :APP_USER_ID
+                        AND read = 'N'
+                    
+                    ORDER BY order_no DESC, note_time DESC
+                    ```
+                configjson:
+                    ```javascript-browser
+                    {
+                        "refresh": 0,
+                        "mainIcon": "fa-bell-o",
+                        "mainIconColor": "white",
+                        "mainIconBackgroundColor": "rgba(0,0,0,0.0)",
+                        "mainIconBlinking": false,
+                        "counterBackgroundColor": "rgb(129, 187, 95)",
+                        "counterFontColor": "white",
+                        "linkTargetBlank": false,
+                        "showAlways": false,
+                        "browserNotifications": {
+                            "enabled": false,
+                            "cutBodyTextAfter": 100,
+                            "link": false
+                        },
+                        "accept": {
+                            "color": "#44e55c",
+                            "icon": "fa-check"
+                        },
+                        "decline": {
+                            "color": "#b73a21",
+                            "icon": "fa-close"
+                        },
+                        "hideOnRefresh": true
+                    }
+                    ```
+                escapeSpecialCharacters: false
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction page-dialog-guide (
+        name: Page Dialog Guide
+        execution {
+            sequence: 40
+        }
+        when {
+            event: custom
+            customEvent: dialog-guide-clicked
+            selectionType: jsExpression
+            javaScriptExpression: document
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sif.sif_guide
+                WHERE
+                    application_id = :APP_ID
+                    AND page_id = :APP_PAGE_ID
+                ```
+        }
+
+        action plugin-com-contextualhelp-plugin (
+            action: plugin/contextualHelp
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            advanced {
+                initJavaScriptFunction:
+                    ```javascript-browser
+                    function (options) {
+                        options.showProgress = true;
+                        options.animate = true;
+                        options.showButtons = ["next", "previous", "close"];
+                        options.steps = &APP_GUIDE.
+                        
+                        return options;
+                    }
+                    ```
+            }
+        )
+
+        action save-guide-shown (
+            name: Save GUIDE_SHOWN
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    var localStorage;
+                    
+                    if (apex.storage.hasLocalStorageSupport()) {
+                        localStorage = apex.storage.getScopedLocalStorage(
+                            { 
+                                prefix: "ERP", 
+                                useAppId: true,
+                                usePageId: true 
+                            }
+                        );
+                    
+                        localStorage.setItem("guide_shown", JSON.stringify("Y"));
+                    }
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction page-guide (
+        name: Page Guide
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @guide
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sif.sif_guide
+                WHERE
+                    application_id = :APP_ID
+                    AND page_id = :APP_PAGE_ID
+                ```
+        }
+
+        action plugin-com-contextualhelp-plugin (
+            action: plugin/contextualHelp
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            advanced {
+                initJavaScriptFunction:
+                    ```javascript-browser
+                    function (options) {
+                        options.showProgress = true;
+                        options.animate = true;
+                        options.showButtons = ["next", "previous", "close"];
+                        options.steps = &APP_GUIDE.
+                        
+                        return options;
+                    }
+                    
+                    ```
+            }
+        )
+
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 50
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: P0_QUICK_NAVIGATION
+        }
+        config {
+            buildOption: @feature-quick-navigation
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @quick-navigation-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

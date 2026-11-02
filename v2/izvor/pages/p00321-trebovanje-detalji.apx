@@ -1,0 +1,1269 @@
+page 321 (
+    name: Trebovanje / Detalji
+    alias: TREBOVANJE-DETALJI
+    title: Trebovanje / Detalji
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region stavke-trebovanja (
+        name: Stavke trebovanja
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-expanded
+                t-Region--noUI
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region stavke-trebovanja-ig (
+        name: Stavke trebovanja IG
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    stavka_id,
+                    kolicina,
+                    null as calculated
+                FROM
+                    trebovanje_stavke
+                WHERE
+                    trebovanje_id = :P321_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @stavke-trebovanja
+            slot: subRegions
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+                excel
+                pdf
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 248511763756615340
+        }
+
+        savedReport 2486585 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @CALCULATED
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column CALCULATED (
+            type: textField
+            heading {
+                heading: Stanje (količina)
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: CALCULATED
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KOLICINA (
+            type: numberField
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            validation {
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        column STAVKA_ID (
+            type: popupLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke-robe
+                nullDisplayValue: - Izaberite stavku -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: useLov
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+    )
+
+    region trebovanje-detalji (
+        name: Trebovanje / Detalji
+        title: Osnovne informacije
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-expanded
+                t-Region--noUI
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P321_BROJ (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P321_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        settings {
+            showTime: true
+        }
+        layout {
+            sequence: 110
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: DD.MM.YYYY HH24:MI
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P321_GODINA (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P321_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P321_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P321_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 100
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P321_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P321_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 150
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 4
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P321_OSNOVNO_SREDSTVO_ID (
+        type: selectOne
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva
+        }
+        layout {
+            sequence: 130
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P321_RADNI_NALOG_ID (
+        type: selectOne
+        label {
+            label: Radni nalog
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv AS d,
+                    id AS r
+                FROM
+                    radni_nalozi
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+        layout {
+            sequence: 120
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P321_SKLADISTE_ID (
+        type: selectOne
+        label {
+            label: Skladište
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-skladista
+        }
+        layout {
+            sequence: 70
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    trebovanje_stavke
+                WHERE
+                    trebovanje_id = :P321_ID
+                ```
+        }
+    )
+
+    pageItem P321_SKLADISTE_PRENOS_ID (
+        type: selectOne
+        label {
+            label: Prenos u skladište
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-skladista
+        }
+        layout {
+            sequence: 140
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P321_TIP_KRETANJA_ID (
+        type: selectOne
+        label {
+            label: Tip kretanja
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv as d,
+                    id as r
+                FROM
+                    sif.acc_tipovi_kretanja_robe
+                WHERE
+                    valid = 'Y'
+                    AND tip_kretanja = 'I'
+                ```
+        }
+        layout {
+            sequence: 80
+            region: @trebovanje-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P321_TIP_KRETANJA_SIFRA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 90
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P321_ZAKLJUCANO (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @trebovanje-detalji
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P321_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P321_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P321_ID
+        }
+    )
+
+    dynamicAction calculate (
+        name: Calculate
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: columns
+            interactiveGrid: @stavke-trebovanja-ig
+            columns: STAVKA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    SELECT
+                        coalesce(stanje_kolicina, 0)
+                    INTO
+                        :CALCULATED
+                    FROM
+                        vw_skladiste_stavke
+                    WHERE
+                        stavka_id = :STAVKA_ID
+                        AND skladiste_id = :P321_SKLADISTE_ID;
+                    
+                    EXCEPTION
+                        WHEN no_data_found THEN
+                            :CALCULATED := 0;
+                    
+                    ```
+                itemsToSubmit: CALCULATED
+                itemsToReturn: CALCULATED
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-sifra (
+        name: Get sifra
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P321_TIP_KRETANJA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P321_TIP_KRETANJA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    sif.acc_pkg.get_tip_kretanja_robe (
+                        p_id    => :P321_TIP_KRETANJA_ID,
+                        p_sifra => :P321_TIP_KRETANJA_SIFRA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P321_TIP_KRETANJA_ID
+                    P321_TIP_KRETANJA_SIFRA
+                ]
+                itemsToReturn: P321_TIP_KRETANJA_SIFRA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction i-os (
+        name: I_OS
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P321_TIP_KRETANJA_SIFRA
+        }
+        clientSideCondition {
+            type: item=value
+            item: P321_TIP_KRETANJA_SIFRA
+            value: I_OS
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P321_OSNOVNO_SREDSTVO_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P321_OSNOVNO_SREDSTVO_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction i-pr (
+        name: I_PR
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P321_TIP_KRETANJA_SIFRA
+        }
+        clientSideCondition {
+            type: item=value
+            item: P321_TIP_KRETANJA_SIFRA
+            value: I_PR
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P321_RADNI_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P321_RADNI_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction ms-sk-ms-oj (
+        name: MS_SK,MS_OJ
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: P321_TIP_KRETANJA_SIFRA
+        }
+        clientSideCondition {
+            type: itemIsInList
+            item: P321_TIP_KRETANJA_SIFRA
+            list: [
+                MS_SK
+                MS_OJ
+            ]
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P321_SKLADISTE_PRENOS_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P321_SKLADISTE_PRENOS_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction new (
+        name: New
+        execution {
+            sequence: 90
+        }
+        when {
+            selectionType: items
+            items: P321_SKLADISTE_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P321_SKLADISTE_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: DATUM NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P321_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P321_DATUM
+        }
+    )
+
+    validation oj-not-null (
+        name: OJ NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P321_OJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P321_OJ_ID
+        }
+    )
+
+    validation skladiste-not-null (
+        name: SKLADISTE NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P321_SKLADISTE_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P321_SKLADISTE_ID
+        }
+    )
+
+    validation tip-kretanja-not-null (
+        name: TIP KRETANJA NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P321_TIP_KRETANJA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P321_TIP_KRETANJA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 189526178283083802
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.delete_trebovanje (
+                    p_id => :P321_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 248678612393345210
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.get_trebovanje (
+                    p_id                  => :P321_ID,
+                    p_ooj_id              => :P321_OOJ_ID,
+                    p_tip_kretanja_id     => :P321_TIP_KRETANJA_ID,
+                    p_skladiste_id        => :P321_SKLADISTE_ID,
+                    p_osnovno_sredstvo_id => :P321_OSNOVNO_SREDSTVO_ID,
+                    p_radni_nalog_id      => :P321_RADNI_NALOG_ID,
+                    p_oj_id               => :P321_OJ_ID,
+                    p_broj                => :P321_BROJ,
+                    p_naziv               => :P321_NAZIV,
+                    p_godina              => :P321_GODINA,
+                    p_datum               => :P321_DATUM,
+                    p_opis                => :P321_OPIS,
+                    p_zakljucano          => :P321_ZAKLJUCANO
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 248678058799345204
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P321_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P321_ID := skladista_pkg.insert_trebovanje (
+                    p_ooj_id              => :APP_OOJ_ID,
+                    p_tip_kretanja_id     => :P321_TIP_KRETANJA_ID,
+                    p_skladiste_id        => :P321_SKLADISTE_ID,
+                    p_osnovno_sredstvo_id => :P321_OSNOVNO_SREDSTVO_ID,
+                    p_radni_nalog_id      => :P321_RADNI_NALOG_ID,
+                    p_skladiste_prenos_id => :P321_SKLADISTE_PRENOS_ID,
+                    p_oj_id               => :P321_OJ_ID,
+                    p_radnik_id           => :APP_RADNIK_ID,
+                    p_broj                => :P321_BROJ,
+                    p_naziv               => :P321_NAZIV,
+                    p_godina              => :APP_GODINA,
+                    p_datum               => to_date(:P321_DATUM, 'DD.MM.YYYY HH24:MI'),
+                    p_opis                => :P321_OPIS,
+                    p_korisnik_id         => :APP_USER_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 189497796249919314
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup-new (
+        name: Setup NEW
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.get_brojac (
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_godina             => :APP_GODINA,
+                    p_vrsta_naloga_sifra => 'tr',
+                    p_broj               => :P321_BROJ,
+                    p_naziv              => :P321_NAZIV
+                );
+                
+                :P321_DATUM := to_char(current_date, 'DD.MM.YYYY HH24:MI');
+                
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'TREBOVANJE_STAVKE'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 189496552150919302
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P321_ID
+        }
+    )
+
+    process stavke-ig (
+        name: Stavke IG
+        type: executeCode
+        editableRegion: @stavke-trebovanja-ig
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'D' THEN -- DELETE
+                    skladista_pkg.delete_trebovanje_stavka (
+                        p_id => :ID
+                    );
+                
+                ELSIF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                    skladista_pkg.insert_trebovanje_stavka(
+                        p_trebovanje_id => :P321_ID,
+                        p_stavka_id     => :STAVKA_ID,
+                        p_kolicina      => :KOLICINA
+                    );
+                
+                    RETURN;
+                ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    skladista_pkg.update_trebovanje_stavka (
+                        p_id            => :ID,
+                        p_trebovanje_id => :P321_ID,
+                        p_stavka_id     => :STAVKA_ID,
+                        p_kolicina      => :KOLICINA
+                    );
+                
+                    RETURN;
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 248678542130345209
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.update_trebovanje (
+                    p_id                  => :P321_ID,
+                    p_tip_kretanja_id     => :P321_TIP_KRETANJA_ID,
+                    p_skladiste_id        => :P321_SKLADISTE_ID,
+                    p_osnovno_sredstvo_id => :P321_OSNOVNO_SREDSTVO_ID,
+                    p_radni_nalog_id      => :P321_RADNI_NALOG_ID,
+                    p_skladiste_prenos_id => :P321_SKLADISTE_PRENOS_ID,
+                    p_oj_id               => :P321_OJ_ID,
+                    p_radnik_id           => :APP_RADNIK_ID,
+                    p_opis                => :P321_OPIS,
+                    p_korisnik_id         => :APP_USER_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 248512754677615350
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

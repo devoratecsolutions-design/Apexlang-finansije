@@ -1,0 +1,78 @@
+textMessage APEX.DIALOG.CANCEL (
+    message {
+        text: Odustani
+        language: en
+        usedInJavaScript: true
+    }
+)
+
+textMessage APEX.NUMBER_FIELD.VALUE_INVALID (
+    message {
+        text: #LABEL# mora biti broj.
+        language: en
+        usedInJavaScript: true
+    }
+    subscription {
+        master: @/200/APEX.NUMBER_FIELD.VALUE_INVALID/en
+    }
+)
+
+textMessage APEX.PWA.PUSH.SUBSCRIPTION_FAILED (
+    message {
+        text: Ovaj uređaj nije uspio omogućiti push obavještenja.
+        language: en
+    }
+    subscription {
+        master: @/200/APEX.PWA.PUSH.SUBSCRIPTION_FAILED/en
+    }
+)
+
+textMessage DELETE_MSG (
+    message {
+        text: Da li ste sigurni da želite da obrišete odabranu stavku?
+        language: en
+    }
+    subscription {
+        master: @/200/DELETE_MSG/en
+    }
+)
+
+textMessage APEX.DATEPICKER_VALUE_LESS_MIN_DATE (
+    message {
+        text: #LABEL# ne može biti prije %0.
+        language: en
+        usedInJavaScript: true
+    }
+)
+
+textMessage APEX.DATEPICKER_VALUE_GREATER_MAX_DATE (
+    message {
+        text: #LABEL# ne može biti poslije %0.
+        language: en
+        usedInJavaScript: true
+    }
+)
+
+textMessage APEX.PAGE_ITEM_IS_REQUIRED (
+    message {
+        text: #LABEL# je obavezno polje.
+        language: en
+        usedInJavaScript: true
+    }
+)
+
+textMessage FLOW.SINGLE_VALIDATION_ERROR (
+    message {
+        text: Pronađena je 1 greška.
+        language: en
+        usedInJavaScript: true
+    }
+)
+
+textMessage FLOW.VALIDATION_ERROR (
+    message {
+        text: Broj grešaka: %0.
+        language: en
+        usedInJavaScript: true
+    }
+)

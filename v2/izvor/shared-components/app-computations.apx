@@ -1,0 +1,21 @@
+appComputation app-godina (
+    itemName: APP_GODINA
+    execution {
+        sequence: 10
+        point: afterAuthentication
+    }
+    computation {
+        type: sqlQuerySingleValue
+        sqlQuery:
+            ```sql
+            SELECT
+                max(godina)
+            FROM
+                core.protokoli
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+            ```
+    }
+)
+

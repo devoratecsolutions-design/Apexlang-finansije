@@ -1,0 +1,686 @@
+page 330 (
+    name: Dokumenti skladišta
+    alias: OPERACIJE
+    title: Dokumenti skladišta
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @robno-materijalno-dokumenti
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region dokumenti-skladiste (
+        name: "Dokumenti [Skladište: &P330_SKLADISTE.]"
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region izaberite-skladiste (
+        name: Izaberite skladište
+        type: staticContent
+        source {
+            htmlCode: Izaberite skladište u meniju <b>Skladište</b> u zaglavlju aplikacije. Prikazuju se dokumenti izabranog skladišta.
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: A_SKLADISTE_ID
+        }
+    )
+
+    region menu-dokumenti-novi (
+        name: Menu - Dokumenti - Novi
+        type: list
+        source {
+            list: @menu-dokumenti-ulaz
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: novi
+        }
+        componentAppearance {
+            listTemplate: @menu-popup
+            templateOptions: [
+                #DEFAULT#
+                js-addActions
+                js-menu-callout
+            ]
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-page
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: A_SKLADISTE_ID
+        }
+    )
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @dokumenti-report
+        }
+        layout {
+            sequence: 9
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P330_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P330_VRSTA (
+            type: checkboxGroup
+            label {
+                label: Vrsta dokumenta
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT DISTINCT vrsta_naziv AS d, vrsta_sifra AS r
+                    FROM vw_rm_dokumenti
+                    WHERE ooj_id = :APP_OOJ_ID AND skladiste_id = :A_SKLADISTE_ID
+                    ORDER BY 1
+                    ```
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VRSTA_SIFRA
+            }
+        )
+
+        filter P330_STATUS (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:U pripremi;priprema,Zaključen;zakljucena,Proknjižen;proknjizena,Storniran;storno
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: DOK_STATUS
+            }
+        )
+
+        filter P330_KLIJENT_ID (
+            type: radioGroup
+            label {
+                label: Dobavljač
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti-dobavljaci
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                clientSideFiltering: true
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: KLIJENT_ID
+            }
+        )
+
+    )
+
+    region dokumenti-report (
+        name: Dokumenti skladišta
+        title: Dokumenti skladišta
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    vrsta_naziv,
+                    datum,
+                    klijent_naziv,
+                    otpremnica_broj,
+                    to_char(otpremnica_datum, 'DD.MM.YYYY') AS otpremnica_datum,
+                    stavki,
+                    to_char(kolicina, 'FM999G999G999G990D999') AS kolicina,
+                    sb_nedostaje,
+                    kalkulacija_naziv,
+                    opis,
+                    vrsta_sifra,
+                    status,
+                    klijent_id,
+                    CASE
+                        WHEN stornirano = 'Y' THEN 'storno'
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'proknjizena'
+                        WHEN status = 'Z' THEN 'zakljucena'
+                        ELSE 'priprema'
+                    END AS dok_status,
+                    CASE
+                        WHEN stornirano = 'Y' THEN 'Storniran'
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
+                        WHEN status = 'Z' THEN 'Zaključen'
+                        WHEN u_kalkulaciji_id IS NOT NULL THEN 'U kalkulaciji'
+                        ELSE 'U pripremi'
+                    END AS dok_status_naziv,
+                    CASE
+                        WHEN stornirano = 'Y' THEN 'fa-ban'
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'fa-book'
+                        WHEN status = 'Z' THEN 'fa-lock'
+                        WHEN u_kalkulaciji_id IS NOT NULL THEN 'fa-calculator'
+                        ELSE 'fa-pencil'
+                    END AS dok_status_ikona,
+                    CASE WHEN sb_nedostaje > 0 THEN 'Y' END AS sb_upozorenje,
+                    CASE
+                        WHEN v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => id, p_clear_cache => 331)
+                        ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => id)
+                    END AS url
+                FROM
+                    vw_rm_dokumenti
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                    AND skladiste_id = :A_SKLADISTE_ID
+                ORDER BY
+                    datum DESC, id DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: Nema dokumenata za izabrane filtere.
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+                htmlExpression:
+                    ```html
+                    <span class="fin-date">#DATUM#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Dobavljač / veza
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OTPREMNICA_BROJ (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+        column OTPREMNICA_DATUM (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+        column STAVKI (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Stavki
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+                htmlExpression:
+                    ```html
+                    #STAVKI#<span class="fin-num-sub">kol. #KOLICINA#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 390
+            }
+        )
+
+        column SB_NEDOSTAJE (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 400
+            }
+        )
+
+        column KALKULACIJA_NAZIV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 410
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_SIFRA (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 430
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 440
+            }
+        )
+
+        column KLIJENT_ID (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 450
+            }
+        )
+
+        column DOK_STATUS (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 460
+            }
+        )
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-status fin-status--#DOK_STATUS#"><span class="fa #DOK_STATUS_IKONA#" aria-hidden="true"></span>#DOK_STATUS_NAZIV#</span>{if SB_UPOZORENJE/}<span class="fin-chip fin-chip--warning" title="Stavke bez kompletnih serijskih brojeva"><span class="fa fa-barcode" aria-hidden="true"></span>SB: #SB_NEDOSTAJE#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOK_STATUS_IKONA (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 480
+            }
+        )
+
+        column SB_UPOZORENJE (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 490
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 500
+            }
+        )
+
+    )
+
+    pageItem P330_SKLADISTE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: regionBody
+        }
+    )
+
+    button knjizi (
+        buttonName: KNJIZI
+        label: Knjiži dokumente
+        layout {
+            sequence: 10
+            region: @dokumenti-skladiste
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-book
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 334
+                clearCache: 334
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button novi-dokument (
+        buttonName: NOVI_DOKUMENT
+        label: Novi dokument
+        layout {
+            sequence: 20
+            region: @dokumenti-skladiste
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        advanced {
+            customAttributes: data-menu="novi_menu"
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: A_SKLADISTE_ID
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Zatvoren dijalog - osvježi
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: jQuerySelector
+            jquerySelector: body
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @dokumenti-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @faceted-search
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    computation p330-skladiste (
+        itemName: P330_SKLADISTE
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT sifra || ' - ' || naziv FROM skladista WHERE id = :A_SKLADISTE_ID
+                ```
+        }
+    )
+
+)

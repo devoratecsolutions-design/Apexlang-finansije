@@ -1,0 +1,556 @@
+page 363 (
+    name: Popis / Unos popisa
+    alias: POPIS-UNOS-POPISA
+    title: Popis / Unos popisa
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region osnovne-informacije (
+        name: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    datum,
+                    opis,
+                    zakljucano
+                FROM
+                    popisi
+                WHERE
+                    id = :P363_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column ZAKLJUCANO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Zaključano
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ZAKLJUCANO/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    ```
+            }
+        )
+
+    )
+
+    region stavke (
+        name: Stavke
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    redni_broj,
+                    stavka_id,
+                    prethodna_kolicina,
+                    popis_kolicina
+                FROM
+                    popis_stavke
+                WHERE
+                    popis_id = :P363_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        toolbar {
+            show: false
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 191476505506484229
+        }
+
+        savedReport 1919067 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @REDNI_BROJ
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @PRETHODNA_KOLICINA
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @POPIS_KOLICINA
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 6
+                }
+            )
+
+            sort (
+                column: @REDNI_BROJ
+                sort {
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column POPIS_KOLICINA (
+            type: numberField
+            heading {
+                heading: Količina (popis)
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: POPIS_KOLICINA
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PRETHODNA_KOLICINA (
+            type: displayOnly
+            heading {
+                heading: Količina (aplikativno)
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: PRETHODNA_KOLICINA
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column REDNI_BROJ (
+            type: displayOnly
+            heading {
+                heading: RB
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke-robe
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column STAVKA_ID (
+            type: displayOnly
+            heading {
+                heading: Stavka
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke-robe
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+    )
+
+    pageItem P363_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button popis (
+        buttonName: POPIS
+        label: Popis
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-signature
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button zakljucaj (
+        buttonName: ZAKLJUCAJ
+        label: Zaključaj
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process popis (
+        name: Popis
+        type: executeCode
+        editableRegion: @stavke
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.update_popis_stavka (
+                    p_id             => :ID,
+                    p_popis_kolicina => :POPIS_KOLICINA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 191477524575484239
+        }
+        serverSideCondition {
+            whenButtonPressed: @popis
+        }
+    )
+
+    process zakljucaj (
+        name: Zakljucaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.zakljucaj_popis (
+                    p_ooj_id   => :APP_OOJ_ID,
+                    p_godina   => :APP_GODINA,
+                    p_popis_id => :P363_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 191477749092484241
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj
+        }
+    )
+
+)
+

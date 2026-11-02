@@ -1,0 +1,312 @@
+page 20061 (
+    name: Preuzimanje sesije
+    alias: PREUZIMANJE-SESIJE1
+    title: Preuzimanje sesije
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region odabir-osnovne-org-jedinice (
+        name: Odabir Osnovne org jedinice
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    pageItem P20061_FIRMA_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @odabir-osnovne-org-jedinice
+            slot: regionBody
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P20061_KORISNIK_ID (
+        type: selectOne
+        label {
+            label: Korisnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    korisnik_naziv d,
+                    id r
+                FROM
+                    core.vw_korisnici
+                WHERE
+                    firma_id = :P20061_FIRMA_ID
+                    AND valid = 'Y'
+                    AND biro_korisnik = 'Y'
+                
+                ```
+        }
+        cascadingLov {
+            parentItems: P20061_FIRMA_ID
+        }
+        layout {
+            sequence: 30
+            region: @odabir-osnovne-org-jedinice
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P20061_OOJ_ID (
+        type: selectOne
+        label {
+            label: Osnovna organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select 
+                    naziv as d, 
+                    id as r 
+                from 
+                    core.ooj
+                where 
+                    firma_id = :P20061_FIRMA_ID
+                    and valid = 'Y'
+                ```
+        }
+        cascadingLov {
+            parentItems: P20061_FIRMA_ID
+            itemsToSubmit: P20061_OOJ_ID
+        }
+        layout {
+            sequence: 40
+            region: @odabir-osnovne-org-jedinice
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P20061_PAGE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @odabir-osnovne-org-jedinice
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+            executeValidations: false
+        }
+    )
+
+    button rejoin (
+        buttonName: REJOIN
+        label: Preuzmi sesiju
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrows-h
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation korisnik-id-not-null (
+        name: Korisnik ID NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P20061_KORISNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P20061_KORISNIK_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @rejoin
+        }
+    )
+
+    validation ooj-id-not-null (
+        name: Ooj ID NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P20061_OOJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P20061_OOJ_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @rejoin
+        }
+    )
+
+    process rejoin-session (
+        name: Rejoin Session
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.rejoin_session (
+                    p_firma_id        => :APP_FIRMA_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_user_id         => :APP_USER_ID,
+                    p_radnik_id       => :APP_RADNIK_ID,
+                    p_session_changed => :APP_SESSION_CHANGED,
+                    p_firma_id_new    => :P20061_FIRMA_ID,
+                    p_ooj_id_new      => :P20061_OOJ_ID,
+                    p_user_id_new     => :P20061_KORISNIK_ID,
+                    p_radnik_id_new   => null,
+                    p_firma_id_back   => :APP_FIRMA_ID_BACK,
+                    p_ooj_id_back     => :APP_OOJ_ID_BACK,
+                    p_user_id_back    => :APP_USER_ID_BACK,
+                    p_radnik_id_back  => :APP_RADNIK_ID_BACK
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 391963561056636360
+        }
+    )
+
+    branch (
+        name: Go To Page &P20061_PAGE_ID.
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: &P20061_PAGE_ID.
+                clearCache: 20061
+            }
+        }
+    )
+
+)
+

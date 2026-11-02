@@ -1,0 +1,984 @@
+page 230 (
+    name: PDV Prijava
+    alias: PDV-PRIJAVA
+    title: PDV Prijava
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    css {
+        inline:
+            ```css
+            #pdv .a-GV-header {
+            
+                height: 60px;
+            
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @glavna-knjiga-pdv-prijava
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>"PDV prijava"</em></b> nalazi se polje <b><em>"Poreski period"</em></b> 
+            izvještaja u kojem je potrebno odabrati period za koji se popunjava prijava. </br>
+            Nakon odabira perioda, pritiskom na dugme <b><em>"Generiši PDV"</em></b> prijavu sistem automatski 
+            formira prijavu na osnovu evidentiranih ulaznih i izlaznih računa.</br>
+            </br>
+            Dugme <b><em>"Generisanje PDV"</em></b> prijave radi tako ukoliko u odabranom poreskom periodu nije 
+            bilo promjena u dokumentima, sistem će generisati prijavu identičnu prethodnoj, 
+            uz mogućnost pregleda i poređenja sa ranije kreiranim prijavama. </br>
+            
+            Nakon što unesete sva potrebna polja, sistem vam nudi dvije mogućnosti pregleda:
+            <ul>
+                <li>Pregled kroz izvještaj – odmah na istoj stranici prijava se prikazuje u obliku izvještaja.</li>
+                <li>Link <b><em>„Pregled“</em></b> – klikom na ovaj link bićete preusmjereni na posebnu stranicu 
+                kreiranu radi lakše preglednosti i detaljnog prikaza PDV prijave.</li>
+            </ul> </br>
+            Na stranici pregleda dostupne su sljedeće funkcionalnosti:
+            <ul>
+                <li>Dugme <b><em>„Štampaj“</em></b> – omogućava preuzimanje PDV prijave u PDF formatu, spremnom za arhiviranje 
+                    ili slanje nadležnim organima.</li>
+                <li>Dugme <b><em>„Knjiži“</em></b> – pokreće automatsko knjiženje PDV prijave u glavnu knjigu. 
+                    Sistem tada zatvara konta PDV obaveze i pretporeza na odgovarajuće kontne pozicije, 
+                    bez potrebe za ručnim unosom.</li>
+            </ul>
+            ```
+    }
+
+    region pdv-prijava (
+        name: PDV Prijava
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        accessibility {
+            useLandmark: false
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pdv-prjava (
+        name: PDV PRJAVA
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    isporuke_p11              as p_11,
+                    izvoz_p12                 as p_12,
+                    isporuke_osl_pdv_p13      as p_13,
+                    nabavke_p21               as p_21,
+                    uvoz_p22                  as p_22,
+                    nabavke_poljoprivreda_p23 as p_23,
+                    pdv_izlaz_p51             as p_51,
+                    pdv_ulaz_p61              as p_61,
+                    pdv_reg_obveznici_p41     as p_41,
+                    pdv_uvoz_p42              as p_42,
+                    pausal_poljoprivreda_p43  as p_43,
+                    fbih_p32                  as p_32,
+                    rs_p33                    as p_33,
+                    dbr_p34                   as p_34,
+                    pdv_uplata_povrat_p71     as p_71,
+                    CASE
+                        WHEN valid = 'Y' THEN
+                            '<span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                                <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                            </span>'
+                        ELSE
+                            '<span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                                <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                            </span>'
+                    END AS valid,
+                    created
+                FROM 
+                    pdv_prijave
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND poreski_period = :P230_PORESKI_PERIOD
+                ```
+            pageItemsToSubmit: P230_PORESKI_PERIOD
+        }
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: fin-grid
+        }
+        componentAppearance {
+            selectFirstRow: false
+            fixedRowHeight: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            show: false
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.defaultGridViewOptions = {
+                        reorderColumns: false,
+                        footer: false
+                    }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 110504738538941632
+        }
+
+        savedReport 1106278 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @P_11
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @P_12
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @P_13
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @P_21
+                layout {
+                    width: 177
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @P_22
+                layout {
+                    width: 105
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @P_23
+                layout {
+                    width: 225
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @P_51
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @P_61
+                layout {
+                    sequence: 9
+                }
+            )
+
+            displayColumn (
+                column: @P_41
+                layout {
+                    sequence: 10
+                }
+            )
+
+            displayColumn (
+                column: @P_42
+                layout {
+                    sequence: 11
+                }
+            )
+
+            displayColumn (
+                column: @P_43
+                layout {
+                    sequence: 12
+                }
+            )
+
+            displayColumn (
+                column: @P_32
+                layout {
+                    sequence: 13
+                }
+            )
+
+            displayColumn (
+                column: @P_33
+                layout {
+                    sequence: 14
+                }
+            )
+
+            displayColumn (
+                column: @P_34
+                layout {
+                    sequence: 15
+                }
+            )
+
+            displayColumn (
+                column: @P_71
+                layout {
+                    sequence: 16
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @VALID
+                layout {
+                    sequence: 17
+                }
+            )
+
+            displayColumn (
+                column: @CREATED
+                layout {
+                    show: false
+                    sequence: 18
+                }
+            )
+
+            sort (
+                column: @CREATED
+                sort {
+                    direction: desc
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+        )
+
+        columnGroup izlaz (
+            heading: IZLAZ
+        )
+
+        columnGroup izlazni-pdv (
+            heading: IZLAZNI PDV
+        )
+
+        columnGroup krajnja-potršnja (
+            heading: KRAJNJA POTRŠNJA
+        )
+
+        columnGroup ulaz (
+            heading: ULAZ
+        )
+
+        columnGroup ulazni-pdv (
+            heading: ULAZNI PDV
+        )
+
+        column CREATED (
+            type: displayOnly
+            layout {
+                sequence: 190
+            }
+            source {
+                databaseColumn: CREATED
+                dataType: date
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+            }
+        )
+
+        column ID (
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 232
+                    items: {
+                        P232_ID: &ID.
+                    }
+                    clearCache: 232
+                }
+                linkText: <img src="#APEX_FILES#app_ui/img/icons/apex-edit-view.png" class="apex-edit-view" alt="">
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_11 (
+            type: numberField
+            heading {
+                heading: Isporuke - polje 11
+            }
+            layout {
+                sequence: 20
+                group: @izlaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_11
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_12 (
+            type: numberField
+            heading {
+                heading: Izvoz - polje 12
+            }
+            layout {
+                sequence: 30
+                group: @izlaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_12
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_13 (
+            type: numberField
+            heading {
+                heading: Isporuke osl. PDV - polje 13
+            }
+            layout {
+                sequence: 40
+                group: @izlaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_13
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_21 (
+            type: numberField
+            heading {
+                heading: Nabavke - polje 21
+            }
+            layout {
+                sequence: 50
+                group: @ulaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_21
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_22 (
+            type: numberField
+            heading {
+                heading: Uvoz - polje 22
+            }
+            layout {
+                sequence: 60
+                group: @ulaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_22
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_23 (
+            type: numberField
+            heading {
+                heading: Nabavke poljop. - polje 23
+            }
+            layout {
+                sequence: 70
+                group: @ulaz
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_23
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_32 (
+            type: numberField
+            heading {
+                heading: FBiH - polje 32
+            }
+            layout {
+                sequence: 130
+                group: @krajnja-potršnja
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_32
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_33 (
+            type: numberField
+            heading {
+                heading: RS - polje 33
+            }
+            layout {
+                sequence: 140
+                group: @krajnja-potršnja
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_33
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_34 (
+            type: numberField
+            heading {
+                heading: D. Brč - polje 34"
+            }
+            layout {
+                sequence: 150
+                group: @krajnja-potršnja
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_34
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_41 (
+            type: numberField
+            heading {
+                heading: PDV reg. obveznici - polje 41
+            }
+            layout {
+                sequence: 100
+                group: @ulazni-pdv
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_41
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_42 (
+            type: numberField
+            heading {
+                heading: PDV uvoz - polje 42
+            }
+            layout {
+                sequence: 110
+                group: @ulazni-pdv
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_42
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_43 (
+            type: numberField
+            heading {
+                heading: Paušal poljop. - polje 43
+            }
+            layout {
+                sequence: 120
+                group: @ulazni-pdv
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_43
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_51 (
+            type: numberField
+            heading {
+                heading: PDV Izlaz - polje 51
+            }
+            layout {
+                sequence: 80
+                group: @izlazni-pdv
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_51
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_61 (
+            type: numberField
+            heading {
+                heading: PDV Ulaz - polje 61
+            }
+            layout {
+                sequence: 90
+                group: @ulazni-pdv
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_61
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column P_71 (
+            type: numberField
+            heading {
+                heading: PDV uplata/povrat - polje 71
+            }
+            layout {
+                sequence: 160
+                group: @krajnja-potršnja
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: P_71
+                dataType: number
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column VALID (
+            type: displayOnly
+            heading {
+                heading: Aktivno
+            }
+            settings {
+                format: html
+            }
+            layout {
+                sequence: 180
+            }
+            source {
+                databaseColumn: VALID
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+    )
+
+    pageItem P230_PORESKI_PERIOD (
+        type: selectOne
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @poreski-period
+        }
+        layout {
+            sequence: 10
+            slot: body
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button generate-pdv (
+        buttonName: GENERATE_PDV
+        label: Generisanje PDV prijave
+        layout {
+            sequence: 10
+            region: @pdv-prijava
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 231
+                clearCache: 231
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @generate-pdv
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pdv-prjava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction prikazi-podatke (
+        name: Prikazi podatke
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P230_PORESKI_PERIOD
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pdv-prjava
+            }
+            execution {
+                sequence: 110
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

@@ -1,0 +1,588 @@
+page 452 (
+    name: Blagajne / Detalji
+    alias: BLAGAJNE-DETALJI
+    title: Blagajne / Detalji
+    pageGroup: @blagajna
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region blagajne-detalji (
+        name: Blagajne / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P452_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @blagajne-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P452_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Konto
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @kontni-okvir-klase-ooj
+        }
+        layout {
+            sequence: 40
+            region: @blagajne-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P452_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @blagajne-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P452_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @blagajne-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P452_TIP (
+        type: radioGroup
+        label {
+            label: Tip
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @tip-blagajne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            region: @blagajne-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P452_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 90
+            region: @blagajne-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P452_ID
+        }
+    )
+
+    pageItem P452_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 60
+            region: @blagajne-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P452_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P452_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P452_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-valuta (
+        name: Toggle - Valuta
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P452_TIP
+        }
+        clientSideCondition {
+            type: item=value
+            item: P452_TIP
+            value: DB
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P452_VALUTA_ID := 1;
+                itemsToSubmit: P452_VALUTA_ID
+                itemsToReturn: P452_VALUTA_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P452_VALUTA_ID
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P452_VALUTA_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation kontna-klasa-not-null (
+        name: Kontna klasa NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P452_KONTNA_KLASA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P452_KONTNA_KLASA_ID
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P452_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P452_NAZIV
+        }
+    )
+
+    validation tip-not-null (
+        name: Tip NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P452_TIP
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P452_TIP
+        }
+    )
+
+    validation valuta-not-null (
+        name: Valuta NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P452_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P452_VALUTA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 134814508581532343
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.delete_blagajna (
+                    p_id => :P452_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 129788344204618441
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.get_blagajna (
+                    p_id              => :P452_ID,
+                    p_ooj_id          => :P452_OOJ_ID,
+                    p_kontna_klasa_id => :P452_KONTNA_KLASA_ID,
+                    p_valuta_id       => :P452_VALUTA_ID,
+                    p_tip             => :P452_TIP,
+                    p_naziv           => :P452_NAZIV,
+                    p_valid           => :P452_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 129787750373618435
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P452_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.insert_blagajna (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_kontna_klasa_id => :P452_KONTNA_KLASA_ID,
+                    p_valuta_id       => :P452_VALUTA_ID,
+                    p_tip             => :P452_TIP,
+                    p_naziv           => :P452_NAZIV
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 129788110412618439
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.update_blagajna (
+                    p_id              => :P452_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_kontna_klasa_id => :P452_KONTNA_KLASA_ID,
+                    p_valuta_id       => :P452_VALUTA_ID,
+                    p_tip             => :P452_TIP,
+                    p_naziv           => :P452_NAZIV,
+                    p_valid           => :P452_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 129788218281618440
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

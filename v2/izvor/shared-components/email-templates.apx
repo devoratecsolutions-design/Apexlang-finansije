@@ -1,0 +1,352 @@
+emailTemplate FAKTURA (
+    name: FAKTURA
+    emailSubject: #SUBJECT#
+    htmlFormat {
+        header: <h1>#SUBJECT#</h1>
+        body:
+            ```html
+            <p>#PORUKA!RAW#</p>
+            
+            ```
+        footer: #MAIL_FOOTER!RAW#
+    }
+    advanced {
+        versionNumber: 2
+        htmlTemplate:
+            ```html
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; text-decoration: none; color: #000000;">
+                <table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="max-width: 640px; margin: 0 auto; padding: 0; background-color: #fdfdfd; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="text-align: center; margin-bottom: 20px; padding: 20px 20px 10px;">
+                                        #HEADER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 1.5; padding: 0px 20px 0px;">
+                                        #BODY#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td style="margin-top: 20px; text-align: center; color: #888; background-color: #e1e1e1; padding: 20px; border-radius: 10px;">
+                                        #FOOTER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ```
+    }
+)
+
+emailTemplate MASTER_TEMPLATE (
+    name: MASTER TEMPLATE
+    emailSubject: #SUBJECT#
+    htmlFormat {
+        header: <h1>#SUBJECT#</h1>
+        body:
+            ```html
+            <p>Poštovani <b style="color: #112340;">#NAME#</b>,</p>
+            <p>Koristite dugme ispod da pristupite <b style="color: #112340;">ERP</b> korisničkoj aplikaciji:</p>
+            <p><table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 10px 20px; background-color: #112340; color: #ffffff; border-radius: 5px;">
+                        <a href="#LOGIN_URL#" target="_" style="text-decoration: none; color:white">Prijava</a>
+                    </td>
+                </tr>
+            </table></p>
+            ```
+        footer: #MAIL_FOOTER!RAW#
+    }
+    advanced {
+        versionNumber: 2
+        htmlTemplate:
+            ```html
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; text-decoration: none; color: #000000;">
+                <table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="max-width: 640px; margin: 0 auto; padding: 0; background-color: #fdfdfd; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="text-align: center; margin-bottom: 20px; padding: 20px 20px 10px;">
+                                        #HEADER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 1.5; padding: 0px 20px 0px;">
+                                        #BODY#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td style="margin-top: 20px; text-align: center; color: #888; background-color: #e1e1e1; padding: 20px; border-radius: 10px;">
+                                        #FOOTER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ```
+    }
+    subscription {
+        master: @/200/MASTER_TEMPLATE
+    }
+)
+
+emailTemplate OS_ODRZAVANJE (
+    name: OS ODRZAVANJE
+    emailSubject: #SUBJECT#
+    htmlFormat {
+        header: <h1>#SUBJECT#</h1>
+        body:
+            ```html
+            <p>Poštovani <b style="color: #112340;">#NAME#</b>,</p>
+            <p>Primili ste ovaj mail kao podsjetnik za naredno održavanje (#OS_RAZLIKA# dana) osnovnog sredstva <b style="color: #112340;">#OS_NAZIV#</b>.</p>
+            <p>Informacije o prethodnom održavanju:</p>
+            <p>- Kratki opis održavanja: <b style="color: #112340;">#OS_ODRZAVANJE#</b></p>
+            <p>- Prethodno održavanje: <b style="color: #112340;">#OS_DATUM#</b></p>
+            <p>- Cijena prethodnog održavanja: <b style="color: #112340;">#OS_CIJENA#</b></p>
+            <p>- Održavanje zakazano za: <b style="color: #112340;">#OS_SLEDECI_SERVIS#</b></p>
+            
+            
+            <p>Koristite dugme ispod da pristupite <b style="color: #112340;">ERP</b> korisničkoj aplikaciji:</p>
+            <p><table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 10px 20px; background-color: #112340; color: #ffffff; border-radius: 5px;">
+                        <a href="#LOGIN_URL#" target="_" style="text-decoration: none; color:white">Prijava</a>
+                    </td>
+                </tr>
+            </table></p>
+            ```
+        footer: #MAIL_FOOTER!RAW#
+    }
+    advanced {
+        versionNumber: 2
+        htmlTemplate:
+            ```html
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; text-decoration: none; color: #000000;">
+                <table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="max-width: 640px; margin: 0 auto; padding: 0; background-color: #fdfdfd; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="text-align: center; margin-bottom: 20px; padding: 20px 20px 10px;">
+                                        #HEADER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 1.5; padding: 0px 20px 0px;">
+                                        #BODY#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td style="margin-top: 20px; text-align: center; color: #888; background-color: #e1e1e1; padding: 20px; border-radius: 10px;">
+                                        #FOOTER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ```
+    }
+)
+
+emailTemplate PREDRACUN (
+    name: PREDRACUN
+    emailSubject: #SUBJECT#
+    htmlFormat {
+        header: <h1>#SUBJECT#</h1>
+        body:
+            ```html
+            <p>#PORUKA!RAW#</p>
+            <p><table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 10px 20px; background-color: #112340; color: #ffffff; border-radius: 5px;">
+                        <a href="#LOGIN_URL#" target="_" style="text-decoration: none; color:white">Prijava</a>
+                    </td>
+                </tr>
+            </table></p>
+            ```
+        footer: #MAIL_FOOTER!RAW#
+    }
+    advanced {
+        versionNumber: 2
+        htmlTemplate:
+            ```html
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; text-decoration: none; color: #000000;">
+                <table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="max-width: 640px; margin: 0 auto; padding: 0; background-color: #fdfdfd; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="text-align: center; margin-bottom: 20px; padding: 20px 20px 10px;">
+                                        #HEADER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 1.5; padding: 0px 20px 0px;">
+                                        #BODY#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td style="margin-top: 20px; text-align: center; color: #888; background-color: #e1e1e1; padding: 20px; border-radius: 10px;">
+                                        #FOOTER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ```
+    }
+)
+
+emailTemplate UIO_ODGOVOR (
+    name: UIO ODGOVOR
+    emailSubject: #SUBJECT#
+    htmlFormat {
+        header: <h1>#SUBJECT#</h1>
+        body:
+            ```html
+            <p>Poštovani <b style="color: #112340;">#NAME#</b>,</p>
+            <p>Obavještavamo Vas povodom vašeg zahtjeva za automatski unos KIF / KUF fajlova. Vaš zahtjev je obrađen.</p>
+            {if ODGOVOR/}
+                <p><table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="padding: 10px 20px; background-color: #00b98f; color: #ffffff; border-radius: 5px;">
+                            Vaš zahtjev je odobren.
+                        </td>
+                    </tr>
+                </table></p>
+            {else/}
+                <p><table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="padding: 10px 20px; background-color: #ba3a3a; color: #ffffff; border-radius: 5px;">
+                            Vaš zahtjev je nažalost odbijen.
+                        </td>
+                    </tr>
+                </table></p>
+            {endif/}
+            
+            <p>Koristite dugme ispod da pristupite <b style="color: #112340;">ERP</b> korisničkoj aplikaciji:</p>
+            <p><table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 10px 20px; background-color: #112340; color: #ffffff; border-radius: 5px;">
+                        <a href="#LOGIN_URL#" target="_" style="text-decoration: none; color:white">Prijava</a>
+                    </td>
+                </tr>
+            </table></p>
+            ```
+        footer: #MAIL_FOOTER!RAW#
+    }
+    advanced {
+        versionNumber: 2
+        htmlTemplate:
+            ```html
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; text-decoration: none; color: #000000;">
+                <table cellpadding="0" cellspacing="0" border="0" align="center" width="100%" style="max-width: 640px; margin: 0 auto; padding: 0; background-color: #fdfdfd; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="text-align: center; margin-bottom: 20px; padding: 20px 20px 10px;">
+                                        #HEADER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 1.5; padding: 0px 20px 0px;">
+                                        #BODY#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td style="margin-top: 20px; text-align: center; color: #888; background-color: #e1e1e1; padding: 20px; border-radius: 10px;">
+                                        #FOOTER#
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ```
+    }
+)
+

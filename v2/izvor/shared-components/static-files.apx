@@ -1,0 +1,165 @@
+file "js/finansije-ui.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "js/finansije-ui.min.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "css/finansije-ui.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "css/finansije-ui.min.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "css/nav-icons.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "css/nav-icons.min.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "icons/add.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/app-icon-144-rounded.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/app-icon-192.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/app-icon-256-rounded.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/app-icon-32.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/app-icon-512.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/arrow.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/bank-transfer.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/bank.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/book.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/chart.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/cheque.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/comment.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/delete.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/diskette.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/file-exchange.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/money-exchange.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/money.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/pencil.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/plus.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/printer.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/search.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/task.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/transaction-history.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "icons/trash.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
+
+file "js/success-autohide.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "js/success-autohide.min.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+

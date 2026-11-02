@@ -1,0 +1,580 @@
+page 1802 (
+    name: Stavke Izvoda-knjizenje
+    alias: STAVKE-IZVODA-KNJIZENJE
+    title: Transakcije izvoda
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        width: 1600
+        height: 800
+        maxWidth: 1600
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region transakcije (
+        name: Transakcije
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select izs.rbr,zr.sifra||'/'||i.broj||'/'||i.godina as izvod, case when izs.smjer='P' then 'Priliv' else 'Odliv' end as smjer, izs.uplatio, izs.svrha_doznake, izs.poziv_na_broj,izs.ref_ziro_racun, 
+                       izs.vrsta_placanja, izs.vrsta_prihoda, lpad(gg.sifra, 3, '0')||'-'||gg.naziv as opstina, izs.budzetska_organizacija, 
+                       v.sifra as valuta, izs.iznos_valutno, izs.iznos, 
+                       kl.naziv as partner, rpad(ak.code, :APP_KONTO_DUZINA, '0')||'-'||ak.naziv  as konto, izs.id as dodaj_stavku 
+                from accounting.izvodi i
+                join sif.sif_ziro_racuni zr on i.ziro_racun_id=zr.id
+                join accounting.izvod_stavke izs on i.id=izs.izvod_id
+                left join accounting.sec_klijenti kl on kl.id=izs.klijent_id
+                left join sif.acc_kontni_okvir_klase ak on ak.id=izs.konto_id
+                left join sif.sif_gradovi gg on gg.id=izs.opstina
+                join sif.acc_valute v on v.id=izs.valuta_id
+                where izs.izvod_id in (
+                                        select distinct n005
+                                        from apex_collections
+                                        where collection_name = 'SADRZAJ_GK_IZVODI'
+                                       )
+                order by izs.izvod_id,rbr
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 272229075358574806
+        }
+
+        column BUDZETSKA_ORGANIZACIJA (
+            type: plainText
+            heading {
+                heading: Budžetska organizacija
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column DODAJ_STAVKU (
+            type: link
+            heading {
+                heading: Dodaj stavku
+                alignment: center
+            }
+            layout {
+                sequence: 170
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: #
+                }
+                linkText: <img  src="#APP_FILES#icons/add.png" class="apex-edit-view add-st"   style="height:22px !important; width:22px !important" alt="" >
+                linkAttributes: data-id=#DODAJ_STAVKU#
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: P
+            }
+            enableUsersTo {
+                hide: false
+                sort: false
+                filter: false
+                highlight: false
+                controlBreak: false
+                aggregate: false
+                compute: false
+                chart: false
+                groupBy: false
+                pivot: false
+            }
+        )
+
+        column IZNOS (
+            type: plainText
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column IZNOS_VALUTNO (
+            type: plainText
+            heading {
+                heading: Iznos Valutno
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column IZVOD (
+            type: plainText
+            heading {
+                heading: Izvod
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column KONTO (
+            type: plainText
+            heading {
+                heading: Konto
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: M
+            }
+        )
+
+        column OPSTINA (
+            type: plainText
+            heading {
+                heading: Opstina
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: N
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column POZIV_NA_BROJ (
+            type: plainText
+            heading {
+                heading: Poziv na broj
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column RBR (
+            type: plainText
+            heading {
+                heading: Rbr
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column REF_ZIRO_RACUN (
+            type: plainText
+            heading {
+                heading: Žiro Racun
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column SMJER (
+            type: plainText
+            heading {
+                heading: Smjer
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column SVRHA_DOZNAKE (
+            type: plainText
+            heading {
+                heading: Svrha doznake
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column UPLATIO (
+            type: plainText
+            heading {
+                heading: Uplatio
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column VALUTA (
+            type: plainText
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 140
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: O
+            }
+        )
+
+        column VRSTA_PLACANJA (
+            type: plainText
+            heading {
+                heading: Vrsta plaćanja
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column VRSTA_PRIHODA (
+            type: plainText
+            heading {
+                heading: Vrsta prihoda
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2722768 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn BUDZETSKA_ORGANIZACIJA (
+                sequence: 10
+            )
+
+            displayColumn DODAJ_STAVKU (
+                sequence: 17
+            )
+
+            displayColumn IZNOS (
+                sequence: 15
+            )
+
+            displayColumn IZNOS_VALUTNO (
+                sequence: 16
+            )
+
+            displayColumn IZVOD (
+                sequence: 1
+            )
+
+            displayColumn KONTO (
+                sequence: 12
+            )
+
+            displayColumn OPSTINA (
+                sequence: 13
+            )
+
+            displayColumn PARTNER (
+                sequence: 11
+            )
+
+            displayColumn POZIV_NA_BROJ (
+                sequence: 6
+            )
+
+            displayColumn RBR (
+                sequence: 2
+            )
+
+            displayColumn REF_ZIRO_RACUN (
+                sequence: 7
+            )
+
+            displayColumn SMJER (
+                sequence: 3
+            )
+
+            displayColumn SVRHA_DOZNAKE (
+                sequence: 5
+            )
+
+            displayColumn UPLATIO (
+                sequence: 4
+            )
+
+            displayColumn VALUTA (
+                sequence: 14
+            )
+
+            displayColumn VRSTA_PLACANJA (
+                sequence: 8
+            )
+
+            displayColumn VRSTA_PRIHODA (
+                sequence: 9
+            )
+
+        )
+
+    )
+
+    pageItem P1802_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @transakcije
+            slot: regionBody
+        }
+    )
+
+    dynamicAction odabir-transakcije (
+        name: Odabir transakcije
+        execution {
+            sequence: 10
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .add-st
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    --dodajemo transakciju izvoda u templejt za knjiženje
+                    for r in (select 'A' as tip,izs.id as izvod_stavka_id, iz.id as izvod_id,iz.datum as datum_dokumenta, iz.opis opis_izvoda,  
+                                                       izs.svrha_doznake as opis_transkacije,
+                                                       izs.klijent_id as partner, izs.opstina as opstina, null as radnik,
+                                                       izs.smjer as smjer_placanja,
+                                                       izs.konto_id as konto,nvl(ko.otvorene_stavke,'N') as pracenje_os,  null as mjesto_tr, 
+                                                       case when izs.smjer='P' then 'P' else 'D' end as strana_knjizenja,
+                                                       case when izs.smjer='P' then -izs.iznos else izs.iznos  end as iznos, izs.rbr, 
+                                                       izs.valuta_id, 
+                                                       ko.naziv
+                                from accounting.izvodi iz 
+                                join accounting.izvod_stavke izs on iz.id=izs.izvod_id
+                                left join sif.acc_kontni_okvir_klase ko on ko.id=izs.konto_id
+                                where izs.id=:P1802_ID)
+                    loop
+                        APEX_COLLECTION.ADD_MEMBER(
+                                  p_collection_name => 'SADRZAJ_GK_IZVODI',
+                                  p_c001 => r.tip,
+                                  p_c002 => r.opis_izvoda,
+                                  p_c003 => r.opis_transkacije,
+                                  p_c004 => r.partner,
+                                  p_c005 => r.opstina,
+                                  p_c006 => r.radnik,
+                                  p_c007 => r.smjer_placanja,
+                                  p_c008 => r.mjesto_tr,
+                                  p_c009 => r.strana_knjizenja,
+                                  p_c010 => r.pracenje_os,
+                                  p_c011 => null, --id otvorene stavke
+                                  p_c012 => null, -- vezni dokument otvorene stavke 
+                                  p_c013 => null, --opis veznog dokumenta
+                                  p_c014 => 'N', -- red zakljucan za brisanje
+                                  p_c015 => r.konto,
+                                  p_c016 => r.valuta_id,
+                                  p_c017 => null,
+                                  p_c018 => r.naziv,
+                                  p_n001 => abs(r.iznos),
+                                  p_n002 => r.iznos,
+                                  p_n003 => r.rbr,
+                                  p_n004 => r.izvod_stavka_id,
+                                  p_n005 => r.izvod_id,
+                                  p_d001 => r.datum_dokumenta
+                                ); 
+                    end loop;       
+                    ```
+                itemsToSubmit: P1802_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).parent().data('id');
+            }
+            affectedElements {
+                selectionType: items
+                items: P1802_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process zatvori-modal (
+        name: Zatvori modal
+        type: closeDialog
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 272232254363574838
+        }
+    )
+
+)
+

@@ -1,0 +1,1322 @@
+page 110 (
+    name: Kontni okvir klasa / Detalji
+    alias: KONTNI-OKVIR-KLASA-DETALJI
+    title: Kontni okvir klasa / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region audit-information (
+        name: Audit Information
+        type: staticContent
+        layout {
+            sequence: 160
+            parentRegion: @kontni-okvir-klasa-detalji
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_ID
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sif.acc_kontni_okvir_klase
+                WHERE
+                    (id = :P110_ID or :P110_ID is null)
+                    AND (length(code) > 3)
+                ```
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region kontni-okvir-klasa-detalji (
+        name: Kontni okvir klasa / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sif.acc_kontni_okvir_klase
+                WHERE
+                    (id = :P110_ID or :P110_ID is null)
+                    AND (length(code) > 3)
+                ```
+        }
+    )
+
+    region ne-možete-izmijeniti-ovaj-podatak (
+        name: Ne možete izmijeniti ovaj podatak
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    code,
+                    naziv,
+                    os,
+                    klijent,
+                    oj,
+                    radnik,
+                    pdv_indikator, 
+                    otvorene_stavke
+                FROM
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :P110_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sif.acc_kontni_okvir_klase
+                WHERE
+                    (id = :P110_ID or :P110_ID is null)
+                    AND (length(code) > 3)
+                ```
+        }
+        reportLayout {
+            numberOfRows: 1
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+            ]
+        }
+
+        column CODE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KLIJENT (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Klijent / Obavezno
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if KLIJENT/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column OJ (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica / Obavezno
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if OJ/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column OS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Osnovno sredstvo / Obavezno
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if OS/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column OTVORENE_STAVKE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Otvorene Stavke / Obavezno
+            }
+            layout {
+                sequence: 80
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if OTVORENE_STAVKE/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column PDV_INDIKATOR (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: PDV indikator / Obavezno
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if PDV_INDIKATOR/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column RADNIK (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Radnik / Obavezno
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if RADNIK/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+    )
+
+    pageItem P110_CODE (
+        type: textField
+        label {
+            label: Šifra
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 50
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P110_CREATED (
+        type: displayOnly
+        label {
+            label: Created
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_CREATED_BY (
+        type: displayOnly
+        label {
+            label: Created By
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_ENTITET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P110_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P110_KLIJENT (
+        type: radioGroup
+        label {
+            label: Klijent / Obavezno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 110
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Unos klijenta postaje obavezan uslov za knjiženje na izabranom kontu.
+        }
+    )
+
+    pageItem P110_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Nadređena kontna klasa
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    CASE
+                        WHEN LENGTH(code) IN (3,4) THEN code
+                        ELSE RPAD(code, NVL(:APP_KONTO_DUZINA, 6), '0')
+                    END || ' - ' || naziv AS d ,
+                    id r
+                FROM
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    valid = 'Y'
+                    AND ((ooj_id IS null AND length(code) =3) or (ooj_id = :APP_OOJ_ID and length(code) <NVL(:APP_KONTO_DUZINA, 6)))
+                    
+                ORDER BY
+                    code ASC 
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P110_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P110_OJ (
+        type: radioGroup
+        label {
+            label: Mjesto troška / Obavezno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 120
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Unos organizacione jedinice postaje obavezan uslov za knjiženje na izabranom kontu.
+        }
+    )
+
+    pageItem P110_OS (
+        type: hidden
+        layout {
+            sequence: 100
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+        }
+        help {
+            helpText: Unos osnovnog sredstva postaje obavezan uslov za knjiženje na izabranom kontu.
+        }
+    )
+
+    pageItem P110_OTVORENE_STAVKE (
+        type: radioGroup
+        label {
+            label: Otvorene stavke / Obavezno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 140
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Odabirom opcije "DA" konto se prati u modulu otvorenih stavki.
+        }
+    )
+
+    pageItem P110_PDV_INDIKATOR (
+        type: radioGroup
+        label {
+            label: PDV indikator / Obavezno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Unos pdv indikatora postaje obavezan uslov za knjiženje na izabranom kontu.
+        }
+    )
+
+    pageItem P110_PDV_INDIKATOR_SIFRA (
+        type: popupLov
+        label {
+            label: PDV indikator
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 600
+        }
+        lov {
+            type: sharedComponent
+            lov: @pdv-indikatori-svi
+            displayExtraValues: false
+            nullDisplayValue: " "
+        }
+        layout {
+            sequence: 80
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                margin-top-none
+                margin-bottom-md
+                margin-right-lg
+                t-Form-fieldContainer--slimPadding
+            ]
+            width: 30
+        }
+        help {
+            inlineHelpText: <b>Definisanjem PDV indikatora omogućava se automatsko knjiženje ulaznih/izlaznih faktura. </b>
+        }
+    )
+
+    pageItem P110_RADNIK (
+        type: radioGroup
+        label {
+            label: Radnik / Obavezno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 130
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Unos radnika postaje obavezan uslov za knjiženje na izabranom kontu.
+        }
+    )
+
+    pageItem P110_ROW_VERSION (
+        type: displayOnly
+        label {
+            label: Row Version
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_UPDATED (
+        type: displayOnly
+        label {
+            label: Updated
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_UPDATED_BY (
+        type: displayOnly
+        label {
+            label: Updated By
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 150
+            region: @kontni-okvir-klasa-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P110_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_ID
+        }
+    )
+
+    dynamicAction hide-pdv-indikator-sifra (
+        name: Hide PDV INDIKATOR SIFRA
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P110_PDV_INDIKATOR
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P110_PDV_INDIKATOR_SIFRA
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: item!=value
+                item: P110_PDV_INDIKATOR
+                value: Y
+            }
+        )
+
+    )
+
+    dynamicAction set-sifra (
+        name: Set sifra
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P110_KONTNA_KLASA_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                        select  kk.code
+                        FROM sif.acc_kontni_okvir_klase kk 
+                        where kk.id=:P110_KONTNA_KLASA_ID;
+                    
+                    
+                    ```
+                itemsToSubmit: P110_KONTNA_KLASA_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P110_CODE
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction show-pdv-indikator-sifra (
+        name: Show PDV INDIKATOR SIFRA
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P110_PDV_INDIKATOR
+        }
+        clientSideCondition {
+            type: item=value
+            item: P110_PDV_INDIKATOR
+            value: Y
+        }
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P110_PDV_INDIKATOR_SIFRA
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation code-length (
+        name: Code VALID
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                    v_nad_code varchar2(12);
+                    v_pom      number;
+                begin
+                
+                    -----------------------------------------------------------
+                    -- 1) jedinstvenost šifre (bez trailing nula) u okviru OOJ-a
+                    -----------------------------------------------------------
+                    select count(1)
+                    into v_pom
+                    from sif.acc_kontni_okvir_klase k
+                    where rtrim(k.code,'0') = rtrim(:P110_CODE,'0')
+                      and k.ooj_id = :APP_OOJ_ID
+                      and k.id <> nvl(:P110_ID,0);
+                
+                    if v_pom > 0 then
+                        return 'Šifra konta "' || :P110_CODE || '" već postoji u kontnom planu - šifra mora biti jedinstvena!';
+                    end if;
+                
+                    -----------------------------------------------------------
+                    -- 2) šifra nadređenog konta
+                    -----------------------------------------------------------
+                    select k.code
+                    into v_nad_code
+                    from sif.acc_kontni_okvir_klase k
+                    where id = :P110_KONTNA_KLASA_ID;
+                
+                    -----------------------------------------------------------
+                    -- 3) šifra mora počinjati šifrom nadređenog konta
+                    -----------------------------------------------------------
+                    if substr(:P110_CODE, 1, length(v_nad_code)) != v_nad_code then
+                        return 'Šifra konta mora počinjati šifrom nadređenog konta ("' || v_nad_code || '")!';
+                    end if;
+                
+                    -----------------------------------------------------------
+                    -- 4) šifra mora biti duža od šifre nadređenog konta
+                    -----------------------------------------------------------
+                    if length(:P110_CODE) = length(v_nad_code) then
+                        return 'Šifra podređenog konta mora biti duža od šifre nadređenog konta ("' || v_nad_code || '") - dodajte bar jedan karakter!';
+                    end if;
+                
+                    -----------------------------------------------------------
+                    -- 5) maksimalna dužina šifre konta
+                    -----------------------------------------------------------
+                    if length(:P110_CODE) > nvl(:APP_KONTO_DUZINA, 6) then
+                        return 'Šifra konta može imati najviše ' || nvl(:APP_KONTO_DUZINA, 6) || ' karaktera (trenutno: ' || length(:P110_CODE) || ')!';
+                    end if;
+                
+                end;
+                ```
+        }
+        error {
+            associatedItem: @P110_CODE
+        }
+    )
+
+    validation code-not-null (
+        name: Code NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_CODE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_CODE
+        }
+    )
+
+    validation klijent-not-null (
+        name: Klijent NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_KLIJENT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_KLIJENT
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_NAZIV
+        }
+    )
+
+    validation oj-not-null (
+        name: Oj NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_OJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_OJ
+        }
+    )
+
+    validation pdv-not-null (
+        name: PDV NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_PDV_INDIKATOR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_PDV_INDIKATOR
+        }
+    )
+
+    validation radnik-not-null (
+        name: Radnik NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P110_RADNIK
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P110_RADNIK
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P109_SEARCH
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 44901435888697927
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.delete_kontni_okvir_klasa (
+                    p_id => :P110_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 44903092812697925
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.get_kontni_okvir_klasa (
+                    p_id              => :P110_ID,
+                    p_entitet_id      => :P110_ENTITET_ID,
+                    p_kontna_klasa_id => :P110_KONTNA_KLASA_ID,
+                    p_code            => :P110_CODE,
+                    p_naziv           => :P110_NAZIV,
+                    p_os              => :P110_OS,
+                    p_klijent         => :P110_KLIJENT,
+                    p_oj              => :P110_OJ,
+                    p_radnik          => :P110_RADNIK,
+                    p_pdv_indikator   => :P110_PDV_INDIKATOR,
+                    p_pdv_indikator_sifra   => :P110_PDV_INDIKATOR_SIFRA,
+                    p_valid           => :P110_VALID,
+                    p_row_version     => :P110_ROW_VERSION,
+                    p_created         => :P110_CREATED,
+                    p_created_by      => :P110_CREATED_BY,
+                    p_updated         => :P110_UPDATED,
+                    p_updated_by      => :P110_UPDATED_BY, 
+                    p_otvorene_stavke => :P110_OTVORENE_STAVKE
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 44901816234697926
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.insert_kontni_okvir_klasa (
+                    p_entitet_id      => :P110_ENTITET_ID,
+                    p_kontna_klasa_id => :P110_KONTNA_KLASA_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_code            => :P110_CODE,
+                    p_naziv           => :P110_NAZIV,
+                    p_os              => :P110_OS,
+                    p_klijent         => :P110_KLIJENT,
+                    p_oj              => :P110_OJ,
+                    p_radnik          => :P110_RADNIK,
+                    p_pdv_indikator   => :P110_PDV_INDIKATOR,
+                    p_pdv_indikator_sifra   => :P110_PDV_INDIKATOR_SIFRA,  
+                    p_otvorene_stavke => :P110_OTVORENE_STAVKE
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Konto dodat u kontni plan.
+        }
+        advanced {
+            executionMappingIdentifier: 44902292275697926
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup-entitet (
+        name: Setup entitet
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P110_ENTITET_ID := core.ooj_pkg.get_ooj_entitet_id(
+                    p_ooj_id => :APP_OOJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 113044642547710943
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P110_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.update_kontni_okvir_klasa (
+                    p_id              => :P110_ID,
+                    p_entitet_id      => :P110_ENTITET_ID,
+                    p_kontna_klasa_id => :P110_KONTNA_KLASA_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_code            => :P110_CODE,
+                    p_naziv           => :P110_NAZIV,
+                    p_os              => :P110_OS,
+                    p_klijent         => :P110_KLIJENT,
+                    p_oj              => :P110_OJ,
+                    p_radnik          => :P110_RADNIK,
+                    p_pdv_indikator   => :P110_PDV_INDIKATOR,
+                    p_pdv_indikator_sifra   => :P110_PDV_INDIKATOR_SIFRA,
+                    p_valid           => :P110_VALID,
+                    p_otvorene_stavke => :P110_OTVORENE_STAVKE
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Izmjene sačuvane!
+        }
+        advanced {
+            executionMappingIdentifier: 44902650089697925
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

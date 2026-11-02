@@ -1,0 +1,455 @@
+page 74 (
+    name: Ugovor / Fakture
+    alias: UGOVOR-FAKTURE
+    title: Ugovor / Fakture
+    pageGroup: @ugovori
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region detalji-ugovora (
+        name: Detalji ugovora
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    predmet,
+                    ugovor_start,
+                    ugovor_end,
+                    round(months_between(ugovor_end, ugovor_start)) AS broj_mjeseci_ugovora,
+                    interval_naziv,
+                    interval_broj_mjeseci,
+                
+                    floor(round(months_between(ugovor_end, ugovor_start)) / interval_broj_mjeseci) AS broj_faktura
+                
+                FROM
+                    vw_ugovori
+                WHERE
+                    id = :P74_UGOVOR_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column BROJ_FAKTURA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Potreban broj faktura
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+        )
+
+        column BROJ_MJESECI_UGOVORA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Trajanje ugovora (u mjesecima)
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+        )
+
+        column INTERVAL_BROJ_MJESECI (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column INTERVAL_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Interval fakturisanja
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column PREDMET (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Predmet
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column UGOVOR_END (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Kraj ugovora
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column UGOVOR_START (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Početak ugovora
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    region izlazne-fakture-report (
+        name: Izlazne fakture Report
+        title: Izlazne fakture
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    klijent_naziv,
+                    naziv_fakture,
+                    datum_fakture,
+                    datum_valute,
+                    iznos_fakture_nopdv,
+                    iznos_fakture,
+                    uplaceno,
+                    vrsta_fakture_naziv
+                FROM
+                    vw_kif
+                WHERE
+                    ugovor_id = :P74_UGOVOR_ID
+                ORDER BY
+                    datum_valute DESC, faktura_broj DESC
+                ```
+        }
+        orderBy {
+            type: item
+            item: {
+                itemName: P74_ORDER_BY
+                orderBys: {
+                    FAKTURA_BROJ1: faktura_broj DESC
+                    FAKTURA_BROJ: faktura_broj ASC
+                    DATUM_FAKTURE1: datum_fakture DESC
+                    DATUM_FAKTURE: datum_fakture ASC
+                    DATUM_VALUTE1: datum_valute DESC
+                    DATUM_VALUTE: datum_valute ASC
+                }
+            }
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum valute
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column IZNOS_FAKTURE_NOPDV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPLACENO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Uplaćeno
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if UPLACENO/}
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-badge-dollar"></span>
+                        </span>
+                    {else/}
+                        <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-badge-dollar"></span>
+                        </span>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_FAKTURE_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Vrsta fakture
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P74_UGOVOR_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

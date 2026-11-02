@@ -1,0 +1,688 @@
+page 505 (
+    name: Budžet / Konfiguracija org. jedinica
+    alias: BUDŽET-KONFIGURACIJA-ORG-JEDINICA
+    title: Budžet / Konfiguracija org. jedinica
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        height: 400
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet-konfiguracija-org-jedinica (
+        name: Budžet / Konfiguracija org. jedinica
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region item-wrapper (
+        name: Item Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @budžet-konfiguracija-org-jedinica
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region kolekcija-report (
+        name: Kolekcija Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c001 AS oj_id,
+                    oj.naziv AS oj_naziv,
+                    c002 AS max_iznos
+                FROM
+                    apex_collections c
+                    LEFT JOIN core.oj ON c.c001 = oj.id
+                WHERE
+                    collection_name = 'BUDZET_OJ'
+                ```
+        }
+        layout {
+            sequence: 50
+            parentRegion: @budžet-konfiguracija-org-jedinica
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DERIVED$01 (
+            reportColumnQueryId: 5
+            derivedColumn: Y
+            heading {
+                heading: Obriši
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft delete-oj" data-id=#SEQ_ID#>
+                        <span class="t-Icon t-Icon--left fa fa-trash"></span>
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MAX_IZNOS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Maksimalan iznos budžeta
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SEQ_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-budžet
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    pageItem P505_BUDZET_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @budžet-konfiguracija-org-jedinica
+            slot: regionBody
+        }
+    )
+
+    pageItem P505_DELETE_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @budžet-konfiguracija-org-jedinica
+            slot: regionBody
+        }
+    )
+
+    pageItem P505_MAX_IZNOS (
+        type: numberField
+        label {
+            label: Maksimalan iznos budžeta
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P505_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv AS d,
+                    id AS r
+                FROM
+                    core.oj
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND parent_id IS null
+                    AND id NOT IN (
+                        SELECT 
+                            c001
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'BUDZET_OJ'
+                    )
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @budžet-konfiguracija-org-jedinica
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj u kolekciju
+        layout {
+            sequence: 20
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button finish (
+        buttonName: FINISH
+        label: Završi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction add-to-collection (
+        name: Add to Collection
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @add
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P505_OJ_ID') !== "" && 
+                $v('P505_MAX_IZNOS') !== ""
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_count NUMBER;
+                    BEGIN
+                        SELECT
+                            count(*)
+                        INTO
+                            l_count
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'BUDZET_OJ'
+                            AND c001 = :P505_OJ_ID;
+                    
+                        IF l_count > 0 THEN
+                            raise_application_error(-20001, 'Ne možete ponovo dodati istu organizacionu jedinicu.');
+                        END IF;
+                    
+                        apex_collection.add_member (
+                            p_collection_name => 'BUDZET_OJ',
+                            p_c001            => :P505_OJ_ID,
+                            p_c002            => :P505_MAX_IZNOS
+                        );
+                    
+                        :P505_OJ_ID := null;
+                        :P505_MAX_IZNOS := null;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P505_MAX_IZNOS
+                    P505_OJ_ID
+                ]
+                itemsToReturn: [
+                    P505_MAX_IZNOS
+                    P505_OJ_ID
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @kolekcija-report
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P505_OJ_ID
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction delete (
+        name: Delete
+        execution {
+            sequence: 30
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .delete-oj
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    apex_collection.delete_member (
+                        p_collection_name => 'BUDZET_OJ',
+                        p_seq             => :P505_DELETE_ID
+                    );
+                    
+                    :P505_DELETE_ID := null;
+                    ```
+                itemsToSubmit: P505_DELETE_ID
+                itemsToReturn: P505_DELETE_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @kolekcija-report
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P505_OJ_ID
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P505_DELETE_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process create-collection (
+        name: Create collection
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'BUDZET_OJ'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 144274881467864150
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_oj IS (
+                        SELECT
+                            c001 AS oj_id,
+                            to_number(c002, '999G999G999G999G990D00') AS max_iznos
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'BUDZET_OJ'
+                    );
+                BEGIN
+                    :P505_BUDZET_ID := budzet_pkg.insert_budzet (
+                        p_ooj_id      => :APP_OOJ_ID,
+                        p_interval_id => :P504_INTERVAL_ID,
+                        p_valuta_id   => :P504_VALUTA_ID,
+                        p_budzet_id   => null,
+                        p_godina      => :P504_GODINA,
+                        p_napomena    => :P504_NAPOMENA,
+                        p_radnik_id   => :APP_RADNIK_ID
+                    );
+                
+                    FOR c1 IN c_oj LOOP
+                        budzet_pkg.insert_budzet_oj (
+                            p_budzet_id => :P505_BUDZET_ID,
+                            p_oj_id     => c1.oj_id,
+                            p_max_iznos => c1.max_iznos,
+                            p_radnik_id => :APP_RADNIK_ID
+                        );
+                
+                    END LOOP;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 144344961670280315
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 504
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 506
+                items: {
+                    P506_BUDZET_ID: &P505_BUDZET_ID.
+                }
+                clearCache: 506
+            }
+        }
+    )
+
+)
+

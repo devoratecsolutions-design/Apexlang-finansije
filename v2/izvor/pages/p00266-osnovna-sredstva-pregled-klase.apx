@@ -1,0 +1,335 @@
+page 266 (
+    name: Osnovna sredstva / Pregled klase
+    alias: OSNOVNA-SREDSTVA-PREGLED-KLASE
+    title: Osnovna sredstva / Pregled klase
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region detalji (
+        name: Detalji
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    sifra,
+                    naziv,
+                    procenat,
+                    vijek_trajanja
+                FROM
+                    sif.acc_klase_os
+                WHERE
+                    id = :P266_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv klase
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #SIFRA# - #NAZIV#
+            }
+        )
+
+        column PROCENAT (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Procenat
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression: #PROCENAT# %
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column VIJEK_TRAJANJA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Vijek trajanja
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression: #VIJEK_TRAJANJA# god.
+            }
+        )
+
+    )
+
+    region konta (
+        name: Konta
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    transakcija_naziv,
+                    kontna_klasa_code,
+                    kontna_klasa_naziv
+                FROM
+                    sif.vw_klase_os_konta
+                WHERE
+                    klasa_id = :P266_ID
+                ORDER BY
+                    transakcija_naziv
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column KONTNA_KLASA_CODE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Konto
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #KONTNA_KLASA_CODE# - #KONTNA_KLASA_NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KONTNA_KLASA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column TRANSAKCIJA_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Transakcija
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    pageItem P266_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P266_ORIG (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 252
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P266_ORIG
+            value: 252
+        }
+    )
+
+    button cancel-2 (
+        buttonName: CANCEL_1
+        label: Odustani
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+            executeValidations: false
+        }
+        serverSideCondition {
+            type: item=value
+            item: P266_ORIG
+            value: 256
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel-2
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

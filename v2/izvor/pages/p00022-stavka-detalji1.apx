@@ -1,0 +1,1266 @@
+page 22 (
+    name: Stavka / Detalji
+    alias: STAVKA-DETALJI1
+    title: Stavka / Detalji
+    pageGroup: @stavke
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region stavka-detalji (
+        name: Stavka / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region osnovno (
+        name: Osnovni podaci
+        title: Osnovni podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @stavka-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region klasifikacija (
+        name: Klasifikacija
+        title: Klasifikacija
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @stavka-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region porez (
+        name: Porez (PDV)
+        title: Porez (PDV)
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @stavka-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        serverSideCondition {
+            type: item=value
+            item: P22_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    region pracenje (
+        name: Praćenje i status
+        title: Praćenje i status
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @stavka-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    pageItem P22_GRUPA_INFO (
+        type: displayOnly
+        label {
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 30
+            region: @klasifikacija
+            slot: regionBody
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: fin-warn-item
+        }
+    )
+
+    pageItem P22_GRUPA_ID (
+        type: selectOne
+        label {
+            label: Grupa za knjiženje
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-grupe-stavki
+        }
+        layout {
+            sequence: 20
+            region: @klasifikacija
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp_prosto
+            ]
+        }
+        help {
+            helpText: Grupa određuje konta prihoda za automatsko knjiženje faktura. Konta se podešavaju u meniju Grupe za knjiženje.
+        }
+    )
+
+    pageItem P22_ID (
+        type: hidden
+        layout {
+            sequence: 190
+            region: @stavka-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P22_INO_USLUGA (
+        type: radioGroup
+        label {
+            label: Usluga koja se izvršava u inostranstvu
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 90
+            region: @pracenje
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    pageItem P22_JM_ID (
+        type: selectOne
+        label {
+            label: Jedinica mjere
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-jm
+        }
+        layout {
+            sequence: 40
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P22_KLASA_ID (
+        type: popupLov
+        label {
+            label: Klasa
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 600
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klase-stavki
+        }
+        layout {
+            sequence: 10
+            region: @klasifikacija
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P22_MARZA (
+        type: numberField
+        label {
+            label: Marža (%) – prijedlog za cijene
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @osnovno
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P22_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 30
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P22_NAZIV_OLD (
+        type: hidden
+        layout {
+            sequence: 250
+            region: @stavka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P22_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 200
+            region: @stavka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P22_PDV_INDIKATOR (
+        type: radioGroup
+        label {
+            label: Obračun PDV-a
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @pdv-indikator
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @porez
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: item=value
+            item: P22_PDV_SISTEM
+            value: Y
+        }
+        help {
+            helpText: "Poseban PDV indikator primjenjuje se na robu/usluge za koju je propisana stopa PDV-a različita od 17%. "
+        }
+    )
+
+    pageItem P22_PDV_INDIKATOR_ID (
+        type: selectOne
+        label {
+            label: Poseban PDV indikator
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @pdv-indikatori-nula
+        }
+        layout {
+            sequence: 20
+            region: @porez
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-lg
+            ]
+        }
+        serverSideCondition {
+            type: item=value
+            item: P22_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    pageItem P22_PDV_SISTEM (
+        type: hidden
+        layout {
+            sequence: 210
+            region: @stavka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P22_RETROAKTIVNO (
+        type: radioGroup
+        label {
+            label: Promijeniti naziv i na fakturama koje nisu fiskalizovane ni proknjižene
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 30
+            region: @pracenje
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P22_ID
+        }
+    )
+
+    pageItem P22_SERIJSKI_BROJ (
+        type: radioGroup
+        label {
+            label: Prati se po serijskom broju
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @pracenje
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P22_SIFRA (
+        type: textField
+        label {
+            label: Šifra
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 20
+            region: @osnovno
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 100
+        }
+    )
+
+    pageItem P22_TIP_STAVKE_ID (
+        type: selectOne
+        label {
+            label: Tip stavke
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-tip-stavki
+        }
+        layout {
+            sequence: 10
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P22_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 20
+            region: @pracenje
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P22_ID
+        }
+        readOnly {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    vw_skladiste_stavke
+                WHERE
+                    stavka_id = :P22_ID
+                    AND stanje_kolicina > 0
+                ```
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P22_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P22_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P22_ID
+        }
+    )
+
+    dynamicAction close-dialog (
+        name: Close Dialog
+        execution {
+            sequence: 100
+        }
+        when {
+            event: ready
+        }
+
+        action native-show (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    function zameniX() {
+                        var topWin = window.top;
+                        var $ = topWin.apex.jQuery;
+                        var btn = $('.ui-dialog-titlebar-close', topWin.document);
+                    
+                        if (btn.length) {
+                            btn.off('click').on('click', function(e) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                    
+                                apex.page.cancelWarnOnUnsavedChanges();
+                                topWin.apex.navigation.dialog.close(true);
+                            });
+                        }
+                    }
+                    
+                    var observer = new MutationObserver(zameniX);
+                    observer.observe(window.top.document.documentElement, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                    
+                    zameniX();
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction retroaktivna-izmjena (
+        name: Retroaktivna izmjena
+        execution {
+            sequence: 90
+        }
+        when {
+            selectionType: items
+            items: P22_NAZIV
+        }
+        clientSideCondition {
+            type: item!=value
+            item: P22_NAZIV
+            value: &P22_NAZIV_OLD.
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P22_RETROAKTIVNO
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P22_RETROAKTIVNO
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction toggle-pdv-indikator-id (
+        name: Toggle / Pdv indikator ID
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P22_PDV_INDIKATOR
+        }
+        clientSideCondition {
+            type: item=value
+            item: P22_PDV_INDIKATOR
+            value: N
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P22_PDV_INDIKATOR_ID := null;
+                itemsToSubmit: P22_PDV_INDIKATOR_ID
+                itemsToReturn: P22_PDV_INDIKATOR_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P22_PDV_INDIKATOR_ID
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P22_PDV_INDIKATOR_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction grupa-konta (
+        name: Grupa - provjera konta
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P22_GRUPA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_broj NUMBER;
+                    BEGIN
+                        :P22_GRUPA_INFO := NULL;
+                        IF :P22_GRUPA_ID IS NOT NULL THEN
+                            SELECT count(*) INTO l_broj
+                              FROM sif.acc_grupe_stavki_konta
+                             WHERE grupa_stavke_id = :P22_GRUPA_ID AND valid = 'Y';
+                            IF l_broj = 0 THEN
+                                :P22_GRUPA_INFO := 'Grupa nema podešena konta - fakture sa ovom stavkom se neće automatski proknjižiti.';
+                            END IF;
+                        END IF;
+                    END;
+                    ```
+                itemsToSubmit: P22_GRUPA_ID
+                itemsToReturn: P22_GRUPA_INFO
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation marza-pozitivna (
+        name: Marža >= 0
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                RETURN :P22_MARZA IS NULL
+                    OR nvl(to_number(:P22_MARZA DEFAULT -1 ON CONVERSION ERROR), -1) >= 0;
+                ```
+        }
+        error {
+            errorMessage: Marža mora biti broj veći ili jednak nuli.
+            associatedItem: @P22_MARZA
+        }
+    )
+
+    validation sifra-jedinstvena (
+        name: Šifra jedinstvena
+        execution {
+            sequence: 65
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_stavke
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND upper(trim(sifra)) = upper(trim(:P22_SIFRA))
+                  AND id != nvl(:P22_ID, -1)
+                ```
+        }
+        error {
+            errorMessage: Stavka sa šifrom &P22_SIFRA. već postoji.
+            associatedItem: @P22_SIFRA
+        }
+    )
+
+    validation klasa-not-null (
+        name: Klasa NOT NULL
+        execution {
+            sequence: 55
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_KLASA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_KLASA_ID
+        }
+    )
+
+    validation grupa-not-null (
+        name: Grupa NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_GRUPA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_GRUPA_ID
+        }
+        serverSideCondition {
+            type: itemIsNotInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp_prosto
+            ]
+        }
+    )
+
+    validation jm-not-null (
+        name: JM NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_JM_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_JM_ID
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_NAZIV
+        }
+    )
+
+    validation pdv-indikator-id-not-null (
+        name: Pdv indikator ID NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_PDV_INDIKATOR_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P22_PDV_SISTEM = 'Y' AND :P22_PDV_INDIKATOR = 'N'
+        }
+    )
+
+    validation pdv-indikator-not-null (
+        name: Pdv indikator NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_PDV_INDIKATOR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_PDV_INDIKATOR
+        }
+        serverSideCondition {
+            type: item=value
+            item: P22_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    validation retroaktivno-not-null (
+        name: Retroaktivno NOT NULL
+        execution {
+            sequence: 110
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_RETROAKTIVNO
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_RETROAKTIVNO
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            type: expression
+            plsqlExpression: :P22_NAZIV != :P22_NAZIV_OLD
+        }
+    )
+
+    validation serijski-broj-not-null (
+        name: Serijski broj NOT NULL
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_SERIJSKI_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_SERIJSKI_BROJ
+        }
+    )
+
+    validation sifra-not-null (
+        name: Sifra NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_SIFRA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_SIFRA
+        }
+    )
+
+    validation tip-stavke-not-null (
+        name: Tip stavke NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P22_TIP_STAVKE_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P22_TIP_STAVKE_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 189205637703047291
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- v2: stavka iz dokumenata se ne briše (paket javlja poruku -20101)
+                stavke_pkg.delete_stavka(p_id => :P22_ID);
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 189207233554047292
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.get_stavka (
+                    p_id               => :P22_ID,
+                    p_ooj_id           => :P22_OOJ_ID,
+                    p_tip_stavke_id    => :P22_TIP_STAVKE_ID,
+                    p_grupa_id         => :P22_GRUPA_ID,
+                    p_jm_id            => :P22_JM_ID,
+                    p_naziv            => :P22_NAZIV,
+                    p_sifra            => :P22_SIFRA,
+                    p_marza            => :P22_MARZA,
+                    p_klasa_id         => :P22_KLASA_ID,
+                    p_pdv_indikator    => :P22_PDV_INDIKATOR,
+                    p_pdv_indikator_id => :P22_PDV_INDIKATOR_ID,
+                    p_ino_usluga       => :P22_INO_USLUGA,
+                    p_serijski_broj    => :P22_SERIJSKI_BROJ,
+                    p_valid            => :P22_VALID
+                );
+
+                :P22_NAZIV_OLD := :P22_NAZIV;
+                :P22_PDV_SISTEM := nvl(core.ooj_pkg.get_ooj_pdv_sistem(:APP_OOJ_ID), 'N');
+
+                IF :P22_ID IS NULL THEN
+                    :P22_MARZA := 0;
+                    :P22_SERIJSKI_BROJ := 'N';
+                    IF :P22_PDV_SISTEM = 'Y' THEN
+                        :P22_PDV_INDIKATOR := 'Y';
+                    END IF;
+                    -- v2: JM "kom" (O-07), klasa "Ostalo" (O-06) kao prijedlog
+                    SELECT min(id) INTO :P22_JM_ID
+                      FROM sif.acc_jedinice_mjere
+                     WHERE valid = 'Y' AND lower(trim(naziv)) IN ('kom', 'kom.', 'komad');
+                    :P22_KLASA_ID := stavke_pkg.klasa_ostalo(:APP_OOJ_ID);
+                    -- šifra: najveća numerička + 1, najmanje 6 cifara (O-04)
+                    :P22_SIFRA := stavke_pkg.sljedeca_sifra(:APP_OOJ_ID);
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 189206016703047292
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.insert_stavka (
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_tip_stavke_id    => :P22_TIP_STAVKE_ID,
+                    p_grupa_id         => :P22_GRUPA_ID,
+                    p_jm_id            => :P22_JM_ID,
+                    p_naziv            => :P22_NAZIV,
+                    p_sifra            => :P22_SIFRA,
+                    p_marza            => :P22_MARZA,
+                    p_klasa_id         => :P22_KLASA_ID,
+                    p_pdv_indikator    => :P22_PDV_INDIKATOR,
+                    p_pdv_indikator_id => :P22_PDV_INDIKATOR_ID,
+                    p_ino_usluga       => :P22_INO_USLUGA,
+                    p_serijski_broj    => :P22_SERIJSKI_BROJ
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 189206437242047292
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.update_stavka (
+                    p_id               => :P22_ID,
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_tip_stavke_id    => :P22_TIP_STAVKE_ID,
+                    p_grupa_id         => :P22_GRUPA_ID,
+                    p_jm_id            => :P22_JM_ID,
+                    p_naziv            => :P22_NAZIV,
+                    p_sifra            => :P22_SIFRA,
+                    p_marza            => :P22_MARZA,
+                    p_klasa_id         => :P22_KLASA_ID,
+                    p_pdv_indikator    => :P22_PDV_INDIKATOR,
+                    p_pdv_indikator_id => :P22_PDV_INDIKATOR_ID,
+                    p_ino_usluga       => :P22_INO_USLUGA,
+                    p_serijski_broj    => :P22_SERIJSKI_BROJ,
+                    p_valid            => :P22_VALID
+                );
+                
+                IF :P22_NAZIV != :P22_NAZIV_OLD THEN
+                    IF :P22_RETROAKTIVNO = 'Y' THEN
+                        -- v2 (O-02): samo fakture koje nisu fiskalizovane ni proknjižene
+                        UPDATE kif_stavke ks
+                           SET naziv = :P22_NAZIV
+                         WHERE ks.stavka_id = :P22_ID
+                           AND EXISTS (SELECT 1 FROM kif k
+                                        WHERE k.id = ks.kif_id
+                                          AND k.glavna_knjiga_id IS NULL
+                                          AND nvl(k.fiskalizovano, 'N') = 'N');
+                    END IF;
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 189206802055047292
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

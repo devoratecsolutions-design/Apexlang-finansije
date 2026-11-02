@@ -1,0 +1,2765 @@
+page 341 (
+    name: Kalkulacija
+    alias: KALKULACIJA-ROBE-DETALJI
+    title: Kalkulacija
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmKalk.init('P341');
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-kalkulacije-robe
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region kalkulacija-naslov (
+        name: Kalkulacija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 1
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region kalk-traka (
+        name: Traka kalkulacije
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-docbar">
+                  <span class="fin-docbar__no">&P341_NAZIV.</span>
+                  <span class="fin-status fin-status--&P341_STATUS_KLASA."><span class="fa &P341_STATUS_IKONA." aria-hidden="true"></span>&P341_STATUS_NAZIV.</span>
+                  <span class="fin-docbar__meta">&P341_SKLADISTE.</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region zakljucana (
+        name: Kalkulacija se ne može mijenjati
+        type: staticContent
+        source {
+            htmlCode: &P341_RAZLOG.
+        }
+        layout {
+            sequence: 7
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_ID is not null and :P341_IZMJENJIVA = 'N'
+        }
+    )
+
+    region kalk-detalji (
+        name: Kalkulacija / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'N'
+        }
+    )
+
+    region osnovno (
+        name: Osnovni podaci
+        title: Osnovni podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @kalk-detalji
+            slot: subRegions
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region pregled (
+        name: Pregled iznosa
+        title: Pregled iznosa
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-kalk-zbir"><div class="fin-kalk-zbir__k"><span>Fakture</span><b id="kzFak">&P341_IZNOS_FAKTURA.</b></div><div class="fin-kalk-zbir__k"><span>Zavisni troškovi</span><b id="kzTr">&P341_IZNOS_TROSKOVA.</b></div><div class="fin-kalk-zbir__k fin-kalk-zbir__k--glavni"><span>Za raspodjelu</span><b id="kzUk">&P341_UKUPNO.</b></div><div class="fin-kalk-zbir__k"><span>Raspoređeno</span><b id="kzRas">&P341_RASPOREDJENO.</b></div><div id="kzRazK" class="fin-kalk-zbir__k fin-kalk-zbir__k--&P341_RAZLIKA_KLASA."><span>Razlika</span><b id="kzRaz">&P341_RAZLIKA.</b></div></div>
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @kalk-detalji
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P341_ID
+        }
+    )
+
+    region kalk-tabovi (
+        name: Tabovi
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                t-TabsRegion-mod--simple
+                js-useLocalStorage
+            ]
+            cssClasses: fin-kalk-tabovi
+        }
+    )
+
+    region tab-dokumenti (
+        name: Prijemnice, fakture i troškovi
+        title: Prijemnice, fakture i troškovi
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @kalk-tabovi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form fin-kalk-tab
+        }
+    )
+
+    region tab-raspodjela (
+        name: Raspodjela
+        title: Raspodjela
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @kalk-tabovi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form fin-kalk-tab
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P341_ID
+        }
+    )
+
+    region tab-cijene (
+        name: Nabavne i prodajne cijene
+        title: Nabavne i prodajne cijene
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @kalk-tabovi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form fin-kalk-tab
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P341_ID
+        }
+    )
+
+    region prijemnice-sekcija (
+        name: Prijemnice
+        title: Prijemnice
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @tab-dokumenti
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region kalk-prijemnice (
+        name: Prijemnice - tabela
+        title: Prijemnice - tabela
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    ko.id,
+                    ko.operacija_id,
+                    to_char(o.datum, 'DD.MM.YYYY') AS datum,
+                    o.klijent_naziv AS dobavljac,
+                    o.stavki,
+                    to_char(o.iznos, 'FM999G999G999G990D00') AS vrijednost
+                FROM kalkulacija_operacije ko
+                JOIN vw_rm_dokumenti o ON o.id = ko.operacija_id
+                WHERE ko.kalkulacija_id = :P341_ID
+                ORDER BY o.datum, o.id
+                ```
+            pageItemsToSubmit: [
+                P341_ID
+                P341_SKLADISTE_ID
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @prijemnice-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Dodajte prijemnice (u pripremi) sa skladišta čija se nabavna vrijednost računa.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj prijemnicu"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: kalk_prijemnice
+            savedReportMappingIdentifier: 34100000000051
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'N'
+        }
+
+        savedReport 34100000000052 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @OPERACIJA_ID
+                layout {
+                    sequence: 2
+                    width: 420
+                }
+            )
+
+            displayColumn (
+                column: @DATUM
+                layout {
+                    sequence: 3
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @DOBAVLJAC
+                layout {
+                    sequence: 4
+                    width: 220
+                }
+            )
+
+            displayColumn (
+                column: @STAVKI
+                layout {
+                    sequence: 5
+                    width: 70
+                }
+            )
+
+            displayColumn (
+                column: @VRIJEDNOST
+                layout {
+                    sequence: 6
+                    width: 140
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column OPERACIJA_ID (
+            type: popupLov
+            heading {
+                heading: Prijemnica
+            }
+            settings {
+                popupWidth: 720
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT o.naziv || ' · ' || to_char(o.datum, 'DD.MM.YYYY') || ' · ' || o.klijent_naziv
+                           || ' · ' || o.stavki || ' stavki · ' || to_char(o.iznos, 'FM999G999G999G990D00') AS d,
+                           o.id AS r
+                    FROM vw_rm_dokumenti o
+                    WHERE o.ooj_id = :APP_OOJ_ID
+                      AND o.skladiste_id = nvl(:P341_SKLADISTE_ID, :A_SKLADISTE_ID)
+                      AND o.vrsta_sifra = 'PRI'
+                      AND o.stornirano = 'N'
+                      AND ((o.status = 'P' AND NOT EXISTS (SELECT 1 FROM kalkulacija_operacije ko WHERE ko.operacija_id = o.id))
+                           OR o.id IN (SELECT ko.operacija_id FROM kalkulacija_operacije ko WHERE ko.kalkulacija_id = :P341_ID))
+                    ORDER BY o.datum DESC, o.id DESC
+                    ```
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite prijemnicu -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: OPERACIJA_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column DATUM (
+            type: textField
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: DATUM
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column DOBAVLJAC (
+            type: textField
+            heading {
+                heading: Dobavljač
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: DOBAVLJAC
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column STAVKI (
+            type: textField
+            heading {
+                heading: Stavki
+                alignment: center
+            }
+            layout {
+                sequence: 70
+                columnAlignment: center
+            }
+            source {
+                databaseColumn: STAVKI
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column VRIJEDNOST (
+            type: textField
+            heading {
+                heading: Vrijednost prijemnice
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: VRIJEDNOST
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+    )
+
+    region fakture-sekcija (
+        name: Ulazne fakture
+        title: Ulazne fakture
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @tab-dokumenti
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region kalk-kuf (
+        name: Ulazne fakture - tabela
+        title: Ulazne fakture - tabela
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    kk.id,
+                    kk.kuf_id,
+                    kk.sa_pdv,
+                    nvl(kk.nacin_raspodjele, 'V') AS nacin_raspodjele,
+                    CASE WHEN rm_kalkulacija_pkg.izvor_rasporedjen(kk.id, null) = 'Y' THEN '✓ raspoređeno' ELSE 'nije raspoređeno' END AS stanje,
+                    to_char(rm_kalkulacija_pkg.kuf_raspolozivo(kk.kuf_id, kk.sa_pdv, kk.id), 'FM999G999G999G990D00') AS raspolozivo,
+                    to_char(kk.iznos, 'FM999G999G999G990D00') AS iznos
+                FROM kalkulacija_kuf kk
+                WHERE kk.kalkulacija_id = :P341_ID
+                ORDER BY kk.id
+                ```
+            pageItemsToSubmit: [
+                P341_ID
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @fakture-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Dodajte zaključene ulazne fakture (roba, prevoz, carina...) i iznos koji se raspoređuje.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj fakturu"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: kalk_kuf
+            savedReportMappingIdentifier: 34100000000011
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'N'
+        }
+
+        savedReport 34100000000012 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @KUF_ID
+                layout {
+                    sequence: 2
+                    width: 380
+                }
+            )
+
+            displayColumn (
+                column: @SA_PDV
+                layout {
+                    sequence: 3
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @RASPOLOZIVO
+                layout {
+                    sequence: 4
+                    width: 120
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 5
+                    width: 130
+                }
+            )
+
+            displayColumn (
+                column: @NACIN_RASPODJELE
+                layout {
+                    sequence: 6
+                    width: 140
+                }
+            )
+
+            displayColumn (
+                column: @STANJE
+                layout {
+                    sequence: 7
+                    width: 130
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column KUF_ID (
+            type: popupLov
+            heading {
+                heading: Ulazna faktura
+            }
+            settings {
+                popupWidth: 720
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT f.naziv || ' · ' || f.klijent_naziv || nvl2(f.naziv_fakture, ' · ' || f.naziv_fakture, '')
+                           || ' · raspoloživo ' || to_char(CASE WHEN :APP_PDV_SISTEM = 'Y' THEN f.raspolozivo_bez_pdv ELSE f.raspolozivo_sa_pdv END, 'FM999G999G999G990D00') AS d,
+                           f.id AS r
+                    FROM vw_rm_kalk_fakture f
+                    WHERE f.ooj_id = :APP_OOJ_ID
+                      AND (f.raspolozivo_sa_pdv > 0
+                           OR f.id IN (SELECT kk.kuf_id FROM kalkulacija_kuf kk WHERE kk.kalkulacija_id = :P341_ID))
+                    ORDER BY f.datum_fakture DESC
+                    ```
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite ulaznu fakturu -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: KUF_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column SA_PDV (
+            type: selectList
+            heading {
+                heading: Iznos
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Bez PDV-a;N,Sa PDV-om;Y
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: SA_PDV
+                dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :APP_PDV_SISTEM = 'Y'
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: textField
+            heading {
+                heading: Raspoloživo
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RASPOLOZIVO
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column IZNOS (
+            type: textField
+            heading {
+                heading: Raspoređuje se (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: varchar2
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column NACIN_RASPODJELE (
+            type: selectList
+            heading {
+                heading: Raspodjela
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Po vrijednosti;V,Po količini;K,Linearno;L,Ručno;R
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: NACIN_RASPODJELE
+                dataType: varchar2
+            }
+        )
+
+        column STANJE (
+            type: textField
+            heading {
+                heading: Stanje
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: STANJE
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+    )
+
+    region troskovi-sekcija (
+        name: Zavisni troškovi bez fakture
+        title: Zavisni troškovi bez fakture
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @tab-dokumenti
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region kalk-troskovi (
+        name: Zavisni troškovi - tabela
+        title: Zavisni troškovi - tabela
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    t.id,
+                    t.opis,
+                    nvl(t.nacin_raspodjele, 'V') AS nacin_raspodjele,
+                    CASE WHEN rm_kalkulacija_pkg.izvor_rasporedjen(null, t.id) = 'Y' THEN '✓ raspoređeno' ELSE 'nije raspoređeno' END AS stanje,
+                    to_char(t.iznos, 'FM999G999G999G990D00') AS iznos
+                FROM kalkulacija_troskovi t
+                WHERE t.kalkulacija_id = :P341_ID
+                ORDER BY t.id
+                ```
+            pageItemsToSubmit: [
+                P341_ID
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @troskovi-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Npr. vlastiti prevoz ili drugi trošak nabavke za koji nema ulazne fakture.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj trošak"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: kalk_troskovi
+            savedReportMappingIdentifier: 34100000000021
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'N'
+        }
+
+        savedReport 34100000000022 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @OPIS
+                layout {
+                    sequence: 2
+                    width: 440
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 3
+                    width: 140
+                }
+            )
+
+            displayColumn (
+                column: @NACIN_RASPODJELE
+                layout {
+                    sequence: 4
+                    width: 140
+                }
+            )
+
+            displayColumn (
+                column: @STANJE
+                layout {
+                    sequence: 5
+                    width: 130
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column OPIS (
+            type: textField
+            heading {
+                heading: Opis troška
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: OPIS
+                dataType: varchar2
+            }
+            validation {
+                valueRequired: true
+                maxLength: 500
+            }
+        )
+
+        column IZNOS (
+            type: textField
+            heading {
+                heading: Iznos (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: varchar2
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column NACIN_RASPODJELE (
+            type: selectList
+            heading {
+                heading: Raspodjela
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Po vrijednosti;V,Po količini;K,Linearno;L,Ručno;R
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: NACIN_RASPODJELE
+                dataType: varchar2
+            }
+        )
+
+        column STANJE (
+            type: textField
+            heading {
+                heading: Stanje
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: STANJE
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+    )
+
+    region izvori-panel (
+        name: Fakture i troškovi
+        title: Fakture i troškovi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    izvor,
+                    vrsta,
+                    naziv,
+                    CASE nacin WHEN 'V' THEN 'po vrijednosti' WHEN 'K' THEN 'po količini' WHEN 'L' THEN 'linearno' ELSE 'ručno' END AS nacin,
+                    to_char(iznos, 'FM999G999G999G990D00') AS iznos,
+                    to_char(rasporedjeno, 'FM999G999G999G990D00') AS rasporedjeno,
+                    rasporedjen
+                FROM vw_rm_kalkulacija_izvori
+                WHERE kalkulacija_id = :P341_ID
+                ORDER BY redoslijed
+                ```
+            pageItemsToSubmit: P341_ID
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tab-raspodjela
+            slot: subRegions
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section fin-kalk-izvori
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Dodajte fakture ili zavisne troškove na prvom tabu.
+        }
+        advanced {
+            htmlDomId: kalk_izvori
+        }
+
+        column IZVOR (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column VRSTA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Faktura / trošak
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <a class="fin-kalk-izvor" href="javascript:void(0)" data-izvor="#IZVOR#" data-r="#RASPOREDJEN#"><span class="fin-kalk-dot fin-kalk-dot--#RASPOREDJEN#" aria-hidden="true"></span><span class="fin-kalk-izvor__tekst"><span class="fin-kalk-izvor__naziv">#NAZIV#</span><span class="fin-sub">#VRSTA# · #NACIN#</span></span><span class="fin-kalk-izvor__iznos"><b>#IZNOS#</b><span class="fin-sub" data-ras>raspoređeno #RASPOREDJENO#</span></span></a>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NACIN (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 350
+            }
+        )
+
+        column RASPOREDJENO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+        column RASPOREDJEN (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+    )
+
+    region raspodjela-panel (
+        name: Raspodjela izvora
+        type: staticContent
+        source {
+            htmlCode: <div id="finKalkRasp" class="fin-kalk-rasp"><div class="fin-kalk-rasp__prazno"><span class="fa fa-hand-o-left" aria-hidden="true"></span> Izaberite fakturu ili trošak.</div></div>
+        }
+        layout {
+            sequence: 20
+            parentRegion: @tab-raspodjela
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 8
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region cijene-upozorenje (
+        name: Cijene se formiraju poslije raspodjele
+        type: staticContent
+        source {
+            htmlCode: Nabavna cijena se formira kad su sve fakture i zavisni troškovi raspoređeni (tab Raspodjela). Tek tada se unose marža, VPC i MPC.
+        }
+        layout {
+            sequence: 5
+            parentRegion: @tab-cijene
+            slot: subRegions
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--warning
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_SVE_RASP = 'N'
+        }
+    )
+
+    region cijene-sekcija (
+        name: Cijene po artiklu
+        title: Cijene po artiklu
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @tab-cijene
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region kalk-cijene (
+        name: Cijene po artiklu - tabela
+        title: Cijene po artiklu - tabela
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    ks.stavka_id AS id,
+                    st.sifra || ' - ' || st.naziv AS artikal,
+                    jm.naziv AS jm_naziv,
+                    rtrim(to_char(sum(ks.kolicina), 'FM999G999G999G990D999999'), '.,') AS kolicina,
+                    rtrim(rtrim(to_char(max(ks.nabavna_cijena), 'FM999G999G999G990D000000'), '0'), '.,') AS nabavna_cijena,
+                    to_char(sum(ks.nabavna_vrijednost), 'FM999G999G999G990D00') AS nabavna_vrijednost,
+                    rtrim(rtrim(to_char(max(ks.marza_procenat), 'FM999G990D9999'), '0'), '.,') AS marza_procenat,
+                    rtrim(rtrim(to_char(max(ks.vpc), 'FM999G999G999G990D0000'), '0'), '.,') AS vpc,
+                    rtrim(rtrim(to_char(max(ks.pdv_stopa), 'FM990D99'), '0'), '.,') AS pdv_stopa,
+                    to_char(max(ks.mpc), 'FM999G999G999G990D00') AS mpc
+                FROM kalkulacija_stavke ks
+                JOIN sec_stavke st ON st.id = ks.stavka_id
+                LEFT JOIN sif.acc_jedinice_mjere jm ON jm.id = st.jm_id
+                WHERE ks.kalkulacija_id = :P341_ID
+                GROUP BY ks.stavka_id, st.sifra, st.naziv, jm.naziv
+                ORDER BY st.sifra
+                ```
+            pageItemsToSubmit: [
+                P341_ID
+                P341_ROBNO
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @cijene-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                update
+            ]
+        }
+        messages {
+            whenNoDataFound: Artikli se pojavljuju kad se dodaju prijemnice.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = ""; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    toolbarData.toolbarRemove("selection-add-row");
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: kalk_cijene
+            savedReportMappingIdentifier: 34100000000061
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'N' or :P341_SVE_RASP = 'N'
+        }
+
+        savedReport 34100000000062 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ARTIKAL
+                layout {
+                    sequence: 2
+                    width: 300
+                }
+            )
+
+            displayColumn (
+                column: @JM_NAZIV
+                layout {
+                    sequence: 3
+                    width: 70
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 4
+                    width: 90
+                }
+            )
+
+            displayColumn (
+                column: @NABAVNA_CIJENA
+                layout {
+                    sequence: 5
+                    width: 115
+                }
+            )
+
+            displayColumn (
+                column: @NABAVNA_VRIJEDNOST
+                layout {
+                    sequence: 6
+                    width: 125
+                }
+            )
+
+            displayColumn (
+                column: @MARZA_PROCENAT
+                layout {
+                    sequence: 7
+                    width: 85
+                }
+            )
+
+            displayColumn (
+                column: @VPC
+                layout {
+                    sequence: 8
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @PDV_STOPA
+                layout {
+                    sequence: 9
+                    width: 60
+                }
+            )
+
+            displayColumn (
+                column: @MPC
+                layout {
+                    sequence: 10
+                    width: 100
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column ARTIKAL (
+            type: textField
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: ARTIKAL
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column JM_NAZIV (
+            type: textField
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: JM_NAZIV
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column KOLICINA (
+            type: textField
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column NABAVNA_CIJENA (
+            type: textField
+            heading {
+                heading: Nabavna cijena
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: NABAVNA_CIJENA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            type: textField
+            heading {
+                heading: Nabavna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: NABAVNA_VRIJEDNOST
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column MARZA_PROCENAT (
+            type: textField
+            heading {
+                heading: Marža %
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: MARZA_PROCENAT
+                dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column VPC (
+            type: textField
+            heading {
+                heading: VPC
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: VPC
+                dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column PDV_STOPA (
+            type: textField
+            heading {
+                heading: PDV %
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: PDV_STOPA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column MPC (
+            type: textField
+            heading {
+                heading: MPC
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: MPC
+                dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+    )
+
+    region sastav (
+        name: Sastav nabavne cijene
+        title: Sastav nabavne cijene
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    i.vrsta,
+                    i.naziv,
+                    to_char(sum(r.iznos), 'FM999G999G999G990D00') AS iznos,
+                    rtrim(rtrim(to_char(sum(r.iznos) / nullif(sum(ks.kolicina), 0), 'FM999G999G999G990D000000'), '0'), '.,') AS po_jedinici
+                FROM kalkulacija_raspodjela r
+                JOIN kalkulacija_stavke ks ON ks.id = r.kalkulacija_stavka_id
+                JOIN vw_rm_kalkulacija_izvori i
+                  ON i.kalkulacija_id = ks.kalkulacija_id
+                 AND i.izvor = CASE WHEN r.kalkulacija_kuf_id IS NOT NULL THEN 'F:' || r.kalkulacija_kuf_id ELSE 'T:' || r.kalkulacija_trosak_id END
+                WHERE ks.kalkulacija_id = :P341_ID
+                  AND ks.stavka_id = :P341_ARTIKL
+                GROUP BY i.vrsta, i.naziv, i.redoslijed
+                ORDER BY i.redoslijed
+                ```
+            pageItemsToSubmit: [
+                P341_ID
+                P341_ARTIKL
+            ]
+        }
+        layout {
+            sequence: 20
+            parentRegion: @tab-cijene
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Kliknite artikal u tabeli da vidite kako je formirana nabavna cijena.
+        }
+        advanced {
+            htmlDomId: kalk_sastav
+        }
+
+        column VRSTA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Faktura / trošak
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA#</span></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Raspoređeno
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PO_JEDINICI (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Po jedinici
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P341_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @kalk-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P341_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 2
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_STATUS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_STATUS_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_STATUS_KLASA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_STATUS_IKONA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_IZMJENJIVA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 7
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_RAZLOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 8
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_SKLADISTE_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 9
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_SKLADISTE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_ROBNO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 11
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_ADMIN (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_RAZLOG_OTKLJ (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 13
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_IZNOS_FAKTURA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 14
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_IZNOS_TROSKOVA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 15
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_UKUPNO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 16
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_RASPOREDJENO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 17
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_RAZLIKA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 18
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_RAZLIKA_KLASA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 19
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_SVE_RASP (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_ARTIKL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 21
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P341_DATUM (
+        type: datePicker
+        label {
+            label: Datum kalkulacije
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 5
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Ne može biti prije datuma prijemnica, u budućnosti niti u zaključanom periodu.
+        }
+    )
+
+    pageItem P341_OPIS (
+        type: textarea
+        label {
+            label: Opis / komentar
+            alignment: left
+        }
+        validation {
+            maxLength: 1000
+        }
+        layout {
+            sequence: 30
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            height: 2
+        }
+    )
+
+    button nazad (
+        buttonName: NAZAD
+        label: Kalkulacije
+        layout {
+            sequence: 5
+            region: @kalkulacija-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 340
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 10
+            region: @kalkulacija-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Obrisati kalkulaciju? Prijemnice ostaju u pripremi.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_ID is not null and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button otkljucaj (
+        buttonName: OTKLJUCAJ
+        label: Otključaj
+        layout {
+            sequence: 15
+            region: @kalkulacija-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-unlock
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Otključati kalkulaciju? Prijemnice se vraćaju u pripremu, a roba više nije raspoloživa.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_ID is not null and :P341_RAZLOG_OTKLJ is null
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Snimi
+        layout {
+            sequence: 20
+            region: @kalkulacija-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-save
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button zakljucaj (
+        buttonName: ZAKLJUCAJ
+        label: Zaključaj
+        layout {
+            sequence: 30
+            region: @kalkulacija-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Zaključati kalkulaciju? Cijene se upisuju u prijemnice, prijemnice se zaključavaju i roba postaje raspoloživa.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P341_ID is not null and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    validation datum-obavezno (
+        name: Datum obavezno
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P341_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P341_DATUM
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process ucitaj (
+        name: Učitavanje kalkulacije
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                for k in (select * from vw_rm_kalkulacije where id = :P341_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P341_NAZIV            := k.naziv;
+                    :P341_DATUM            := k.datum;
+                    :P341_OPIS             := k.opis;
+                    :P341_SKLADISTE_ID     := k.skladiste_id;
+                    :P341_SKLADISTE        := k.skladiste;
+                    :P341_ROBNO            := k.robno;
+                    :P341_STATUS           := k.status;
+                    :P341_STATUS_KLASA     := case when k.status = 'Z' then 'zakljucena' else 'priprema' end;
+                    :P341_STATUS_NAZIV     := case when k.status = 'Z' then 'Zaključena' else 'U pripremi' end;
+                    :P341_STATUS_IKONA     := case when k.status = 'Z' then 'fa-lock' else 'fa-pencil' end;
+                    :P341_IZNOS_FAKTURA    := to_char(k.iznos_faktura, 'FM999G999G999G990D00');
+                    :P341_IZNOS_TROSKOVA   := to_char(k.iznos_troskova, 'FM999G999G999G990D00');
+                    :P341_UKUPNO           := to_char(k.iznos_faktura + k.iznos_troskova, 'FM999G999G999G990D00');
+                    :P341_RASPOREDJENO     := to_char(k.nabavna_vrijednost, 'FM999G999G999G990D00');
+                    :P341_RAZLIKA          := to_char(k.iznos_faktura + k.iznos_troskova - k.nabavna_vrijednost, 'FM999G999G999G990D00');
+                    :P341_RAZLIKA_KLASA    := case when abs(k.iznos_faktura + k.iznos_troskova - k.nabavna_vrijednost) > 0.005 then 'greska' else 'ok' end;
+                end loop;
+                :P341_ADMIN := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
+                :P341_RAZLOG := rm_kalkulacija_pkg.razlog_zabrane(:P341_ID);
+                :P341_IZMJENJIVA := rm_kalkulacija_pkg.izmjenjiva(:P341_ID);
+                :P341_RAZLOG_OTKLJ := rm_kalkulacija_pkg.razlog_zabrane_otkljucavanja(:P341_ID, :P341_ADMIN);
+                :P341_SVE_RASP := rm_kalkulacija_pkg.sve_rasporedjeno(:P341_ID);
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P341_ID
+        }
+    )
+
+    process nova (
+        name: Nova kalkulacija - početne vrijednosti
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P341_IZMJENJIVA       := 'Y';
+                :P341_STATUS           := 'P';
+                :P341_STATUS_KLASA     := 'priprema';
+                :P341_STATUS_NAZIV     := 'U pripremi';
+                :P341_STATUS_IKONA     := 'fa-pencil';
+                :P341_NAZIV            := 'Nova kalkulacija';
+                :P341_DATUM            := nvl(:P341_DATUM, trunc(sysdate));
+                :P341_SKLADISTE_ID     := :A_SKLADISTE_ID;
+                :P341_RAZLOG_OTKLJ     := 'nova';
+                :P341_SVE_RASP         := 'N';
+                for s in (select sifra || ' - ' || naziv as n from skladista where id = :A_SKLADISTE_ID) loop
+                    :P341_SKLADISTE := s.n;
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P341_ID
+        }
+    )
+
+    process snimi (
+        name: Snimi zaglavlje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P341_ID := rm_kalkulacija_pkg.snimi(
+                    p_id               => :P341_ID,
+                    p_ooj_id           => :APP_OOJ_ID,
+                    p_godina           => :APP_GODINA,
+                    p_skladiste_id     => nvl(:P341_SKLADISTE_ID, :A_SKLADISTE_ID),
+                    p_datum            => :P341_DATUM,
+                    p_nacin_raspodjele => 'V',
+                    p_opis             => :P341_OPIS
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Kalkulacija je snimljena.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process cijene-snimi (
+        name: Cijene po artiklu - snimi
+        type: executeCode
+        editableRegion: @kalk-cijene
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_kalkulacija_pkg.snimi_cijene_artikla(
+                        p_id             => :P341_ID,
+                        p_stavka_id      => kuf_pkg.broj(:ID),
+                        p_marza_procenat => kuf_pkg.broj(:MARZA_PROCENAT),
+                        p_vpc            => kuf_pkg.broj(:VPC),
+                        p_mpc            => kuf_pkg.broj(:MPC)
+                    );
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 11
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y' and :P341_SVE_RASP = 'Y' and :P341_ROBNO = 'Y'
+        }
+    )
+
+    process prijemnice-snimi (
+        name: Prijemnice - snimi redove
+        type: executeCode
+        editableRegion: @kalk-prijemnice
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_kalkulacija_pkg.obrisi_prijemnicu_red(l_id);
+                        else
+                            rm_kalkulacija_pkg.snimi_prijemnicu_red(l_id, :P341_ID, kuf_pkg.broj(:OPERACIJA_ID));
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 12
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process kuf-snimi (
+        name: Fakture - snimi redove
+        type: executeCode
+        editableRegion: @kalk-kuf
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_kalkulacija_pkg.obrisi_kuf(l_id);
+                        else
+                            rm_kalkulacija_pkg.snimi_kuf(l_id, :P341_ID, kuf_pkg.broj(:KUF_ID), :SA_PDV, kuf_pkg.broj(:IZNOS), :APP_PDV_SISTEM,
+                                                         :NACIN_RASPODJELE);
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process troskovi-snimi (
+        name: Troškovi - snimi redove
+        type: executeCode
+        editableRegion: @kalk-troskovi
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_kalkulacija_pkg.obrisi_trosak(l_id);
+                        else
+                            rm_kalkulacija_pkg.snimi_trosak(l_id, :P341_ID, :OPIS, kuf_pkg.broj(:IZNOS), :NACIN_RASPODJELE);
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 22
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process preracunaj (
+        name: Preračunaj zbirove
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_kalkulacija_pkg.preracunaj(:P341_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P341_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process zakljucaj (
+        name: Zaključaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_kalkulacija_pkg.zakljucaj(:P341_ID);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Kalkulacija je zaključena, prijemnice su zaključene.
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj
+        }
+    )
+
+    process otkljucaj (
+        name: Otključaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_kalkulacija_pkg.otkljucaj(:P341_ID, case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end);
+                ```
+        }
+        execution {
+            sequence: 45
+        }
+        successMessage {
+            successMessage: Kalkulacija je otključana.
+        }
+        serverSideCondition {
+            whenButtonPressed: @otkljucaj
+        }
+    )
+
+    process obrisi (
+        name: Obriši
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_kalkulacija_pkg.obrisi(:P341_ID);
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Kalkulacija je obrisana.
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process ajax-kuf-info (
+        name: KUF_INFO
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(rm_kalkulacija_pkg.kuf_info(
+                    p_kuf_id => to_number(apex_application.g_x01),
+                    p_sa_pdv => case when :APP_PDV_SISTEM = 'Y' then nvl(apex_application.g_x02, 'N') else 'Y' end,
+                    p_red_id => kuf_pkg.broj(apex_application.g_x03)
+                ));
+                ```
+        }
+        execution {
+            sequence: 60
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-rasp-izvor (
+        name: RASP_IZVOR
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_util.prn(rm_kalkulacija_pkg.izvor_json(:P341_ID, apex_application.g_x01), false);
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 61
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-rasp-snimi (
+        name: RASP_SNIMI
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_art apex_t_varchar2 := apex_t_varchar2();
+                    l_izn apex_t_varchar2 := apex_t_varchar2();
+                begin
+                    for i in 1 .. apex_application.g_f01.count loop
+                        apex_string.push(l_art, apex_application.g_f01(i));
+                        apex_string.push(l_izn, apex_application.g_f02(i));
+                    end loop;
+                    apex_util.prn(rm_kalkulacija_pkg.snimi_raspodjelu_izvora(:P341_ID, apex_application.g_x01, l_art, l_izn), false);
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 62
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-rasp-sve (
+        name: RASP_SVE
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_util.prn(rm_kalkulacija_pkg.rasporedi_json(:P341_ID), false);
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 63
+            point: ajaxCallback
+        }
+    )
+
+    branch (
+        name: Nazad na listu
+        execution {
+            sequence: 40
+        }
+        behavior {
+            target: {
+                page: 340
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch (
+        name: Ostani na kalkulaciji
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 341
+                items: {
+                    P341_ID: &P341_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ
+        }
+    )
+
+)

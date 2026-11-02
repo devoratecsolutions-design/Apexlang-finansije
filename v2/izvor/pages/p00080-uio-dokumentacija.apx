@@ -1,0 +1,179 @@
+page 80 (
+    name: UIO dokumentacija
+    alias: UIO-DOKUMENTACIJA
+    title: UIO dokumentacija
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @uio-osnovna
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region uio-dokumentacija (
+        name: UIO dokumentacija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_uio(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region uio-po-mjesecima (
+        name: UIO zapisi po mjesecima
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartLayout {
+            height: 280
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series kif (
+            name: KIF
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    WITH m AS (
+                        SELECT level AS mj FROM dual CONNECT BY level <= 12
+                    )
+                    SELECT
+                        substr('JanFebMarAprMajJunJulAvgSepOktNovDec', (m.mj - 1) * 3 + 1, 3) AS mjesec,
+                        coalesce(count(k.id), 0) AS vrijednost
+                    FROM
+                        m
+                        LEFT JOIN uio_kif k
+                            ON  k.ooj_id = :APP_OOJ_ID
+                            AND extract(year FROM k.datum_fakture) = :APP_GODINA
+                            AND extract(month FROM k.datum_fakture) = m.mj
+                    GROUP BY
+                        m.mj
+                    ORDER BY
+                        m.mj
+                    ```
+            }
+            columnMapping {
+                label: MJESEC
+                value: VRIJEDNOST
+            }
+            appearance {
+                color: #2271b1
+            }
+        )
+
+        series kuf (
+            name: KUF
+            execution {
+                sequence: 20
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    WITH m AS (
+                        SELECT level AS mj FROM dual CONNECT BY level <= 12
+                    )
+                    SELECT
+                        substr('JanFebMarAprMajJunJulAvgSepOktNovDec', (m.mj - 1) * 3 + 1, 3) AS mjesec,
+                        coalesce(count(k.id), 0) AS vrijednost
+                    FROM
+                        m
+                        LEFT JOIN uio_kuf k
+                            ON  k.ooj_id = :APP_OOJ_ID
+                            AND extract(year FROM k.datum_fakture) = :APP_GODINA
+                            AND extract(month FROM k.datum_fakture) = m.mj
+                    GROUP BY
+                        m.mj
+                    ORDER BY
+                        m.mj
+                    ```
+            }
+            columnMapping {
+                label: MJESEC
+                value: VRIJEDNOST
+            }
+            appearance {
+                color: #9aa7b6
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+)
+

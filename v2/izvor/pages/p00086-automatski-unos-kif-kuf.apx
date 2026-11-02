@@ -1,0 +1,2644 @@
+page 86 (
+    name: Automatski unos KIF / KUF
+    alias: AUTOMATSKI-UNOS-KIF-KUF
+    title: Automatski unos KIF / KUF
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @uio-automatski-unos
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region automatski-unos-kif-kuf (
+        name: Automatski unos KIF / KUF
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region kif (
+        name: KIF
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P86_KUF
+        }
+    )
+
+    region kuf (
+        name: KUF
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P86_KIF
+        }
+    )
+
+    region loaded (
+        name: Loaded
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @kif
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+    )
+
+    region loaded-2 (
+        name: Loaded
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @kuf
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+    )
+
+    region loaded-3 (
+        name: Loaded 2
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @kuf
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+    )
+
+    region loaded-4 (
+        name: Loaded 2
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @kif
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+    )
+
+    region logovi-report (
+        name: Logovi Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    filename,
+                    komentar,
+                    to_char(updated, 'DD.MM.YYYY HH24:MI:SS') as updated,
+                
+                    null as link,
+                    status_color_code as icon_color_class,
+                    'fa fa-gears' as icon_class
+                FROM
+                    vw_uio_history
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    id DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper-logovi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column FILENAME (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Filename
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOMENTAR (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Komentar
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #UPDATED#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #KOMENTAR#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #FILENAME#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region odbijeno (
+        name: Odbijeno
+        type: staticContent
+        source {
+            htmlCode: Vaš zahtjev za automatski unos KIF i KUF fajlova je odbijen.
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper-unos-primjera
+            slot: regionBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: item=value
+            item: P86_STATUS_SIFRA
+            value: odbijeno
+        }
+    )
+
+    region pretraga (
+        name: Pretraga...
+        type: smartFilters
+        source {
+            filteredRegion: @zahtjevi-report
+        }
+        layout {
+            sequence: 10
+            parentRegion: @svi-zahtjevi
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P86_DATA_LOAD_STATUS_ID (
+            type: radioGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        naziv as d,
+                        id as r
+                    FROM
+                        sif.sif_statusi
+                    WHERE
+                        opis = 'Data Loading'
+                    ```
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: DATA_LOAD_STATUS_ID
+                dataType: number
+            }
+        )
+
+        filter P86_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region prihvaćeno (
+        name: Prihvaćeno
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                Vaš zahtjev za automatski unos KIF i KUF fajlova je obrađen.
+                Vaš zahtjev je prihvaćen.
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper-uspješno-obrađeno
+            slot: subRegions
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--success
+            ]
+        }
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-rds
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region svi-zahtjevi (
+        name: Svi zahtjevi
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+    )
+
+    region tabs (
+        name: Tabs
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @wrapper-uspješno-obrađeno
+            slot: subRegions
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                t-TabsRegion-mod--fillLabels
+                t-TabsRegion-mod--simple
+            ]
+        }
+    )
+
+    region u-obradi (
+        name: U obradi
+        type: staticContent
+        source {
+            htmlCode: Uspješno ste poslali primjere vaših KIF i KUF fajlova. Vaš zahtjev je u obradi.
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper-obrada
+            slot: subRegions
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+    )
+
+    region upload-a-file (
+        name: Upload a File
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @kif
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P86_KIF
+        }
+    )
+
+    region upload-a-file-2 (
+        name: Upload a File
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @kuf
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P86_KUF
+        }
+    )
+
+    region učitani-kif-fajl-pregled (
+        name: Učitani KIF fajl (pregled)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH preview AS (
+                    SELECT 
+                        rownum as rn,
+                        p.line_number,
+                        p.col001 as vrsta_sloga, 
+                        p.col002 as poreski_period, 
+                        p.col003 as redni_br, 
+                        p.col004 as tip_dokumenta, 
+                        p.col005 as broj_fakture, 
+                        p.col006 as datum_fakture, 
+                        p.col007 as naziv_kupca, 
+                        p.col008 as sjediste_kupca, 
+                        p.col009 as pdv_broj_kupca, 
+                        p.col010 as jib_broj_kupca, 
+                        p.col011 as iznos_fakture, 
+                        p.col012 as iznos_fakture_interne, 
+                        p.col013 as iznos_fakture_izvozne, 
+                        p.col014 as iznos_ostale_bez_pdv, 
+                        p.col015 as iznos_osnovice_za_pdv, 
+                        p.col016 as iznos_izlaz_pdv_za_pdv, 
+                        p.col017 as iznos_osnovice_za_nepdv, 
+                        p.col018 as iznos_izlaz_pdv_za_nepdv, 
+                        p.col019 as iznos_pdv_32polje, 
+                        p.col020 as iznos_pdv_33polje,
+                        p.col021 as iznos_pdv_34polje
+                    FROM
+                        apex_application_temp_files f, 
+                        table( apex_data_parser.parse (
+                            p_content      => f.blob_content,
+                            p_file_name    => f.filename,
+                            p_file_profile => apex_data_loading.get_file_profile( p_static_id => :P86_KIF_STATIC_ID ),
+                            p_max_rows     => 500 ) 
+                        ) p
+                    WHERE 
+                        f.name = :P86_KIF
+                    ORDER BY
+                        p.line_number
+                )
+                SELECT *
+                FROM preview
+                WHERE 
+                    rn > :P86_KIF_BEFORE
+                    -- AND rn <= (SELECT COUNT(*) FROM your_table) - N;
+                ```
+        }
+        layout {
+            sequence: 50
+            parentRegion: @kif
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+
+        column BROJ_FAKTURE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Broj fakture
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_INTERNE (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Iznos interne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_IZVOZNE (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Izvozne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_NEPDV (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            heading {
+                heading: Izlaz PDV za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_PDV (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: Izlaz PDV za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_NEPDV (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            heading {
+                heading: Osnovica za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_PDV (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Osnovica za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSTALE_BEZ_PDV (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Ostale bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_32POLJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            heading {
+                heading: PDV - 32 polje
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_33POLJE (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            heading {
+                heading: PDV - 33 polje
+                alignment: end
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_34POLJE (
+            reportColumnQueryId: 23
+            derivedColumn: N
+            heading {
+                heading: PDV - 34 polje
+                alignment: end
+            }
+            layout {
+                sequence: 230
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JIB_BROJ_KUPCA (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: JIB broj kupca
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINE_NUMBER (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Linija
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_KUPCA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Naziv kupca
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_BROJ_KUPCA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: PDV broj kupca
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PORESKI_PERIOD (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Poreski period
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BR (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RN (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column SJEDISTE_KUPCA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Sjedište kupca
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_DOKUMENTA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Tip dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_SLOGA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    region učitani-kuf-fajl-pregled (
+        name: Učitani KUF fajl (pregled)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH preview AS (
+                    SELECT
+                        rownum as rn,
+                        p.line_number,
+                        p.col001 as vrsta_sloga,
+                        p.col002 as redni_br,
+                        p.col003 as poreski_period,
+                        p.col004 as tip_dokumenta,
+                        p.col005 as broj_fakture,
+                        p.col006 as datum_fakture,
+                        p.col007 as datum_prijema_fakture,
+                        p.col008 as naziv_dobavljaca,
+                        p.col009 as sjediste_dobavljaca,
+                        p.col010 as pdv_broj_dobavljaca,
+                        p.col011 as jib_broj_dobavljaca,
+                        p.col012 as iznos_fakture_bezpdv,
+                        p.col013 as iznos_fakture_sapdv,
+                        p.col014 as iznos_pausal,
+                        p.col015 as iznos_ulaznog_pdv,
+                        p.col016 as iznos_ulazpdv_odbiti,
+                        p.col017 as iznos_ulazpdv_neodbiti,
+                        p.col018 as iznos_pdv_32polje,
+                        p.col019 as iznos_pdv_33polje,
+                        p.col020 as iznos_pdv_34polje
+                
+                    FROM
+                        apex_application_temp_files f, 
+                        table( apex_data_parser.parse(
+                            p_content      => f.blob_content,
+                            p_file_name    => f.filename,
+                            p_file_profile => apex_data_loading.get_file_profile( p_static_id => :P86_KUF_STATIC_ID ),
+                            p_max_rows     => 500 ) 
+                        ) p
+                    WHERE 
+                        f.name = :P86_KUF
+                    ORDER BY
+                        p.line_number
+                )
+                SELECT *
+                FROM preview
+                WHERE 
+                    rn > :P86_KUF_BEFORE
+                    -- AND rn <= (SELECT COUNT(*) FROM your_table) - N;
+                ```
+        }
+        layout {
+            sequence: 60
+            parentRegion: @kuf
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+
+        column BROJ_FAKTURE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Broj fakture
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_PRIJEMA_FAKTURE (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Datum prijema fakture
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_BEZPDV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_SAPDV (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PAUSAL (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Paušal
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_32POLJE (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            heading {
+                heading: PDV - 32 polje
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_33POLJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            heading {
+                heading: PDV - 33 polje
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_34POLJE (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            heading {
+                heading: PDV - 34 polje
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZNOG_PDV (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZPDV_NEODBITI (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV koji se ne može odbiti
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZPDV_ODBITI (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV koji se može odbiti
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JIB_BROJ_DOBAVLJACA (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: JIB broj dobavljača
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINE_NUMBER (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Linija
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_DOBAVLJACA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Naziv dobavljača
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_BROJ_DOBAVLJACA (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: PDV broj dobavljača
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PORESKI_PERIOD (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Poreski period
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BR (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RN (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Rn
+            }
+            layout {
+                sequence: 220
+            }
+        )
+
+        column SJEDISTE_DOBAVLJACA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Sjedište dobavljača
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_DOKUMENTA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Tip dokumenta
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_SLOGA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+    )
+
+    region wrapper-logovi (
+        name: Wrapper - Logovi
+        title: Logovi
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    uio_history
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    region wrapper-obrada (
+        name: Wrapper - Obrada
+        title: Obrada
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: item=value
+            item: P86_STATUS_SIFRA
+            value: obrada
+        }
+    )
+
+    region wrapper-unos-primjera (
+        name: Wrapper - Unos primjera
+        title: Unos primjera
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P86_STATUS_SIFRA IS null OR :P86_STATUS_SIFRA = 'odbijeno'
+        }
+    )
+
+    region wrapper-uspješno-obrađeno (
+        name: Wrapper - Uspješno obrađeno
+        title: Uspješno obrađeno
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: item=value
+            item: P86_STATUS_SIFRA
+            value: prihvaceno
+        }
+    )
+
+    region zahtjevi-report (
+        name: Zahtjevi Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    naziv,
+                    data_load_status_id,
+                    data_load_status_naziv,
+                    data_load_kif_example_filename,
+                    data_load_kuf_example_filename,
+                
+                    apex_page.get_url(
+                        p_page        => 87,
+                        p_items       => 'P87_ID',
+                        p_values      => id,
+                        p_clear_cache => 87
+                    ) as link,
+                    data_load_color_code as icon_color_class,
+                    'fa fa-upload-alt' as icon_class
+                
+                FROM
+                    core.vw_ooj
+                WHERE
+                    data_load_status_id IS NOT NULL
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @svi-zahtjevi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATA_LOAD_KIF_EXAMPLE_FILENAME (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Data Load Kif Example Filename
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column DATA_LOAD_KUF_EXAMPLE_FILENAME (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Data Load Kuf Example Filename
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column DATA_LOAD_STATUS_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Data Load Status Id
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column DATA_LOAD_STATUS_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Data Load Status Naziv
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #DATA_LOAD_STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: KIF: <b>#DATA_LOAD_KIF_EXAMPLE_FILENAME#</b> / KUF: <b>#DATA_LOAD_KUF_EXAMPLE_FILENAME#</b>
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+    )
+
+    pageItem P86_KIF (
+        type: fileUpload
+        label {
+            label: Unos KIF fajla
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+            dropzoneTitle: Unos KIF fajla
+        }
+        storage {
+            type: appTempFiles
+            fileTypes: text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain
+        }
+        layout {
+            sequence: 10
+            region: @upload-a-file
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P86_KIF_AFTER (
+        type: displayOnly
+        label {
+            label: Broj poslednjih redova koji će biti uklonjeni
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @loaded-4
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+    )
+
+    pageItem P86_KIF_BEFORE (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @loaded
+            slot: item
+        }
+    )
+
+    pageItem P86_KIF_DATE_FORMAT (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @loaded
+            slot: item
+        }
+    )
+
+    pageItem P86_KIF_ERROR_COUNT (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @upload-a-file
+            slot: regionBody
+        }
+    )
+
+    pageItem P86_KIF_EXAMPLE (
+        type: fileUpload
+        label {
+            label: Primjer KIF fajla
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+            fileTypes: text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain
+        }
+        layout {
+            sequence: 30
+            region: @wrapper-unos-primjera
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P86_KIF_FILENAME (
+        type: displayOnly
+        label {
+            label: KIF Filename
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @loaded
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P86_KIF_STATIC_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @loaded
+            slot: item
+        }
+    )
+
+    pageItem P86_KUF (
+        type: fileUpload
+        label {
+            label: Unos KUF fajla
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+            dropzoneTitle: Unos KUF fajla
+        }
+        storage {
+            type: appTempFiles
+            fileTypes: text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain
+        }
+        layout {
+            sequence: 10
+            region: @upload-a-file-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P86_KUF_AFTER (
+        type: displayOnly
+        label {
+            label: Broj poslednjih redova koji će biti uklonjeni
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @loaded-3
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+    )
+
+    pageItem P86_KUF_BEFORE (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @loaded-2
+            slot: item
+        }
+    )
+
+    pageItem P86_KUF_DATE_FORMAT (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @loaded-2
+            slot: item
+        }
+    )
+
+    pageItem P86_KUF_ERROR_COUNT (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @upload-a-file-2
+            slot: regionBody
+        }
+    )
+
+    pageItem P86_KUF_EXAMPLE (
+        type: fileUpload
+        label {
+            label: Primjer KUF fajla
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+            fileTypes: text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain
+        }
+        layout {
+            sequence: 40
+            region: @wrapper-unos-primjera
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P86_KUF_FILENAME (
+        type: displayOnly
+        label {
+            label: KUF Filename
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @loaded-2
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P86_KUF_STATIC_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @loaded-2
+            slot: item
+        }
+    )
+
+    pageItem P86_NOTIFICATION_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 80
+            slot: body
+        }
+    )
+
+    pageItem P86_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    button clear-kif (
+        buttonName: CLEAR_KIF
+        label: Očisti
+        layout {
+            sequence: 20
+            region: @loaded
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-remove
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button clear-kuf (
+        buttonName: CLEAR_KUF
+        label: Očisti
+        layout {
+            sequence: 20
+            region: @loaded-2
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-remove
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button upload (
+        buttonName: UPLOAD
+        label: "Pošalji "
+        layout {
+            sequence: 50
+            region: @wrapper-unos-primjera
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+                t-Button--padTop
+            ]
+            icon: fa-upload-alt
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button upload-kif (
+        buttonName: UPLOAD_KIF
+        label: Učitaj KIF
+        layout {
+            sequence: 10
+            region: @loaded-4
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-upload
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+    )
+
+    button upload-kuf (
+        buttonName: UPLOAD_KUF
+        label: Učitaj KUF
+        layout {
+            sequence: 10
+            region: @loaded-3
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-upload
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @zahtjevi-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zahtjevi-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction submit-page-kif (
+        name: Submit Page KIF
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P86_KIF
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P86_KIF
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction submit-page-kuf (
+        name: Submit Page KUF
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P86_KUF
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P86_KUF
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation kif-example-not-null (
+        name: KIF EXAMPLE NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P86_KIF_EXAMPLE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P86_KIF_EXAMPLE
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload
+        }
+    )
+
+    validation kif-valid-type (
+        name: KIF - VALID TYPE
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                if apex_data_parser.assert_file_type(
+                    p_file_name => :P86_KIF_FILENAME,
+                    p_file_type => apex_data_parser.c_file_type_csv )
+                then
+                    return true;
+                elsif apex_data_parser.assert_file_type(
+                    p_file_name => :P86_KIF_FILENAME,
+                    p_file_type => apex_data_parser.c_file_type_xlsx )
+                then
+                    return true;
+                else
+                    :P86_KIF := null;
+                    return false;
+                end if;
+                ```
+        }
+        error {
+            errorMessage: Pogrešan tip fajla.
+            associatedItem: @P86_KIF
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kif
+        }
+    )
+
+    validation kuf-example-not-null (
+        name: KUF EXAMPLE NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P86_KUF_EXAMPLE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P86_KUF_EXAMPLE
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload
+        }
+    )
+
+    validation kuf-valid-type (
+        name: KUF - VALID TYPE
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                if apex_data_parser.assert_file_type(
+                    p_file_name => :P86_KUF_FILENAME,
+                    p_file_type => apex_data_parser.c_file_type_csv )
+                then
+                    return true;
+                elsif apex_data_parser.assert_file_type(
+                    p_file_name => :P86_KUF_FILENAME,
+                    p_file_type => apex_data_parser.c_file_type_xlsx )
+                then
+                    return true;
+                else
+                    :P86_KUF := null;
+                    return false;
+                end if;
+                ```
+        }
+        error {
+            errorMessage: Pogrešan tip fajla.
+            associatedItem: @P86_KUF
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kuf
+        }
+    )
+
+    computation p86-kif-filename (
+        itemName: P86_KIF_FILENAME
+        execution {
+            sequence: 30
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    filename
+                FROM
+                    apex_application_temp_files
+                WHERE
+                    name = :P86_KIF
+                ```
+        }
+    )
+
+    computation p86-kuf-filename (
+        itemName: P86_KUF_FILENAME
+        execution {
+            sequence: 20
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    filename
+                FROM
+                    apex_application_temp_files
+                WHERE
+                    name = :P86_KUF
+                ```
+        }
+    )
+
+    computation p86-status-sifra (
+        itemName: P86_STATUS_SIFRA
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    data_load_status_sifra
+                FROM
+                    core.vw_ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    process clear (
+        name: Clear
+        type: clearSessionState
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 50332824378018336
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CLEAR_KIF,CLEAR_KUF
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.get_ooj_data_load (
+                    p_ooj_id                    => :APP_OOJ_ID,
+                    p_data_load_kif_static_id   => :P86_KIF_STATIC_ID,
+                    p_data_load_kif_before      => :P86_KIF_BEFORE,
+                    p_data_load_kif_after       => :P86_KIF_AFTER,
+                    p_data_load_kif_date_format => :P86_KIF_DATE_FORMAT,
+                    p_data_load_kuf_static_id   => :P86_KUF_STATIC_ID,
+                    p_data_load_kuf_before      => :P86_KUF_BEFORE,
+                    p_data_load_kuf_after       => :P86_KUF_AFTER,
+                    p_data_load_kuf_date_format => :P86_KuF_DATE_FORMAT
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: afterHeader
+        }
+        advanced {
+            executionMappingIdentifier: 50554330050545128
+        }
+        serverSideCondition {
+            type: item=value
+            item: P86_STATUS_SIFRA
+            value: prihvaceno
+        }
+    )
+
+    process load-kif (
+        name: Load KIF
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_file            BLOB;
+                    l_load_result     apex_data_loading.t_data_load_result;
+                    l_collection_name VARCHAR2(64) := 'LOAD_KIF';
+                BEGIN
+                    SELECT 
+                        blob_content
+                    INTO 
+                        l_file
+                    FROM 
+                        apex_application_temp_files
+                    WHERE 
+                        name = :P86_KIF;
+                
+                    l_load_result := apex_data_loading.load_data (
+                        p_static_id    => :P86_KIF_STATIC_ID,
+                        p_data_to_load => l_file 
+                    );
+                    :P86_KIF_ERROR_COUNT := l_load_result.error_rows;
+                
+                    <<RemoveRows>>
+                    BEGIN
+                        FOR c1 IN (
+                            WITH preview AS (
+                                SELECT  
+                                    rownum as rn,
+                                    seq_id
+                                FROM
+                                    apex_collections
+                                WHERE
+                                    collection_name = l_collection_name
+                            )
+                            SELECT *
+                            FROM preview
+                            WHERE
+                                rn <= :P86_KIF_BEFORE
+                                OR rn > (SELECT count(*) FROM apex_collections WHERE collection_name = l_collection_name) - :P86_KIF_AFTER
+                        ) LOOP
+                            apex_collection.delete_member (
+                                p_collection_name => l_collection_name,
+                                p_seq             => c1.seq_id
+                            );
+                        END LOOP;
+                    END;
+                
+                END;
+                
+                
+                
+                
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 50555164486545136
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kif
+        }
+    )
+
+    process load-kuf (
+        name: Load KUF
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_file            BLOB;
+                    l_load_result     apex_data_loading.t_data_load_result;
+                    l_collection_name VARCHAR2(64) := 'LOAD_KUF';
+                BEGIN
+                    SELECT 
+                        blob_content
+                    INTO 
+                        l_file
+                    FROM 
+                        apex_application_temp_files
+                    WHERE 
+                        name = :P86_KUF;
+                
+                    l_load_result := apex_data_loading.load_data (
+                        p_static_id    => :P86_KUF_STATIC_ID,
+                        p_data_to_load => l_file 
+                    );
+                    :P86_KUF_ERROR_COUNT := l_load_result.error_rows;
+                
+                    <<RemoveRows>>
+                    BEGIN
+                        FOR c1 IN (
+                            WITH preview AS (
+                                SELECT  
+                                    rownum as rn,
+                                    seq_id
+                                FROM
+                                    apex_collections
+                                WHERE
+                                    collection_name = l_collection_name
+                            )
+                            SELECT *
+                            FROM preview
+                            WHERE
+                                rn <= :P86_KUF_BEFORE
+                                OR rn > (SELECT count(*) FROM apex_collections WHERE collection_name = l_collection_name) - :P86_KUF_AFTER
+                        ) LOOP
+                            apex_collection.delete_member (
+                                p_collection_name => l_collection_name,
+                                p_seq             => c1.seq_id
+                            );
+                        END LOOP;
+                    END;
+                
+                END;
+                
+                
+                
+                
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 50555234216545137
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kuf
+        }
+    )
+
+    process read-notification (
+        name: Read notification
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.notifikacije_pkg.read_notification (
+                    p_id => :P86_NOTIFICATION_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 111738586587490987
+        }
+        serverSideCondition {
+            type: request=Value
+            value: notification
+        }
+    )
+
+    process upload-example (
+        name: Upload example
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.upload_data_load_example (
+                    p_ooj_id      => :APP_OOJ_ID,
+                    p_kif_example => :P86_KIF_EXAMPLE,
+                    p_kuf_example => :P86_KUF_EXAMPLE
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 50276892464322024
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload
+        }
+    )
+
+    branch (
+        name: Go To Page 88 - KIF
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 88
+                items: {
+                    P88_ERROR_COUNT: &P86_KIF_ERROR_COUNT.
+                    P88_FILENAME: &P86_KIF_FILENAME.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kif
+        }
+    )
+
+    branch (
+        name: Go To Page 89 - KUF
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 89
+                items: {
+                    P89_ERROR_COUNT: &P86_KUF_ERROR_COUNT.
+                    P89_FILENAME: &P86_KUF_FILENAME.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @upload-kuf
+        }
+    )
+
+)
+

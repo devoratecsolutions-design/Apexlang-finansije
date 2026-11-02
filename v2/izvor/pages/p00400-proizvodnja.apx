@@ -1,0 +1,248 @@
+page 400 (
+    name: Proizvodnja
+    alias: PROIZVODNJA
+    title: Proizvodnja
+    pageGroup: @proizvodnja
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @proizvodnja-osnovni-pristup
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region proizvodnja (
+        name: Proizvodnja
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_proizvodnja(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region rn-po-statusu (
+        name: Radni nalozi po statusu
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 5
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chart {
+            type: donut
+        }
+        chartLayout {
+            height: 280
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series statusi (
+            name: Radni nalozi
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        coalesce(s.naziv, 'Bez statusa') AS status,
+                        count(*) AS broj
+                    FROM
+                        radni_nalozi rn
+                        LEFT JOIN sif.sif_statusi s ON s.id = rn.status_id
+                    WHERE
+                        rn.ooj_id = :APP_OOJ_ID
+                        AND rn.godina = :APP_GODINA
+                        AND rn.valid = 'Y'
+                        AND coalesce(rn.stornirano, 'N') = 'N'
+                    GROUP BY
+                        s.naziv
+                    ORDER BY
+                        2 DESC
+                    ```
+            }
+            columnMapping {
+                label: STATUS
+                value: BROJ
+            }
+        )
+
+    )
+
+    region rn-posljednji (
+        name: Posljednji radni nalozi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    rn.datum,
+                    rn.naziv,
+                    rn.kolicina,
+                    coalesce(s.naziv, '-') AS status
+                FROM
+                    radni_nalozi rn
+                    LEFT JOIN sif.sif_statusi s ON s.id = rn.status_id
+                WHERE
+                    rn.ooj_id = :APP_OOJ_ID
+                    AND rn.valid = 'Y'
+                    AND coalesce(rn.stornirano, 'N') = 'N'
+                ORDER BY
+                    rn.datum DESC,
+                    rn.id DESC
+                FETCH FIRST 10 ROWS ONLY
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+            startNewRow: false
+            columnSpan: 7
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 10
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema stavki.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Radni nalog
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+)
+

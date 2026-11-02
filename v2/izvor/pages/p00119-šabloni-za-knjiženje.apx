@@ -1,0 +1,733 @@
+page 119 (
+    name: Šabloni za knjiženje
+    alias: ŠABLONI-ZA-KNJIŽENJE
+    title: Šabloni za knjiženje
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Zbog specifičnih potreba organizacija i različitih entitetskih zahtjeva, 
+            omogućeno je kreiranje novih šablona u skladu sa potrebama korisnika. 
+            </br>
+            Proces kreiranja uključuje:
+            <ul>
+                <li>Unos naziva i opisa šablona,</li>
+                <li>Definisanje konta za automatska knjiženja, uključujući konta za izlazne fakture i avansne fakture,</li>
+                <li>Potvrđivanje unosa klikom na dugme <b><em>"Kreiraj".</em></b></li>
+            </ul>
+            ```
+    }
+
+    region klijenti-bez-šeme-za-knjiženje (
+        name: Klijenti bez šeme za knjiženje
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                from 
+                    vw_klijenti
+                where
+                    ooj_id = :APP_OOJ_ID
+                    AND sablon_id is null
+                ```
+        }
+    )
+
+    region klijenti-report (
+        name: Klijenti Report
+        type: themeTemplateComponent/mediaList
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    drzava_naziv || ', ' || grad || ', ' || adresa as opis,
+                    tip_klijenta_naziv || ' / ' || apex_item.text_from_lov (
+                        vrsta_klijenta,
+                        'VRSTA_KLIJENTA'
+                    ) as badge
+                from 
+                    vw_klijenti
+                where
+                    ooj_id = :APP_OOJ_ID
+                    AND sablon_id is null
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @klijenti-bez-šeme-za-knjiženje
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        accessibility {
+            landmarkType: region
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            title: NAZIV
+            description: OPIS
+            displayBadge: true
+        }
+        plugin-badge {
+            label: &BADGE.
+            value: BADGE
+        }
+        rowSelection {
+            type: multipleSelection
+            currentSelectionPageItem: P119_SELECTED
+            selectAllPageItem: P119_SELECT_ALL
+        }
+        pagination {
+            type: scroll
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column BADGE (
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: BADGE
+                dataType: varchar2
+            }
+        )
+
+        column ID (
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column NAZIV (
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: NAZIV
+                dataType: varchar2
+            }
+        )
+
+        column OPIS (
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: OPIS
+                dataType: varchar2
+            }
+        )
+
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                from 
+                    vw_klijenti
+                where
+                    ooj_id = :APP_OOJ_ID
+                    AND sablon_id is null
+                ```
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region select-all-wrapper (
+        name: Select All - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @klijenti-bez-šeme-za-knjiženje
+            slot: subRegions
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region šabloni-za-knjiženje (
+        name: Šabloni za knjiženje
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    naziv,
+                    opis,
+                    updated,
+                    updated_by,
+                    
+                    apex_page.get_url(
+                        p_page   => 120,
+                        p_items  => 'P120_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-gears' as icon_class
+                FROM
+                    sabloni
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    OR (ooj_id IS null AND  core.korisnik_pkg.user_has_role(:APP_USER_ID, 'MAIN_ADMIN_RLE') > 0)
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #UPDATED# / #UPDATED_BY#
+                    </span>
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #OPIS#
+            }
+            security {
+                escapeSpecialChars: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                defaultSequence: 1
+            }
+            security {
+                escapeSpecialChars: false
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: SINCE
+            }
+        )
+
+        column UPDATED_BY (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Updated By
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+    )
+
+    region šabloni-za-knjiženje-2 (
+        name: Šabloni za knjiženje
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P119_SABLON_ID (
+        type: selectOne
+        label {
+            label: Šablon
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sabloni
+        }
+        layout {
+            sequence: 30
+            region: @select-all-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P119_SELECTED (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @klijenti-report
+            slot: regionBody
+        }
+    )
+
+    pageItem P119_SELECT_ALL (
+        type: checkbox
+        label {
+            label: Izaberi sve klijente
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @klijenti-report
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-left-sm
+            ]
+        }
+    )
+
+    button copy-basic (
+        buttonName: COPY_BASIC
+        label: Kopiraj osnovnu šemu knjiženja
+        layout {
+            sequence: 10
+            region: @šabloni-za-knjiženje-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 120
+                clearCache: 120
+                request: copy_basic
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 20
+            region: @šabloni-za-knjiženje-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 120
+                clearCache: 120
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button update (
+        buttonName: UPDATE
+        label: Ažuriraj šablone izabranih klijenata
+        layout {
+            sequence: 20
+            region: @select-all-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @šabloni-za-knjiženje
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-item (
+            name: Refresh - Item
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P119_SABLON_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @šabloni-za-knjiženje
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @šabloni-za-knjiženje
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-item (
+            name: Refresh - Item
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P119_SABLON_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-3 (
+        name: Dialog Closed - Refresh 3
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @copy-basic
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @šabloni-za-knjiženje
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-item (
+            name: Refresh - Item
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P119_SABLON_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process update-sabloni (
+        name: Update sabloni
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sec_pkg.update_klijent_sablon (
+                    p_klijent_list => :P119_SELECTED,
+                    p_sablon_id    => :P119_SABLON_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 157491599207763005
+        }
+        serverSideCondition {
+            whenButtonPressed: @update
+        }
+    )
+
+)
+

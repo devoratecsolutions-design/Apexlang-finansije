@@ -1,0 +1,501 @@
+page 313 (
+    name: Stanje skladišta
+    alias: STANJE-SKLADISTA
+    title: Stanje skladišta
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @robno-materijalno-konfiguracija-skladišta
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region stanje-naslov (
+        name: "Stanje skladišta: &P313_NAZIV."
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filteri (
+        name: Filteri
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region stanje (
+        name: Stanje
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_sifra,
+                    stavka_naziv,
+                    jm_naziv,
+                    grupa_naziv,
+                    tip_stavke_naziv,
+                    kolicina,
+                    obradjeno,
+                    raspolozivo,
+                    CASE WHEN obradjeno <> 0 THEN round(vrijednost / obradjeno, 4) END AS cijena,
+                    vrijednost,
+                    CASE WHEN prati_sb = 'Y' THEN 'Da' ELSE 'Ne' END AS serijski_broj,
+                    zadnja_promjena
+                FROM vw_rm_skladiste_stanje
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND skladiste_id = :P313_SKLADISTE_ID
+                  AND (:P313_SVE = 'Y' OR kolicina <> 0 OR obradjeno <> 0)
+                ```
+            pageItemsToSubmit: [
+                P313_SKLADISTE_ID
+                P313_SVE
+            ]
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nema artikala na stanju izabranog skladišta.
+        }
+        advanced {
+            savedReportMappingIdentifier: 313000000000000001
+        }
+
+        column STAVKA_SIFRA (
+            type: plainText
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column STAVKA_NAZIV (
+            type: plainText
+            heading {
+                heading: Naziv artikla
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column JM_NAZIV (
+            type: plainText
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column GRUPA_NAZIV (
+            type: plainText
+            heading {
+                heading: Grupa
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column TIP_STAVKE_NAZIV (
+            type: plainText
+            heading {
+                heading: Tip
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column KOLICINA (
+            type: plainText
+            heading {
+                heading: Stanje
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D000
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column OBRADJENO (
+            type: plainText
+            heading {
+                heading: Obrađeno
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D000
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: plainText
+            heading {
+                heading: Raspoloživo
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D000
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column CIJENA (
+            type: plainText
+            heading {
+                heading: Prosječna cijena
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D0000
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column VRIJEDNOST (
+            type: plainText
+            heading {
+                heading: Vrijednost (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column SERIJSKI_BROJ (
+            type: plainText
+            heading {
+                heading: Serijski broj
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column ZADNJA_PROMJENA (
+            type: plainText
+            heading {
+                heading: Zadnja promjena
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn STAVKA_SIFRA (
+                sequence: 1
+            )
+
+            displayColumn STAVKA_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn GRUPA_NAZIV (
+                sequence: 4
+            )
+
+            displayColumn TIP_STAVKE_NAZIV (
+                sequence: 5
+            )
+
+            displayColumn KOLICINA (
+                sequence: 6
+            )
+
+            displayColumn OBRADJENO (
+                sequence: 7
+            )
+
+            displayColumn RASPOLOZIVO (
+                sequence: 8
+            )
+
+            displayColumn CIJENA (
+                sequence: 9
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 10
+            )
+
+            displayColumn SERIJSKI_BROJ (
+                sequence: 11
+            )
+
+            displayColumn ZADNJA_PROMJENA (
+                sequence: 12
+            )
+
+        )
+
+    )
+
+    pageItem P313_SKLADISTE_ID (
+        type: selectOne
+        label {
+            label: Skladište
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT s.sifra || ' - ' || s.naziv AS d, s.id AS r
+                FROM skladista s
+                WHERE s.ooj_id = :APP_OOJ_ID
+                  AND nvl(rm_skladiste_pkg.modul(s.id), 'MAT') = nvl(:A_RM_MODUL, 'ROB')
+                ORDER BY s.valid DESC, s.sifra
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @filteri
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P313_SVE (
+        type: switch
+        label {
+            label: Prikaži i artikle sa nultim stanjem
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+        layout {
+            sequence: 20
+            region: @filteri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P313_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            region: @filteri
+            slot: regionBody
+        }
+    )
+
+    dynamicAction filter (
+        name: Promjena filtera - osvježi
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: [
+                P313_SKLADISTE_ID
+                P313_SVE
+            ]
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stanje
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process naziv (
+        name: Naziv skladišta
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P313_SKLADISTE_ID := nvl(:P313_SKLADISTE_ID, :A_SKLADISTE_ID);
+                for s in (select sifra || ' - ' || naziv as n from skladista where id = :P313_SKLADISTE_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P313_NAZIV := s.n;
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+)

@@ -1,0 +1,1202 @@
+authorization admin-preuzimanje-sesije (
+    name: Admin - Preuzimanje sesije
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SEC_ADMIN_SESIJA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+    subscription {
+        master: @/200/admin-preuzimanje-sesije
+    }
+)
+
+authorization blagajna-dnevnik-blagajne (
+    name: Blagajna - Dnevnik blagajne
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BL_DNEVNIK_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization blagajna-izvještaji (
+    name: Blagajna - Izvještaji
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BL_IZVJESTAJI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization blagajna-konfiguracija (
+    name: Blagajna - Konfiguracija
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BL_KONFIGURACIJA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization blagajna-osnovni-pristup (
+    name: Blagajna - Osnovni pristup
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BL_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization bolovanje-osnovna (
+    name: Bolovanje - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,B_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-osnovna (
+    name: Budžet - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_OSNOVNA_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-pregled-nacrta (
+    name: Budžet - Pregled Nacrta
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_PREGLED_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-realizacija (
+    name: Budžet - Realizacija
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_REALIZACIJA_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-realokacija-stavki (
+    name: Budžet - Realokacija Stavki
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_REALOKACIJA_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-realokacija-stavki-lična-org-jedinica (
+    name: Budžet - Realokacija Stavki (Lična Org. Jedinica)
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_REALOKACIJA_OJ_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-slanje-nacrta (
+    name: Budžet - Slanje Nacrta
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_NACRT_OJ_ZAVRSI_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-stavke (
+    name: Budžet - Stavke
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_STAVKE_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-zaključavanje-nacrta (
+    name: Budžet - Zaključavanje Nacrta
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_ZAKLJUCANO_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-započinjanje-nacrta (
+    name: Budžet - Započinjanje Nacrta
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_KREIRANJE_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization budžet-započinjanje-rebalans (
+    name: Budžet - Započinjanje Rebalans
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,BDZ_REBALANS_RLE'
+            );
+            
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization fakture-kif (
+    name: Fakture - KIF
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,FAK_KIF_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization fakture-kuf (
+    name: Fakture - KUF
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,FAK_KUF_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization fakture-osnovna (
+    name: Fakture - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,FAK_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization fakture-stavke (
+    name: Fakture - Stavke
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,FAK_STAVKE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization finansije-klijenti (
+    name: Finansije - Klijenti
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SEC_KLIJENTI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization finansije-konfiguracija (
+    name: Finansije - Konfiguracija
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SEC_KONFIGURACIJA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization finansije-ugovori (
+    name: Finansije - Ugovori
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SEC_UGOVORI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization glavna-knjiga-izvještaji (
+    name: Glavna knjiga - Izvještaji
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,GK_IZVJESTAJI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization glavna-knjiga-izvodi (
+    name: Glavna knjiga - Izvodi
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,GK_IZVODI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization glavna-knjiga-nalozi (
+    name: Glavna knjiga - Nalozi
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,GK_NALOG_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization glavna-knjiga-osnovna (
+    name: Glavna knjiga - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,GK_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization glavna-knjiga-pdv-prijava (
+    name: Glavna knjiga - PDV prijava
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,GK_PDV_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization izvodi-izmjene (
+    name: Izvodi - Izmjene
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,IZ_IZMJENE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization izvodi-osnovna (
+    name: Izvodi - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,IZ_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization main-admin (
+    name: MAIN ADMIN
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Insufficient privileges, user is not an Administrator
+    }
+    advanced {
+        evaluationType: perSession
+    }
+    subscription {
+        master: @/200/main-admin
+    }
+)
+
+authorization osnovna-sredstva-amortizacija (
+    name: Osnovna sredstva - Amortizacija
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,OS_AMORTIZACIJA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization osnovna-sredstva-izmjena (
+    name: Osnovna sredstva - Izmjena
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,OS_IZMJENA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization osnovna-sredstva-osnovna (
+    name: Osnovna sredstva - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,OS_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization osnovna-sredstva-popis (
+    name: Osnovna sredstva - Popis
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,OS_POPIS_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization osnovna-sredstva-pregled (
+    name: Osnovna sredstva - Pregled
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,OS_PREGLED_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization proizvodnja-cjenovnik (
+    name: Proizvodnja - Cjenovnik
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,PRO_CJENOVNIK_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization proizvodnja-kreiranje-radnih-naloga (
+    name: Proizvodnja - Kreiranje radnih naloga
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,PRO_RADNI_NALOZI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization proizvodnja-normativi (
+    name: Proizvodnja - Normativi
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,PRO_NORMATIVI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization proizvodnja-osnovni-pristup (
+    name: Proizvodnja - Osnovni pristup
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,PRO_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization proizvodnja-radnik (
+    name: Proizvodnja - Radnik
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,PRO_RADNIK_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization radnik-osnovna (
+    name: Radnik - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'O_RADNIK_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+    subscription {
+        master: @/200/radnik-osnovna
+    }
+)
+
+authorization robno-materijalno-dokumenti (
+    name: Robno-materijalno - Dokumenti
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_DOKUMENTI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-izvještaji (
+    name: Robno-materijalno - Izvještaji
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_IZVJESTAJI_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-kalkulacije-robe (
+    name: Robno-materijalno - Kalkulacije robe
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_KALKULACIJE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-konfiguracija-skladišta (
+    name: Robno-materijalno - Konfiguracija skladišta
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_SKLADISTA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-nivelacije-cijene (
+    name: Robno-materijalno - Nivelacije cijene
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_NIVELACIJE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-osnovni-pristup (
+    name: Robno-materijalno - Osnovni pristup
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-popis (
+    name: Robno-materijalno - Popis
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_POPIS_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization robno-materijalno-trebovanja (
+    name: Robno-materijalno - Trebovanja
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,RMK_TREBOVANJA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization sekretarica-ima-sekretaricu (
+    name: Sekretarica - Ima sekretaricu
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,A_BIRO_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+    subscription {
+        master: @/200/sekretarica-ima-sekretaricu
+    }
+)
+
+authorization skladišta-izmjena (
+    name: Skladišta - Izmjena
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SK_IZMJENA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization skladišta-narudžbenice (
+    name: Skladišta - Narudžbenice
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SK_NARUDZBENICE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization skladišta-operacije (
+    name: Skladišta - Operacije
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SK_OPERACIJE_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization skladišta-osnovna (
+    name: Skladišta - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,SK_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization uio-automatski-unos (
+    name: UIO - Automatski unos
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,UIO_AUTO_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization uio-kif (
+    name: UIO - KIF
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,UIO_KIF_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization uio-kuf (
+    name: UIO - KUF
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,UIO_KUF_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+
+authorization uio-osnovna (
+    name: UIO - Osnovna
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody:
+            ```plsql
+            RETURN core.korisnik_pkg.user_authorization (
+                p_korisnik_id => :APP_USER_ID,
+                p_role        => 'MAIN_ADMIN_RLE,UIO_OSNOVNA_RLE'
+            );
+            ```
+    }
+    error {
+        errorMessage: Nemate pravo pristupa ovom modulu aplikacije
+    }
+    advanced {
+        evaluationType: perSession
+    }
+)
+

@@ -1,0 +1,182 @@
+page 500 (
+    name: Budžet
+    alias: BUDŽET-DASHBOARD
+    title: Budžet
+    pageGroup: @budžet
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @budžet-osnovna
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet (
+        name: Budžet
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_budzet(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region plan-realizacija (
+        name: Plan i realizacija po organizacionim jedinicama
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 360
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series plan (
+            name: Planirano
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        coalesce(oj.naziv, 'Bez org. jedinice') AS org_jedinica,
+                        sum(bs.iznos) AS planirano,
+                        sum(bs.iznos_realizacija) AS realizovano
+                    FROM
+                        vw_dash_budzet_aktuelni b
+                        JOIN budzet_stavke bs ON bs.budzet_id = b.budzet_id AND bs.valid = 'Y'
+                        LEFT JOIN core.oj oj ON oj.id = bs.oj_id
+                    WHERE
+                        b.ooj_id = :APP_OOJ_ID
+                        AND b.godina = :APP_GODINA
+                    GROUP BY
+                        oj.naziv
+                    ORDER BY
+                        2 DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    ```
+            }
+            columnMapping {
+                label: ORG_JEDINICA
+                value: PLANIRANO
+            }
+            appearance {
+                color: #9aa7b6
+            }
+        )
+
+        series realizacija (
+            name: Realizovano
+            execution {
+                sequence: 20
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        coalesce(oj.naziv, 'Bez org. jedinice') AS org_jedinica,
+                        sum(bs.iznos) AS planirano,
+                        sum(bs.iznos_realizacija) AS realizovano
+                    FROM
+                        vw_dash_budzet_aktuelni b
+                        JOIN budzet_stavke bs ON bs.budzet_id = b.budzet_id AND bs.valid = 'Y'
+                        LEFT JOIN core.oj oj ON oj.id = bs.oj_id
+                    WHERE
+                        b.ooj_id = :APP_OOJ_ID
+                        AND b.godina = :APP_GODINA
+                    GROUP BY
+                        oj.naziv
+                    ORDER BY
+                        2 DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    ```
+            }
+            columnMapping {
+                label: ORG_JEDINICA
+                value: REALIZOVANO
+            }
+            appearance {
+                color: #00a982
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+)
+

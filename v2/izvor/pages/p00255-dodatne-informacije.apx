@@ -1,0 +1,438 @@
+page 255 (
+    name: Dodatne informacije
+    alias: DODATNE-INFORMACIJE
+    title: Dodatne informacije
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        height: 400
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region dodatne-informacije (
+        name: Dodatne informacije
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-osnovna-sredstva
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    pageItem P255_DOKUMENT (
+        type: fileUpload
+        label {
+            label: Dokument
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+        }
+        layout {
+            sequence: 250
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P255_DOKUMENT_BROJ (
+        type: numberField
+        label {
+            label: Broj dokumenta
+            alignment: left
+        }
+        layout {
+            sequence: 300
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P255_DOKUMENT_DATUM (
+        type: datePicker
+        label {
+            label: Datum dokumenta
+            alignment: left
+        }
+        layout {
+            sequence: 310
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P255_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti
+        }
+        layout {
+            sequence: 240
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P255_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Radnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 230
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P255_REG_OZNAKA (
+        type: textField
+        label {
+            label: Registarska oznaka
+            alignment: left
+        }
+        layout {
+            sequence: 220
+            region: @dodatne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button finish (
+        buttonName: FINISH
+        label: Završi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 54575607841621766
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                
+                    -- Page 1
+                    l_os.ooj_id := :APP_OOJ_ID;
+                    l_os.inventurni_broj := :P252_INVENTURNI_BROJ;
+                    l_os.inventurni_naziv := :P252_INVENTURNI_NAZIV;
+                    l_os.stari_inventurni_broj := :P252_STARI_INVENTURNI_BROJ;
+                    l_os.naziv := :P252_NAZIV;
+                    l_os.kolicina := :P252_KOLICINA;
+                    l_os.jm_id := :P252_JM_ID;
+                    l_os.datum := :P252_DATUM;
+                    l_os.indikator_id := :P252_INDIKATOR_ID;
+                    -- IF :APP_TIP_PREDUZETNIKA_SIFRA = 'vsp_prosto' THEN
+                        -- l_os.nabavna_vrijednost := to_number(:P252_NABAVNA_VRIJEDNOST, '999G999G999G999G990D00');
+                    -- END IF;
+                
+                    l_os.automatska_amortizacija := :P252_AUTOMATSKA_AMORTIZACIJA;
+                    IF :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno') THEN
+                        l_os.priprema := coalesce(:P252_PRIPREMA, 'N');
+                        IF :P252_PRIPREMA = 'N' THEN
+                            l_os.priprema_id := :P252_PRIPREMA_ID;
+                        END IF;
+                    ELSE
+                        l_os.priprema := 'N';
+                        l_os.priprema_id := null;
+                    END IF;
+                
+                    -- Page 2
+                    l_os.oj_id := :P253_OJ_ID;
+                    l_os.lokacija_id := :P253_LOKACIJA_ID;
+                    l_os.prostorija_id := :P253_PROSTORIJA_ID;
+                
+                    -- Page 3
+                    l_os.klasa_id := :P252_KLASA_ID;
+                    l_os.vijek_trajanja := :P254_VIJEK_TRAJANJA;
+                    l_os.amortizaciona_stopa := :P254_AMORTIZACIONA_STOPA;
+                    l_os.procijenjeni_vijek_trajanja := :P254_PROCIJENJENI_VIJEK_TRAJANJA;
+                    l_os.poreska_amortizaciona_stopa := :P254_PORESKA_AMORTIZACIONA_STOPA;
+                    l_os.grad_id := :P254_GRAD_ID;
+                    l_os.donacija := :P254_DONACIJA;
+                    l_os.rezidualna_vrijednost := :P254_REZIDUALNA_VRIJEDNOST;
+                
+                    -- Page 4
+                    l_os.reg_oznaka := :P255_REG_OZNAKA;
+                    l_os.radnik_id := :P255_RADNIK_ID;
+                    l_os.klijent_id := :P255_KLIJENT_ID;
+                    IF :P255_DOKUMENT IS NOT null THEN
+                        sif.utils_pkg.get_apex_file_upload (
+                            p_apex_filename => :P255_DOKUMENT,
+                            p_blob          => l_os.dokument,
+                            p_filename      => l_os.dokument_filename,
+                            p_mimetype      => l_os.dokument_mimetype
+                        );
+                
+                        l_os.dokument_lastupd := sysdate;
+                    END IF;
+                    
+                    l_os.dokument_broj := :P255_DOKUMENT_BROJ;
+                    l_os.dokument_datum := :P255_DOKUMENT_DATUM;
+                    IF :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno') THEN
+                        l_os.aktivirano := 'N';
+                    ELSE
+                        l_os.aktivirano := 'Y';
+                    END IF;
+                    l_os.status_id := 21;
+                    l_os.valid := 'Y';
+                
+                    IF :P252_GROUP_YN = 'Y' THEN
+                        os_pkg.insert_group_os (
+                            p_os       => l_os,
+                            p_kolicina => :P252_GROUP_KOLICINA
+                        );
+                    ELSE
+                        os_pkg.insert_osnovno_sredstvo (
+                            p_os => l_os
+                        );
+                    END IF;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 54608944226650028
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 254
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+)
+

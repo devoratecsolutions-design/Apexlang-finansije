@@ -1,0 +1,357 @@
+page 277 (
+    name: Zajednički indikatori
+    alias: ZAJEDNIČKI-INDIKATORI
+    title: Zajednički indikatori
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-pregled
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region zajednički-indikatori (
+        name: Zajednički indikatori
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    sifra,
+                    naziv,
+                    opis,
+                    
+                    apex_page.get_url(
+                        p_page   => 278,
+                        p_items  => 'P278_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-layouts-grid-2x' as icon_class
+                FROM
+                    sec_os_indikatori
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #SIFRA#
+                    </span>
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #OPIS#
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Sifra
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+    )
+
+    region zajednički-indikatori-2 (
+        name: Zajednički indikatori
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @zajednički-indikatori
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P277_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @zajednički-indikatori-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 278
+                clearCache: 278
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zajednički-indikatori
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @zajednički-indikatori
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zajednički-indikatori
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

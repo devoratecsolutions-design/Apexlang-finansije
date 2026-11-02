@@ -1,0 +1,1055 @@
+page 203 (
+    name: Nalog za knjiženje / Stavka
+    alias: NALOG-ZA-KNJIŽENJE-STAVKA
+    title: Nalog za knjiženje / Stavka
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region nalog-za-knjiženje-stavka (
+        name: Nalog za knjiženje / Stavka
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P203_DATUM_DOKUMENTA (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P203_DODJELA (
+        type: textarea
+        label {
+            label: Dodjela
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 200
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P203_GLAVNA_KNJIGA_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P203_GRAD_ID (
+        type: selectOne
+        label {
+            label: Grad
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv || ' ( ' || lpad(sifra, 3, '0') || ' )' as d,
+                    id as r
+                FROM
+                    sif.sif_gradovi g
+                WHERE
+                    (
+                        :P203_KLIJENT_ID IS NOT NULL 
+                        AND g.drzava_id = (
+                            SELECT k.drzava_id
+                            FROM sec_klijenti k
+                            WHERE k.id = :P203_KLIJENT_ID
+                        )
+                    ) OR (
+                        :P203_KLIJENT_ID IS NULL 
+                        AND drzava_id = 28
+                    )
+                ```
+        }
+        cascadingLov {
+            parentItems: P203_KLIJENT_ID
+        }
+        layout {
+            sequence: 120
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P203_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P203_INTERNI_NALOG (
+        type: radioGroup
+        label {
+            label: Interni nalog
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 160
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+            ]
+        }
+    )
+
+    pageItem P203_IZNOS (
+        type: numberField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P203_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti
+        }
+        layout {
+            sequence: 110
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P203_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Konto
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @kontni-okvir-klase-ooj
+        }
+        layout {
+            sequence: 70
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P203_NALOG_PROKNJIZEN (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P203_NALOG_STORNIRAN (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    pageItem P203_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 180
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    pageItem P203_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 100
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P203_OSNOVNO_SREDSTVO_ID (
+        type: selectOne
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva
+        }
+        layout {
+            sequence: 130
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+            ]
+        }
+    )
+
+    pageItem P203_OS_DATUM (
+        type: datePicker
+        label {
+            label: Datum transakcije
+            alignment: left
+        }
+        layout {
+            sequence: 150
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+            ]
+        }
+    )
+
+    pageItem P203_OTVORENA (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P203_OTVORENI_IZNOS (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P203_PDV_INDIKATOR_ID (
+        type: selectOne
+        label {
+            label: PDV indikator
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :P203_VRSTA_NALOGA_SIFRA IN ('if', 'ifs', 'av', 'avs') THEN
+                    RETURN 'select sifra||''-''||naziv as d, id as r from sif.acc_pdv_indikatori where ui=''I''';
+                ELSE
+                    RETURN 'select sifra ||''-''||naziv as d, id as r from sif.acc_pdv_indikatori where ui= ''U''';
+                END IF;
+                ```
+        }
+        cascadingLov {
+            parentItems: P203_VRSTA_NALOGA_SIFRA
+        }
+        layout {
+            sequence: 170
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    pageItem P203_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Radnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 190
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    pageItem P203_REDNI_BROJ (
+        type: displayOnly
+        label {
+            label: Redni broj
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P203_TIP_STAVKE (
+        type: radioGroup
+        label {
+            label: Duguje / potražuje
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @duguje-potrazuje
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P203_TRANSAKCIJA_ID (
+        type: selectOne
+        label {
+            label: Transakcija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-transakcije-os
+        }
+        layout {
+            sequence: 140
+            region: @nalog-za-knjiženje-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P203_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+            ]
+        }
+    )
+
+    pageItem P203_VRSTA_NALOGA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P203_VRSTA_NALOGA_SIFRA (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P203_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P203_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation dp-not-null (
+        name: DP NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P203_TIP_STAVKE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P203_TIP_STAVKE
+        }
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P203_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P203_IZNOS
+        }
+    )
+
+    validation klijent-required (
+        name: Klijent REQUIRED
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :P203_KONTNA_KLASA_ID
+                    AND klijent = 'Y'
+                    AND :P203_KLIJENT_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos za izabrani konto.
+            associatedItem: @P203_KLIJENT_ID
+        }
+    )
+
+    validation kontna-klasa-not-nll (
+        name: Kontna klasa NOT NLL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P203_KONTNA_KLASA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P203_KONTNA_KLASA_ID
+        }
+    )
+
+    validation oj-required (
+        name: Oj REQUIRED
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :P203_KONTNA_KLASA_ID
+                    AND oj = 'Y'
+                    AND :P203_OJ_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos za izabrani konto.
+            associatedItem: @P203_OJ_ID
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P203_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P203_OPIS
+        }
+    )
+
+    validation os-required (
+        name: Os REQUIRED
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :P203_KONTNA_KLASA_ID
+                    AND os = 'Y'
+                    AND :P203_OSNOVNO_SREDSTVO_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos za izabrani konto.
+            associatedItem: @P203_OSNOVNO_SREDSTVO_ID
+        }
+    )
+
+    validation radnik-required (
+        name: Radnik REQUIRED
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :P203_KONTNA_KLASA_ID
+                    AND radnik = 'Y'
+                    AND :P203_RADNIK_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos za izabrani konto.
+            associatedItem: @P203_RADNIK_ID
+        }
+    )
+
+    validation transakcija-required (
+        name: Transakcija REQUIRED
+        execution {
+            sequence: 50
+        }
+        validation {
+            plsqlExpression:
+                ```plsql
+                (:P203_OSNOVNO_SREDSTVO_ID IS NOT null AND :P203_TRANSAKCIJA_ID IS NOT null)
+                OR
+                (:P203_OSNOVNO_SREDSTVO_ID IS null AND :P203_TRANSAKCIJA_ID IS null)
+                ```
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos ako ste izabrali osnovno sredstvo.
+            associatedItem: @P203_TRANSAKCIJA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 96077169591501183
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.delete_glavna_knjiga_stavka (
+                    p_id => :P203_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 95995475750183517
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.get_glavna_knjiga_stavka (
+                    p_id                  => :P203_ID,
+                    p_glavna_knjiga_id    => :P203_GLAVNA_KNJIGA_ID,
+                    p_kontna_klasa_id     => :P203_KONTNA_KLASA_ID,
+                    p_klijent_id          => :P203_KLIJENT_ID,
+                    p_redni_broj          => :P203_REDNI_BROJ,
+                    p_tip_stavke          => :P203_TIP_STAVKE,
+                    p_opis                => :P203_OPIS,
+                    p_iznos               => :P203_IZNOS,
+                    p_grad_id             => :P203_GRAD_ID,
+                    p_osnovno_sredstvo_id => :P203_OSNOVNO_SREDSTVO_ID,
+                    p_transakcija_id      => :P203_TRANSAKCIJA_ID,
+                    p_os_datum            => :P203_OS_DATUM,
+                    p_interni_nalog       => :P203_INTERNI_NALOG,
+                    p_pdv_indikator_id    => :P203_PDV_INDIKATOR_ID,
+                    p_oj_id               => :P203_OJ_ID,
+                    p_radnik_id           => :P203_RADNIK_ID,
+                    p_dodjela             => :P203_DODJELA,
+                    p_datum_dokumenta     => :P203_DATUM_DOKUMENTA,
+                    p_otvorena            => :P203_OTVORENA,
+                    p_otvoreni_iznos      => :P203_OTVORENI_IZNOS
+                );
+                
+                glavna_knjiga_pkg.get_glavna_knjiga (
+                    p_id                 => :P203_GLAVNA_KNJIGA_ID,
+                    p_proknjizeno        => :P203_NALOG_PROKNJIZEN,
+                    p_stornirano         => :P203_NALOG_STORNIRAN,
+                    p_vrsta_naloga_id    => :P203_VRSTA_NALOGA_ID,
+                    p_vrsta_naloga_sifra => :P203_VRSTA_NALOGA_SIFRA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 95995263077183515
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P203_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                
+                v_ot_stavka varchar2(1);
+                
+                begin 
+                
+                
+                select ko.otvorene_stavke os
+                into v_ot_stavka
+                from sif.acc_kontni_okvir_klase ko 
+                where ko.id=:P203_KONTNA_KLASA_ID;
+                
+                glavna_knjiga_pkg.update_glavna_knjiga_stavka (
+                    p_id                  => :P203_ID,
+                    p_glavna_knjiga_id    => :P203_GLAVNA_KNJIGA_ID,
+                    p_kontna_klasa_id     => :P203_KONTNA_KLASA_ID,
+                    p_klijent_id          => :P203_KLIJENT_ID,
+                    p_redni_broj          => :P203_REDNI_BROJ,
+                    p_tip_stavke          => :P203_TIP_STAVKE,
+                    p_opis                => :P203_OPIS,
+                    p_iznos               => to_number(:P203_IZNOS, '999G999G999G999G990D00'),
+                    p_grad_id             => :P203_GRAD_ID,
+                    p_osnovno_sredstvo_id => :P203_OSNOVNO_SREDSTVO_ID,
+                    p_transakcija_id      => :P203_TRANSAKCIJA_ID,
+                    p_os_datum            => :P203_OS_DATUM,
+                    p_interni_nalog       => :P203_INTERNI_NALOG,
+                    p_pdv_indikator_id    => :P203_PDV_INDIKATOR_ID,
+                    p_oj_id               => :P203_OJ_ID,
+                    p_radnik_id           => :P203_RADNIK_ID,
+                    p_dodjela             => :P203_DODJELA,
+                    p_datum_dokumenta     => :P201_DATUM_DOKUMENTA,
+                    p_otvorena            => case v_ot_stavka when 'N' then 'Z' else 'O' end,
+                    p_otvoreni_iznos      => case v_ot_stavka when 'N' then 0 else TO_NUMBER(:P203_IZNOS,'999G999G999G999G990D00') end
+                );
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 95995320136183516
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

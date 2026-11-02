@@ -1,0 +1,407 @@
+page 453 (
+    name: Tipovi promjena
+    alias: TIPOVI-PROMJENA
+    title: Tipovi promjena
+    pageGroup: @blagajna
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @blagajna-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Stranica <b><em>"Tipovi promjena"</em></b> služi knjigovođi da definiše sve potrebne promjene i da ih 
+            poveže sa odgovarajućim kontom kako bi se u budućnosti mogle knjižiti. </br>
+            </br>
+            Novi tip promjene se kreira klikom na dugme <b><em>"Novi unos"</em></b> nakon čega se otvara modalni 
+            dijalog u kojem je potrebno unijeti naziv promjene, odabrati konto i označiti koja 
+            su polja obavezna u dnevniku, kao što su radnik, klijent ili organizaciona jedinica. </br>
+            </br>
+            Nakon toga potrebno je kliknuti na dugme <b><em>"Kreiraj"</em></b> kako bi se tip promjene prikazao u 
+            izvještaju na stranici.</br>
+            Za izmjenu postojećih podataka koristi se ikona lupe kroz koju se prikazuju detalji i 
+            omogućava ažuriranje unosa.
+            ```
+    }
+
+    region tipovi-promjena (
+        name: Tipovi promjena
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    id,
+                    kontna_klasa_id,
+                    naziv,
+                    radnik,
+                    klijent,
+                    oj,
+                    valid
+                FROM
+                    blagajna_tipovi_promjena
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 0
+            }
+            link {
+                target: {
+                    page: 454
+                    items: {
+                        P454_ID: \#ID#\
+                    }
+                    action: resetPagination
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KLIJENT (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if KLIJENT/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+        column OJ (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if OJ/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+        column RADNIK (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if RADNIK/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Aktivno
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                defaultSequence: 1
+                sortable: false
+            }
+        )
+
+    )
+
+    region tipovi-promjena-2 (
+        name: Tipovi promjena
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @tipovi-promjena
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P453_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @tipovi-promjena-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 454
+                clearCache: 454
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @tipovi-promjena
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @tipovi-promjena
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @tipovi-promjena
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

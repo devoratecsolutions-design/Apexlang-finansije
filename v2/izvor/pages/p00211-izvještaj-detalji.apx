@@ -1,0 +1,484 @@
+page 211 (
+    name: Izvještaj / Detalji
+    alias: IZVJEŠTAJ-DETALJI
+    title: Izvještaj / Detalji
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            t-Dialog--noPadding
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+            t-PageBody--noContentPadding
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region report (
+        name: Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    aop_id,
+                    aop_naziv,
+                    aop,
+                    aop_tip,
+                    bruto,
+                    ispravka,
+                    neto,
+                    prethodna_godina,
+                    CASE
+                        WHEN aop_tip = 'G' THEN
+                            'Y'
+                        ELSE
+                            'N'
+                    END AS bold
+                
+                FROM
+                    vw_izvjestaji_aop
+                WHERE
+                    izvjestaj_id = :P211_ID
+                ORDER BY
+                    to_number(aop) ASC
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 200
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+
+        column AOP (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: AOP
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#AOP#</span>
+                    {else/}
+                        <span>#AOP#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column AOP_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column AOP_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#AOP_NAZIV#</span>
+                    {else/}
+                        <span>#AOP_NAZIV#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column AOP_TIP (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 40
+            }
+        )
+
+        column BOLD (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 90
+            }
+        )
+
+        column BRUTO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Bruto
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#BRUTO#</span>
+                    {else/}
+                        <span>#BRUTO#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column ISPRAVKA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Ispravka
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#ISPRAVKA#</span>
+                    {else/}
+                        <span>#ISPRAVKA#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P211_IZVJESTAJ_SIFRA
+                value: bs
+            }
+        )
+
+        column NETO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Neto
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#NETO#</span>
+                    {else/}
+                        <span>#NETO#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P211_IZVJESTAJ_SIFRA
+                value: bs
+            }
+        )
+
+        column PRETHODNA_GODINA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Stanje na dan prethodne godine
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if BOLD/}
+                        <span class="u-bold">#PRETHODNA_GODINA#</span>
+                    {else/}
+                        <span>#PRETHODNA_GODINA#</span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    pageItem P211_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P211_IZVJESTAJ_SIFRA (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: Štampa
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print-izvjestaj (
+        name: Print - Izvjestaj
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action bs-print (
+            name: BS - Print
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                      
+                        filename = 'bilans_stanja', 
+                        report_path = '/reports/ACCOUNTING/izvjestaji/bilans_stanja', 
+                        report_parameters = {
+                            ID: $v("P211_ID")
+                        },
+                        new_tab = false
+                    );
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+            clientSideCondition {
+                type: item=value
+                item: P211_IZVJESTAJ_SIFRA
+                value: bs
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+        action bu-print (
+            name: BU - Print
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                      
+                        filename = 'bilans_uspjeha', 
+                        report_path = '/reports/ACCOUNTING/izvjestaji/bilans_uspjeha', 
+                        report_parameters = {
+                            ID: $v("P211_ID")
+                        },
+                        new_tab = false
+                    );
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            clientSideCondition {
+                type: item=value
+                item: P211_IZVJESTAJ_SIFRA
+                value: bu
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+)
+

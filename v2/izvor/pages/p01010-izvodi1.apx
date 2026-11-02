@@ -1,0 +1,650 @@
+page 1010 (
+    name: Izvodi
+    alias: IZVODI1
+    title: Izvodi
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    security {
+        authorizationScheme: @glavna-knjiga-nalozi
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+    help {
+        helpText:
+            ```html
+            Sekcija <b><em>"Žiro računi"</em></b> predstavlja ključni dio konfiguracije finansijskog modula, 
+            jer omogućava analitičko prećanje bankovnih izvoda. </br>
+            U zavisnosti od tipa korisnika omogućeno je i odgovarajuće knjiženje izvoda u Glavnu knjigu.
+            
+            </br>
+            
+            Klikom na dugme <b><em>"Novi unos"</em></b> otvara se modalni dijalog u kojem je potrebno:
+            <ul>
+                <li>Odabrati banku iz padajućeg menija (lista registrovanih poslovnih banaka),</li>
+                <li>Unijeti šifru račun radi lakšeg praćenja izvoda po računu</li>
+                <li>Unijeti valutu u kojoj je otvoren račun</li>
+                <li>Opciono unijeti opis namjene žiro računa</li>
+                <li>Unijeti žiro račun banke</li>
+                <li>Definisati konto (ako se koristi dvojno knjigovodstvo) računa– najčešće je to konto 241xxx</li>
+                <li>Definisati vrstu naloga Glavne knjige preko kojeg se vrši knjiženje izvoda (ako se koristi dvojno knjigovodstvo)</li>
+                <li>Potvrditi unos klikom na dugme Kreiraj.</li>
+            </ul>
+            ```
+    }
+
+    region izvodi (
+        name: Izvodi
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 90
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region master-records (
+        name: Master  Records
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT i.*,
+                    apex_page.get_url(
+                        p_page   => 1012,
+                        p_items  => 'P1012_ID',
+                        p_values => i.izvod_id
+                    ) as pregled
+                     
+                FROM
+                
+                    accounting.vw_izvodi i
+                
+                
+                WHERE
+                    i.ooj_id = :APP_OOJ_ID
+                ORDER BY i.datum desc
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                search-results
+                fin-list
+            ]
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlightOff
+                t-Report--hideNoPagination
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: <div class="u-tC">Nema pronađenih podataka.</div>
+        }
+
+        column BROJ (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Broj
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BROJ_RACUNA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Broj računa
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column ID_RACUNA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 220
+            }
+        )
+
+        column IZVOD_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column NALOG_GK (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Nalog GK
+                alignment: center
+            }
+            layout {
+                sequence: 190
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NOVO_STANJE (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Novo stanje
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OOJ_ID (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 210
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 120
+            }
+        )
+
+        column PREGLED (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+                alignment: center
+            }
+            layout {
+                sequence: 200
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: #PREGLED#
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PRETHODNO_STANJE (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Prethodno stanje
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROKNJIZEN (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 170
+            }
+        )
+
+        column PROKNJIZEN_V (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 180
+            }
+        )
+
+        column SIFRA_RACUNA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Šifra računa
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STORNO (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 130
+            }
+        )
+
+        column STORNO_V (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 140
+            }
+        )
+
+        column VALUTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZAKLJUCAN (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 150
+            }
+        )
+
+        column ZAKLJUCAN_V (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 160
+            }
+        )
+
+    )
+
+    region search (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @master-records
+        }
+        layout {
+            sequence: 19
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P1010_GODINA (
+            type: radioGroup
+            label {
+                label: Godina
+            }
+            lov {
+                type: sharedComponent
+                lov: @global-godine
+            }
+            layout {
+                sequence: 80
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: GODINA
+            }
+        )
+
+        filter P1010_ID_RACUNA (
+            type: radioGroup
+            label {
+                label: Račun
+            }
+            lov {
+                type: sharedComponent
+                lov: @ooj-ziro-racuni
+            }
+            layout {
+                sequence: 70
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: ID_RACUNA
+            }
+        )
+
+        filter P1010_PROKNJIZEN (
+            type: radioGroup
+            label {
+                label: Proknjižen
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 50
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: PROKNJIZEN_V
+            }
+        )
+
+        filter P1010_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 20
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P1010_STORNO (
+            type: radioGroup
+            label {
+                label: Storno
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STORNO_V
+            }
+        )
+
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_izvodi(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1010_PRINT_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 20
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 202
+                clearCache: 202
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create-bank (
+        buttonName: CREATE_BANK
+        label: Novi unos
+        layout {
+            sequence: 10
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 1002
+                items: {
+                    P1002_ID:
+                }
+                clearCache: 122
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create-izvod (
+        buttonName: CREATE_IZVOD
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @izvodi
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 1011
+                items: {
+                    P1011_ID:
+                }
+                clearCache: 122
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction refresh-data-create (
+        name: Refresh data - create
+        execution {
+            sequence: 80
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create-bank
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh-data-update (
+        name: Refresh data - update
+        execution {
+            sequence: 70
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @master-records
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

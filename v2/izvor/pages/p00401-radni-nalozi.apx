@@ -1,0 +1,540 @@
+page 401 (
+    name: Radni nalozi
+    alias: RADNI-NALOZI
+    title: Radni nalozi
+    pageGroup: @proizvodnja
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @proizvodnja-kreiranje-radnih-naloga
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+        reloadOnSubmit: always
+    }
+
+    region potrebna-konfiguracija (
+        name: Potrebna konfiguracija
+        type: staticContent
+        source {
+            htmlCode: Neophodno je da konfigurišete formu numeracije dokumenata.
+        }
+        layout {
+            sequence: 90
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return not core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'rn', :APP_GODINA);
+        }
+    )
+
+    region radni-nalozi (
+        name: Radni nalozi
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region radni-nalozi-report (
+        name: Radni nalozi Report
+        title: Radni nalozi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    naziv,
+                    normativ_id,
+                    normativ_naziv,
+                    opis,
+                    status_naziv,
+                    status_color_code,
+                    
+                    apex_page.get_url(
+                        p_page   => 407,
+                        p_items  => 'P407_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-tools' as icon_class
+                FROM
+                    vw_radni_nalozi
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    broj DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'rn', :APP_GODINA);
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if NORMATIV_ID/}
+                    #NORMATIV_NAZIV#
+                    {else/}
+                    #OPIS#
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NORMATIV_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Normativ Id
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NORMATIV_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Normativ Naziv
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Status Color Code
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Status Naziv
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @radni-nalozi-report
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'rn', :APP_GODINA);
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P401_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button configuration (
+        buttonName: CONFIGURATION
+        label: Numeracija dokumenata
+        layout {
+            sequence: 10
+            region: @potrebna-konfiguracija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-file-wrench
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 103
+                clearCache: 103
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos bez normativa
+        layout {
+            sequence: 10
+            region: @radni-nalozi
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 402
+                items: {
+                    P402_NORMATIV: N
+                }
+                clearCache: 402
+                action: resetPagination
+                request: setup
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create-normativ (
+        buttonName: CREATE_NORMATIV
+        label: Novi unos iz normativa
+        layout {
+            sequence: 20
+            region: @radni-nalozi
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 402
+                items: {
+                    P402_NORMATIV: Y
+                }
+                clearCache: 402
+                action: resetPagination
+                request: setup
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 170
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create-normativ
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @radni-nalozi-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 180
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @radni-nalozi-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction perform-search (
+        name: Perform Search
+        execution {
+            sequence: 150
+        }
+        when {
+            event: keypress
+            selectionType: items
+            items: P401_SEARCH
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: this.browserEvent.which === apex.jQuery.ui.keyCode.ENTER
+        }
+
+        action native-cancel-event (
+            action: cancelEvent
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

@@ -1,0 +1,286 @@
+page 5 (
+    name: Dashboard / Detalji
+    alias: DASHBOARD-DETALJI
+    title: Dashboard / Detalji
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region report (
+        name: Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    gks.kontna_klasa_id,
+                    SUM(gks.iznos) AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                WHERE 
+                    ck.chart_id = :P5_ID
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                GROUP BY 
+                    gks.kontna_klasa_id
+                ORDER BY 
+                    gks.kontna_klasa_id;
+                
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P5_SIFRA
+            value: PDV
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUMA_IZNOS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    region report-pdv (
+        name: Report PDV
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    gks.kontna_klasa_id,
+                    SUM(gks.iznos) AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                WHERE 
+                    ck.chart_id = :P5_ID
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                    AND trunc(gks.glavna_knjiga_datum_knjizenja, 'MM') = trunc(sysdate, 'MM')
+                GROUP BY 
+                    gks.kontna_klasa_id
+                ORDER BY 
+                    gks.kontna_klasa_id;
+                
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item=value
+            item: P5_SIFRA
+            value: PDV
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUMA_IZNOS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    pageItem P5_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P5_NAZIV (
+        type: displayOnly
+        label {
+            label: Detalji
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P5_SIFRA (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.get_chart (
+                    p_id    => :P5_ID,
+                    p_sifra => :P5_SIFRA,
+                    p_naziv => :P5_NAZIV
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 178887435447272641
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P5_ID
+        }
+    )
+
+)
+

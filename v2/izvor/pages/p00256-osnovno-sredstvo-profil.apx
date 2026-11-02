@@ -1,0 +1,2657 @@
+page 256 (
+    name: Osnovno sredstvo / Profil
+    alias: OSNOVNO-SREDSTVO-PROFIL
+    title: Osnovno sredstvo / Profil
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region amortizacija (
+        name: Amortizacija
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    vijek_trajanja,
+                    amortizaciona_stopa,
+                    procijenjeni_vijek_trajanja,
+                    poreska_amortizaciona_stopa,
+                    grad_naziv,
+                    grad_sifra,
+                    donacija,
+                    rezidualna_vrijednost
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column AMORTIZACIONA_STOPA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Amortizaciona stopa ( % )
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression: #AMORTIZACIONA_STOPA# %
+            }
+        )
+
+        column DONACIJA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Donacija
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column GRAD_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Grad
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression: #GRAD_NAZIV# ( #GRAD_SIFRA# )
+            }
+        )
+
+        column GRAD_SIFRA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 80
+            }
+        )
+
+        column PORESKA_AMORTIZACIONA_STOPA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Poreska amortizaciona stopa ( % )
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression: #PORESKA_AMORTIZACIONA_STOPA# %
+            }
+        )
+
+        column PROCIJENJENI_VIJEK_TRAJANJA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Procijenjeni vijek trajanja
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column REZIDUALNA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Rezidualna vrijednost
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column VIJEK_TRAJANJA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Vijek trajanja
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region dodatne-informacije (
+        name: Dodatne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    reg_oznaka,
+                    radnik_naziv,
+                    klijent_naziv,
+                    dbms_lob.getlength(dokument) as dokument,
+                    dokument_filename,
+                    dokument_mimetype,
+                    dokument_lastupd,
+                    dokument_charset,
+                    dokument_broj,
+                    dokument_datum
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DOKUMENT (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: downloadBlob
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                viewFileAs: inline
+                downloadText: Preuzmi
+            }
+            blobAttributes {
+                tableName: VW_OSNOVNA_SREDSTVA
+                blobColumn: DOKUMENT
+                primaryKeyColumn1: ID
+                mimeTypeColumn: DOKUMENT_MIMETYPE
+                filenameColumn: DOKUMENT_FILENAME
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND dokument IS NOT null
+                    ```
+            }
+        )
+
+        column DOKUMENT_BROJ (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Broj dokumenta
+            }
+            layout {
+                sequence: 100
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND dokument_broj IS NOT null
+                    ```
+            }
+        )
+
+        column DOKUMENT_CHARSET (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 90
+            }
+        )
+
+        column DOKUMENT_DATUM (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Datum dokumenta
+            }
+            layout {
+                sequence: 110
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND dokument_datum IS NOT null
+                    ```
+            }
+        )
+
+        column DOKUMENT_FILENAME (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column DOKUMENT_LASTUPD (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 80
+            }
+        )
+
+        column DOKUMENT_MIMETYPE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 40
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND klijent_id IS NOT null
+                    ```
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 30
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND radnik_id IS NOT null
+                    ```
+            }
+        )
+
+        column REG_OZNAKA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Registarka oznaka
+            }
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND reg_oznaka IS NOT null
+                    ```
+            }
+        )
+
+    )
+
+    region istorija-promjena (
+        name: Istorija promjena
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    history_date,
+                    history_komentar,
+                    created_by
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    history_id = :P256_ID OR history_id = :P256_HISTORY_ID
+                ORDER BY
+                    history_date DESC
+                    
+                ```
+        }
+        layout {
+            sequence: 70
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CREATED_BY (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Ažurirao korisnik
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column HISTORY_DATE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Datum ažuriranja
+            }
+            layout {
+                sequence: 20
+            }
+            appearance {
+                formatMask: DD.MM.YYYY HH24:MI:SS
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column HISTORY_KOMENTAR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Komentar ažuriranja
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: <img src="#APEX_FILES#app_ui/img/icons/apex-edit-view.png" class="apex-edit-view" alt="">
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    region održavanja-i-servisi (
+        name: Održavanja i servisi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    opis,
+                    datum,
+                    cijena,
+                    sledeci_servis
+                FROM
+                    sec_osnovno_sredstvo_odrzavanje
+                WHERE
+                    osnovno_sredstvo_id = :P256_ID
+                ORDER BY
+                    datum DESC
+                    
+                ```
+        }
+        layout {
+            sequence: 60
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND priprema = 'N'
+                ```
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #CIJENA# KM
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 268
+                    items: {
+                        P268_ID: #ID#
+                    }
+                    clearCache: 268
+                }
+                linkText: <img src="#APEX_FILES#app_ui/img/icons/apex-edit-view.png" class="apex-edit-view" alt="">
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SLEDECI_SERVIS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Sledeći servis
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region opšti-podaci (
+        name: Opšti podaci
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    klasa_id,
+                    klasa_sifra,
+                    klasa_naziv,
+                    inventurni_naziv,
+                    stari_inventurni_broj,
+                    naziv,
+                    kolicina,
+                    jm_naziv,
+                    datum,
+                    automatska_amortizacija,
+                    priprema,
+                    priprema_id,
+                    priprema_inventurni_naziv,
+                    priprema_naziv,
+                    aktivirano,
+                    status_naziv,
+                    valid
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column AKTIVIRANO (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Aktivirano
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 160
+            }
+        )
+
+        column AUTOMATSKA_AMORTIZACIJA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Automatska amortizacija
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Datum kapitalizacije
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Jedinica mjere
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column KLASA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KLASA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column KLASA_SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Klasa
+            }
+            layout {
+                sequence: 20
+            }
+            link {
+                target: {
+                    page: 266
+                    items: {
+                        P266_ID: #KLASA_ID#
+                        P266_ORIG: 256
+                    }
+                    clearCache: 266
+                }
+                linkText: #KLASA_SIFRA# - #KLASA_NAZIV#
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column PRIPREMA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Osnovno sredstvo u pripremi
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 120
+            }
+        )
+
+        column PRIPREMA_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Sredstvo u pripremi
+            }
+            layout {
+                sequence: 130
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #PRIPREMA_ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: #PRIPREMA_NAZIV# ( #PRIPREMA_INVENTURNI_NAZIV# )
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_osnovna_sredstva
+                    WHERE
+                        id = :P256_ID
+                        AND priprema_id IS NOT null
+                    ```
+            }
+        )
+
+        column PRIPREMA_INVENTURNI_NAZIV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 140
+            }
+        )
+
+        column PRIPREMA_NAZIV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 150
+            }
+        )
+
+        column STARI_INVENTURNI_BROJ (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Stari inventurni broj
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 170
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Validno
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 180
+            }
+        )
+
+    )
+
+    region organizaciona-pripadnost (
+        name: Organizaciona pripadnost
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    region pregledate-istoriju (
+        name: Pregledate istoriju
+        type: staticContent
+        source {
+            htmlCode: <b>Komentar ažuriranja: </b>&P256_HISTORY_KOMENTAR.
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+            cssClasses: u-color-9
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P256_HISTORY_ID
+        }
+    )
+
+    region tabs (
+        name: Tabs
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: contentBody
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                t-TabsRegion-mod--simple
+            ]
+        }
+    )
+
+    region vrijednosti (
+        name: Vrijednosti
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    pripremna_vrijednost,
+                    nabavna_vrijednost,
+                    knjigovodstvena_vrijednost,
+                    -- vrijednost_poreske_amortizacije,
+                    -- revalorizovana_vrijednost,
+                    vrijednost_donacija,
+                    odlozeni_porezi,
+                    amortizacija_vrijednost,
+                    -- povecanje_vrijednost,
+                    prodajna_vrijednost,
+                    manjak_vrijednost,
+                    otpis_vrijednost
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+        layout {
+            sequence: 50
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    glavna_knjiga_stavke
+                WHERE
+                    osnovno_sredstvo_id = :P256_ID
+                ```
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column AMORTIZACIJA_VRIJEDNOST (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Amortizovana vrijednost
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #AMORTIZACIJA_VRIJEDNOST# KM
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KNJIGOVODSTVENA_VRIJEDNOST (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstvena vrijednost
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #KNJIGOVODSTVENA_VRIJEDNOST# КМ
+            }
+        )
+
+        column MANJAK_VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Manjak
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #MANJAK_VRIJEDNOST# KM
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Nabavna vrijednost
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #NABAVNA_VRIJEDNOST# КМ
+            }
+        )
+
+        column ODLOZENI_POREZI (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Odloženi porezi
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #ODLOZENI_POREZI# КМ
+            }
+        )
+
+        column OTPIS_VRIJEDNOST (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Otpisana vrijednost
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #OTPIS_VRIJEDNOST# KM
+            }
+        )
+
+        column PRIPREMNA_VRIJEDNOST (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Pripremna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #PRIPREMNA_VRIJEDNOST# KM
+            }
+        )
+
+        column PRODAJNA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Prodajna vrijednost
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #PRODAJNA_VRIJEDNOST# KM
+            }
+        )
+
+        column VRIJEDNOST_DONACIJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Vrijednost donacija
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #VRIJEDNOST_DONACIJA# КМ
+            }
+        )
+
+    )
+
+    pageItem P256_HISTORY_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P256_HISTORY_KOMENTAR (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P256_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P256_NALOG_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    pageItem P256_NAZIV (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    button activate (
+        buttonName: ACTIVATE
+        label: Aktiviraj
+        layout {
+            sequence: 60
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-5
+            icon: fa-check-circle-o
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 267
+                items: {
+                    P267_ID: &P256_ID.
+                }
+                clearCache: 267
+                request: start
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND priprema = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj odžavanje
+        layout {
+            sequence: 10
+            region: @održavanja-i-servisi
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 268
+                items: {
+                    P268_OSNOVNO_SREDSTVO_ID: &P256_ID.
+                }
+                clearCache: 268
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button back (
+        buttonName: BACK
+        label: Nazad
+        layout {
+            sequence: 10
+            region: @pregledate-istoriju
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 256
+                items: {
+                    P256_ID: &P256_HISTORY_ID.
+                }
+                clearCache: 256
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite obrisati osnovno sredstvo?
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button edit (
+        buttonName: EDIT_1
+        label: Ažuriraj
+        layout {
+            sequence: 10
+            region: @opšti-podaci
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 257
+                items: {
+                    P257_ID: &P256_ID.
+                }
+                clearCache: 257
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button edit-2 (
+        buttonName: EDIT_2
+        label: Ažuriraj
+        layout {
+            sequence: 10
+            region: @organizaciona-pripadnost
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 258
+                items: {
+                    P258_ID: &P256_ID.
+                }
+                clearCache: 258
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button edit-3 (
+        buttonName: EDIT_4
+        label: Ažuriraj
+        layout {
+            sequence: 10
+            region: @dodatne-informacije
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 260
+                items: {
+                    P260_ID: &P256_ID.
+                }
+                clearCache: 260
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button edit-4 (
+        buttonName: EDIT_3
+        label: Ažuriraj
+        layout {
+            sequence: 10
+            region: @amortizacija
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 259
+                items: {
+                    P259_ID: &P256_ID.
+                }
+                clearCache: 259
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button open (
+        buttonName: OPEN
+        label: Otvori novo osnovno sredstvo
+        layout {
+            sequence: 50
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-check-circle-o
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 252
+                items: {
+                    P252_PRIPREMA_ID: &P256_ID.
+                    P252_PRIPREMA: N
+                }
+                clearCache: 252
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND priprema = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button otpis (
+        buttonName: OTPIS
+        label: Otpis
+        layout {
+            sequence: 30
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-remove
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 269
+                items: {
+                    P269_ID: &P256_ID.
+                }
+                clearCache: 269
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND aktivirano = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button prenos (
+        buttonName: PRENOS
+        label: Prenos sredstava
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-arrows-h
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 272
+                items: {
+                    P272_ID: &P256_ID.
+                }
+                clearCache: 272
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND aktivirano = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: Štampa
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND aktivirano = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    button prodaja (
+        buttonName: PRODAJA
+        label: Prodaja
+        layout {
+            sequence: 40
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-badge-dollar
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 270
+                items: {
+                    P270_ID: &P256_ID.
+                }
+                clearCache: 270
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND aktivirano = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button set-nabavna (
+        buttonName: SET_NABAVNA
+        label: Unos nabavne vrijednosti
+        layout {
+            sequence: 30
+            region: @vrijednosti
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-eye
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 264
+                items: {
+                    P264_ID: &P256_ID.
+                }
+                clearCache: 264
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                    AND priprema = 'Y'
+                    AND :P256_HISTORY_ID IS null
+                    AND valid = 'Y'
+                ```
+        }
+    )
+
+    button view-am (
+        buttonName: VIEW_AM
+        label: Pregled amortizacije
+        layout {
+            sequence: 20
+            region: @vrijednosti
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-eye
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 264
+                items: {
+                    P264_ID: &P256_ID.
+                }
+                clearCache: 264
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+    )
+
+    button view-vrijednost (
+        buttonName: VIEW_VRIJEDNOST
+        label: Pregled vrijednosti
+        layout {
+            sequence: 50
+            region: @vrijednosti
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-bar-chart
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 262
+                items: {
+                    P262_ID: &P256_ID.
+                }
+                clearCache: 262
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P256_HISTORY_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-aktivirano (
+        name: Dialog Closed - Aktivirano
+        execution {
+            sequence: 80
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @activate
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P256_NALOG_ID
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P267_NALOG_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P256_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: GO_TO_NALOG
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-otpisano (
+        name: Dialog Closed - Otpisano
+        execution {
+            sequence: 90
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @otpis
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P256_NALOG_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P269_NALOG_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P256_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: GO_TO_NALOG
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-prenos (
+        name: Dialog Closed - Prenos
+        execution {
+            sequence: 100
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @prenos
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P256_NALOG_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P272_NALOG_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P256_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: GO_TO_NALOG
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-prodano (
+        name: Dialog Closed - Prodano
+        execution {
+            sequence: 110
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @prodaja
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P256_NALOG_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P270_NALOG_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P256_NALOG_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: GO_TO_NALOG
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 6
+        execution {
+            sequence: 70
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @održavanja-i-servisi
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @održavanja-i-servisi
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @edit
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @opšti-podaci
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-history (
+            name: Refresh - History
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @istorija-promjena
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-3 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @edit-2
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @organizaciona-pripadnost
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-history (
+            name: Refresh - History
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @istorija-promjena
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-4 (
+        name: Dialog Closed - Refresh 3
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @edit-4
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @amortizacija
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-history (
+            name: Refresh - History
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @istorija-promjena
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-5 (
+        name: Dialog Closed - Refresh 4
+        execution {
+            sequence: 50
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @edit-3
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @dodatne-informacije
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-history (
+            name: Refresh - History
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @istorija-promjena
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print-os (
+        name: Print - OS
+        execution {
+            sequence: 120
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                        filename = 'os_' + $v("P256_NAZIV"), 
+                        report_path = '/reports/ACCOUNTING/os/kartica_os', 
+                        report_parameters = {
+                            ID: $v("P256_ID")
+                        },
+                        new_tab = false
+                    );
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+    computation p256-history-id (
+        itemName: P256_HISTORY_ID
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    history_id
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+    )
+
+    computation p256-history-komentar (
+        itemName: P256_HISTORY_KOMENTAR
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    history_komentar
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+    )
+
+    computation p256-naziv (
+        itemName: P256_NAZIV
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    id = :P256_ID
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 55879687037186409
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva (:P256_ID);
+                    
+                    os_pkg.delete_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55879569573186408
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch (
+        name: Go To Page 201
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P256_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+        serverSideCondition {
+            type: request=Value
+            value: GO_TO_NALOG
+        }
+    )
+
+)
+

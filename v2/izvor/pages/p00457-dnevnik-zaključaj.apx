@@ -1,0 +1,352 @@
+page 457 (
+    name: Dnevnik / Zaključaj
+    alias: DNEVNIK-ZAKLJUČAJ
+    title: Dnevnik / Zaključaj
+    pageGroup: @blagajna
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P457_DNEVNIK_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P457_PLACANJA (
+        type: numberField
+        label {
+            label: Ukupna plaćanja
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P457_POCETNO_STANJE (
+        type: numberField
+        label {
+            label: Početno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P457_PRIJEM (
+        type: numberField
+        label {
+            label: Ukupan prijem
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P457_RAZLIKA (
+        type: numberField
+        label {
+            label: Razlika
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P457_ZAKLJUCNO_STANJE (
+        type: numberField
+        label {
+            label: Zaključno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button lock (
+        buttonName: LOCK
+        label: Zaključaj dnevnik
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction calculate (
+        name: Calculate
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: [
+                P457_PLACANJA
+                P457_PRIJEM
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P457_RAZLIKA := (to_number(:P457_PRIJEM, '999G999G999G999G990D00') - to_number(:P457_PLACANJA, '999G999G999G999G990D00'));
+                itemsToSubmit: [
+                    P457_PRIJEM
+                    P457_PLACANJA
+                    P457_RAZLIKA
+                ]
+                itemsToReturn: P457_RAZLIKA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation placanja-not-null (
+        name: Placanja NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P457_PLACANJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P457_PLACANJA
+        }
+    )
+
+    validation prijem-not-null (
+        name: Prijem NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P457_PRIJEM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P457_PRIJEM
+        }
+    )
+
+    validation zakljucno-stanje-not-null (
+        name: Zakljucno stanje NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P457_ZAKLJUCNO_STANJE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P457_ZAKLJUCNO_STANJE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.get_blagajna_dnevnik_zakljucavanje (
+                    p_id               => :P457_DNEVNIK_ID,
+                    p_pocetno_stanje   => :P457_POCETNO_STANJE,
+                    p_prijem           => :P457_PRIJEM,
+                    p_placanja         => :P457_PLACANJA,
+                    p_zakljucno_stanje => :P457_ZAKLJUCNO_STANJE
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 136296059293639709
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P457_DNEVNIK_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.update_blagajna_dnevnik_zakljucavanje (
+                    p_id               => :P457_DNEVNIK_ID,
+                    p_prijem           => to_number(:P457_PRIJEM, '999G999G999G999G990D00'),
+                    p_placanja         => to_number(:P457_PLACANJA, '999G999G999G999G990D00'),
+                    p_zakljucno_stanje => to_number(:P457_ZAKLJUCNO_STANJE, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 136296485180639713
+        }
+        serverSideCondition {
+            whenButtonPressed: @lock
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 455
+            }
+        }
+    )
+
+)
+

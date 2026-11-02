@@ -1,0 +1,395 @@
+page 507 (
+    name: Budžet / Detalji
+    alias: BUDŽET-DETALJI
+    title: Budžet / Detalji
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        height: 400
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet-osnovne-informacije (
+        name: Budžet / Osnovne informacije
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P507_GODINA (
+        type: selectOne
+        label {
+            label: Godina
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    EXTRACT(YEAR FROM SYSDATE) + LEVEL - 1 AS d,
+                    EXTRACT(YEAR FROM SYSDATE) + LEVEL - 1 AS r
+                FROM 
+                    dual
+                CONNECT BY LEVEL <= 2;
+                
+                ```
+        }
+        layout {
+            sequence: 50
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P507_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P507_INTERVAL_ID (
+        type: selectOne
+        label {
+            label: Interval
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-intervali-budzet
+        }
+        layout {
+            sequence: 70
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P507_NAPOMENA (
+        type: textarea
+        label {
+            label: Napomena
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 80
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P507_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+        }
+    )
+
+    pageItem P507_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 60
+            region: @budžet-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.delete_budzet (
+                    p_id => :P507_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 144391604773239212
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet (
+                    p_id          => :P507_ID,
+                    p_ooj_id      => :P507_OOJ_ID,
+                    p_interval_id => :P507_INTERVAL_ID,
+                    p_valuta_id   => :P507_VALUTA_ID,
+                    p_godina      => :P507_GODINA,
+                    p_napomena    => :P507_NAPOMENA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 144391108187239207
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P507_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.update_budzet (
+                    p_id          => :P507_ID,
+                    p_ooj_id      => :APP_OOJ_ID,
+                    p_interval_id => :P507_INTERVAL_ID,
+                    p_valuta_id   => :P507_VALUTA_ID,
+                    p_godina      => :P507_GODINA,
+                    p_napomena    => :P507_NAPOMENA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 144391572777239211
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 503 - Delete
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 503
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch (
+        name: Go To Page 506 - Update
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 506
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

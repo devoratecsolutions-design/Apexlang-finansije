@@ -1,0 +1,136 @@
+buildOption commented-out (
+    name: Commented Out
+    subscription {
+        master: @/200/commented-out
+    }
+)
+
+buildOption feature-about-page (
+    name: Feature: About Page
+    status {
+        status: include
+    }
+    advanced {
+        featureIdentifier: APPLICATION_ABOUT_PAGE
+    }
+    subscription {
+        master: @/200/feature-about-page
+    }
+    comments {
+        comments: About this application page.
+    }
+)
+
+buildOption feature-activity-reporting (
+    name: Feature: Activity Reporting
+    status {
+        status: include
+    }
+    advanced {
+        featureIdentifier: APPLICATION_ACTIVITY_REPORTING
+    }
+    subscription {
+        master: @/200/feature-activity-reporting
+    }
+    comments {
+        comments: Include numerous reports and charts on end user activity.
+    }
+)
+
+buildOption feature-configuration-options (
+    name: Feature: Configuration Options
+    status {
+        status: include
+    }
+    advanced {
+        featureIdentifier: APPLICATION_CONFIGURATION
+    }
+    subscription {
+        master: @/200/feature-configuration-options
+    }
+    comments {
+        comments: Allow application administrators to enable or disable specific functionality, associated with an Oracle APEX build option, from within the application.
+    }
+)
+
+buildOption feature-feedback (
+    name: Feature: Feedback
+    advanced {
+        featureIdentifier: APPLICATION_FEEDBACK
+    }
+    subscription {
+        master: @/200/feature-feedback
+    }
+    comments {
+        comments: Provide a mechanism for end users to post general comments back to the application administrators and developers.
+    }
+)
+
+buildOption feature-inspect-element (
+    name: Feature: Inspect Element
+    status {
+        defaultOnExport: exclude
+        onUpgradeKeepStatus: true
+    }
+    subscription {
+        master: @/200/feature-inspect-element
+    }
+    comments {
+        comments: Feature to disable Inspect Element with Application Process.
+    }
+)
+
+buildOption feature-printing (
+    name: Feature: Printing
+    status {
+        status: include
+        defaultOnExport: include
+        onUpgradeKeepStatus: true
+    }
+    subscription {
+        master: @/200/feature-printing
+    }
+)
+
+buildOption feature-push-notifications (
+    name: Feature: Push Notifications
+    status {
+        status: include
+    }
+    advanced {
+        featureIdentifier: APPLICATION_PUSH_NOTIFICATIONS
+    }
+    subscription {
+        master: @/200/feature-push-notifications
+    }
+    comments {
+        comments: Allow users to subscribe to push notifications on their devices.
+    }
+)
+
+buildOption feature-quick-navigation (
+    name: Feature: Quick Navigation
+    status {
+        onUpgradeKeepStatus: true
+    }
+    subscription {
+        master: @/200/feature-quick-navigation
+    }
+)
+
+buildOption feature-user-settings (
+    name: Feature: User Settings
+    status {
+        status: include
+    }
+    advanced {
+        featureIdentifier: APPLICATION_USER_SETTINGS
+    }
+    subscription {
+        master: @/200/feature-user-settings
+    }
+    comments {
+        comments: The user settings page is a drawer that links to all user settings pages.
+    }
+)
+

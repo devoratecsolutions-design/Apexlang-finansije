@@ -1,0 +1,367 @@
+page 116 (
+    name: Klase osnovnih sredstava
+    alias: KLASE-OSNOVNIH-SREDSTAVA
+    title: Klase osnovnih sredstava
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Osnovna sredstva se razvrstavaju u klase koje grupišu imovinu sličnih karakteristika, 
+            vijeka trajanja i stopa amortizacije.</br>
+            </br>
+            
+            U aplikaciji, određene klase osnovnih sredstava kreirane su od strane sistemske administracije. </br>
+            One predstavljaju osnovni okvir i standard i korisnici nemaju pravo izmjene tih zapisa kako bi 
+            se očuvala usklađenost sa zakonodavstvom i stabilnost sistema.
+            
+            
+            Korisnicima je omogućeno da kreiraju nove klase osnovnih sredstava na dugme <b><em>"Novi unos"</em></b>, 
+            u skladu sa specifičnostima organizacije. </br>
+            </br>
+            Proces obuhvata:
+            <ul>
+            <li>Povezivanje sa nadređenom klasom – određuje mjesto u hijerarhiji kontnog plana.</li>
+            <li>Unos šifre i naziva – jedinstveno identifikovanje nove klase.</li>
+            <li>Definisanje procenta i vijeka trajanja – na osnovu kojih će se obračunavati amortizacija.</li>
+            <li>Dodavanje stavki – u okviru kreirane klase mogu se unositi nove stavke (imovina) koje se povezuju sa odgovarajućim kontom i transakcijom.</li>
+            </ul>
+            ```
+    }
+
+    region klase-osnovnih-sredstava (
+        name: Klase osnovnih sredstava
+        type: tree
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    level,
+                    id,
+                    sifra || ' - ' || naziv AS naziv,
+                    
+                    case 
+                        when connect_by_isleaf = 1 then 
+                            0 
+                        when level = 1 
+                            then 1 
+                        else 
+                            -1 
+                    end as status
+                FROM
+                    sif.acc_klase_os
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                START WITH
+                    parent_id IS NULL
+                CONNECT BY
+                    PRIOR id = parent_id
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-tree
+        }
+        advanced {
+            htmlDomId: TREE_116
+        }
+        settings {
+            nodeLabelColumn: NAZIV
+            nodeValueColumn: ID
+            hierarchy: notComputed
+            nodeStatusColumn: STATUS
+            hierarchyLevelColumn: LEVEL
+            activateNodeLinkWith: doubleClick
+            link: {
+                page: 117
+                items: {
+                    P117_ID: &ID.
+                }
+                clearCache: 117
+            }
+            defaultIconCssClass: fa-table
+            iconTypeCssClass: fa
+        }
+    )
+
+    region klase-osnovnih-sredstava-2 (
+        name: Klase osnovnih sredstava
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region alatna-traka (
+        name: Alatna traka
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-tree-toolbar" data-tree="TREE_116">
+                    <label class="fin-tree-search">
+                        <span class="fa fa-search" aria-hidden="true"></span>
+                        <input type="search" placeholder="Pretraga po šifri ili nazivu..." aria-label="Pretraga stabla" autocomplete="off">
+                        <button type="button" class="fin-tree-clear" data-action="clear" title="Obriši pretragu" aria-label="Obriši pretragu"><span class="fa fa-times" aria-hidden="true"></span></button>
+                    </label>
+                    <span class="fin-tree-count" aria-live="polite"></span>
+                    <span class="fin-tree-actions">
+                        <button type="button" class="fin-tbtn" data-action="expand"><span class="fa fa-plus-square-o" aria-hidden="true"></span>Proširi sve</button>
+                        <button type="button" class="fin-tbtn" data-action="collapse"><span class="fa fa-minus-square-o" aria-hidden="true"></span>Skupi sve</button>
+                    </span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button copy (
+        buttonName: COPY
+        label: Kopiraj osnovne klase
+        layout {
+            sequence: 20
+            region: @klase-osnovnih-sredstava-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message:
+                ```html
+                Da li ste sigurni da želite kopirati osnovne klase osnovnih sredstava?
+                
+                Izbrisaće se trenutne klase koje imate?
+                ```
+            style: information
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sif.acc_klase_os
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 40
+            region: @klase-osnovnih-sredstava-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 117
+                clearCache: 117
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create-priprema (
+        buttonName: CREATE_PRIPREMA
+        label: Kreiraj sredstva u pripremi
+        layout {
+            sequence: 10
+            region: @klase-osnovnih-sredstava-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND priprema = 'Y'
+                ```
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klase-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @klase-osnovnih-sredstava
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klase-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process copy (
+        name: Copy
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.copy_klase_os (
+                    p_new_ooj_id => :APP_OOJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Uspješno ste kopirali osnovne klase osnovnih sredstava.
+        }
+        advanced {
+            executionMappingIdentifier: 235281199385589647
+        }
+        serverSideCondition {
+            whenButtonPressed: @copy
+        }
+    )
+
+    process create-os-pripreme (
+        name: Create os pripreme
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                os_pkg.insert_os_priprema_klase (
+                    p_ooj_id => :APP_OOJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Uspješno ste kreirali osnovna sredstva u pripremi.
+        }
+        advanced {
+            executionMappingIdentifier: 235450281627400111
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+)
+

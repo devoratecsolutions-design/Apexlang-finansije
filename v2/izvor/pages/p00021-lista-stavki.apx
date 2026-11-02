@@ -1,0 +1,625 @@
+page 21 (
+    name: Lista stavki
+    alias: LISTA-STAVKI
+    title: Lista stavki
+    pageGroup: @stavke
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @fakture-stavke
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Stranica <b><em>"Stavke"</em></b> namijenjena je detaljnom upravljanju svim 
+            stavkama koje se koriste prilikom kreiranja faktura. </br>
+            Filtriranje se može vršiti prema tipu stavke, jedinici mjere, po poreznim kriterijima, 
+            prema PDV indikatorima (isporuke oslobođene plaćanja PDV-a, obračunate kamate, 
+            PDV na automobile, fakture izdate za NATO/EUFOR, izvoz po stopi od 0%, 
+            obračunski PDV ili stavke bez PDV indikatora). </br>
+            </br>
+            Ukoliko još uvijek nemate kreirane stavke, potrebno je odabrati opciju <b><em>"Novi unos"</em></b>. </br>
+            Proces unosa stavki identičan je kao i kod izlaznih faktura, bitno je napomenuti u slučajevima 
+            kada se odabere roba ili proizvod, otvara se dodatno polje za odabir grupe stavke, koja se prethodno 
+            konfiguriše na stranici <b><em>"Konfiguracija"</em></b>.</br>
+            </br>
+            Nakon što se svi podaci popune, potvrdom na dugme <b><em>"Kreiraj"</em></b> stavka se uspješno dodaje u sistem.
+            Sekcija <b><em>"Cjenovnik"</em></b>, koja pruža pregled cijena prema tipu stavke. 
+            
+            ```
+    }
+
+    region stavke (
+        name: Stavke
+        title: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.id,
+                    s.sifra,
+                    s.naziv,
+                    s.tip_stavke_id,
+                    s.tip_stavke_naziv,
+                    s.klasa_id,
+                    s.klasa_naziv,
+                    s.grupa_id,
+                    s.grupa_naziv,
+                    s.jm_id,
+                    s.jm_naziv,
+                    s.pdv_indikator,
+                    CASE WHEN s.pdv_indikator = 'N' THEN s.pdv_indikator_sifra || ' - ' || s.pdv_indikator_naziv END AS pdv_poseban,
+                    s.pdv_indikator_vrijednost AS pdv_stopa,
+                    s.valid,
+                    CASE WHEN s.valid = 'Y' THEN 'paid' ELSE 'na' END AS status_klasa,
+                    CASE WHEN s.valid = 'Y' THEN 'Aktivna' ELSE 'Neaktivna' END AS status_naziv
+                FROM
+                    vw_stavke s
+                WHERE
+                    s.ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    s.sifra
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 10000
+        }
+        messages {
+            whenNoDataFound: Nema stavki za izabrane filtere.
+        }
+
+        column GRUPA_ID (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 240
+            }
+        )
+
+        column GRUPA_NAZIV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 250
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 22
+                    items: {
+                        P22_ID: #ID#
+                    }
+                    clearCache: 22
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#SIFRA#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 260
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KLASA_ID (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 230
+            }
+        )
+
+        column KLASA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Klasa
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #KLASA_NAZIV#{if ?GRUPA_NAZIV/}<span class="fin-sub">grupa: #GRUPA_NAZIV#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 210
+            }
+        )
+
+        column PDV_INDIKATOR (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 270
+            }
+        )
+
+        column PDV_POSEBAN (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 280
+            }
+        )
+
+        column PDV_STOPA (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: PDV
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #PDV_STOPA# %{if ?PDV_POSEBAN/}<span class="fin-sub">#PDV_POSEBAN#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        serverSideCondition {
+            type: item=value
+            item: P21_PDV_SISTEM
+            value: Y
+        }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 200
+            }
+        )
+
+        column STATUS_KLASA (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-badge fin-badge--#STATUS_KLASA#">#STATUS_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_STAVKE_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 220
+            }
+        )
+
+        column TIP_STAVKE_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Tip
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-chip">#TIP_STAVKE_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 290
+            }
+        )
+
+    )
+
+    region stavke-2 (
+        name: Stavke
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @stavke
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P21_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 1
+            }
+            appearance {
+                valuePlaceholder: Pretraga po šifri ili nazivu...
+            }
+        )
+
+        filter P21_F_TIP (
+            type: checkboxGroup
+            label {
+                label: Tip
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tip-stavki
+            }
+            layout {
+                sequence: 10
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: TIP_STAVKE_ID
+                dataType: number
+            }
+        )
+
+        filter P21_F_KLASA (
+            type: checkboxGroup
+            label {
+                label: Klasa
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klase-stavki-naziv
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: KLASA_ID
+                dataType: number
+            }
+        )
+
+        filter P21_F_GRUPA (
+            type: checkboxGroup
+            label {
+                label: Grupa za knjiženje
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-grupe-stavki
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: GRUPA_ID
+                dataType: number
+            }
+        )
+
+        filter P21_F_JM (
+            type: checkboxGroup
+            label {
+                label: Jedinica mjere
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-jm
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: JM_ID
+                dataType: number
+            }
+        )
+
+        filter P21_F_PDV (
+            type: radioGroup
+            label {
+                label: PDV
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Pun iznos PDV-a;Y,Poseban PDV indikator;N
+            }
+            layout {
+                sequence: 50
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: PDV_INDIKATOR
+            }
+            serverSideCondition {
+                type: item=value
+                item: P21_PDV_SISTEM
+                value: Y
+            }
+        )
+
+        filter P21_F_STATUS (
+            type: radioGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Aktivna;Y,Neaktivna;N
+            }
+            layout {
+                sequence: 70
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VALID
+            }
+        )
+
+    )
+
+    pageItem P21_PDV_SISTEM (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @stavke-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 22
+                clearCache: 22
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @stavke
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: get data
+        type: executeCode
+        source {
+            plsqlCode: :P21_PDV_SISTEM := nvl(core.ooj_pkg.get_ooj_pdv_sistem(:APP_OOJ_ID), 'N');
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 42178720681684421
+        }
+    )
+
+)
+

@@ -1,0 +1,539 @@
+page 411 (
+    name: Radni Nalog Troskovi
+    alias: RADNI-NALOG-TROSKOVI
+    title: Radni Nalog Troskovi
+    pageGroup: @proizvodnja
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region radni-nalog-troskovi (
+        name: Radni Nalog Troskovi
+        type: form
+        source {
+            location: localDatabase
+            tableName: RADNI_NALOG_TROSKOVI
+            includeRowidColumn: true
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    pageItem P411_CREATED (
+        type: datePicker
+        label {
+            label: Created
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: CREATED
+            dataType: date
+        }
+    )
+
+    pageItem P411_CREATED_BY (
+        type: textField
+        label {
+            label: Created By
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: CREATED_BY
+            dataType: varchar2
+        }
+    )
+
+    pageItem P411_ID (
+        type: numberField
+        label {
+            label: Id
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: ID
+            dataType: number
+        }
+    )
+
+    pageItem P411_IZNOS (
+        type: numberField
+        label {
+            label: Iznos
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: IZNOS
+            dataType: number
+        }
+    )
+
+    pageItem P411_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: OPIS
+            dataType: varchar2
+        }
+    )
+
+    pageItem P411_RADNI_NALOG_ID (
+        type: numberField
+        label {
+            label: Radni Nalog Id
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: RADNI_NALOG_ID
+            dataType: number
+        }
+    )
+
+    pageItem P411_ROWID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @radni-nalog-troskovi
+            slot: regionBody
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: ROWID
+            dataType: varchar2
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P411_ROW_VERSION (
+        type: numberField
+        label {
+            label: Row Version
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: ROW_VERSION
+            dataType: number
+        }
+    )
+
+    pageItem P411_UPDATED (
+        type: datePicker
+        label {
+            label: Updated
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: UPDATED
+            dataType: date
+        }
+    )
+
+    pageItem P411_UPDATED_BY (
+        type: textField
+        label {
+            label: Updated By
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: UPDATED_BY
+            dataType: varchar2
+        }
+    )
+
+    pageItem P411_VALID (
+        type: textField
+        label {
+            label: Valid
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @radni-nalog-troskovi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 1
+        }
+        source {
+            formRegion: @radni-nalog-troskovi
+            column: VALID
+            dataType: varchar2
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P411_ROWID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P411_ROWID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P411_ROWID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: [
+                P411_ROWID
+                REQUEST
+            ]
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 152118523385803632
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process initialize-form-radni-nalog-troskovi (
+        name: Initialize form Radni Nalog Troskovi
+        type: formInitialization
+        formRegion: @radni-nalog-troskovi
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 152117777840803631
+        }
+    )
+
+    process process-form-radni-nalog-troskovi (
+        name: Process form Radni Nalog Troskovi
+        type: formAutoRowProcessing
+        formRegion: @radni-nalog-troskovi
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 152118147910803632
+        }
+    )
+
+)
+

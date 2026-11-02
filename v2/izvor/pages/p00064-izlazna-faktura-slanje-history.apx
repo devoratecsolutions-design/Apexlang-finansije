@@ -1,0 +1,305 @@
+page 64 (
+    name: Izlazna faktura / Slanje / History
+    alias: IZLAZNA-FAKTURA-SLANJE-HISTORY
+    title: Izlazna faktura / Slanje / History
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region izlazna-faktura-slanje-history (
+        name: Izlazna faktura / Slanje / History
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    korisnik_naziv,
+                    email_from,
+                    email_to,
+                    cc,
+                    bcc,
+                    subject,
+                    message,
+                    sys.dbms_lob.getlength(attachment) attachment,
+                    attachment_filename,
+                    attachment_mimetype,
+                    attachment_lastupd,
+                    attachment_charset,
+                    
+                    created,
+                    to_char(created, 'DD.MM.YYYY') AS created_char
+                FROM
+                    vw_kif_email_history
+                WHERE
+                    kif_id = :P64_FAKTURA_ID
+                ORDER BY
+                    created DESC
+                ```
+        }
+        orderBy {
+            type: staticValue
+            orderByClause: created DESC
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--staticRowColors
+                t-Report--rowHighlight
+                t-Report--inline
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: no data found
+        }
+
+        column ATTACHMENT (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: downloadBlob
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 93
+            }
+            appearance {
+                downloadText: Preuzmi
+            }
+            blobAttributes {
+                tableName: KIF_EMAIL_HISTORY
+                blobColumn: ATTACHMENT
+                primaryKeyColumn1: ID
+                mimeTypeColumn: ATTACHMENT_MIMETYPE
+                filenameColumn: ATTACHMENT_FILENAME
+                lastUpdatedColumn: ATTACHMENT_LASTUPD
+                charSetColumn: ATTACHMENT_CHARSET
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column ATTACHMENT_CHARSET (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 133
+            }
+        )
+
+        column ATTACHMENT_FILENAME (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 103
+            }
+        )
+
+        column ATTACHMENT_LASTUPD (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 123
+            }
+        )
+
+        column ATTACHMENT_MIMETYPE (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 113
+            }
+        )
+
+        column BCC (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 63
+            }
+        )
+
+        column CC (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 53
+            }
+        )
+
+        column CREATED (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 163
+            }
+        )
+
+        column CREATED_CHAR (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 153
+            }
+        )
+
+        column EMAIL_FROM (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Informacije
+            }
+            layout {
+                sequence: 33
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    Poslao: <b>#KORISNIK_NAZIV#</b>
+                    <br>
+                    <b>#SUBJECT#</b>
+                    <br>
+                    <br>
+                    From: <b>#EMAIL_FROM#</b>
+                    <br>
+                    To: <b>#EMAIL_TO#</b>
+                    {if CC/}
+                    <br>
+                    Cc: <b>#CC#</b>
+                    {endif/}
+                    {if BCC/}
+                    <br>
+                    Bcc: <b>#BCC#</b>
+                    {endif/}
+                    <br>
+                    <br>
+                    Datum slanja <b>#CREATED_CHAR#</b>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column EMAIL_TO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 43
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 0
+            }
+        )
+
+        column KORISNIK_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 143
+            }
+        )
+
+        column MESSAGE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: richText
+            heading {
+                heading: Poruka
+            }
+            layout {
+                sequence: 83
+            }
+            settings {
+                format: html
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUBJECT (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 73
+            }
+        )
+
+    )
+
+    pageItem P64_FAKTURA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+)
+

@@ -1,0 +1,475 @@
+page 1901 (
+    name: Kurs/ Detalji
+    alias: KURS-DETALJI
+    title: Kurs/ Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovna-organizaciona-jedinica-banka-detalji (
+        name: Osnovna organizaciona jedinica / Banka / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1901_DATUM (
+        type: datePicker
+        label {
+            label: Datum kursa
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P1901_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1901_KURS (
+        type: numberField
+        label {
+            label: Kurs
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D000000
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Kurs unesite sa tačkom kao decimalnim separatorom, na 6 decimalnih mjesta (npr. 1.955830).
+        }
+    )
+
+    pageItem P1901_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1901_VALUTA (
+        type: popupLov
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            popupWidth: 500
+            popupHeight: 400
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute-popup
+        }
+        layout {
+            sequence: 40
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            column: 1
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P1901_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1901_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1901_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: DATUM NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1901_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1901_DATUM
+        }
+    )
+
+    validation iskorišten-kurs (
+        name: Iskorišten kurs
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody: " return accounting.finansije_pkg.validate_change_kurs (:APP_OOJ_ID, :P1901_VALUTA, :P1901_DATUM);"
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE, SAVE
+        }
+    )
+
+    validation kurs-not-null (
+        name: KURS NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1901_KURS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1901_KURS
+        }
+    )
+
+    validation valuta-not-null (
+        name: VALUTA NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1901_VALUTA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1901_VALUTA
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 270525712636689632
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.delete_acc_valuta_kursevi (
+                                p_id              => :P1901_ID
+                    );
+                
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 270525360099689632
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.get_acc_valuta_kursevi (
+                                p_id                =>  :P1901_ID,
+                                p_valuta_id         =>  :P1901_VALUTA,
+                                p_ooj_id            =>  :P1901_OOJ_ID,
+                                p_datum             =>  :P1901_DATUM,
+                                p_kurs              =>  :P1901_KURS
+                    );
+                
+                
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 270524187720689628
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare 
+                v_id number;
+                
+                begin 
+                
+                        sif.acc_pkg.insert_acc_valuta_kursevi (
+                                p_valuta_id         =>  :P1901_VALUTA,
+                                p_ooj_id            =>  :APP_OOJ_ID,
+                                p_datum             =>  :P1901_DATUM,
+                                p_kurs              =>  to_number(:P1901_KURS, '999G999G999G999G990D000000'),
+                                p_id                =>  v_id
+                            );
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 270524569226689630
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.update_acc_valuta_kursevi (
+                                p_id                =>  :P1901_ID,
+                                p_valuta_id         =>  :P1901_VALUTA,
+                                p_ooj_id            =>  :APP_OOJ_ID,
+                                p_datum             =>  :P1901_DATUM,
+                                p_kurs              =>  to_number(:P1901_KURS, '999G999G999G999G990D000000')
+                
+                            );
+                
+                
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 270524975936689631
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

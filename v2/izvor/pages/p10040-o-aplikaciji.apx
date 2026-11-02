@@ -1,0 +1,54 @@
+page 10040 (
+    name: O aplikaciji
+    alias: O-APLIKACIJI
+    title: O aplikaciji
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: All application help text can be accessed from this page. The links in the "Documentation" region give a much more in-depth explanation of the application's features and functionality.
+    }
+    config {
+        buildOption: @feature-about-page
+    }
+
+    region finansije (
+        name: Finansije
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <b>Aplikacija Finansije</b> omogućava organizacijama da na jednom mjestu vode sve ključne procese iz oblasti finansija i računovodstva. Obuhvata evidenciju ulaznih i izlaznih faktura sa pripadajućim stavkama, glavnu knjigu sa knjiženjima i izvještajima, kao i obaveze prema poreskoj upravi kroz KIF, KUF i automatski unos u sistem. Na ovaj način osigurava se uredno praćenje novčanih tokova i pravovremeno ispunjavanje zakonskih obaveza.
+                <br>
+                <br>
+                Pored osnovnih računovodstvenih procesa, aplikacija nudi i alate za upravljanje ugovorima, blagajnama i osnovnim sredstvima, uz mogućnost obračuna amortizacije i praćenja održavanja imovine. Takođe, obuhvaćeni su materijalno i robno knjigovodstvo, što olakšava rad sa skladištima, zalihama i narudžbenicama, dok podrška za proizvodne procese omogućava vođenje radnih naloga, normativnih lista i cjenovnika.
+                <br>
+                <br>
+                Finansijska aplikacija ne samo da osigurava preciznu i tačnu evidenciju, već i povezuje finansijske procese sa operativnim aktivnostima u preduzeću. To menadžmentu daje potpunu sliku poslovanja i omogućava donošenje odluka zasnovanih na realnim podacima, dok zaposlenima pojednostavljuje svakodnevni rad i smanjuje mogućnost grešaka.
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 4
+        }
+        appearance {
+            template: @content-block
+            templateOptions: [
+                #DEFAULT#
+                t-ContentBlock--h1
+            ]
+        }
+    )
+
+)
+

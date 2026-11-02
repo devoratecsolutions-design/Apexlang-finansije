@@ -1,0 +1,1132 @@
+page 40 (
+    name: Ulazne fakture
+    alias: ULAZNE-FAKTURE
+    title: Ulazne fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @fakture-kuf
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Klikom na opciju <b><em>"Ulazne fakture"</em></b> otvara se pregled faktura koje preduzeće dobija 
+            od svojih dobavljača. </br>
+            Kako bi se obezbijedila evidencija ovih faktura, potrebno ih je unijeti u sistem.</br>
+            Ukoliko nemate unesenog klijenta, potrebno je uraditi sljedeće: 
+            <ul>
+                <li>kliknite na dugme "Novi klijent"</li> 
+                <li>unesite tražene podatke.</li>
+            </ul>
+            U ovom kontekstu klijent se registruje kao dobavljač, ali može biti i tip kupac–dobavljač 
+            ukoliko je istovremeno u obe uloge. </br>
+            </br>
+            Pri unosu dobavljača obavezno je definisati i vrstu klijenta 
+            (povezano pravno lice, pravno lice, fizičko lice ili zaposleno lice).</br>
+            Ako se kao država odabere Bosna i Hercegovina, sistem automatski otvara dodatno 
+            polje za izbor entiteta (Federacija BiH, Republika Srpska ili Brčko distrikt). </br>
+            Na osnovu države i entiteta primjenjuje se odgovarajući šablon za klijenta, 
+            koji prethodno trebate definisati u konfiguraciji.</br>
+            </br>
+            Klikom na dugme <b><em>"Kreiraj fakturu"</em></b> i nakon unosa svih podataka, faktura se evidentira u sistemu.</br>
+            Uneseni dokument moguće je pregledati i putem ikone u izvještajima sa desne strane, 
+            gdje je dostupna opcija <b><em>"Dokument"</em></b>, koja otvara pregled priloženog dokumenta.
+            
+            ```
+    }
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @ulazne-fakture-report
+        }
+        layout {
+            sequence: 9
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P40_KLIJENT_ID (
+            type: radioGroup
+            label {
+                label: Dobavljač
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti-dobavljaci
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: KLIJENT_ID
+            }
+        )
+
+        filter P40_NAPLATA (
+            type: checkboxGroup
+            label {
+                label: Plaćanje
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Plaćena;paid,Djelimično;partial,Neplaćena;open,Dospjela;overdue,Stornirana;void
+            }
+            layout {
+                sequence: 55
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: NAPLATA_STATUS
+            }
+        )
+
+        filter P40_PORESKI_PERIOD (
+            type: checkboxGroup
+            label {
+                label: Poreski period
+            }
+            lov {
+                type: sharedComponent
+                lov: @poreski-period-char
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: PORESKI_PERIOD
+            }
+        )
+
+        filter P40_VRSTA (
+            type: checkboxGroup
+            label {
+                label: Vrsta dokumenta
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Ulazna faktura;UF,Avansna faktura;UAV,Zatvaranje avansa;UAVZ,Knjižno odobrenje;UKO,Knjižno zaduženje;UKZ
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VRSTA_SIFRA
+            }
+        )
+
+        filter P40_VALUTA (
+            type: checkboxGroup
+            label {
+                label: Valuta
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT v.sifra AS d, v.id AS r
+                    FROM sif.acc_valute v
+                    WHERE EXISTS (SELECT 1 FROM kuf k WHERE k.valuta_id = v.id AND k.ooj_id = :APP_OOJ_ID)
+                    ORDER BY CASE v.sifra WHEN 'BAM' THEN 0 ELSE 1 END, v.sifra
+                    ```
+            }
+            layout {
+                sequence: 25
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VALUTA_ID
+            }
+        )
+
+        filter P40_STATUS (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:U pripremi;P,Zaključena;Z
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS
+            }
+        )
+
+        filter P40_PROKNJIZENO (
+            type: radioGroup
+            label {
+                label: Proknjiženo
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: PROKNJIZENO
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :APP_TIP_PREDUZETNIKA_SIFRA in ('doo', 'ad', 'vsp_dvojno')
+            }
+        )
+
+        filter P40_SEARCH2 (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region potrebna-konfiguracija (
+        name: Potrebna konfiguracija
+        type: staticContent
+        source {
+            htmlCode: Neophodno je da konfigurišete formu numeracije dokumenata.
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return not core.protokoli_pkg.check_brojac (:APP_OOJ_ID, 'uf', :APP_GODINA);
+        }
+    )
+
+    region ulazne-fakture (
+        name: Ulazne fakture
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region ulazne-fakture-report (
+        name: Ulazne fakture Report
+        title: "Ulazne fakture "
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    naziv_fakture,
+                    klijent_naziv,
+                    datum_fakture,
+                    datum_valute,
+                    iznos_sa_pdv,
+                    iznos_bez_pdv,
+                    uio_kuf_count,
+                    uplaceno,
+                    uplaceno_izvod,
+                    CASE
+                        WHEN uplaceno_izvod >= iznos_sa_pdv THEN
+                            'is-paid'
+                        WHEN uplaceno_izvod > 0 THEN
+                            'is-partial'
+                        ELSE
+                            'is-zero'
+                    END AS uplaceno_izvod_color_code,
+                    uplaceno_rucno,
+                    CASE
+                        WHEN uplaceno_rucno >= iznos_sa_pdv THEN
+                            'is-paid'
+                        WHEN uplaceno_rucno > 0 THEN
+                            'is-partial'
+                        ELSE
+                            'is-zero'
+                    END AS uplaceno_rucno_color_code,
+                
+                    CASE
+                        WHEN dokumenata = 0 THEN
+                            null
+                        ELSE
+                            apex_page.get_url(
+                                p_page   => 42,
+                                p_items  => 'P42_ID',
+                                p_values => id
+                            ) 
+                    END AS view_document,
+                    
+                    null as knjizeno,
+                    klijent_id,
+                    glavna_knjiga_id,
+                    to_char(datum_fakture, 'MM.YYYY') as poreski_period,
+                    CASE
+                        WHEN glavna_knjiga_id IS NOT null THEN
+                            'Y'
+                        ELSE
+                            'N'
+                    END AS proknjizeno,
+                    -- v2: status plaćanja i prikaz
+                    CASE
+                        WHEN stornirano = 'Y' THEN 'void'
+                        WHEN storniran_id IS NOT NULL OR vrsta_sifra = 'UAV' THEN 'paid'
+                        WHEN uplaceno = 'Y'
+                          OR nvl(uplaceno_izvod, 0) + nvl(uplaceno_rucno, 0) + nvl(zatvoreno_avansom, 0) >= iznos_sa_pdv THEN 'paid'
+                        WHEN nvl(uplaceno_izvod, 0) + nvl(uplaceno_rucno, 0) + nvl(zatvoreno_avansom, 0) > 0 THEN 'partial'
+                        WHEN datum_valute < trunc(sysdate) THEN 'overdue'
+                        ELSE 'open'
+                    END AS naplata_status,
+                    CASE
+                        WHEN stornirano = 'Y' THEN 'Stornirana'
+                        WHEN storniran_id IS NOT NULL OR vrsta_sifra = 'UAV' THEN 'Plaćena'
+                        WHEN uplaceno = 'Y'
+                          OR nvl(uplaceno_izvod, 0) + nvl(uplaceno_rucno, 0) + nvl(zatvoreno_avansom, 0) >= iznos_sa_pdv THEN 'Plaćena'
+                        WHEN nvl(uplaceno_izvod, 0) + nvl(uplaceno_rucno, 0) + nvl(zatvoreno_avansom, 0) > 0 THEN 'Djelimično'
+                        WHEN datum_valute < trunc(sysdate) THEN 'Dospjela ' || to_char(trunc(sysdate) - trunc(datum_valute)) || ' d'
+                        ELSE 'Neplaćena'
+                    END AS naplata_label,
+                    CASE WHEN uio_kuf_count > 0 THEN 'Y' ELSE 'N' END AS uio_dn,
+                    CASE WHEN vrsta_sifra <> 'UF' THEN 'Y' ELSE 'N' END AS vrsta_nije_uf,
+                    CASE WHEN :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno') THEN 'Y' ELSE 'N' END AS app_dvojno,
+                    vrsta_sifra,
+                    vrsta_naziv,
+                    status,
+                    CASE
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'proknjizena'
+                        WHEN status = 'Z' THEN 'zakljucena'
+                        ELSE 'priprema'
+                    END AS dok_status,
+                    CASE
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'Proknjižena'
+                        WHEN status = 'Z' THEN 'Zaključena'
+                        ELSE 'U pripremi'
+                    END AS dok_status_naziv,
+                    CASE
+                        WHEN glavna_knjiga_id IS NOT NULL THEN 'fa-book'
+                        WHEN status = 'Z' THEN 'fa-lock'
+                        ELSE 'fa-pencil'
+                    END AS dok_status_ikona,
+                    dokumenata,
+                    valuta_id,
+                    valuta_sifra,
+                    to_char(valuta_iznos_sa_pdv, 'FM999G999G999G999G990D00') AS valuta_iznos,
+                    strana_valuta,
+                    CASE WHEN status = 'P' AND glavna_knjiga_id IS NULL AND storniran_id IS NULL
+                         THEN 'Y' ELSE 'N' END AS u_pripremi
+                FROM
+                    vw_kuf_lista
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                ORDER BY
+                    datum_fakture DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema faktura za izabrane filtere.
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+                htmlExpression:
+                    ```html
+                    <span class="fin-date">#DATUM_FAKTURE#</span>
+                    {if ?DATUM_VALUTE/}<span class="fin-sub">valuta #DATUM_VALUTE#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column GLAVNA_KNJIGA_ID (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 170
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            link {
+                target: {
+                    page: 41
+                    items: {
+                        P41_ID: #ID#
+                        P41_ORIG: 40
+                    }
+                    clearCache: 41
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV_FAKTURE#</span><span class="fin-sub">#NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column IZNOS_SA_PDV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: fin-num fin-num--strong
+                htmlExpression:
+                    ```html
+                    #IZNOS_SA_PDV#{if STRANA_VALUTA/}<span class="fin-num-sub">#VALUTA_IZNOS# #VALUTA_SIFRA#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KLIJENT_ID (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 150
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Dobavljač
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                cssClasses: fin-col-client
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KNJIZENO (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 90
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-chips">
+                    <span class="fin-status fin-status--#DOK_STATUS#"><span class="fa #DOK_STATUS_IKONA#" aria-hidden="true"></span>#DOK_STATUS_NAZIV#</span>
+                    {if VRSTA_NIJE_UF/}<span class="fin-chip fin-chip--info">#VRSTA_NAZIV#</span>{endif/}
+                    {if UIO_DN/}<span class="fin-chip fin-chip--info"><span class="fa fa-archive" aria-hidden="true"></span>UIO</span>{endif/}
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAPLATA_LABEL (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column NAPLATA_STATUS (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            heading {
+                heading: Plaćanje
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-badge fin-badge--#NAPLATA_STATUS#">#NAPLATA_LABEL#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column PORESKI_PERIOD (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column PROKNJIZENO (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 210
+            }
+        )
+
+        column VRSTA_NIJE_UF (
+            reportColumnQueryId: 24
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+
+        column APP_DVOJNO (
+            reportColumnQueryId: 25
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+
+        column VRSTA_SIFRA (
+            reportColumnQueryId: 26
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 380
+            }
+        )
+
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 27
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 390
+            }
+        )
+
+
+        column STATUS (
+            reportColumnQueryId: 28
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 400
+            }
+        )
+
+
+        column U_PRIPREMI (
+            reportColumnQueryId: 29
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 410
+            }
+        )
+
+
+        column VALUTA_ID (
+            reportColumnQueryId: 30
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 420
+            }
+        )
+
+
+        column VALUTA_SIFRA (
+            reportColumnQueryId: 31
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 430
+            }
+        )
+
+
+        column VALUTA_IZNOS (
+            reportColumnQueryId: 32
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 440
+            }
+        )
+
+
+        column STRANA_VALUTA (
+            reportColumnQueryId: 33
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 450
+            }
+        )
+
+
+        column DOK_STATUS (
+            reportColumnQueryId: 40
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 470
+            }
+        )
+
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 41
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 480
+            }
+        )
+
+
+        column DOK_STATUS_IKONA (
+            reportColumnQueryId: 42
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 490
+            }
+        )
+
+
+        column DOKUMENATA (
+            reportColumnQueryId: 50
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 520
+            }
+        )
+
+
+        column UIO_DN (
+            reportColumnQueryId: 23
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 350
+            }
+        )
+
+        column UIO_KUF_COUNT (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 160
+            }
+        )
+
+        column UPLACENO (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 140
+            }
+        )
+
+        column UPLACENO_IZVOD (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Izvod
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 44
+                    items: {
+                        P44_ID: #ID#
+                    }
+                    clearCache: 44
+                }
+                linkText: <span class="fin-amt-link #UPLACENO_IZVOD_COLOR_CODE#" title="Plaćanja kroz izvode">#UPLACENO_IZVOD#</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPLACENO_IZVOD_COLOR_CODE (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 180
+            }
+        )
+
+        column UPLACENO_RUCNO (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Ručno
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 45
+                    items: {
+                        P45_ID: #ID#
+                    }
+                    clearCache: 45
+                }
+                linkText: <span class="fin-amt-link #UPLACENO_RUCNO_COLOR_CODE#" title="Ručno evidentirana plaćanja">#UPLACENO_RUCNO#</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPLACENO_RUCNO_COLOR_CODE (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 200
+            }
+        )
+
+        column VIEW_DOCUMENT (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Dokumenti
+                alignment: center
+            }
+            layout {
+                sequence: 100
+            }
+            columnFormatting {
+                cssClasses: fin-col-actions
+                htmlExpression:
+                    ```html
+                    {if VIEW_DOCUMENT/}<a class="fin-docs" href="#VIEW_DOCUMENT#" title="Dokumenti (#DOKUMENATA#)" aria-label="Dokumenti (#DOKUMENATA#)"><span class="fa fa-paperclip" aria-hidden="true"></span><span class="fin-docs__n">#DOKUMENATA#</span></a>{else/}<span class="fin-docs fin-docs--prazno" title="Nema dokumenata"><span class="fa fa-paperclip" aria-hidden="true"></span></span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'uf', :APP_GODINA);
+        }
+    )
+
+    button configuration (
+        buttonName: CONFIGURATION
+        label: Numeracija dokumenata
+        layout {
+            sequence: 10
+            region: @potrebna-konfiguracija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-file-wrench
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 103
+                clearCache: 103
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 40
+            region: @ulazne-fakture
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 41
+                items: {
+                    P41_ORIG: 40
+                }
+                clearCache: 41
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'uf', :APP_GODINA);
+        }
+    )
+
+    button download (
+        buttonName: DOWNLOAD
+        label: Preuzmi KUF
+        layout {
+            sequence: 10
+            region: @ulazne-fakture
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 43
+                clearCache: 43
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'uf', :APP_GODINA) AND :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno');
+        }
+    )
+
+    button uio-kuf (
+        buttonName: UIO_KUF
+        label: Prelazak na UIO - KUF
+        layout {
+            sequence: 20
+            region: @ulazne-fakture
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 83
+                clearCache: 83
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'uf', :APP_GODINA) AND :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno');
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ulazne-fakture-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @ulazne-fakture-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ulazne-fakture-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

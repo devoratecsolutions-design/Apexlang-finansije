@@ -1,0 +1,1107 @@
+breadcrumb breadcrumb (
+    name: Breadcrumb
+
+    entry administracija (
+        name: Administracija
+        pageNumber: 10000
+        execution {
+            sequence: 900
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 10000
+            }
+        }
+    )
+
+    entry amortizacija (
+        name: Amortizacija
+        pageNumber: 263
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 263
+            }
+        }
+    )
+
+    entry automatski-unos-kif-x2f-kuf (
+        name: Automatski unos KIF &#x2F; KUF
+        pageNumber: 86
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @uio-dokumentacija
+        }
+        link {
+            target: {
+                page: 86
+            }
+        }
+    )
+
+    entry banke (
+        name: Banke
+        pageNumber: 121
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 121
+            }
+        }
+    )
+
+    entry blagajna (
+        name: Blagajna
+        pageNumber: 450
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 450
+            }
+        }
+    )
+
+    entry blagajne (
+        name: Blagajne
+        pageNumber: 451
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @blagajna
+        }
+        link {
+            target: {
+                page: 451
+            }
+        }
+    )
+
+    entry budžet (
+        name: Budžet
+        pageNumber: 500
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 500
+            }
+        }
+    )
+
+    entry budžeti (
+        name: Budžeti
+        pageNumber: 503
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžet
+        }
+        link {
+            target: {
+                page: 503
+            }
+        }
+    )
+
+    entry budžetske-stavke (
+        name: Budžetske stavke
+        pageNumber: 501
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžet
+        }
+        link {
+            target: {
+                page: 501
+            }
+        }
+    )
+
+    entry cjenovnik (
+        name: Cjenovnik
+        pageNumber: 431
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @proizvodnja
+        }
+        link {
+            target: {
+                page: 431
+            }
+        }
+    )
+
+    entry cjenovnik-2 (
+        name: Cjenovnik
+        pageNumber: 25
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @stavke
+        }
+        link {
+            target: {
+                page: 25
+            }
+        }
+    )
+
+    entry dnevnik (
+        name: Dnevnik
+        pageNumber: 455
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @blagajna
+        }
+        link {
+            target: {
+                page: 455
+            }
+        }
+    )
+
+    entry dokumentacija-p72-ugovor-naziv (
+        name: "Dokumentacija [&P72_UGOVOR_NAZIV.]"
+        pageNumber: 72
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @ugovori
+        }
+        link {
+            target: {
+                page: 72
+            }
+        }
+    )
+
+    entry dokumenti (
+        name: Dokumenti
+        pageNumber: 330
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 330
+            }
+        }
+    )
+
+    entry fakture-računi (
+        name: Fakture - računi
+        pageNumber: 2
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+    )
+
+    entry fiskalizacija (
+        name: Fiskalizacija
+        pageNumber: 105
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 105
+            }
+        }
+    )
+
+    entry glavna-knjiga (
+        name: Glavna knjiga
+        pageNumber: 199
+        execution {
+            sequence: 20
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 199
+            }
+        }
+    )
+
+    entry grupe-stavki (
+        name: Grupe stavki
+        pageNumber: 114
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 114
+            }
+        }
+    )
+
+    entry izgled-faktura (
+        name: Izgled faktura
+        pageNumber: 101
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 101
+            }
+        }
+    )
+
+    entry izlazne-fakture (
+        name: Izlazne fakture
+        pageNumber: 50
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @fakture-računi
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry izvještaji (
+        name: Izvještaji
+        pageNumber: 210
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @glavna-knjiga
+        }
+        link {
+            target: {
+                page: 210
+            }
+        }
+    )
+
+    entry izvještaji-2 (
+        name: Izvještaji
+        pageNumber: 370
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 370
+            }
+        }
+    )
+
+    entry izvještaji-3 (
+        name: Izvještaji
+        pageNumber: 459
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @blagajna
+        }
+        link {
+            target: {
+                page: 459
+            }
+        }
+    )
+
+    entry izvodi (
+        name: Izvodi
+        pageNumber: 220
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @glavna-knjiga
+        }
+        link {
+            target: {
+                page: 220
+            }
+        }
+    )
+
+    entry kalkulacije-robe (
+        name: Kalkulacije robe
+        pageNumber: 340
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 340
+            }
+        }
+    )
+
+    entry klase-osnovnih-sredstava (
+        name: Klase osnovnih sredstava
+        pageNumber: 116
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 116
+            }
+        }
+    )
+
+    entry klase-stavki (
+        name: Klase stavki
+        pageNumber: 125
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 125
+            }
+        }
+    )
+
+    entry klijenti (
+        name: Klijenti
+        pageNumber: 10
+        execution {
+            sequence: 90
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+    )
+
+    entry konfiguracija (
+        name: Konfiguracija
+        pageNumber: 100
+        execution {
+            sequence: 100
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+    )
+
+    entry kontni-okvir (
+        name: Kontni okvir
+        pageNumber: 109
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 109
+            }
+        }
+    )
+
+    entry lista (
+        name: Lista
+        pageNumber: 251
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 251
+            }
+        }
+    )
+
+    entry lista-cjenovnika (
+        name: Lista cjenovnika
+        pageNumber: 27
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @stavke
+        }
+        link {
+            target: {
+                page: 27
+            }
+        }
+    )
+
+    entry lista-stavki (
+        name: Lista stavki
+        pageNumber: 21
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @stavke
+        }
+        link {
+            target: {
+                page: 21
+            }
+        }
+    )
+
+    entry materijalni-izvještaji (
+        name: Materijalni izvještaji
+        pageNumber: 371
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @izvještaji-2
+        }
+        link {
+            target: {
+                page: 371
+            }
+        }
+    )
+
+    entry nalog-za-knjiženje (
+        name: Nalog za knjiženje
+        pageNumber: 201
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @nalozi-za-knjiženje
+        }
+        link {
+            target: {
+                page: 201
+            }
+        }
+    )
+
+    entry nalozi-za-knjiženje (
+        name: Nalozi za knjiženje
+        pageNumber: 200
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @glavna-knjiga
+        }
+        link {
+            target: {
+                page: 200
+            }
+        }
+    )
+
+    entry nivelacija-cijena (
+        name: Nivelacija cijena
+        pageNumber: 350
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 350
+            }
+        }
+    )
+
+    entry normativi (
+        name: Normativi
+        pageNumber: 421
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @proizvodnja
+        }
+        link {
+            target: {
+                page: 421
+            }
+        }
+    )
+
+    entry numeracija-dokumenata (
+        name: Numeracija dokumenata
+        pageNumber: 103
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 103
+            }
+        }
+    )
+
+    entry održavanja (
+        name: Održavanja
+        pageNumber: 271
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 271
+            }
+        }
+    )
+
+    entry osnovna-konfiguracija (
+        name: Osnovna konfiguracija
+        pageNumber: 118
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 118
+            }
+        }
+    )
+
+    entry osnovna-sredstva (
+        name: Osnovna sredstva
+        pageNumber: 250
+        execution {
+            sequence: 50
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 250
+            }
+        }
+    )
+
+    entry pdv-prijava (
+        name: PDV Prijava
+        pageNumber: 230
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @glavna-knjiga
+        }
+        link {
+            target: {
+                page: 230
+            }
+        }
+    )
+
+    entry popis (
+        name: Popis
+        pageNumber: 261
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 261
+            }
+        }
+    )
+
+    entry popisi (
+        name: Popisi
+        pageNumber: 360
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 360
+            }
+        }
+    )
+
+    entry potpisi (
+        name: Potpisi
+        pageNumber: 123
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 123
+            }
+        }
+    )
+
+    entry početna (
+        name: Početna
+        pageNumber: 1
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry pregled-uputstva (
+        name: Pregled uputstva
+        pageNumber: 10045
+        execution {
+            sequence: 1000
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 10045
+            }
+        }
+    )
+
+    entry profil (
+        name: Profil
+        pageNumber: 506
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžeti
+        }
+        link {
+            target: {
+                page: 506
+            }
+        }
+    )
+
+    entry proizvodnja (
+        name: Proizvodnja
+        pageNumber: 400
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 400
+            }
+        }
+    )
+
+    entry radni-nalog (
+        name: Radni nalog
+        pageNumber: 407
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @proizvodnja
+        }
+        link {
+            target: {
+                page: 407
+            }
+        }
+    )
+
+    entry radni-nalozi (
+        name: Radni nalozi
+        pageNumber: 401
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @proizvodnja
+        }
+        link {
+            target: {
+                page: 401
+            }
+        }
+    )
+
+    entry realizacija (
+        name: Realizacija
+        pageNumber: 521
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžeti
+        }
+        link {
+            target: {
+                page: 521
+            }
+        }
+    )
+
+    entry realokacija (
+        name: Realokacija
+        pageNumber: 519
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžeti
+        }
+        link {
+            target: {
+                page: 519
+            }
+        }
+    )
+
+    entry robni-izvještaji (
+        name: Robni izvještaji
+        pageNumber: 372
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @izvještaji-2
+        }
+        link {
+            target: {
+                page: 372
+            }
+        }
+    )
+
+    entry robno-materijalno (
+        name: Robno - materijalno
+        pageNumber: 300
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 300
+                clearCache: 300
+            }
+        }
+    )
+
+    entry skladišta (
+        name: Skladišta
+        pageNumber: 310
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 310
+            }
+        }
+    )
+
+    entry stavke (
+        name: Stavke
+        pageNumber: 20
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+    entry tipovi-promjena (
+        name: Tipovi promjena
+        pageNumber: 453
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @blagajna
+        }
+        link {
+            target: {
+                page: 453
+            }
+        }
+    )
+
+    entry trebovanja (
+        name: Trebovanja
+        pageNumber: 320
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 320
+            }
+        }
+    )
+
+    entry ugovori (
+        name: Ugovori
+        pageNumber: 70
+        execution {
+            sequence: 40
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+    )
+
+    entry uio-dokumentacija (
+        name: UIO dokumentacija
+        pageNumber: 80
+        execution {
+            sequence: 30
+        }
+        appearance {
+            parentEntry: @početna
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+    )
+
+    entry uio-kif (
+        name: UIO - KIF
+        pageNumber: 81
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @uio-dokumentacija
+        }
+        link {
+            target: {
+                page: 81
+            }
+        }
+    )
+
+    entry uio-kuf (
+        name: UIO - KUF
+        pageNumber: 83
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @uio-dokumentacija
+        }
+        link {
+            target: {
+                page: 83
+            }
+        }
+    )
+
+    entry ulazne-fakture (
+        name: Ulazne fakture
+        pageNumber: 40
+        execution {
+            sequence: 20
+        }
+        appearance {
+            parentEntry: @fakture-računi
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry unos-budžetskih-stavki (
+        name: Unos budžetskih stavki
+        pageNumber: 509
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @budžeti
+        }
+        link {
+            target: {
+                page: 509
+            }
+        }
+    )
+
+    entry zaduživanje (
+        name: Zaduživanje
+        pageNumber: 273
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 273
+            }
+        }
+    )
+
+    entry zajednički-indikatori (
+        name: Zajednički indikatori
+        pageNumber: 277
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @osnovna-sredstva
+        }
+        link {
+            target: {
+                page: 277
+            }
+        }
+    )
+
+    entry šabloni-za-knjiženje (
+        name: Šabloni za knjiženje
+        pageNumber: 119
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @konfiguracija
+        }
+        link {
+            target: {
+                page: 119
+            }
+        }
+    )
+
+)
+

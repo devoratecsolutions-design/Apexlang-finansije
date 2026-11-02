@@ -1,0 +1,165 @@
+appItem APP_FIRMA_ID (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_FIRMA_ID
+    }
+)
+
+appItem APP_FIRMA_ID_BACK (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_FIRMA_ID_BACK
+    }
+)
+
+appItem APP_FIRMA_NAME (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_FIRMA_NAME
+    }
+)
+
+appItem APP_GODINA (
+    security {
+        sessionStateProtection: unrestricted
+    }
+)
+
+appItem APP_GUIDE (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+        escapeSpecialChars: false
+    }
+    subscription {
+        master: @/200/APP_GUIDE
+    }
+)
+
+appItem APP_KASA_ID (
+    security {
+        sessionStateProtection: unrestricted
+    }
+)
+
+appItem APP_KONTO_DUZINA (
+)
+
+appItem APP_OOJ_ID (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_OOJ_ID
+    }
+)
+
+appItem APP_OOJ_ID_BACK (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_OOJ_ID_BACK
+    }
+)
+
+appItem APP_OOJ_NAME (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_OOJ_NAME
+    }
+)
+
+appItem APP_PDV_BROJ (
+)
+
+appItem APP_PDV_SISTEM (
+)
+
+appItem APP_PERIOD_ZAKLJUCAN_DO (
+)
+
+appItem APP_RADNIK_ID (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_RADNIK_ID
+    }
+)
+
+appItem APP_RADNIK_NAME (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_RADNIK_NAME
+    }
+)
+
+appItem APP_SESSION_CHANGED (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_SESSION_CHANGED
+    }
+)
+
+appItem APP_TIP_PREDUZETNIKA_SIFRA (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_TIP_PREDUZETNIKA_SIFRA
+    }
+)
+
+appItem APP_USER_ID (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_USER_ID
+    }
+)
+
+appItem APP_USER_ID_BACK (
+    scope: global
+    security {
+        sessionStateProtection: unrestricted
+    }
+    subscription {
+        master: @/200/APP_USER_ID_BACK
+    }
+)
+
+appItem A_PROFIL_URL (
+    scope: global
+    subscription {
+        master: @/200/A_PROFIL_URL
+    }
+)
+
+appItem A_SKLADISTE_ID (
+)
+

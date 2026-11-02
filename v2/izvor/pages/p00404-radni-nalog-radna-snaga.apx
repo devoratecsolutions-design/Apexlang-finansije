@@ -1,0 +1,437 @@
+page 404 (
+    name: Radni nalog / Radna snaga
+    alias: RADNI-NALOG-RADNA-SNAGA
+    title: Radni nalog / Radna snaga
+    pageGroup: @proizvodnja
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        height: 400
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region radni-nalog-radna-snaga (
+        name: Radni nalog / Radna snaga
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c001 AS obrazovanje_id,
+                    c002 AS broj_sati
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'RN_RADNA_SNAGA'
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    let $ = apex.jQuery,
+                        toolbarData = $.apex.interactiveGrid.copyDefaultToolbar();
+                        addrowAction = toolbarData.toolbarFind("selection-add-row"),
+                        addrowAction.label = "Nova stavka"; // Pick name you need
+                        editrowAction = toolbarData.toolbarFind("edit"),
+                        editrowAction.label = "Izmjeni"; // Pick name you need
+                        options.toolbarData = toolbarData;
+                
+                    options.defaultGridViewOptions = {
+                       reorderColumns:false,
+                       hideDeletedRows:true,
+                       skipReadonlyCells:true
+                }
+                 return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 151397313681459125
+        }
+
+        savedReport 1519065 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @SEQ_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @OBRAZOVANJE_ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @BROJ_SATI
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column BROJ_SATI (
+            type: numberField
+            heading {
+                heading: Broj sati
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            validation {
+                valueRequired: true
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: BROJ_SATI
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OBRAZOVANJE_ID (
+            type: popupLov
+            heading {
+                heading: Obrazovanje
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-obrazovanje
+                displayExtraValues: false
+                nullDisplayValue: - Izaberite obrazovanje -
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: OBRAZOVANJE_ID
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column SEQ_ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: SEQ_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-radni-nalog
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button next (
+        buttonName: NEXT
+        label: Dalje
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process save-collection (
+        name: Save collection
+        type: executeCode
+        editableRegion: @radni-nalog-radna-snaga
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'D' THEN -- DELETE
+                    apex_collection.delete_member (
+                        p_collection_name => 'RN_RADNA_SNAGA',
+                        p_seq             => :SEQ_ID
+                    );
+                
+                ELSIF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                    apex_collection.add_member (
+                        p_collection_name => 'RN_RADNA_SNAGA',
+                        p_c001            => :OBRAZOVANJE_ID,
+                        p_c002            => to_number(:BROJ_SATI, '999G999G999G999G990D00')
+                    );
+                
+                    RETURN;
+                ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    apex_collection.update_member (  
+                        p_collection_name => 'RN_RADNA_SNAGA',
+                        p_seq             => :SEQ_ID,
+                        p_c001            => :OBRAZOVANJE_ID,
+                        p_c002            => to_number(:BROJ_SATI, '999G999G999G999G990D00')
+                    );
+                
+                    RETURN;
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 151399160639459143
+        }
+        serverSideCondition {
+            whenButtonPressed: @next
+            executionScope: allSubmittedRows
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 403
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 405
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @next
+        }
+    )
+
+)
+

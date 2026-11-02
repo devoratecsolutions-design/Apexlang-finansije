@@ -1,0 +1,309 @@
+page 125 (
+    name: Klase stavki
+    alias: KLASE-STAVKI
+    title: Klase stavki
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        functionAndGlobalVariableDeclaration:
+            ```javascript-browser
+            function treeSearchHighlight(pStaticId, pSearchString, pClassName) {
+                var tree$ = apex.region(pStaticId).widget();
+            
+                apex.jQuery("." + apex.util.escapeCSS(pClassName), "#" + apex.util.escapeCSS(pStaticId))
+                    .removeClass(pClassName);
+            
+                tree$.treeView("collapseAll");
+            
+                if (!pSearchString) {
+                    tree$.treeView("collapseAll");
+                    return;
+                }
+            
+                var lTerm = pSearchString.toLowerCase();
+            
+                var lMatches$ = tree$.treeView("find", {
+                    depth: -1,
+                    findAll: true,
+                    match: function(n) {
+                        return n.label.toLowerCase().indexOf(lTerm) >= 0;
+                    }
+                });
+            
+                if (lMatches$.length === 0) {
+                    tree$.treeView("collapseAll");
+                    return;
+                }
+            
+                lMatches$.find(".a-TreeView-label").addClass(pClassName);
+            
+                var lAncestorNodes$ = lMatches$.parents(".a-TreeView-node");
+                var lAncestors$ = lAncestorNodes$.children(".a-TreeView-content");
+            
+                if (lAncestors$.length > 0) {
+                    tree$.treeView("expand", lAncestors$);
+                }
+            }
+            ```
+    }
+    css {
+        inline:
+            ```css
+            .tree-search-highlight {
+                background-color: #1b3a5c;
+                color: #ffffff;
+                border-radius: 3px;
+                padding: 0 2px;
+            }
+            
+            #KLASE_STAVKI_ID .ik-ks-vrh   { color: #1f3a68; }
+            #KLASE_STAVKI_ID .ik-ks-list  { color: #2e7d32; }
+            
+            ```
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region klase-stavki (
+        name: Klase stavki
+        type: tree
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select k.id,
+                       k.nadredjeno_id,
+                       k.naziv,
+                       case when exists (select 1 
+                                         from sec_klase_stavki c
+                                         where c.nadredjeno_id = k.id)
+                            then 'fa fa-folder ik-ks-vrh ' else 'fa fa-tag ik-ks-list' 
+                        end as ikona
+                from sec_klase_stavki k
+                where k.ooj_id = :APP_OOJ_ID
+                
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-tree
+        }
+        advanced {
+            htmlDomId: KLASE_STAVKI_ID
+        }
+        settings {
+            nodeLabelColumn: NAZIV
+            nodeValueColumn: ID
+            nodeIdColumn: ID
+            parentKeyColumn: NADREDJENO_ID
+            orderSiblingsBy: NAZIV
+            link: {
+                page: 126
+                items: {
+                    P126_ID: &ID.
+                }
+                clearCache: 126
+            }
+            iconCssClassColumn: IKONA
+            selectedNodePageItem: P125_ID
+        }
+    )
+
+    region klase-stavki-2 (
+        name: Klase stavki
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region alatna-traka (
+        name: Alatna traka
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-tree-toolbar" data-tree="KLASE_STAVKI_ID">
+                    <label class="fin-tree-search">
+                        <span class="fa fa-search" aria-hidden="true"></span>
+                        <input type="search" placeholder="Pretraga po šifri ili nazivu..." aria-label="Pretraga stabla" autocomplete="off">
+                        <button type="button" class="fin-tree-clear" data-action="clear" title="Obriši pretragu" aria-label="Obriši pretragu"><span class="fa fa-times" aria-hidden="true"></span></button>
+                    </label>
+                    <span class="fin-tree-count" aria-live="polite"></span>
+                    <span class="fin-tree-actions">
+                        <button type="button" class="fin-tbtn" data-action="expand"><span class="fa fa-plus-square-o" aria-hidden="true"></span>Proširi sve</button>
+                        <button type="button" class="fin-tbtn" data-action="collapse"><span class="fa fa-minus-square-o" aria-hidden="true"></span>Skupi sve</button>
+                    </span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P125_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @klase-stavki-2
+            slot: next
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 30
+            region: @klase-stavki-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 126
+                clearCache: 126
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    apex.jQuery(document).one("apexafterrefresh", "#KLASE_STAVKI_ID", function() {
+                         finTree.reapply('KLASE_STAVKI_ID');
+                    
+                    });
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klase-stavki
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @klase-stavki
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    apex.jQuery(document).one("apexafterrefresh", "#KLASE_STAVKI_ID", function() {
+                         finTree.reapply('KLASE_STAVKI_ID');
+                    
+                    });
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klase-stavki
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

@@ -1,0 +1,1218 @@
+page 407 (
+    name: Radni nalog
+    alias: RADNI-NALOG
+    title: Radni nalog
+    pageGroup: @proizvodnja
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+        reloadOnSubmit: always
+    }
+
+    region radna-snaga (
+        name: Radna snaga
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    obrazovanje_id,
+                    radnik_id,
+                    broj_sati,
+                    iznos
+                FROM
+                    radni_nalog_radna_snaga
+                WHERE 
+                    radni_nalog_id = :P407_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                t-Report--stretch
+                #DEFAULT#
+                t-Report--rowHighlight
+                t-Report--inline
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: No data found.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column BROJ_SATI (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Broj Sati
+            }
+            layout {
+                sequence: 6
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Id
+            }
+            layout {
+                sequence: 2
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+            }
+            layout {
+                sequence: 7
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OBRAZOVANJE_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Obrazovanje Id
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Radnik Id
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region radni-nalog (
+        name: Radni nalog
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region radni-nalog-2 (
+        name: Radni nalog
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    glavna_knjiga_id,
+                    skladiste_naziv,
+                    oj_naziv,
+                    normativ_naziv,
+                    stavka_naziv,
+                    status_naziv,
+                    status_color_code,
+                    naziv,
+                    kolicina,
+                    godina,
+                    datum,
+                    opis,
+                    storniran_id,
+                    stornirano
+                FROM
+                    vw_radni_nalozi
+                WHERE
+                    id = :P407_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-label--stacked
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: No Record Selected
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column DATUM (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 113
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "DATUM" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column GLAVNA_KNJIGA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Glavna Knjiga Id
+            }
+            layout {
+                sequence: 3
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "GLAVNA_KNJIGA_ID" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Godina
+            }
+            layout {
+                sequence: 103
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "GODINA" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 93
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "KOLICINA" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 13
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "NAZIV" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column NORMATIV_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Normativ
+            }
+            layout {
+                sequence: 43
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 33
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 123
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "OPIS" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column SKLADISTE_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Skladište
+            }
+            layout {
+                sequence: 23
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 73
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 63
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    
+                    ```
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 53
+            }
+        )
+
+        column STORNIRANO (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Stornirano
+            }
+            layout {
+                sequence: 143
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "STORNIRANO" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+        column STORNIRAN_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Storniran
+            }
+            layout {
+                sequence: 133
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "RADNI_NALOZI"
+                    where "STORNIRAN_ID" is not null
+                    and "ID" = :P407_ID
+                    ```
+            }
+        )
+
+    )
+
+    region radni-nalog-hist (
+        name: Radni Nalog Hist
+        type: classicReport
+        source {
+            location: localDatabase
+            tableName: RADNI_NALOG_HIST
+            includeRowidColumn: true
+            whereClause: "RADNI_NALOG_ID" = :P407_ID
+        }
+        layout {
+            sequence: 10
+            parentRegion: @radni-nalog-2
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                t-Report--stretch
+                #DEFAULT#
+                t-Report--rowHighlight
+                t-Report--inline
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: No data found.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column CREATED (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Created
+            }
+            layout {
+                sequence: 8
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CREATED_BY (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Created By
+            }
+            layout {
+                sequence: 9
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Id
+            }
+            layout {
+                sequence: 2
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOMENTAR (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Komentar
+            }
+            layout {
+                sequence: 6
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Radnik Id
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNI_NALOG_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 3
+            }
+        )
+
+        column ROWID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: <span class="u-VisuallyHidden">Edit</span>
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 412
+                    items: {
+                        P412_ROWID: #ROWID#
+                    }
+                    action: resetPagination
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 32
+            }
+        )
+
+        column ROW_VERSION (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Row Version
+            }
+            layout {
+                sequence: 7
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Status Id
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATED_BY (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Updated By
+            }
+            layout {
+                sequence: 11
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region region-display-selector (
+        name: Region Display Selector
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+            cssClasses: js-detail-rds
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region stavke (
+        name: Stavke
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    stavka_id,
+                    jm_id,
+                    kolicina,
+                    iznos
+                FROM
+                    radni_nalog_stavke
+                WHERE 
+                    radni_nalog_id = :P407_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-grid
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+                excel
+                pdf
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 152165922809849803
+        }
+
+        savedReport 1521936 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @JM_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 5
+                }
+            )
+
+        )
+
+        column ID (
+            type: numberField
+            heading {
+                heading: Id
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS (
+            type: numberField
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column JM_ID (
+            type: numberField
+            heading {
+                heading: Jm Id
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: JM_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column KOLICINA (
+            type: numberField
+            heading {
+                heading: Kolicina
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column STAVKA_ID (
+            type: numberField
+            heading {
+                heading: Stavka Id
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+    )
+
+    region troškovi (
+        name: Troškovi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select rowid,
+                       id,
+                       radni_nalog_id,
+                       opis,
+                       iznos,
+                       valid,
+                       row_version,
+                       created,
+                       created_by,
+                       updated,
+                       updated_by
+                  from radni_nalog_troskovi
+                WHERE
+                    radni_nalog_id = :P407_ID
+                ```
+        }
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P407_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                t-Report--stretch
+                #DEFAULT#
+                t-Report--rowHighlight
+                t-Report--inline
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: No data found.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column CREATED (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Created
+            }
+            layout {
+                sequence: 8
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CREATED_BY (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Created By
+            }
+            layout {
+                sequence: 9
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Id
+            }
+            layout {
+                sequence: 2
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNI_NALOG_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 3
+            }
+        )
+
+        column ROWID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: <span class="u-VisuallyHidden">Edit</span>
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 411
+                    items: {
+                        P411_ROWID: #ROWID#
+                    }
+                    action: resetPagination
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                cellWidth: 32
+            }
+        )
+
+        column ROW_VERSION (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Row Version
+            }
+            layout {
+                sequence: 7
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATED_BY (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Updated By
+            }
+            layout {
+                sequence: 11
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Valid
+            }
+            layout {
+                sequence: 6
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P407_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+)
+

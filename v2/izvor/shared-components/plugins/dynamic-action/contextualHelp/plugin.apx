@@ -1,0 +1,88 @@
+plugin contextualHelp (
+    name: Contextual Help
+    staticId: COM.CONTEXTUALHELP.PLUGIN
+    type: dynamicAction
+    component {
+        standardAttributes: [
+            defaultFireOnInitialization
+            initJavascriptCodeAttr
+        ]
+    }
+    source {
+        plsqlCode:
+            ```plsql
+            -- =============================================================================
+            --
+            --  Created by Richard Baldogi
+            --
+            --  This plug-in creates a dynamic action which helps to explore and drive the user in the site with contextual help dialogs.
+            --
+            --  License: MIT
+            --
+            --  GitHub: https://github.com/baldogiRichard/apex-contextual-help
+            --
+            -- =============================================================================
+            
+            --Render Function
+            function render 
+              ( p_dynamic_action in apex_plugin.t_dynamic_action
+              , p_plugin         in apex_plugin.t_plugin 
+              )
+            return apex_plugin.t_dynamic_action_render_result
+            as
+                l_result apex_plugin.t_dynamic_action_render_result;
+                
+                --Initialization Javascript Code
+                l_init_js varchar2(32767) := nvl(apex_plugin_util.replace_substitutions(p_dynamic_action.init_javascript_code), 'undefined');   
+            
+            begin
+                --debug
+                if apex_application.g_debug
+                then
+                    apex_plugin_util.debug_dynamic_action
+                      ( p_plugin         => p_plugin
+                      , p_dynamic_action => p_dynamic_action
+                      );
+                end if;
+            
+                l_result.javascript_function := 'function(){CONTEXTUALHELP.main(' || l_init_js || ');}';
+                    
+                return l_result;
+                
+            end render;
+            ```
+    }
+    callbacks {
+        apiInterface: function
+        renderProcedureName: render
+    }
+    advanced {
+        category: execute
+        substituteAttributeValues: true
+    }
+    css {
+        fileUrls: #PLUGIN_FILES#css/style.css
+    }
+    javaScript {
+        fileUrls: [
+            #PLUGIN_FILES#js/driver.js
+            #PLUGIN_FILES#js/script.js
+        ]
+    }
+    information {
+        version: 1.0
+        aboutUrl: https://github.com/baldogiRichard/apex-contextual-help
+    }
+    subscription {
+        master: @/200/dynamicAction/contextualHelp
+    }
+
+    standardAttributeConfig (
+        name: hasInitJavaScriptCodeAttribute
+        validation {
+            required: true
+        }
+    )
+
+)
+

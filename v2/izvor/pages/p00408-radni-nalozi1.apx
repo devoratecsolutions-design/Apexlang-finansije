@@ -1,0 +1,864 @@
+page 408 (
+    name: Radni Nalozi
+    alias: RADNI-NALOZI1
+    title: Radni Nalozi
+    pageGroup: @proizvodnja
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region radni-nalozi (
+        name: Radni Nalozi
+        type: form
+        source {
+            location: localDatabase
+            tableName: RADNI_NALOZI
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    pageItem P408_BROJ (
+        type: numberField
+        label {
+            label: Broj
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: BROJ
+            dataType: number
+        }
+    )
+
+    pageItem P408_CREATED (
+        type: datePicker
+        label {
+            label: Created
+            alignment: left
+        }
+        layout {
+            sequence: 190
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: CREATED
+            dataType: date
+        }
+    )
+
+    pageItem P408_CREATED_BY (
+        type: textField
+        label {
+            label: Created By
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: CREATED_BY
+            dataType: varchar2
+        }
+    )
+
+    pageItem P408_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: right
+        }
+        layout {
+            sequence: 140
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: DATUM
+            dataType: date
+        }
+    )
+
+    pageItem P408_GLAVNA_KNJIGA_ID (
+        type: numberField
+        label {
+            label: Glavna Knjiga Id
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: GLAVNA_KNJIGA_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_GODINA (
+        type: numberField
+        label {
+            label: Godina
+            alignment: right
+        }
+        layout {
+            sequence: 130
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: GODINA
+            dataType: number
+        }
+    )
+
+    pageItem P408_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @radni-nalozi
+            slot: regionBody
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P408_KOLICINA (
+        type: numberField
+        label {
+            label: Kolicina
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: KOLICINA
+            dataType: number
+        }
+    )
+
+    pageItem P408_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: NAZIV
+            dataType: varchar2
+        }
+    )
+
+    pageItem P408_NORMATIV_ID (
+        type: numberField
+        label {
+            label: Normativ Id
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: NORMATIV_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_OJ_ID (
+        type: numberField
+        label {
+            label: Oj Id
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: OJ_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_OOJ_ID (
+        type: numberField
+        label {
+            label: Ooj Id
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: OOJ_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: right
+        }
+        layout {
+            sequence: 150
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: OPIS
+            dataType: varchar2
+        }
+    )
+
+    pageItem P408_ROW_VERSION (
+        type: numberField
+        label {
+            label: Row Version
+            alignment: left
+        }
+        layout {
+            sequence: 180
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: ROW_VERSION
+            dataType: number
+        }
+    )
+
+    pageItem P408_SKLADISTE_ID (
+        type: numberField
+        label {
+            label: Skladiste Id
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: SKLADISTE_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_STATUS_ID (
+        type: numberField
+        label {
+            label: Status Id
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: STATUS_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_STAVKA_ID (
+        type: numberField
+        label {
+            label: Stavka Id
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: STAVKA_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_STORNIRANO (
+        type: textField
+        label {
+            label: Stornirano
+            alignment: right
+        }
+        layout {
+            sequence: 160
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 1
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: STORNIRANO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P408_STORNIRAN_ID (
+        type: numberField
+        label {
+            label: Storniran Id
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: STORNIRAN_ID
+            dataType: number
+        }
+    )
+
+    pageItem P408_UPDATED (
+        type: datePicker
+        label {
+            label: Updated
+            alignment: left
+        }
+        layout {
+            sequence: 210
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: UPDATED
+            dataType: date
+        }
+    )
+
+    pageItem P408_UPDATED_BY (
+        type: textField
+        label {
+            label: Updated By
+            alignment: left
+        }
+        layout {
+            sequence: 220
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: UPDATED_BY
+            dataType: varchar2
+        }
+    )
+
+    pageItem P408_VALID (
+        type: textField
+        label {
+            label: Valid
+            alignment: right
+        }
+        layout {
+            sequence: 170
+            region: @radni-nalozi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 1
+        }
+        source {
+            formRegion: @radni-nalozi
+            column: VALID
+            dataType: varchar2
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P408_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P408_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P408_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 152009750589803096
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process initialize-form-radni-nalozi (
+        name: Initialize form Radni Nalozi
+        type: formInitialization
+        formRegion: @radni-nalozi
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 152008931359803096
+        }
+    )
+
+    process process-form-radni-nalozi (
+        name: Process form Radni Nalozi
+        type: formAutoRowProcessing
+        formRegion: @radni-nalozi
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 152009346728803096
+        }
+    )
+
+    branch (
+        name: Redirect to new
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 407
+                items: {
+                    P407_ID: &P408_ID.
+                }
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        name: Redirect to all
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 407
+                clearCache: 407
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+)
+

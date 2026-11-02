@@ -1,0 +1,966 @@
+page 261 (
+    name: Popis osnovnih sredstava
+    alias: POPIS-OSNOVNIH-SREDSTAVA
+    title: Popis osnovnih sredstava
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-popis
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>“Popis”</em></b> dostupna je mogućnost pregleda sredstava, kao i opcija knjiženja manjka. 
+            Klikom na polje količina unosi se broj zatečen u prostoriji,
+            čime se evidentira stvarno stanje. </br>
+            U izvještaju za knjiženje manjka, nakon unosa količina koje su zatečene, potrebno je odabrati datum
+            i potvrditi knjiženje klikom na opciju <b><em>“Proknjiži komplet”</em></b>. </br>
+            Za potrebe arhiviranja ili fizičke evidencije obezbijeđena je i opcija štampe, kojom se putem 
+            dugmeta <b><em>“Štampa”</em></b> generiše dokument.</br>
+            </br>
+            
+            ```
+    }
+
+    region ig-wrapper (
+        name: IG Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND priprema = 'N'
+                    AND history_id IS null
+                ```
+        }
+    )
+
+    region item-wrapper (
+        name: Item Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @ig-wrapper
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region knjizenje-wrapper (
+        name: Knjizenje Wrapper
+        title: Knjiženje manjka
+        type: staticContent
+        layout {
+            sequence: 80
+            parentRegion: @ig-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region nemate-osnovnih-sredstava (
+        name: Nemate osnovnih sredstava
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND priprema = 'N'
+                    AND history_id IS null
+                ```
+        }
+    )
+
+    region os-ig (
+        name: OS IG
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    radnik_id,
+                    inventurni_naziv,
+                    naziv,
+                    kolicina,
+                    kolicina as kolicina_hidden
+                
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND priprema = 'N'
+                    AND (prostorija_id = :P261_PROSTORIJA_ID or :P261_PROSTORIJA_ID IS null)
+                    AND aktivirano = 'Y'
+                    AND valid = 'Y'
+                    AND history_id IS null
+                    AND (klasa_id IN (
+                        SELECT
+                            column_value
+                        FROM
+                            apex_string.split(:P261_KLASA_ID, ':')
+                    ) OR :P261_KLASA_ID IS null)
+                    AND (radnik_id IN (
+                        SELECT
+                            column_value
+                        FROM
+                            apex_string.split(:P261_RADNIK_ID, ':')
+                    ) OR :P261_RADNIK_ID IS null)
+                ```
+            pageItemsToSubmit: [
+                P261_PROSTORIJA_ID
+                P261_KLASA_ID
+                P261_RADNIK_ID
+            ]
+        }
+        layout {
+            sequence: 70
+            parentRegion: @ig-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: fin-grid
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            show: false
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    let $ = apex.jQuery,
+                        toolbarData = $.apex.interactiveGrid.copyDefaultToolbar();
+                        editrowAction = toolbarData.toolbarFind("edit"),
+                        editrowAction.label = "Izmjeni"; // Pick name you need
+                        saverowAction = toolbarData.toolbarFind("save"),
+                        saverowAction.label = "Sačuvaj izmjene"
+                    options.toolbarData = toolbarData;
+                
+                    options.defaultGridViewOptions = {
+                        reorderColumns: false,
+                        hideEmptyFooter: true,
+                        footer: false
+                    }
+                
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 69532759878061525
+        }
+
+        savedReport 927027 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @NAZIV
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA_HIDDEN
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @INVENTURNI_NAZIV
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @RADNIK_ID
+                layout {
+                    sequence: 7
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 30
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            type: displayOnly
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: INVENTURNI_NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        column KOLICINA (
+            type: numberField
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 80
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column KOLICINA_HIDDEN (
+            type: displayOnly
+            heading {
+                heading: Količina (na papiru)
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: KOLICINA_HIDDEN
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column NAZIV (
+            type: displayOnly
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column RADNIK_ID (
+            type: displayOnly
+            heading {
+                heading: Radnik
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: RADNIK_ID
+                dataType: number
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: useLov
+            }
+        )
+
+    )
+
+    region popis (
+        name: Popis
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P261_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 10
+            region: @knjizenje-wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P261_FILENAME (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 60
+            region: @ig-wrapper
+            slot: regionBody
+        }
+    )
+
+    pageItem P261_KLASA_ID (
+        type: selectMany
+        label {
+            label: Klasa
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-klase-os
+        }
+        layout {
+            sequence: 20
+            region: @ig-wrapper
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P261_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 20
+            region: @knjizenje-wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText: Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+        }
+    )
+
+    pageItem P261_LOKACIJA_ID (
+        type: selectOne
+        label {
+            label: Lokacija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @lokacije
+        }
+        layout {
+            sequence: 40
+            region: @ig-wrapper
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P261_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P261_PROSTORIJA_ID (
+        type: selectOne
+        label {
+            label: Prostorija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv as d,
+                    id as r
+                FROM
+                    core.ooj_lokacija_prostorije
+                WHERE
+                    lokacija_id = :P261_LOKACIJA_ID
+                    AND valid = 'Y'
+                ```
+        }
+        cascadingLov {
+            parentItems: P261_LOKACIJA_ID
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P261_RADNIK_ID (
+        type: selectMany
+        label {
+            label: Radnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 10
+            region: @ig-wrapper
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: Štampa
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 40
+            region: @knjizenje-wrapper
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction print-popis (
+        name: Print - Popis
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report (
+                        filename = $v("P261_FILENAME"), 
+                        report_path = '/reports/ACCOUNTING/os/popis', 
+                        report_parameters = {
+                            P_PROSTORIJA_ID: $v("P261_PROSTORIJA_ID"),
+                            P_KLASA_ID: $v("P261_KLASA_ID")
+                        },
+                        new_tab = false
+                    );
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+    dynamicAction refresh-ig (
+        name: Refresh IG
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P261_PROSTORIJA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P261_PROSTORIJA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_naziv VARCHAR2(255);
+                    BEGIN
+                        core.ooj_pkg.get_lokacija_prostorija (
+                            p_id    => :P261_PROSTORIJA_ID,
+                            p_naziv => l_naziv
+                        );
+                    
+                        :P261_FILENAME := 'popis-' || l_naziv;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P261_PROSTORIJA_ID
+                    P261_FILENAME
+                ]
+                itemsToReturn: P261_FILENAME
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @os-ig
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh-ig-klasa-radnik (
+        name: Refresh IG - Klasa/Radnik
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: [
+                P261_KLASA_ID
+                P261_RADNIK_ID
+            ]
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @os-ig
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P261_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P261_DATUM
+        }
+    )
+
+    validation knjizi-yn-not-null (
+        name: Knjizi YN NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P261_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P261_KNJIZI_YN
+        }
+    )
+
+    process save (
+        name: Save
+        type: executeCode
+        editableRegion: @os-ig
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_nalog_id NUMBER;
+                BEGIN
+                    IF :APEX$ROW_STATUS = 'U' THEN
+                        l_nalog_id := os_pkg.popis_osnovno_sredstvo (
+                            p_id             => :ID,
+                            p_godina         => :APP_GODINA,
+                            p_kolicina       => :KOLICINA,
+                            p_stara_kolicina => :KOLICINA_HIDDEN,
+                            p_proknjizeno    => :P261_KNJIZI_YN,
+                            p_datum          => :P261_DATUM
+                        );
+                
+                        IF l_nalog_id IS NOT null THEN
+                            :P261_NALOG_ID := l_nalog_id;
+                        END IF;
+                
+                        RETURN;
+                
+                    END IF;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 69533870845061536
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    branch (
+        name: Go To Page 201
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P261_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

@@ -1,0 +1,1223 @@
+page 342 (
+    name: Kalkulacija robe / Stavke
+    alias: KALKULACIJA-ROBE-STAVKE
+    title: Kalkulacija robe / Stavke
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons-bar-save (
+        name: Buttons Bar - SAVE
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: contentBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--noUI
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region kuf (
+        name: KUF
+        title: KUF
+        type: themeTemplateComponent/contentRow
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    kk.id,
+                    k.klijent_naziv,
+                    k.naziv_fakture,
+                    k.naziv,
+                    k.datum_prijema,
+                    k.datum_fakture,
+                    k.datum_valute,
+                    to_char(k.iznos_bez_pdv, '999G999G999G999G990D00') AS iznos_bez_pdv,
+                    to_char(coalesce(kk.rasporedjen_iznos, 0), '999G999G999G999G990D00') AS rasporedjen_iznos,
+                    to_char(k.iznos_bez_pdv - coalesce(kk.rasporedjen_iznos, 0), '999G999G999G999G990D00') AS preostalo,
+                
+                    apex_item.text_from_lov(kk.tip_kalkulacije, 'TIPOVI_KALKULACIJE') AS tip
+                FROM 
+                    kalkulacija_kuf kk
+                    LEFT JOIN vw_kuf k ON kk.kuf_id = k.id
+                WHERE
+                    kk.kalkulacija_id = :P342_ID
+                ```
+        }
+        orderBy {
+            type: staticValue
+            orderByClause: tip
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            overline: &KLIJENT_NAZIV.
+            title: &NAZIV_FAKTURE.
+            description: &NAZIV.
+            miscellaneous:
+                ```html
+                <b>Ukupno: </b>&IZNOS_BEZ_PDV.
+                <br>
+                <b>Raspoređeno: </b>&RASPOREDJEN_IZNOS.
+                <br>
+                <b>Preostalo: </b>&PREOSTALO.
+                ```
+        }
+        plugin-appearance {
+            applyThemeColors: false
+            style2: compact
+        }
+        plugin-grouping {
+            title2: &TIP.
+        }
+        rowSelection {
+            type: singleSelection
+            currentSelectionPageItem: P342_KUF_ID
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM_FAKTURE (
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: DATUM_FAKTURE
+                dataType: date
+            }
+        )
+
+        column DATUM_PRIJEMA (
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: DATUM_PRIJEMA
+                dataType: date
+            }
+        )
+
+        column DATUM_VALUTE (
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: DATUM_VALUTE
+                dataType: date
+            }
+        )
+
+        column ID (
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            layout {
+                sequence: 140
+            }
+            source {
+                databaseColumn: IZNOS_BEZ_PDV
+                dataType: varchar2
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: KLIJENT_NAZIV
+                dataType: varchar2
+            }
+        )
+
+        column NAZIV (
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: NAZIV
+                dataType: varchar2
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: NAZIV_FAKTURE
+                dataType: varchar2
+            }
+        )
+
+        column PREOSTALO (
+            layout {
+                sequence: 130
+            }
+            source {
+                databaseColumn: PREOSTALO
+                dataType: varchar2
+            }
+        )
+
+        column RASPOREDJEN_IZNOS (
+            layout {
+                sequence: 120
+            }
+            source {
+                databaseColumn: RASPOREDJEN_IZNOS
+                dataType: varchar2
+            }
+        )
+
+        column TIP (
+            layout {
+                sequence: 110
+            }
+            source {
+                databaseColumn: TIP
+                dataType: varchar2
+            }
+            appearance {
+                group: true
+            }
+        )
+
+    )
+
+    region kuf-sum (
+        name: KUF - Sum
+        title: KUF
+        type: themeTemplateComponent/contentRow
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    to_char(sum(k.iznos_bez_pdv), '999G999G999G999G990D00') AS iznos_bez_pdv,
+                    to_char(sum(coalesce(kk.rasporedjen_iznos, 0)), '999G999G999G999G990D00') AS rasporedjen_iznos,
+                    to_char(sum(k.iznos_bez_pdv - coalesce(kk.rasporedjen_iznos, 0)), '999G999G999G999G990D00') AS preostalo
+                FROM 
+                    kalkulacija_kuf kk
+                    LEFT JOIN vw_kuf k ON kk.kuf_id = k.id
+                WHERE
+                    kk.kalkulacija_id = :P342_ID
+                ```
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            title: Ukupno KUF
+            miscellaneous:
+                ```html
+                <b>Ukupno: </b>&IZNOS_BEZ_PDV.
+                <br>
+                <b>Raspoređeno: </b>&RASPOREDJEN_IZNOS.
+                <br>
+                <b>Preostalo: </b>&PREOSTALO.
+                ```
+        }
+        plugin-appearance {
+            applyThemeColors: false
+            style2: compact
+        }
+
+        column IZNOS_BEZ_PDV (
+            layout {
+                sequence: 120
+            }
+            source {
+                databaseColumn: IZNOS_BEZ_PDV
+                dataType: varchar2
+            }
+        )
+
+        column PREOSTALO (
+            layout {
+                sequence: 110
+            }
+            source {
+                databaseColumn: PREOSTALO
+                dataType: varchar2
+            }
+        )
+
+        column RASPOREDJEN_IZNOS (
+            layout {
+                sequence: 100
+            }
+            source {
+                databaseColumn: RASPOREDJEN_IZNOS
+                dataType: varchar2
+            }
+        )
+
+    )
+
+    region stavke-ig (
+        name: Stavke IG
+        title: Ručni unos jedinične cijene
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    stavka_sifra || ' - ' || stavka_naziv AS stavka,
+                    kolicina,
+                    cijena,
+                    iznos
+                FROM
+                    vw_kalkulacija_stavke
+                WHERE
+                    kalkulacija_id = :P342_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            fixedRowHeight: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 190872574147775133
+        }
+
+        savedReport 1909025 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @VRIJEDNOST
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @CIJENA
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column CIJENA (
+            type: displayOnly
+            heading {
+                heading: Cijena
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: CIJENA
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IZNOS (
+            type: displayOnly
+            heading {
+                heading: Iznos
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column KOLICINA (
+            type: displayOnly
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column STAVKA (
+            type: displayOnly
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: STAVKA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        column VRIJEDNOST (
+            type: numberField
+            heading {
+                heading: Vrijednost
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                type: none
+            }
+        )
+
+    )
+
+    region stavke-sum (
+        name: Stavke SUM
+        type: themeTemplateComponent/contentRow
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    to_char(sum(iznos), '999G999G999G999G990D00') AS iznos
+                FROM
+                    vw_kalkulacija_stavke
+                WHERE
+                    kalkulacija_id = :P342_ID
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            title: Ukupno stavke
+            miscellaneous: <b>&IZNOS.</b>
+        }
+        plugin-appearance {
+            applyThemeColors: false
+            style2: compact
+        }
+
+        column IZNOS (
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: varchar2
+            }
+        )
+
+    )
+
+    pageItem P342_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P342_KUF_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P342_TIP_KALKULACIJE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    button automatski-iznos (
+        buttonName: AUTOMATSKI_IZNOS
+        label: Automatski iznos
+        layout {
+            sequence: 10
+            region: @buttons-bar-save
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button lock (
+        buttonName: LOCK
+        label: Zaključaj kalkulaciju
+        layout {
+            sequence: 30
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button rucno-jedinicna-cijena (
+        buttonName: RUCNO_JEDINICNA_CIJENA
+        label: Ručni unos jedinične cijene
+        layout {
+            sequence: 30
+            region: @buttons-bar-save
+            slot: regionBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button rucno-ukupni-iznos (
+        buttonName: RUCNO_UKUPNI_IZNOS
+        label: Ručni unos ukupne vrijednosti
+        layout {
+            sequence: 20
+            region: @buttons-bar-save
+            slot: regionBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-tip (
+        name: Get tip
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P342_KUF_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P342_KUF_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    SELECT
+                        tip_kalkulacije
+                    INTO
+                        :P342_TIP_KALKULACIJE
+                    FROM
+                        kalkulacija_kuf
+                    WHERE
+                        id = :P342_KUF_ID;
+                    ```
+                itemsToSubmit: [
+                    P342_KUF_ID
+                    P342_TIP_KALKULACIJE
+                ]
+                itemsToReturn: P342_TIP_KALKULACIJE
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P342_TIP_KALKULACIJE := null;
+                itemsToSubmit: P342_TIP_KALKULACIJE
+                itemsToReturn: P342_TIP_KALKULACIJE
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction tip-a (
+        name: Tip - A
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P342_TIP_KALKULACIJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P342_TIP_KALKULACIJE
+            value: A
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @automatski-iznos
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @automatski-iznos
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction tip-r (
+        name: Tip - R
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P342_TIP_KALKULACIJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P342_TIP_KALKULACIJE
+            value: R
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @rucno-jedinicna-cijena
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @rucno-jedinicna-cijena
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction tip-u (
+        name: Tip - U
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P342_TIP_KALKULACIJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P342_TIP_KALKULACIJE
+            value: U
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @rucno-ukupni-iznos
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @rucno-ukupni-iznos
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation kuf-not-null (
+        name: Kuf NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P342_KUF_ID
+        }
+        error {
+            errorMessage: Obavezno izaberite neku od faktura.
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: AUTOMATSKI_IZNOS,RUCNO_UKUPNI_IZNOS,RUCNO_JEDINICNA_CIJENA
+        }
+    )
+
+    process add-members-to-collection (
+        name: Add members to collection
+        type: executeCode
+        executionChain: @rucno
+        editableRegion: @stavke-ig
+        source {
+            plsqlCode:
+                ```plsql
+                apex_collection.add_member (
+                    p_collection_name => 'KALKULACIJA_STAVKE',
+                    p_c001 => :ID,
+                    p_c002 => :KOLICINA,
+                    p_c003 => :CIJENA,
+                    p_c004 => :IZNOS,
+                    p_c005 => :VRIJEDNOST
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 191073290354432504
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: RUCNO_JEDINICNA_CIJENA,RUCNO_UKUPNI_IZNOS
+        }
+    )
+
+    process check (
+        name: Check
+        type: executeCode
+        executionChain: @rucno
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.check_kalkulacija_stavke_vrijednosti (
+                    p_kalkulacija_kuf_id => :P342_KUF_ID,
+                    p_tip_kalkulacije    => :P342_TIP_KALKULACIJE
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 191073427386432506
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: RUCNO_JEDINICNA_CIJENA,RUCNO_UKUPNI_IZNOS
+        }
+    )
+
+    process clear-kuf (
+        name: Clear KUF
+        type: clearSessionState
+        clear {
+            type: items
+            items: P342_KUF_ID
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 191073734562432509
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 191105944444144303
+        }
+        serverSideCondition {
+            whenButtonPressed: @lock
+        }
+    )
+
+    process create-collection (
+        name: Create collection
+        type: executeCode
+        executionChain: @rucno
+        source {
+            plsqlCode:
+                ```plsql
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'KALKULACIJA_STAVKE'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 191073326848432505
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: RUCNO_JEDINICNA_CIJENA,RUCNO_UKUPNI_IZNOS
+        }
+    )
+
+    process rucno (
+        name: Rucno
+        type: executionChain
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 191073841975432510
+        }
+    )
+
+    process update-automatski (
+        name: Update - Automatski
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.update_kalkulacija_stavke_automatski (
+                    p_kalkulacija_id     => :P342_ID,
+                    p_kalkulacija_kuf_id => :P342_KUF_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 191073629294432508
+        }
+        serverSideCondition {
+            whenButtonPressed: @automatski-iznos
+        }
+    )
+
+    process update-rucno (
+        name: Update - Rucno
+        type: executeCode
+        executionChain: @rucno
+        editableRegion: @stavke-ig
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.update_kalkulacija_stavka (
+                    p_id                 => :ID,
+                    p_kolicina           => :KOLICINA,
+                    p_kalkulacija_kuf_id => :P342_KUF_ID,
+                    p_tip_kalkulacije    => :P342_TIP_KALKULACIJE,
+                    p_vrijednost         => to_number(:VRIJEDNOST, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 191073529513432507
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: requestIsContainedInValue
+            value: RUCNO_JEDINICNA_CIJENA,RUCNO_UKUPNI_IZNOS
+        }
+    )
+
+    process zakljucaj (
+        name: Zakljucaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.check_kalkulacija (
+                    p_id => :P342_ID
+                );
+                
+                skladista_pkg.zakljucaj_kalkulaciju (
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_godina         => :APP_GODINA,
+                    p_kalkulacija_id => :P342_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 191105885150144302
+        }
+        serverSideCondition {
+            whenButtonPressed: @lock
+        }
+    )
+
+)
+

@@ -1,0 +1,199 @@
+page 42 (
+    name: Ulazna faktura / Dokumenti
+    alias: ULAZNA-FAKTURA-PREGLED
+    title: Dokumenti fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--md
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region dokumenti (
+        name: Dokumenti
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    d.id,
+                    d.naziv,
+                    d.opis,
+                    d.velicina_kb,
+                    to_char(d.created, 'DD.MM.YYYY HH24:MI') AS dodato,
+                    d.created_by AS dodao,
+                    CASE
+                        WHEN d.mime_tip = 'application/pdf' THEN 'fa-file-pdf-o'
+                        WHEN d.mime_tip LIKE 'image/%' THEN 'fa-file-image-o'
+                        ELSE 'fa-file-o'
+                    END AS ikona,
+                    apex_page.get_url(p_page => 42, p_items => 'P42_DOK_ID,P42_NACIN', p_values => d.id || ',inline',
+                                      p_request => 'APPLICATION_PROCESS=KUF_DOKUMENT', p_plain_url => true) AS url_prikaz,
+                    apex_page.get_url(p_page => 42, p_items => 'P42_DOK_ID,P42_NACIN', p_values => d.id || ',attachment',
+                                      p_request => 'APPLICATION_PROCESS=KUF_DOKUMENT', p_plain_url => true) AS url_preuzmi
+                FROM vw_kuf_dokumenti d
+                WHERE d.kuf_id = :P42_ID
+                  AND d.ooj_id = :APP_OOJ_ID
+                ORDER BY d.id DESC
+                ```
+            pageItemsToSubmit: P42_ID
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-doclist
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Faktura nema priloženih dokumenata.
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column VELICINA_KB (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 40
+            }
+        )
+
+        column DODATO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column DODAO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column IKONA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column URL_PRIKAZ (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 80
+            }
+        )
+
+        column URL_PREUZMI (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 90
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <div class="fin-prilog"><span class="fa #IKONA# fin-prilog__ikona" aria-hidden="true"></span><div class="fin-prilog__tekst"><a class="fin-prilog__naziv" href="#URL_PRIKAZ#" target="_blank" rel="noopener">#NAZIV#</a>{if OPIS/}<span class="fin-prilog__opis">#OPIS#</span>{endif/}<span class="fin-prilog__meta">#DODATO# · #DODAO# · #VELICINA_KB# KB</span></div><a class="fin-act" href="#URL_PRIKAZ#" target="_blank" rel="noopener" title="Otvori" aria-label="Otvori"><span class="fa fa-external-link" aria-hidden="true"></span></a><a class="fin-act" href="#URL_PREUZMI#" title="Preuzmi" aria-label="Preuzmi"><span class="fa fa-download" aria-hidden="true"></span></a></div>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P42_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P42_DOK_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P42_NACIN (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+)

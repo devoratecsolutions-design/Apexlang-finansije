@@ -1,0 +1,1417 @@
+page 421 (
+    name: Normativi
+    alias: NORMATIVI1
+    title: Normativi
+    pageGroup: @proizvodnja
+    appearance {
+        pageTemplate: @left-side-column
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.js
+    }
+    css {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.css
+    }
+    security {
+        authorizationScheme: @proizvodnja-normativi
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+        reloadOnSubmit: always
+    }
+
+    region buttons-wrapper (
+        name: Buttons Wrapper
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: fullWidthContent
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+        advanced {
+            htmlDomId: FW_BAR
+        }
+    )
+
+    region left-wrapper (
+        name: Left Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: leftColumn
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-side
+        }
+        advanced {
+            htmlDomId: filter-region
+        }
+    )
+
+    region master-records (
+        name: Master Records
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    naziv,
+                    apex_page.get_url (
+                        p_items  => 'P421_ID',
+                        p_values => id
+                    ) AS link,
+                
+                    null link_class,
+                    null icon_class,
+                    null link_attr,
+                    null icon_color_class,
+                
+                    CASE
+                        WHEN coalesce(:P421_ID, '0') = id THEN
+                            'is-active' 
+                        ELSE
+                            ' '
+                    END list_class
+                
+                FROM
+                    normativi
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    naziv
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @left-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes-no-grid
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                search-results
+                fin-list
+                fin-list--media
+            ]
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: t-MediaList--stack
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: ICON_CLASS
+                alignment: center
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: ICON_COLOR_CLASS
+                alignment: center
+            }
+            layout {
+                sequence: 6
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: LINK
+                alignment: center
+            }
+            layout {
+                sequence: 3
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK_ATTR (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: LINK_ATTR
+                alignment: center
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK_CLASS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: LINK_CLASS
+                alignment: center
+            }
+            layout {
+                sequence: 2
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: LIST_BADGE
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: LIST_CLASS
+                alignment: center
+            }
+            layout {
+                sequence: 7
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: LIST_TEXT
+                alignment: center
+            }
+            layout {
+                sequence: 9
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: LIST_TITLE
+                alignment: center
+            }
+            layout {
+                sequence: 8
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region niste-izabrali-normativ (
+        name: Niste izabrali normativ.
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P421_ID
+        }
+    )
+
+    region normativ (
+        name: Normativ
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    stavka_id,
+                    naziv,
+                    opis,
+                    valid
+                FROM
+                    normativi
+                WHERE 
+                    id = :P421_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P421_ID
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: No Record Selected
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 1
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "NORMATIVI"
+                    where "ID" is not null
+                    and "ID" = :P421_ID
+                    ```
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "NORMATIVI"
+                    where "NAZIV" is not null
+                    and "ID" = :P421_ID
+                    ```
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "NORMATIVI"
+                    where "OPIS" is not null
+                    and "ID" = :P421_ID
+                    ```
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke
+            }
+            layout {
+                sequence: 3
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "NORMATIVI"
+                    where "STAVKA_ID" is not null
+                    and "ID" = :P421_ID
+                    ```
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Aktivno
+            }
+            layout {
+                sequence: 6
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "NORMATIVI"
+                    where "VALID" is not null
+                    and "ID" = :P421_ID
+                    ```
+            }
+        )
+
+    )
+
+    region normativi (
+        name: Normativi
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region radna-snaga (
+        name: Radna snaga
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    obrazovanje_id,
+                    broj_sati,
+                    valid
+                FROM 
+                    normativ_radna_snaga
+                WHERE
+                    normativ_id = :P421_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P421_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column BROJ_SATI (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Broj sati
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 2
+            }
+            link {
+                target: {
+                    page: 424
+                    items: {
+                        P424_ID: #ID#
+                    }
+                    clearCache: 424
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OBRAZOVANJE_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Obrazovanje
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-obrazovanje
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Aktivno
+            }
+            layout {
+                sequence: 6
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region region-display-selector (
+        name: Region Display Selector
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+            cssClasses: js-detail-rds
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P421_ID
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region search (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @master-records
+        }
+        layout {
+            sequence: 10
+            parentRegion: @left-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P421_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region stavke (
+        name: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    stavka_id,
+                    jm_id,
+                    kolicina,
+                    valid
+                FROM
+                    normativ_stavke
+                WHERE 
+                    normativ_id = :P421_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P421_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 2
+            }
+            link {
+                target: {
+                    page: 423
+                    items: {
+                        P423_ID: #ID#
+                    }
+                    clearCache: 423
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Jedinica mjere
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-jm
+            }
+            layout {
+                sequence: 5
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D0000
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Aktivno
+            }
+            layout {
+                sequence: 16
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region troškovi (
+        name: Troškovi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    opis,
+                    iznos,
+                    valid
+                FROM
+                    normativ_troskovi
+                WHERE
+                    normativ_id = :P421_ID
+                ```
+        }
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P421_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 2
+            }
+            link {
+                target: {
+                    page: 425
+                    items: {
+                        P425_ID: #ID#
+                    }
+                    clearCache: 425
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 4
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Aktivno
+            }
+            layout {
+                sequence: 6
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P421_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 20
+            region: @normativi
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 422
+                clearCache: 422
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button edit (
+        buttonName: EDIT
+        label: Ažuriraj
+        layout {
+            sequence: 20
+            region: @normativ
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 422
+                items: {
+                    P422_ID: &P421_ID.
+                }
+                clearCache: 422
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        advanced {
+            htmlDomId: edit_master_btn
+        }
+    )
+
+    button pop-normativ-radna-snaga (
+        buttonName: POP_NORMATIV_RADNA_SNAGA
+        label: Add Normativ Radna Snaga
+        layout {
+            sequence: 10
+            region: @radna-snaga
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 424
+                items: {
+                    P424_ID: &P421_ID.
+                }
+                clearCache: 424
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button pop-normativ-stavke (
+        buttonName: POP_NORMATIV_STAVKE
+        label: Dodaj stavku
+        layout {
+            sequence: 10
+            region: @stavke
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 423
+                items: {
+                    P423_ID: &P421_ID.
+                }
+                clearCache: 423
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button pop-normativ-troskovi (
+        buttonName: POP_NORMATIV_TROSKOVI
+        label: Add Normativ Troskovi
+        layout {
+            sequence: 10
+            region: @troškovi
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 425
+                items: {
+                    P425_ID: &P421_ID.
+                }
+                clearCache: 425
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button toggle (
+        buttonName: TOGGLE
+        label: Expand / Collapse Side Column
+        layout {
+            sequence: 10
+            region: @buttons-wrapper
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--pillEnd
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        advanced {
+            htmlDomId: toggle-btn
+        }
+    )
+
+    dynamicAction dialog-closed (
+        name: Dialog Closed
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @stavke
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-2 (
+        name: Dialog Closed
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @radna-snaga
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @radna-snaga
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-3 (
+        name: Dialog Closed
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @troškovi
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @troškovi
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-4 (
+        name: Dialog Closed
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @normativ
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @normativ
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction expand-collapse-side-column (
+        name: Expand / Collapse Side Column
+        execution {
+            sequence: 160
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @toggle
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: toggleSidebar();
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction perform-search (
+        name: Perform Search
+        execution {
+            sequence: 150
+        }
+        when {
+            event: keypress
+            selectionType: items
+            items: P421_SEARCH
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: this.browserEvent.which === apex.jQuery.ui.keyCode.ENTER
+        }
+
+        action native-cancel-event (
+            action: cancelEvent
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @master-records
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

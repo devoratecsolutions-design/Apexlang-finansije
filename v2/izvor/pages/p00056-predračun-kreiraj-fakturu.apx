@@ -1,0 +1,457 @@
+page 56 (
+    name: Predračun / Kreiraj fakturu
+    alias: PREDRAČUN-KREIRAJ-FAKTURU
+    title: Predračun / Kreiraj fakturu
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P56_DATUM_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum fakture
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P56_DATUM_VALUTE (
+        type: datePicker
+        label {
+            label: Datum valute
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P56_FAKTURA_DATUM (
+        type: displayOnly
+        label {
+            label: Datum predračuna
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P56_FAKTURA_DATUM_VALUTE (
+        type: displayOnly
+        label {
+            label: Datum valute
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P56_FAKTURA_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P56_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P56_ISKORISTI_DATUM (
+        type: switch
+        label {
+            label: Iskoristi datum sa predračuna
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: 2
+        }
+    )
+
+    pageItem P56_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P56_PRINT_PN (
+        type: radioGroup
+        label {
+            label: Štampa posebnih napomena
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 90
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P56_UGOVOR_ID (
+        type: selectOne
+        label {
+            label: Ugovor
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @ugovori-narucioc
+        }
+        layout {
+            sequence: 100
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Faktura iz predračuna
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrow-right-alt
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction toggle (
+        name: Toggle
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P56_ISKORISTI_DATUM
+        }
+        clientSideCondition {
+            type: item=value
+            item: P56_ISKORISTI_DATUM
+            value: N
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: [
+                    P56_DATUM_FAKTURE
+                    P56_DATUM_VALUTE
+                ]
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: [
+                    P56_DATUM_FAKTURE
+                    P56_DATUM_VALUTE
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-fakture-not-null (
+        name: Datum fakture NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P56_DATUM_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P56_DATUM_FAKTURE
+        }
+        serverSideCondition {
+            type: item=value
+            item: P56_ISKORISTI_DATUM
+            value: Y
+        }
+    )
+
+    validation datum-valute-not-null (
+        name: Datum valute NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P56_DATUM_VALUTE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P56_DATUM_VALUTE
+        }
+        serverSideCondition {
+            type: item=value
+            item: P56_ISKORISTI_DATUM
+            value: Y
+        }
+    )
+
+    validation print-not-null (
+        name: Print NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P56_PRINT_PN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P56_PRINT_PN
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P56_FAKTURA_ID
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 140346929428024811
+        }
+    )
+
+    process create (
+        name: Create
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_datum_fakture DATE;
+                    l_datum_valute  DATE;
+                BEGIN
+                    IF :P56_ISKORISTI_DATUM = 'Y' THEN
+                        l_datum_fakture := :P56_FAKTURA_DATUM;
+                        l_datum_valute := :P56_FAKTURA_DATUM_VALUTE;
+                
+                    ELSE
+                        l_datum_fakture := :P56_DATUM_FAKTURE;
+                        l_datum_valute := :P56_DATUM_VALUTE;
+                
+                    END IF;
+                
+                    :P56_FAKTURA_ID := finansije_pkg.create_kif_from_predracun (
+                        p_godina        => :APP_GODINA,
+                        p_predracun_id  => :P56_ID,
+                        p_datum_fakture => l_datum_fakture,
+                        p_datum_valute  => l_datum_valute,
+                        p_print_pn      => :P56_PRINT_PN,
+                        p_ugovor_id     => :P56_UGOVOR_ID
+                    );
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 140346504369024807
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.get_kif (
+                    p_id            => :P56_ID,
+                    p_naziv_fakture => :P56_NAZIV,
+                    p_datum_fakture => :P56_FAKTURA_DATUM,
+                    p_datum_valute  => :P56_FAKTURA_DATUM_VALUTE,
+                    p_ugovor_id     => :P56_UGOVOR_ID
+                );
+                
+                :P56_DATUM_FAKTURE := :P56_FAKTURA_DATUM;
+                :P56_DATUM_VALUTE := :P56_FAKTURA_DATUM_VALUTE;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 140607204405261069
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P56_ID
+        }
+    )
+
+)
+

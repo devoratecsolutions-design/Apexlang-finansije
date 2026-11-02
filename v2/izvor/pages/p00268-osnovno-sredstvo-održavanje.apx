@@ -1,0 +1,812 @@
+page 268 (
+    name: Osnovno sredstvo / Održavanje
+    alias: OSNOVNO-SREDSTVO-ODRŽAVANJE
+    title: Osnovno sredstvo / Održavanje
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region item-wrapper (
+        name: Item wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region osnovno-sredstvo-održavanje (
+        name: Osnovno sredstvo / Održavanje
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    opis,
+                    datum,
+                    cijena,
+                    sledeci_servis
+                FROM
+                    sec_osnovno_sredstvo_odrzavanje
+                WHERE
+                    id = :P268_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P268_ID
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column SLEDECI_SERVIS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Sledeci Servis
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+    )
+
+    region osnovno-sredstvo-održavanje-2 (
+        name: Osnovno sredstvo / Održavanje
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P268_ID
+        }
+    )
+
+    pageItem P268_CIJENA (
+        type: numberField
+        label {
+            label: Cijena
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P268_DATUM (
+        type: datePicker
+        label {
+            label: Datum servisa
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        advanced {
+            postText: <span class="padding-left-sm">Sledeći servis za: </span>
+        }
+    )
+
+    pageItem P268_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P268_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 30
+            region: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P268_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 40
+            region: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 4
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P268_OSNOVNO_SREDSTVO_ID (
+        type: selectOne
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva-aktivirana
+        }
+        layout {
+            sequence: 20
+            region: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P268_SLEDECI_SERVIS (
+        type: datePicker
+        label {
+            label: Datum sljedećeg servisa
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @osnovno-sredstvo-održavanje-2
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P268_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P268_ID
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    button god (
+        buttonName: GOD_1
+        label: Godina
+        layout {
+            sequence: 30
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+            cssClasses: u-color-8-border
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button mj (
+        buttonName: MJ_1
+        label: Mjesec
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+            cssClasses: u-color-8-border
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button mj-2 (
+        buttonName: MJ_6
+        label: 6 mjeseci
+        layout {
+            sequence: 20
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+            cssClasses: u-color-8-border
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction next (
+        name: Next - 6
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @mj-2
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P268_DATUM
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P268_SLEDECI_SERVIS := add_months(:P268_DATUM, 6);
+                itemsToSubmit: [
+                    P268_DATUM
+                    P268_SLEDECI_SERVIS
+                ]
+                itemsToReturn: P268_SLEDECI_SERVIS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction next-1mj (
+        name: Next - 1mj
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @mj
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P268_DATUM
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P268_SLEDECI_SERVIS := add_months(:P268_DATUM, 1);
+                itemsToSubmit: [
+                    P268_DATUM
+                    P268_SLEDECI_SERVIS
+                ]
+                itemsToReturn: P268_SLEDECI_SERVIS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction next-2 (
+        name: Next - 12
+        execution {
+            sequence: 40
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @god
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P268_DATUM
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P268_SLEDECI_SERVIS := add_months(:P268_DATUM, 12);
+                itemsToSubmit: [
+                    P268_DATUM
+                    P268_SLEDECI_SERVIS
+                ]
+                itemsToReturn: P268_SLEDECI_SERVIS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-os-selector (
+        name: Toggle OS selector
+        execution {
+            sequence: 50
+        }
+        when {
+            event: ready
+        }
+        clientSideCondition {
+            type: itemIsNull
+            item: P268_OSNOVNO_SREDSTVO_ID
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P268_OSNOVNO_SREDSTVO_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P268_OSNOVNO_SREDSTVO_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation cijena-not-null (
+        name: Cijena NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P268_CIJENA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P268_CIJENA
+        }
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P268_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P268_DATUM
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P268_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P268_NAZIV
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P268_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P268_OPIS
+        }
+    )
+
+    validation os-not-null (
+        name: OS NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P268_OSNOVNO_SREDSTVO_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P268_OSNOVNO_SREDSTVO_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 97450052478142970
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os_odrzavanje t_sec_osnovno_sredstvo_odrzavanje;
+                BEGIN
+                    l_os_odrzavanje := t_sec_osnovno_sredstvo_odrzavanje ();
+                    l_os_odrzavanje.id := :P268_ID;
+                    
+                    os_pkg.delete_osnovno_sredstvo_odrzavanje (
+                        p_os_odrzavanje => l_os_odrzavanje
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 97428655423182218
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os_odrzavanje t_sec_osnovno_sredstvo_odrzavanje;
+                BEGIN
+                    l_os_odrzavanje := t_sec_osnovno_sredstvo_odrzavanje();
+                    
+                    l_os_odrzavanje.osnovno_sredstvo_id := :P268_OSNOVNO_SREDSTVO_ID;
+                    l_os_odrzavanje.naziv := :P268_NAZIV;
+                    l_os_odrzavanje.opis := :P268_OPIS;
+                    l_os_odrzavanje.datum := :P268_DATUM;
+                    l_os_odrzavanje.cijena := to_number(:P268_CIJENA, '999G999G999G999G990D00');
+                    l_os_odrzavanje.sledeci_servis := :P268_SLEDECI_SERVIS;
+                
+                    os_pkg.insert_osnovno_sredstvo_odrzavanje (
+                        p_os_odrzavanje => l_os_odrzavanje
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 97428557478182217
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+)
+

@@ -1,0 +1,75 @@
+page 100 (
+    name: Konfiguracija
+    alias: KONFIGURACIJA
+    title: Konfiguracija
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region konfiguracija (
+        name: Konfiguracija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region postavke (
+        name: Postavke
+        type: list
+        source {
+            list: @navigation-menu-konfiguracija
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: #DEFAULT#
+            cssClasses: fin-modules fin-hub
+        }
+        componentAppearance {
+            listTemplate: @cards
+            templateOptions: [
+                #DEFAULT#
+                t-Cards--compact
+                t-Cards--displayIcons
+                t-Cards--iconsRounded
+                t-Cards--4cols
+                t-Cards--desc-2ln
+                t-Cards--animRaiseCard
+            ]
+        }
+    )
+
+)
+

@@ -1,0 +1,435 @@
+page 260 (
+    name: Osnovno sredstvo / Dodatne informacije
+    alias: OSNOVNO-SREDSTVO-DODATNE-INFORMACIJE
+    title: Osnovno sredstvo / Dodatne informacije
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovno-sredstvo-opšti-podaci (
+        name: Osnovno sredstvo / Opšti podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P260_DOKUMENT (
+        type: fileUpload
+        label {
+            label: Dokument
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+        }
+        layout {
+            sequence: 240
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P260_DOKUMENT_BROJ (
+        type: numberField
+        label {
+            label: Broj dokumenta
+            alignment: left
+        }
+        layout {
+            sequence: 290
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P260_DOKUMENT_DATUM (
+        type: datePicker
+        label {
+            label: Datum dokumenta
+            alignment: left
+        }
+        layout {
+            sequence: 300
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P260_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 310
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P260_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P260_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti
+        }
+        layout {
+            sequence: 220
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P260_RADNIK_ID (
+        type: selectOne
+        label {
+            label: Radnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @hr-radnici
+        }
+        layout {
+            sequence: 210
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P260_REG_OZNAKA (
+        type: textField
+        label {
+            label: Registarska oznaka
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 200
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P260_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P260_HISTORY_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P260_HISTORY_KOMENTAR
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 55295575949086409
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P260_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P260_REG_OZNAKA := l_os.reg_oznaka;
+                    :P260_RADNIK_ID := l_os.radnik_id;
+                    :P260_KLIJENT_ID := l_os.klijent_id;
+                    :P260_DOKUMENT_BROJ := l_os.dokument_broj;
+                    :P260_DOKUMENT_DATUM := l_os.dokument_datum;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 55294754261086410
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P260_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P260_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    l_os.reg_oznaka := :P260_REG_OZNAKA;
+                    l_os.radnik_id := :P260_RADNIK_ID;
+                    l_os.klijent_id := :P260_KLIJENT_ID;
+                    IF :P260_DOKUMENT IS NOT NULL THEN
+                        sif.utils_pkg.get_apex_file_upload (
+                            p_apex_filename => :P260_DOKUMENT,
+                            p_blob          => l_os.dokument,
+                            p_filename      => l_os.dokument_filename,
+                            p_mimetype      => l_os.dokument_mimetype
+                        );
+                
+                        l_os.dokument_lastupd := sysdate;
+                    END IF;
+                    l_os.dokument_broj := :P260_DOKUMENT_BROJ;
+                    l_os.dokument_datum := :P260_DOKUMENT_DATUM;
+                
+                    l_os.history_komentar := :P260_HISTORY_KOMENTAR;
+                    os_pkg.update_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55295151959086410
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

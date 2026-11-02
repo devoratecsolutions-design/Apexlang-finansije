@@ -1,0 +1,870 @@
+page 70 (
+    name: Ugovori
+    alias: UGOVORI
+    title: Ugovori
+    pageGroup: @ugovori
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-ugovori
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Stranica <b><em>"Ugovori"</em></b> namijenjena je korisnicima radi jednostavnijeg i preglednijeg 
+            evidentiranja ugovora u sistemu. Kada se kreira ugovor, naredni korak je izrada izlazne fakture, 
+            čime se proces administrativno i finansijski zaokružuje. </br>
+            </br>
+            Iznad liste dostupni su pretraga i filteri. </br>
+            Ove opcije omogućavaju brzo pronalaženje željenih ugovora i efikasno 
+            upravljanje postojećim evidencijama.</br>
+            </br>
+            Kreiranje ugovora započinje klikom na dugme <b><em>"Novi unos"</em></b>, nakon čega se otvara modalni 
+            dijalog u kojem je potrebno unijeti osnovne podatke. 
+            Ugovor se može povezati s postojećim ugovorom kao referencom. 
+            Takođe, postoji mogućnost dodavanja dokumentacije koja je vezana za ugovor. 
+            ```
+    }
+
+    region facet-search (
+        name: Facet Search
+        type: smartFilters
+        source {
+            filteredRegion: @ugovori
+        }
+        layout {
+            sequence: 9
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P70_INTERVAL_ID (
+            type: checkboxGroup
+            label {
+                label: Interval fakturisanja
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-intervali
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: INTERVAL_ID
+            }
+        )
+
+        filter P70_KLIJENT_ID (
+            type: checkboxGroup
+            label {
+                label: Klijent
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: KLIJENT_ID
+            }
+        )
+
+        filter P70_OJ_ID (
+            type: checkboxGroup
+            label {
+                label: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: OJ_ID
+            }
+        )
+
+        filter P70_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P70_STATUS_NAZIV (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: distinctValues
+            }
+            layout {
+                sequence: 60
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS_NAZIV
+            }
+        )
+
+        filter P70_VRSTA_UGOVORA_ID (
+            type: checkboxGroup
+            label {
+                label: Vrsta ugovora
+            }
+            lov {
+                type: sharedComponent
+                lov: @vrste-ugovora
+            }
+            layout {
+                sequence: 50
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VRSTA_UGOVORA_ID
+            }
+        )
+
+    )
+
+    region potrebna-konfiguracija (
+        name: Potrebna konfiguracija
+        type: staticContent
+        source {
+            htmlCode: Neophodno je da konfigurišete formu numeracije dokumenata.
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return not core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'ug', :APP_GODINA);
+        }
+    )
+
+    region ugovori (
+        name: Ugovori
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    predmet,
+                    klijent_naziv,
+                    oj_naziv,
+                    izvrsilac_narucioc,
+                    ugovor_start,
+                    ugovor_end,
+                    iznos,
+                    valuta_sifra,
+                    broj,
+                    interval_id,
+                    interval_naziv,
+                    interval_broj_mjeseci,
+                    klijent_id,
+                    oj_id,
+                    vrsta_ugovora_id,
+                    vrsta_ugovora_naziv,
+                    status,
+                    status_naziv,
+                
+                    CASE
+                        WHEN status = 'P' THEN
+                            'u-color-15'
+                        WHEN status = 'R' OR ugovor_end < trunc(sysdate) THEN
+                            'u-color-9'
+                        WHEN trunc(sysdate) BETWEEN (ugovor_end - 15) AND ugovor_end THEN
+                            'u-color-6'
+                        ELSE
+                            'u-color-5'
+                    END AS color_class,
+                
+                    CASE
+                        WHEN EXISTS (SELECT 1 FROM kif WHERE kif.ugovor_id = u.id) THEN
+                            apex_page.get_url (
+                                p_page   => 74,
+                                p_items  => 'P74_UGOVOR_ID',
+                                p_values => id
+                            )
+                        ELSE
+                            null
+                    END AS fakture_link,
+                
+                    CASE
+                        WHEN EXISTS (SELECT 1 FROM ugovor_dokumenta d WHERE d.ugovor_id = u.id) THEN
+                            apex_page.get_url (
+                                p_page   => 72,
+                                p_items  => 'P72_UGOVOR_ID',
+                                p_values => id
+                            )
+                        ELSE
+                            null
+                    END AS dokumentacija_link,
+                
+                    -- Link za novi aneks; aneks se uvijek veže za osnovni ugovor.
+                    CASE
+                        WHEN status = 'Z' THEN
+                            apex_page.get_url (
+                                p_page        => 71,
+                                p_clear_cache => '71',
+                                p_items       => 'P71_REFERENCA_ID',
+                                p_values      => coalesce(referenca_id, id)
+                            )
+                        ELSE
+                            null
+                    END AS aneks_link
+                
+                FROM
+                    vw_ugovori u
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    broj DESC
+                
+                ```
+        }
+        orderBy {
+            type: staticValue
+            orderByClause: broj DESC
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ANEKS_LINK (
+            reportColumnQueryId: 24
+            derivedColumn: N
+            heading {
+                heading: Aneks
+            }
+            layout {
+                sequence: 270
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ANEKS_LINK/}
+                    <a href="#ANEKS_LINK#">
+                        <span class="t-Button t-Button--noLabel #COLOR_CLASS# t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-copy"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BROJ (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 150
+            }
+        )
+
+        column COLOR_CLASS (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 160
+            }
+        )
+
+        column DOKUMENTACIJA_LINK (
+            reportColumnQueryId: 23
+            derivedColumn: N
+            heading {
+                heading: Dokumentacija
+            }
+            layout {
+                sequence: 220
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if DOKUMENTACIJA_LINK/}
+                    <a href="#DOKUMENTACIJA_LINK#">
+                        <span class="t-Button t-Button--noLabel #COLOR_CLASS# t-Button--iconLeft t-Button--small">     
+                            <span class="t-Icon t-Icon--left fa fa-files-o"></span> 
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column FAKTURE_LINK (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            heading {
+                heading: "Fakture "
+            }
+            layout {
+                sequence: 210
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if FAKTURE_LINK/}
+                    <a href="#FAKTURE_LINK#">
+                        <span class="t-Button t-Button--noLabel #COLOR_CLASS# t-Button--iconLeft t-Button--small">     
+                            <span class="t-Icon t-Icon--left fa fa-arrow-right-alt"></span> 
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 280
+            }
+            link {
+                target: {
+                    page: 71
+                    items: {
+                        P71_ID: #ID#
+                    }
+                    clearCache: 71
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column INTERVAL_BROJ_MJESECI (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 190
+            }
+        )
+
+        column INTERVAL_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 200
+            }
+        )
+
+        column INTERVAL_NAZIV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Interval fakturisanja
+            }
+            layout {
+                sequence: 90
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if INTERVAL_ID/}
+                    #INTERVAL_NAZIV# (#INTERVAL_BROJ_MJESECI# mj)
+                    {else/}
+                    -
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: <span class="u-nowrap">#IZNOS# #VALUTA_SIFRA#</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZVRSILAC_NARUCIOC (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Izvrsilac / naručioc
+            }
+            lov {
+                type: sharedComponent
+                lov: @izvrsilac-narucioc
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KLIJENT_ID (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 120
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button #COLOR_CLASS# t-Button--small">   
+                        <span class="t-Button-label">#NAZIV#</span>  
+                    </span>
+                    ```
+                cssClasses: u-nowrap
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 170
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PREDMET (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Predmet
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 250
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 260
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button #COLOR_CLASS# t-Button--small">   
+                        <span class="t-Button-label">#STATUS_NAZIV#</span>  
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UGOVOR_END (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 130
+            }
+        )
+
+        column UGOVOR_START (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Trajanje
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression: <span class="u-nowrap">#UGOVOR_START# - #UGOVOR_END#</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALUTA_SIFRA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 140
+            }
+        )
+
+        column VRSTA_UGOVORA_ID (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 230
+            }
+        )
+
+        column VRSTA_UGOVORA_NAZIV (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: Vrsta ugovora
+            }
+            layout {
+                sequence: 240
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region ugovori-2 (
+        name: Ugovori
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'ug', :APP_GODINA);
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_ugovori(:APP_OOJ_ID);
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button configuration (
+        buttonName: CONFIGURATION
+        label: Numeracija dokumenata
+        layout {
+            sequence: 10
+            region: @potrebna-konfiguracija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-file-wrench
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 103
+                clearCache: 103
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @ugovori-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 71
+                clearCache: 71
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'ug', :APP_GODINA);
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ugovori
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @ugovori
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ugovori
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

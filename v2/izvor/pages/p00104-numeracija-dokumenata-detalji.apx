@@ -1,0 +1,748 @@
+page 104 (
+    name: Numeracija dokumenata / Detalji
+    alias: NUMERACIJA-DOKUMENATA-DETALJI
+    title: Numeracija dokumenata / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region numeracija-dokumenata-detalji (
+        name: Numeracija dokumenata / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P104_AUTO_RESTART (
+        type: radioGroup
+        label {
+            label: Auto restart
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 120
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko želite da se automatski brojač restartuje 01.01. odaberite <b><em>DA</b></em> </br>
+                Ukoliko želite da brojač za odabrani dokumet kontinuirano broji i na početku nove fiskalne godine odaberite <b><em>NE.</em></b>
+                ```
+        }
+    )
+
+    pageItem P104_BROJ (
+        type: textField
+        label {
+            label: Broj
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    pageItem P104_DUZINA (
+        type: numberField
+        label {
+            label: "Dužina brojača "
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+            valuePlaceholder: 4
+        }
+        validation {
+            maxLength: 16
+        }
+        help {
+            helpText:
+                ```html
+                Definiše ukupan broj cifara u oznaci dokumenta dodavanjem 
+                nula ispred dokumenta (npr. dužina 4 formatira broj 1 kao 0001).
+                ```
+        }
+    )
+
+    pageItem P104_GODINA (
+        type: displayOnly
+        label {
+            label: Godina
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P104_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P104_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P104_PREFIX (
+        type: textField
+        label {
+            label: Prefix
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 70
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            valuePlaceholder: FAK
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText:
+                ```html
+                Unesite oznaku npr. ako radite sa fakturama u formatu <b><em>„P-XXXX/XX”</em></b> (npr. „P-0007/25”). 
+                Slovo <b><em>„FAK-”</em></b> označava da je riječ o fakturi, dok broj i sufiks (npr. 0007/25) predstavljaju 
+                redni broj dokumenta i posljednje dvije cifre godine.
+                ```
+        }
+    )
+
+    pageItem P104_SUFIX (
+        type: textField
+        label {
+            label: Sufix
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 100
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+            valuePlaceholder: /2024
+        }
+        validation {
+            maxLength: 16
+        }
+        help {
+            helpText:
+                ```html
+                Definiše fiksni dodatak koji se pojavljuje nakon broja dokumenta 
+                (npr. oznaka godine /2024 ili interna šifra sektora).
+                ```
+        }
+    )
+
+    pageItem P104_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 130
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    pageItem P104_VRSTA_NALOGA_DISPLAY (
+        type: displayOnly
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga
+        }
+        layout {
+            sequence: 40
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    pageItem P104_VRSTA_NALOGA_ID (
+        type: selectOne
+        label {
+            label: Vrsta dokumenta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    vd.naziv d,
+                    vd.id    r
+                FROM
+                     sif.vrste_dokumenata  vd
+                join sif.sif_aplikacije sp on vd.app_id=sp.id
+                WHERE
+                        vd.valid = 'Y'
+                    AND vd.ooj_id = :app_ooj_id
+                    AND vd.id NOT IN (
+                        SELECT
+                            vrsta_naloga_id
+                        FROM
+                            core.protokoli
+                        WHERE
+                                godina = :p104_godina
+                            AND ooj_id = :app_ooj_id
+                            AND vrsta_naloga_id IS NOT NULL
+                    )
+                    AND UPPER(sp.naziv) = 'FINANSIJE'
+                ORDER BY
+                    sifra ASC
+                
+                
+                
+                
+                ```
+        }
+        layout {
+            sequence: 50
+            region: @numeracija-dokumenata-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 255
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P104_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P104_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation auto-restart-not-null (
+        name: Auto restart NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P104_AUTO_RESTART
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P104_AUTO_RESTART
+        }
+    )
+
+    validation broj-not-null (
+        name: Broj NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P104_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P104_BROJ
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    validation duzina-not-null (
+        name: Duzina NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P104_DUZINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P104_DUZINA
+        }
+    )
+
+    validation godina-not-null (
+        name: Godina NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P104_GODINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P104_GODINA
+        }
+    )
+
+    validation vrsta-naloga-not-null (
+        name: Vrsta naloga NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P104_VRSTA_NALOGA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P104_VRSTA_NALOGA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 25987146385702221
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.delete_protokol (
+                    p_id => :P104_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 15931094073310216
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.get_protokol (
+                    p_id              => :P104_ID,
+                    p_ooj_id          => :P104_OOJ_ID,
+                    p_vrsta_naloga_id => :P104_VRSTA_NALOGA_ID,
+                    p_godina          => :P104_GODINA,
+                    p_prefix          => :P104_PREFIX,
+                    p_broj            => :P104_BROJ,
+                    p_sufix           => :P104_SUFIX,
+                    p_duzina          => :P104_DUZINA,
+                    p_auto_restart    => :P104_AUTO_RESTART,
+                    p_valid           => :P104_VALID
+                );
+                
+                :P104_VRSTA_NALOGA_DISPLAY := :P104_VRSTA_NALOGA_ID;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 15930742573310213
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.insert_protokol (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_vrsta_naloga_id => :P104_VRSTA_NALOGA_ID,
+                    p_godina          => :P104_GODINA,
+                    p_prefix          => :P104_PREFIX,
+                    p_broj            => 0,
+                    p_sufix           => :P104_SUFIX,
+                    p_duzina          => :P104_DUZINA,
+                    p_auto_restart    => :P104_AUTO_RESTART
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 15930845587310214
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup-year (
+        name: Setup year
+        type: executeCode
+        source {
+            plsqlCode: :P104_GODINA := extract(year from sysdate);
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 15931454346310220
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P104_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.update_protokol (
+                    p_id              => :P104_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_vrsta_naloga_id => :P104_VRSTA_NALOGA_ID,
+                    p_godina          => :P104_GODINA,
+                    p_prefix          => :P104_PREFIX,
+                    p_broj            => :P104_BROJ,
+                    p_sufix           => :P104_SUFIX,
+                    p_duzina          => :P104_DUZINA,
+                    p_auto_restart    => :P104_AUTO_RESTART,
+                    p_valid           => :P104_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 15930970106310215
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

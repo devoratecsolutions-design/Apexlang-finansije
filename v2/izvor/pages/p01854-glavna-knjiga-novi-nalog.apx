@@ -1,0 +1,1123 @@
+page 1854 (
+    name: Glavna knjiga /Novi nalog
+    alias: GLAVNA-KNJIGA-NOVI-NALOG
+    title: Glavna knjiga /Novi nalog
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        width: 900
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region glavna-knjiga (
+        name: Glavna Knjiga
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region referentni-dokumenti (
+        name: Referentni dokumenti
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select * from 
+                (select izv.izvod_id as dok_id, izv.godina, izv.sifra_racuna as vrsta_dokumenta, izv.broj, izv.datum,izv.opis, izv.novo_stanje-izv.prethodno_stanje as promet, null as iznos_sa_pdv, null as iznos_bez_pdv, null pdv_indikator, null partner,  apex_item.checkbox(1,izv.izvod_id) as označi
+                from accounting.vw_izvodi izv
+                where izv.ooj_id=:APP_OOJ_ID
+                and izv.proknjizen_v='N'
+                and izv.zakljucan_v='Y'
+                and izv.vrsta_naloga_id=:P1850_VRSTA_NALOGA
+                and :P1850_MODUL=1
+                union
+                select k.kuf_id as dok_id,  k.godina, 'UF' as vrsta_dokumenta, k.broj, k.datum_fakture as datum,k.naziv_fakture as opis, k.iznos_sa_pdv as promet,k.iznos_sa_pdv, k.iznos_bez_pdv, k.pdv_indikator, k.partner_naziv as partner,  apex_item.checkbox(1,k.kuf_id) as označi
+                from accounting.vw_kufovi k
+                where k.ooj_id=:APP_OOJ_ID
+                and NVL(k.status,'K')='Z'
+                and k.vrsta_naloga_id=:P1850_VRSTA_NALOGA
+                and :P1850_MODUL=3)
+                order by dok_id
+                ```
+            pageItemsToSubmit: [
+                P1850_MODUL
+                P1850_VRSTA_NALOGA
+            ]
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 274472309763735422
+        }
+
+        column BROJ (
+            type: plainText
+            heading {
+                heading: Broj
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column DATUM (
+            type: plainText
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column DOK_ID (
+            type: hidden
+            heading {
+                heading: Dok Id
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column GODINA (
+            type: plainText
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            type: plainText
+            heading {
+                heading: Iznos bez PDV-a
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1850_MODUL=3
+            }
+        )
+
+        column IZNOS_SA_PDV (
+            type: plainText
+            heading {
+                heading: Iznos sa PDV-om
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1850_MODUL=3
+            }
+        )
+
+        column OPIS (
+            type: plainText
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column OZNAČI (
+            type: percentGraph
+            heading {
+                heading: Označi
+                alignment: center
+            }
+            layout {
+                sequence: 60
+                columnAlignment: center
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: L
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1850_MODUL=3
+            }
+        )
+
+        column PDV_INDIKATOR (
+            type: plainText
+            heading {
+                heading: Pdv Indikator
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: K
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1850_MODUL=3
+            }
+        )
+
+        column PROMET (
+            type: plainText
+            heading {
+                heading: Promet
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1850_MODUL!=3
+            }
+        )
+
+        column VRSTA_DOKUMENTA (
+            type: plainText
+            heading {
+                heading: Vrsta Dokumenta
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2746800 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn BROJ (
+                sequence: 3
+            )
+
+            displayColumn DATUM (
+                sequence: 4
+            )
+
+            displayColumn GODINA (
+                sequence: 1
+            )
+
+            displayColumn IZNOS_BEZ_PDV (
+                sequence: 7
+            )
+
+            displayColumn IZNOS_SA_PDV (
+                sequence: 8
+            )
+
+            displayColumn OPIS (
+                sequence: 10
+            )
+
+            displayColumn OZNAČI (
+                sequence: 11
+            )
+
+            displayColumn PARTNER (
+                sequence: 5
+            )
+
+            displayColumn PDV_INDIKATOR (
+                sequence: 6
+            )
+
+            displayColumn PROMET (
+                sequence: 9
+            )
+
+            displayColumn VRSTA_DOKUMENTA (
+                sequence: 2
+            )
+
+        )
+
+    )
+
+    pageItem P1854_BROJ (
+        type: textField
+        label {
+            label: Broj naloga
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 70
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 2
+        }
+    )
+
+    pageItem P1854_COPY_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1854_DATUM_DOKUMENTA (
+        type: hidden
+        layout {
+            sequence: 100
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+    )
+
+    pageItem P1854_DATUM_KNJIZENJA (
+        type: datePicker
+        label {
+            label: Datum knjiženja
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+            useDefaults: false
+            appearanceBehavior: [
+                monthPicker
+                yearPicker
+                showTodayButton
+            ]
+            daysOutsideMonth: hidden
+        }
+        layout {
+            sequence: 110
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        default {
+            type: expression
+            plsqlExpression: LAST_DAY(:P1854_DATUM_DOKUMENTA)
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 2
+        }
+    )
+
+    pageItem P1854_GODINA (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+    )
+
+    pageItem P1854_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1854_MODUL_ID (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+    )
+
+    pageItem P1854_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        default {
+            type: item
+            item: APP_OOJ_ID
+        }
+    )
+
+    pageItem P1854_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 120
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 255
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 2
+        }
+    )
+
+    pageItem P1854_PROKNJIZENO (
+        type: hidden
+        layout {
+            sequence: 130
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1854_ID
+        }
+    )
+
+    pageItem P1854_VRSTA_NALOGA_ID (
+        type: selectOne
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga
+        }
+        layout {
+            sequence: 40
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 2
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P1854_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button novi-nalog (
+        buttonName: NOVI_NALOG
+        label: Kreiraj
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 2
+        }
+    )
+
+    button sadrzaj-gk (
+        buttonName: SADRZAJ_GK
+        label: Sadržaj naloga GK
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P1850_MODUL
+            value: 2
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-broj (
+        name: Get broj
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P1854_VRSTA_NALOGA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P1854_BROJ := glavna_knjiga_pkg.get_broj_naloga (
+                        p_ooj_id          => :APP_OOJ_ID,
+                        p_vrsta_naloga_id => :P1854_VRSTA_NALOGA_ID,
+                        p_godina          => :APP_GODINA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P1854_VRSTA_NALOGA_ID
+                    P1854_BROJ
+                ]
+                itemsToReturn: P1854_BROJ
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction set-datum-knjizenja (
+        name: Set - Datum knjizenja
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P1854_DATUM_DOKUMENTA
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P1854_DATUM_KNJIZENJA := :P1854_DATUM_DOKUMENTA;
+                itemsToSubmit: [
+                    P1854_DATUM_DOKUMENTA
+                    P1854_DATUM_KNJIZENJA
+                ]
+                itemsToReturn: P1854_DATUM_KNJIZENJA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-kif-datum-opis (
+        name: Set KIF - Datum & Opis
+        execution {
+            sequence: 100
+        }
+        when {
+            selectionType: items
+            items: P1854_KIF_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    finansije_pkg.get_kif (
+                        p_id            => :P1854_KIF_ID,
+                        p_naziv_fakture => :P1854_OPIS,
+                        p_datum_fakture => :P1854_DATUM_DOKUMENTA
+                    );
+                    
+                    :P1854_DATUM_KNJIZENJA := last_day(:P1854_DATUM_DOKUMENTA);
+                    ```
+                itemsToSubmit: [
+                    P1854_DATUM_DOKUMENTA
+                    P1854_DATUM_KNJIZENJA
+                    P1854_OPIS
+                    P1854_KIF_ID
+                ]
+                itemsToReturn: [
+                    P1854_DATUM_DOKUMENTA
+                    P1854_DATUM_KNJIZENJA
+                    P1854_OPIS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-kuf-datum-opis (
+        name: Set KUF - Datum & Opis
+        execution {
+            sequence: 110
+        }
+        when {
+            selectionType: items
+            items: P1854_KUF_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    finansije_pkg.get_kuf (
+                        p_id            => :P1854_KUF_ID,
+                        p_datum_fakture => :P1854_DATUM_DOKUMENTA,
+                        p_naziv_fakture => :P1854_OPIS
+                    );
+                    
+                    :P1854_DATUM_KNJIZENJA := last_day(:P1854_DATUM_KNJIZENJA);
+                    ```
+                itemsToSubmit: [
+                    P1854_DATUM_DOKUMENTA
+                    P1854_DATUM_KNJIZENJA
+                    P1854_OPIS
+                    P1854_KUF_ID
+                ]
+                itemsToReturn: [
+                    P1854_DATUM_DOKUMENTA
+                    P1854_DATUM_KNJIZENJA
+                    P1854_OPIS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-if-in-av-ko-kos (
+        name: Toggle - IF/IN/AV/KO/KOS
+        execution {
+            sequence: 29
+        }
+        when {
+            selectionType: items
+            items: P1854_VRSTA_NALOGA_ID
+        }
+        clientSideCondition {
+            type: itemIsInList
+            item: P1854_VRSTA_NALOGA_ID
+            list: [
+                3
+                65
+                205
+                206
+                105
+                106
+                85
+                107
+                108
+                109
+            ]
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P1854_KIF_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P1854_KIF_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction toggle-uf (
+        name: Toggle - UF
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P1854_VRSTA_NALOGA_ID
+        }
+        clientSideCondition {
+            type: item=value
+            item: P1854_VRSTA_NALOGA_ID
+            value: 2
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P1854_KUF_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P1854_KUF_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation broj-not-null (
+        name: Broj not NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1854_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1854_BROJ
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    validation datum-dokumenta-not-null (
+        name: Datum dokumenta NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1854_DATUM_DOKUMENTA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1854_DATUM_DOKUMENTA
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    validation datum-knjizenja-not-null (
+        name: Datum knjizenja NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1854_DATUM_KNJIZENJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1854_DATUM_KNJIZENJA
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1854_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1854_OPIS
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    validation vrsta-naloga-not-null (
+        name: Vrsta naloga NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1854_VRSTA_NALOGA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1854_VRSTA_NALOGA_ID
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    process sadržaj-naloga-gk (
+        name: Sadržaj naloga GK
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_ids SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
+                BEGIN
+                
+                    FOR i IN 1 .. APEX_APPLICATION.G_F01.COUNT LOOP
+                        l_ids.EXTEND;
+                        l_ids(l_ids.COUNT) := TO_NUMBER(APEX_APPLICATION.G_F01(i));
+                    END LOOP;
+                
+                    if :P1850_MODUL=1 then  --izvodi
+                
+                       accounting.sadrzaj_gk_pkg.izvodi_sgk(p_izvod_ids => l_ids);
+                
+                    elsif :P1850_MODUL=3 then  --ulazne fakture
+                
+                        accounting.sadrzaj_gk_pkg.uf_sgk(p_uf_ids => l_ids);
+                
+                    end if;
+                END;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 274664901407677177
+        }
+        serverSideCondition {
+            whenButtonPressed: @sadrzaj-gk
+        }
+    )
+
+    branch (
+        name: Redirect to Izvodi
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 1801
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 1
+        }
+    )
+
+    branch (
+        name: Redirect to Ulazne fakture
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 1805
+                items: {
+                    P1805_VRSTA_NALOGA_ID: &P1850_VRSTA_NALOGA.
+                }
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            type: item=value
+            item: P1850_MODUL
+            value: 3
+        }
+    )
+
+)
+

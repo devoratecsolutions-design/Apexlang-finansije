@@ -1,0 +1,431 @@
+page 334 (
+    name: Dokumenti / Knjiženje
+    alias: DOKUMENTI-KNJIŽENJE
+    title: Dokumenti / Knjiženje
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region operacije-koje-će-biti-proknjižene (
+        name: Operacije koje će biti proknjižene
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    tip_kretanja_naziv,
+                    naziv,
+                    datum
+                FROM
+                    vw_operacije
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                    AND trunc(datum, 'MM') = trunc(to_date(:P334_PP, 'YYMM'), 'MM')
+                    AND glavna_knjiga_id IS null
+                    AND valid = 'Y'
+                    and (tip_kretanja_id in (
+                        select
+                            column_value
+                        from
+                            apex_string.split(:P334_TIP_KRETANJA_ID, ':')
+                    ) OR :P334_TIP_KRETANJA_ID IS null)
+                    AND zakljucano = 'Y'
+                ORDER BY
+                    datum DESC
+                ```
+            pageItemsToSubmit: [
+                P334_PP
+                P334_TIP_KRETANJA_ID
+            ]
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: DD.MM.YYYY HH24:MI
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            link {
+                target: {
+                    page: 335
+                    items: {
+                        P335_ID: #ID#
+                        P335_VIEW_ONLY: Y
+                    }
+                    clearCache: 335
+                }
+                linkText: #NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_KRETANJA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Tip kretanja
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P334_COUNT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P334_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+                
+                ```
+        }
+    )
+
+    pageItem P334_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P334_PP (
+        type: selectOne
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @poreski-period-yymm
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P334_TIP_KRETANJA_ID (
+        type: selectMany
+        label {
+            label: Tip kretanja
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-tipovi-kretanja-robe
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button knjizi (
+        buttonName: KNJIZI
+        label: Knjiži
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-book
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: [
+                P334_PP
+                P334_TIP_KRETANJA_ID
+            ]
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @operacije-koje-će-biti-proknjižene
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P334_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P334_KNJIZI_YN
+        }
+    )
+
+    process knjizenje (
+        name: Knjizenje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P334_NALOG_ID := glavna_knjiga_pkg.knjizi_operacije_pp (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_godina          => :APP_GODINA,
+                    p_tip_kretanja_id => :P334_TIP_KRETANJA_ID,
+                    p_pp              => to_date(:P334_PP, 'YYMM'),
+                    p_proknjizeno     => :P334_KNJIZI_YN
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 192268993501091299
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P334_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+    )
+
+)
+

@@ -1,0 +1,1278 @@
+page 58 (
+    name: Faktura / Stavka
+    alias: FAKTURA-STAVKA
+    title: Faktura / Stavka
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    advanced {
+        reloadOnSubmit: always
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region faktura-stavka (
+        name: Faktura / Stavka
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P58_CIJENA (
+        type: numberField
+        label {
+            label: Cijena
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P58_CIJENA_VALUTA (
+        type: numberField
+        label {
+            label: Cijena u valuti
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P54_VALUTA_SIFRA
+            value: BAM
+        }
+    )
+
+    pageItem P58_CJENOVNIK (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @faktura-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P58_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @faktura-stavka
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P58_IZNOS (
+        type: textField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P58_IZNOS_PDV (
+        type: textField
+        label {
+            label: Iznos sa PDV
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 160
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P58_IZNOS_VALUTA (
+        type: displayOnly
+        label {
+            label: Iznos Valuta
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 150
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P54_VALUTA_SIFRA
+            value: BAM
+        }
+    )
+
+    pageItem P58_IZNOS_VALUTA_PDV (
+        type: displayOnly
+        label {
+            label: Iznos Valuta
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 170
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P54_VALUTA_SIFRA
+            value: BAM
+        }
+    )
+
+    pageItem P58_JM_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 60
+            region: @faktura-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P58_JM_NAZIV (
+        type: displayOnly
+        label {
+            label: Jedinica mjere
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-jm
+        }
+        layout {
+            sequence: 70
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P58_KIF_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @faktura-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P58_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P58_PDV (
+        type: textField
+        label {
+            label: PDV ( % )
+            alignment: left
+        }
+        settings {
+            disabled: true
+            sendOnPageSubmit: true
+        }
+        layout {
+            sequence: 120
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        default {
+            type: static
+            staticValue: 17
+        }
+    )
+
+    pageItem P58_PDV_INDIKATOR_ID (
+        type: selectOne
+        label {
+            label: PDV Indikator
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @uio-td-pi-53
+        }
+        layout {
+            sequence: 130
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P58_RABAT (
+        type: numberField
+        label {
+            label: Rabat ( % )
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P58_STAVKA_ID (
+        type: popupLov
+        label {
+            label: Stavka
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-if-stavke
+        }
+        layout {
+            sequence: 50
+            region: @faktura-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P58_TIP_CIJENE (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @faktura-stavka
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P58_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P58_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P58_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction disable-item (
+        name: Disable item
+        execution {
+            sequence: 80
+        }
+        when {
+            event: ready
+        }
+
+        action always (
+            name: Always
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P58_IZNOS
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action avansna-faktura (
+            name: Avansna faktura
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: [
+                    P58_KOLICINA
+                    P58_RABAT
+                    P58_PDV
+                    P58_PDV_INDIKATOR_ID
+                ]
+            }
+            execution {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: item=value
+                item: P54_VRSTA_FAKTURE_SIFRA
+                value: AV
+            }
+        )
+
+        action if-ko-kz-pd (
+            name: IF,KO, KZ,PD
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P58_CIJENA
+            }
+            execution {
+                sequence: 30
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P54_VRSTA_FAKTURE_SIFRA
+                value: AV
+            }
+        )
+
+        action valuta-i-avans (
+            name: Valuta i avans
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P58_CIJENA
+            }
+            execution {
+                sequence: 50
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P54_VRSTA_FAKTURE_SIFRA='AV' and :P54_VALUTA_SIFRA!='BAM'
+            }
+        )
+
+        action valuta-i-not-avans (
+            name: Valuta i not avans
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P58_CIJENA_VALUTA
+            }
+            execution {
+                sequence: 40
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P54_VRSTA_FAKTURE_SIFRA!='AV' or :P54_VALUTA_SIFRA='BAM'
+            }
+        )
+
+    )
+
+    dynamicAction enable-item-before-submit (
+        name: Enable item before submit
+        execution {
+            sequence: 90
+        }
+        when {
+            event: apexbeforepagesubmit
+        }
+
+        action native-enable (
+            action: enable
+            affectedElements {
+                selectionType: items
+                items: [
+                    P58_KOLICINA
+                    P58_IZNOS
+                    P58_CIJENA
+                    P58_RABAT
+                    P58_PDV_INDIKATOR_ID
+                    P58_PDV
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-iznos (
+        name: Get iznos
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: [
+                P58_KOLICINA
+                P58_CIJENA
+                P58_RABAT
+                P58_PDV
+            ]
+        }
+        comments {
+            comments:
+                ```
+                client side codition savascript expression
+                $v('P58_KOLICINA') !== "" && 
+                $v('P58_CIJENA') !== "" && 
+                $v('P58_RABAT') !== "" && 
+                $v('P58_PDV') !== ""
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_cijena NUMBER;
+                        l_jed_cijena number;
+                        l_jed_cijena_valuta number;
+                    BEGIN
+                        l_jed_cijena:=to_number(:P58_CIJENA,'999G999G999G999G990D00');
+                        l_cijena := l_jed_cijena - (l_jed_cijena*:P58_RABAT / 100);
+                    
+                        :P58_IZNOS := round(:P58_KOLICINA * l_cijena,2);
+                        :P58_IZNOS_PDV := round(:P58_IZNOS + (:P58_IZNOS * :P58_PDV / 100),2);
+                    
+                        :P58_IZNOS:=to_char(:P58_IZNOS,'999G999G999G999G990D00');
+                        :P58_IZNOS_PDV:=to_char(:P58_IZNOS_PDV,'999G999G999G999G990D00');
+                    
+                    
+                         
+                        if :P54_VALUTA_SIFRA !='BAM' then
+                    
+                            l_jed_cijena_valuta:= to_number(:P58_CIJENA,'999G999G999G999G990D00')/:P54_KURS;
+                            l_cijena :=l_jed_cijena_valuta - (l_jed_cijena_valuta * :P58_RABAT / 100);
+                    
+                            :P58_IZNOS_VALUTA := round(:P58_KOLICINA * l_cijena,2);
+                            :P58_IZNOS_VALUTA_PDV := round(:P58_IZNOS_VALUTA + (:P58_IZNOS_VALUTA * :P58_PDV / 100),2);
+                            :P58_IZNOS_VALUTA:=to_char(:P58_IZNOS_VALUTA,'999G999G999G999G990D00');
+                            :P58_IZNOS_VALUTA_PDV:=to_char(:P58_IZNOS_VALUTA_PDV,'999G999G999G999G990D00');
+                    
+                        end if;
+                    
+                    EXCEPTION
+                        WHEN others THEN
+                            raise_application_error(-20001, 'Pogrešan unos jedinične cijene.');
+                    END;
+                    
+                    
+                    ```
+                itemsToSubmit: [
+                    P58_CIJENA
+                    P58_RABAT
+                    P58_KOLICINA
+                    P58_PDV
+                ]
+                itemsToReturn: [
+                    P58_IZNOS_PDV
+                    P58_IZNOS
+                    P58_IZNOS_VALUTA
+                    P58_IZNOS_VALUTA_PDV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jedinicna-cijena (
+        name: Get jedinicna cijena
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P58_STAVKA_ID
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P58_STAVKA_ID') !== ""
+                
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P58_CIJENA := stavke_pkg.get_stavka_cijena (
+                        p_cjenovnik_id  => :P58_CJENOVNIK,
+                        p_stavka_id     => :P58_STAVKA_ID,
+                        p_tip_cijene    => :P58_TIP_CIJENE
+                    
+                    );
+                    
+                     :P58_CIJENA_VALUTA:=:P58_CIJENA/:P54_KURS;
+                    
+                     --:P52_CIJENA_VALUTA := to_char(:P52_CIJENA_VALUTA,'999G999G999G999G990D00');
+                    
+                    ```
+                itemsToSubmit: [
+                    P58_STAVKA_ID
+                    P54_KURS
+                ]
+                itemsToReturn: [
+                    P58_CIJENA
+                    P58_CIJENA_VALUTA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P58_CIJENA := null;
+                    :P58_CIJENA_U_VALUTI := null;
+                    ```
+                itemsToSubmit: P58_STAVKA_ID
+                itemsToReturn: P58_CIJENA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jedinicna-cijena-km (
+        name: Get jedinicna cijena KM
+        execution {
+            sequence: 40
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: P58_CIJENA_VALUTA
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P58_STAVKA_ID') !== ""
+                
+                ```
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P54_VRSTA_FAKTURE_SIFRA='AV' and :P54_VALUTA_SIFRA!='BAM'
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_cijena NUMBER;
+                        l_cijena_valuta number;
+                        l_jed_cijena number;
+                        l_jed_cijena_valuta number;
+                    BEGIN
+                    
+                        
+                        :P58_CIJENA:=round(to_number(:P58_CIJENA_VALUTA,'999G999G999G999G990D00')*:P54_KURS,2);
+                    
+                        
+                    EXCEPTION
+                    
+                        WHEN others THEN
+                            raise_application_error(-20001, 'Pogrešan unos jedinične cijene.');
+                    END;
+                    ```
+                itemsToSubmit: P58_CIJENA_VALUTA
+                itemsToReturn: P58_CIJENA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jm (
+        name: Get JM
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P58_STAVKA_ID
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P58_STAVKA_ID') !== ""
+                
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    select jm.id, jm.naziv
+                    into :P58_JM_ID, :P58_JM_NAZIV
+                    from sif.acc_jedinice_mjere jm 
+                    join accounting.sec_stavke sc on jm.id=sc.jm_id
+                    where sc.id=:P58_STAVKA_ID;
+                    ```
+                itemsToSubmit: P58_STAVKA_ID
+                itemsToReturn: [
+                    P58_JM_ID
+                    P58_JM_NAZIV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P58_CIJENA := null;
+                itemsToSubmit: P58_STAVKA_ID
+                itemsToReturn: P58_CIJENA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction on-change-pdv-set-cijena-sa-pdv (
+        name: on change pdv set cijena sa pdv
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: P58_PDV
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    declare
+                    l_rabat number;
+                    begin
+                    l_rabat := (:P58_IZNOS*:P58_RABAT/100)-:P58_IZNOS;
+                    :P58_IZNOS_PDV := :P58_IZNOS * :P58_PDV-l_rabat;
+                    
+                    end;
+                    ```
+                itemsToSubmit: [
+                    P58_IZNOS
+                    P58_RABAT
+                    P58_PDV
+                    P58_IZNOS_PDV
+                ]
+                itemsToReturn: P58_IZNOS_PDV
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation cijena-not-null (
+        name: Cijena NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_CIJENA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_CIJENA
+        }
+    )
+
+    validation kolicina-not-null (
+        name: Kolicina NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_KOLICINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_KOLICINA
+        }
+    )
+
+    validation pdv-indikator-not-null (
+        name: PDV indikator NOT NULL
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_PDV_INDIKATOR_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    validation pdv-not-null (
+        name: PDV NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_PDV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_PDV
+        }
+    )
+
+    validation rabat-not-null (
+        name: Rabat NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_RABAT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_RABAT
+        }
+    )
+
+    validation stavka-not-null (
+        name: Stavka NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P58_STAVKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P58_STAVKA_ID
+        }
+    )
+
+    computation p58-cjenovnik (
+        itemName: P58_CJENOVNIK
+        execution {
+            sequence: 10
+        }
+        computation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                    l_cjenovnik number;   -- prilagodi tip ako OUT parametar nije NUMBER (npr. varchar2)
+                begin
+                    accounting.skladista_pkg.get_skladiste_cjenovnik(:A_SKLADISTE_ID, l_cjenovnik);
+                    return l_cjenovnik;
+                end;
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 76384814675105323
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.delete_kif_stavka (
+                    p_id => :P58_ID
+                );
+                
+                finansije_pkg.calculate_kif (
+                    p_id => :P58_KIF_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 157319544526796169
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare 
+                l_jed_cijena_valuta number;
+                l_cijena number;
+                begin 
+                
+                        if :P58_ID is not null then 
+                            
+                            finansije_pkg.get_kif_stavka (
+                                p_id               => :P58_ID,
+                                p_kif_id           => :P58_KIF_ID,
+                                p_stavka_id        => :P58_STAVKA_ID,
+                                p_jm_id            => :P58_JM_ID,
+                                p_kolicina         => :P58_KOLICINA,
+                                p_cijena           => :P58_CIJENA,
+                                p_rabat            => :P58_RABAT,
+                                p_pdv              => :P58_PDV,
+                                p_iznos            => :P58_IZNOS,
+                                p_pdv_indikator_id => :P58_PDV_INDIKATOR_ID
+                            );
+                
+                            :P58_IZNOS_PDV:=round(:P58_IZNOS + (:P58_IZNOS * :P58_PDV / 100),2);
+                            
+                            :P58_IZNOS:=to_char(:P58_IZNOS,'999G999G999G999G990D00');
+                            :P58_IZNOS_PDV:=to_char(:P58_IZNOS_PDV,'999G999G999G999G990D00');
+                
+                            if :P54_VALUTA_SIFRA !='BAM' then
+                                
+                                l_jed_cijena_valuta:= :P58_CIJENA/:P54_KURS;
+                                l_cijena :=l_jed_cijena_valuta - (l_jed_cijena_valuta * :P58_RABAT / 100);
+                                
+                                :P58_CIJENA_VALUTA:=l_jed_cijena_valuta;
+                                :P58_IZNOS_VALUTA := round(:P58_KOLICINA * l_cijena,2);
+                                :P58_IZNOS_VALUTA_PDV := round(:P58_IZNOS_VALUTA + (:P58_IZNOS_VALUTA * :P58_PDV / 100),2);
+                                :P58_IZNOS_VALUTA:=to_char(:P58_IZNOS_VALUTA,'999G999G999G999G990D00');
+                                :P58_IZNOS_VALUTA_PDV:=to_char(:P58_IZNOS_VALUTA_PDV,'999G999G999G999G990D00');
+                
+                            end if;
+                
+                
+                        else
+                
+                            null;
+                            :P58_KOLICINA:=1;
+                            :P58_PDV_INDIKATOR_ID:=:P54_PDV_INDIKATOR_ID;
+                        end if;
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157319147210796169
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.insert_kif_stavka (
+                    p_kif_id           => :P58_KIF_ID,
+                    p_stavka_id        => :P58_STAVKA_ID,
+                    p_jm_id            => :P58_JM_ID,
+                    p_kolicina         => :P58_KOLICINA,
+                    p_cijena           => to_number(:P58_CIJENA,'999G999G999G999G990D00'),
+                    p_rabat            => to_number(:P58_RABAT,'999G999G999G999G990D00'),
+                    p_pdv              => to_number(:P58_PDV,'999G999G999G999G990D00'),
+                    p_iznos            => to_number(:P58_IZNOS,'999G999G999G999G990D00'),
+                    p_pdv_indikator_id => :P58_PDV_INDIKATOR_ID
+                );
+                
+                finansije_pkg.calculate_kif (
+                    p_id => :P58_KIF_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Stavka uspješno dodata.
+        }
+        advanced {
+            executionMappingIdentifier: 157320301717796170
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.update_kif_stavka (
+                    p_id               => :P58_ID,
+                    p_kif_id           => :P58_KIF_ID,
+                    p_stavka_id        => :P58_STAVKA_ID,
+                    p_jm_id            => :P58_JM_ID,
+                    p_kolicina         => :P58_KOLICINA,
+                    p_cijena           => to_number(:P58_CIJENA,'999G999G999G999G990D00'),
+                    p_rabat            => to_number(:P58_RABAT,'999G999G999G999G990D00'),
+                    p_pdv              => to_number(:P58_PDV,'999G999G999G999G990D00'),
+                    p_iznos            => to_number(:P58_IZNOS,'999G999G999G999G990D00'),
+                    p_pdv_indikator_id => :P58_PDV_INDIKATOR_ID 
+                );
+                
+                finansije_pkg.calculate_kif (
+                    p_id => :P58_KIF_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Stavka uspješno ažurirana.
+        }
+        advanced {
+            executionMappingIdentifier: 157319955351796169
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

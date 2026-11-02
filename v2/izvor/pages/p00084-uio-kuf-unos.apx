@@ -1,0 +1,1885 @@
+page 84 (
+    name: UIO KUF - Unos
+    alias: UIO-KUF-UNOS
+    title: UIO KUF - Unos
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region faktura-wrapper (
+        name: Faktura Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @kuf-unos
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region kuf-unos (
+        name: KUF - Unos
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P84_BROJ_FAKTURE (
+        type: textField
+        label {
+            label: Broj fakture
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 100
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText:
+                ```html
+                Ako je tip dokumenta 01-03 – za broj fakture ili drugog dokumenta unosi se broj fakture. <br>
+                Ako je tip dokumenta 04 - za broj fakture ili drugog dokumenta unosi se broj JCI. <br>
+                Ako je tip dokumenta 05 - za broj fakture ili drugog dokumenta unosi se broj dokumenta koji se evidentira u poslovnim knjigama.<br>
+                Ako je tip dokumenta 06 - za broj fakture ili drugog dokumenta unosi se broj KO po kojima je primljeno odobrenje od domaćih dobavljača i KO po kojima je primljeno odobrenje od INO dobavljača. <br>
+                Ako je tip dokumenta 07-09 - za broj fakture ili drugog dokumenta unosi se broj dokumenta koji se evidentira u poslovnim knjigama.
+                ```
+        }
+    )
+
+    pageItem P84_DATUM_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum fakture
+            alignment: left
+        }
+        layout {
+            sequence: 120
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText:
+                ```html
+                Ako je Tip dokumenta 01-03 – za datum fakture ili drugog dokumenta unosi se datum fakture <br>
+                Ako je Tip dokumenta 04 - za datum fakture ili drugog dokumenta unosi se datum JCI <br>
+                Ako je Tip dokumenta 05 - za datum fakture ili drugog dokumenta unosi se datum dokumenta koji se evidentira u poslovnim knjigama<br>
+                Ako je Tip dokumenta 06, za datum fakture ili drugog dokumenta unosi se datum <b>KO</b><br>
+                Ako je Tip dokumenta 07-09, za datum fakture ili drugog dokumenta, unosi se datum dokumenta koji se evidentira u poslovnim knjigama
+                ```
+        }
+    )
+
+    pageItem P84_DATUM_PRIJEMA_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum prijema fakture
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText: Unosi se datum kad je obveznik zaista zaprimio predmetnu fakturu ili drugi dokument, tj. datum kada je evidentirana faktura ili dokument. Ako se ova dva datuma razlikuju onda se unosi datum kada je faktura evidentirana u knjigovodstvenim evidencijama.
+        }
+    )
+
+    pageItem P84_DUMMY (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @kuf-unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P84_FAKTURA_ID (
+        type: selectOne
+        label {
+            label: Faktura
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv_fakture || ' - ' || klijent_naziv || '(' || naziv || ')' AS d,
+                    id AS r
+                FROM
+                    vw_kuf_lista
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND status = 'Z'
+                    AND id not IN (
+                        SELECT faktura_id
+                        FROM uio_kuf
+                        WHERE
+                            ooj_id = :APP_OOJ_ID
+                            and faktura_id is not null
+                    )
+                    
+                ORDER BY
+                    broj
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @faktura-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            authorizationScheme: @fakture-kuf
+        }
+    )
+
+    pageItem P84_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @kuf-unos
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P84_IZNOS_FAKTURE_BEZPDV (
+        type: textField
+        label {
+            label: Faktura bez PDV
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: G99999990D00
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_IZNOS_FAKTURE_SAPDV (
+        type: textField
+        label {
+            label: Faktura sa PDV
+            alignment: left
+        }
+        layout {
+            sequence: 210
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_IZNOS_PAUSAL (
+        type: textField
+        label {
+            label: Paušalna naknada
+            alignment: left
+        }
+        layout {
+            sequence: 220
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_IZNOS_PDV_32POLJE (
+        type: textField
+        label {
+            label: Ul. PDV koji se ne može odbiti - polje 32 PDV prijave
+            alignment: left
+        }
+        layout {
+            sequence: 260
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText: PDV na isporuke licima koja nisu registrovani PDV obveznici u Federaciji BiH.
+        }
+    )
+
+    pageItem P84_IZNOS_PDV_33POLJE (
+        type: textField
+        label {
+            label: Ul. PDV koji se ne može odbiti - polje 33 PDV prijave
+            alignment: left
+        }
+        layout {
+            sequence: 270
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText: PDV na isporuke licima koja nisu registrovani PDV obveznici u Republici Srpskoj.
+        }
+    )
+
+    pageItem P84_IZNOS_PDV_34POLJE (
+        type: textField
+        label {
+            label: Ul. PDV koji se ne može odbiti - polje 34 PDV prijave
+            alignment: left
+        }
+        layout {
+            sequence: 280
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText: PDV na isporuke licima koja nisu registrovani PDV obveznici u Brčko Distriktu.
+        }
+    )
+
+    pageItem P84_IZNOS_ULAZNOG_PDV (
+        type: textField
+        label {
+            label: Iznos ulaznog PDV-a
+            alignment: left
+        }
+        layout {
+            sequence: 230
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_IZNOS_ULAZPDV_NEODBITI (
+        type: textField
+        label {
+            label: Ulazni PDV koji se ne može odbiti
+            alignment: left
+        }
+        layout {
+            sequence: 250
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_IZNOS_ULAZPDV_ODBITI (
+        type: textField
+        label {
+            label: Ulazni PDV koji se može odbiti
+            alignment: left
+        }
+        layout {
+            sequence: 240
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P84_JIB_BROJ_DOBAVLJACA (
+        type: textField
+        label {
+            label: JIB broj dobavljača
+            alignment: left
+        }
+        layout {
+            sequence: 170
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 13
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText:
+                ```html
+                Ako ima JIB – unosi se 13 cifreni JIB/PIB dodijeljen od strane porezne uprave <br>
+                Za uvoz – unosi se trinaest nula <br>
+                Ako nema JIB – polje ostaje prazno
+                ```
+        }
+    )
+
+    pageItem P84_KLIJENT_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @kuf-unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P84_NAZIV_DOBAVLJACA (
+        type: textField
+        label {
+            label: Naziv dobavljača
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 100
+        }
+    )
+
+    pageItem P84_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @kuf-unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P84_PIB_BROJ_DOBAVLJACA (
+        type: textField
+        label {
+            label: PDV broj dobavljača
+            alignment: left
+        }
+        layout {
+            sequence: 190
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 12
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText:
+                ```html
+                Ako ima JIB – unosi se 13 cifreni JIB/PIB dodijeljen od strane porezne uprave <br>
+                Za uvoz – unosi se trinaest nula <br>
+                Ako nema JIB – polje ostaje prazno
+                ```
+        }
+    )
+
+    pageItem P84_PORESKI_PERIOD (
+        type: textField
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 5
+        }
+    )
+
+    pageItem P84_PS (
+        type: radioGroup
+        label {
+            label: Faktura u poslovne svrhe
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:DA;Y,NE;N
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 90
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+    )
+
+    pageItem P84_REDNI_BR (
+        type: textField
+        label {
+            label: Redni broj
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 10
+        }
+        help {
+            inlineHelpText: Za objašnjenje klikni upitnik.
+            helpText: Redni broj iz knjige nabavki - U polju je prikazan sljedeći redni broj za odabrani mjesec
+        }
+    )
+
+    pageItem P84_SJEDISTE_DOBAVLJACA (
+        type: textField
+        label {
+            label: Sjedište dobavljača
+            alignment: left
+        }
+        layout {
+            sequence: 150
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 100
+        }
+    )
+
+    pageItem P84_TIP_DOKUMENTA (
+        type: selectOne
+        label {
+            label: Tip dokumenta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @uio-u-tip-dokumenta
+        }
+        layout {
+            sequence: 80
+            region: @kuf-unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P84_VRSTA_SLOGA (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @kuf-unos
+            slot: regionBody
+        }
+        default {
+            type: static
+            staticValue: 2
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 83
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Sačuvaj unos u KUF
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_ID
+        }
+    )
+
+    button new-kuf (
+        buttonName: NEW_KUF
+        label: Nova ulazna faktura
+        layout {
+            sequence: 10
+            region: @faktura-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 41
+                items: {
+                    P41_ORIG: 84
+                }
+                clearCache: 41
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction clear-on-change (
+        name: clear on change
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P84_PS
+        }
+
+        action native-clear (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: [
+                    P84_IZNOS_FAKTURE_BEZPDV
+                    P84_IZNOS_FAKTURE_SAPDV
+                    P84_IZNOS_PAUSAL
+                    P84_IZNOS_ULAZNOG_PDV
+                    P84_IZNOS_ULAZPDV_ODBITI
+                    P84_IZNOS_ULAZPDV_NEODBITI
+                    P84_IZNOS_PDV_32POLJE
+                    P84_IZNOS_PDV_33POLJE
+                    P84_IZNOS_PDV_34POLJE
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-kuf-data (
+        name: GET KUF DATA
+        execution {
+            sequence: 9
+        }
+        when {
+            selectionType: items
+            items: P84_FAKTURA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    IF :P84_FAKTURA_ID IS NOT null THEN
+                        finansije_pkg.get_kuf (  
+                            p_id                    => :P84_FAKTURA_ID,
+                            p_glavna_knjiga_id      => :P84_DUMMY,
+                            p_ooj_id                => :P84_DUMMY,
+                            p_klijent_id            => :P84_DUMMY,
+                            p_datum_prijema         => :P84_DATUM_PRIJEMA_FAKTURE,
+                            p_datum_fakture         => :P84_DATUM_FAKTURE,
+                            p_datum_valute          => :P84_DUMMY,
+                            p_iznos_bez_pdv         => :P84_IZNOS_FAKTURE_BEZPDV,
+                            p_iznos_sa_pdv          => :P84_IZNOS_FAKTURE_SAPDV,
+                            p_valuta_id             => :P84_DUMMY,
+                            p_valuta_iznos_bez_pdv  => :P84_DUMMY,
+                            p_valuta_iznos_sa_pdv   => :P84_DUMMY,
+                            p_tip_placanja_id       => :P84_DUMMY,
+                            p_fiskalni_racun_broj   => :P84_DUMMY,
+                            p_naziv_fakture         => :P84_BROJ_FAKTURE,
+                            p_uio_tip_dokumenta_id  => :P84_TIP_DOKUMENTA,
+                            p_naziv                 => :P84_DUMMY,
+                            p_broj                  => :P84_DUMMY,
+                            p_valid                 => :P84_DUMMY
+                        ); 
+                    END IF;
+                    ```
+                itemsToSubmit: [
+                    P84_FAKTURA_ID
+                    P84_TIP_DOKUMENTA
+                ]
+                itemsToReturn: [
+                    P84_DATUM_PRIJEMA_FAKTURE
+                    P84_DATUM_FAKTURE
+                    P84_IZNOS_FAKTURE_BEZPDV
+                    P84_IZNOS_FAKTURE_SAPDV
+                    P84_BROJ_FAKTURE
+                    P84_TIP_DOKUMENTA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction new (
+        name: New
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P84_PORESKI_PERIOD
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P84_REDNI_BR := uio_pkg.get_uio_kif_redni_broj (
+                        p_ooj_id         => :APP_OOJ_ID,
+                        p_poreski_period => :P84_PORESKI_PERIOD
+                    );
+                    ```
+                itemsToSubmit: [
+                    P84_PORESKI_PERIOD
+                    P84_REDNI_BR
+                ]
+                itemsToReturn: P84_REDNI_BR
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction racunaj-polja (
+        name: racunaj polja
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P84_IZNOS_FAKTURE_BEZPDV
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: [
+                    P84_IZNOS_FAKTURE_BEZPDV
+                    P84_IZNOS_FAKTURE_SAPDV
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    declare
+                    v_sa_pdv number;
+                    v_pdv_in number;
+                    v_zarez number;
+                    -- V_APP_PDV_BROJ varchar2(13);
+                    begin
+                    select instr(:P84_IZNOS_FAKTURE_BEZPDV,',') into v_zarez from dual;
+                    if (V_zarez > 0) then
+                        null;
+                        else
+                    
+                    case when :P84_PS ='Y' then
+                            if(:P84_PIB_BROJ_DOBAVLJACA is not null and :P84_PIB_BROJ_DOBAVLJACA<> '000000000000') then
+                             v_sa_pdv := to_char(:P84_IZNOS_FAKTURE_BEZPDV*1.17,'fm999999990.00');
+                             v_pdv_in := v_sa_pdv - :P84_IZNOS_FAKTURE_BEZPDV;
+                             :P84_IZNOS_FAKTURE_SAPDV := to_char( v_sa_pdv, 'fm99999990.00');
+                             :P84_IZNOS_ULAZNOG_PDV := to_char ( v_pdv_in, 'fm99999990.00');
+                             :P84_IZNOS_ULAZPDV_ODBITI := to_char ( v_pdv_in, 'fm99999990.00');
+                             :P84_IZNOS_ULAZPDV_NEODBITI :=null;
+                             :P84_IZNOS_PDV_32POLJE := null;
+                             :P84_IZNOS_PDV_33POLJE := null;
+                             :P84_IZNOS_PDV_34POLJE := null;
+                            else
+                             :P84_IZNOS_FAKTURE_SAPDV := to_char(:P84_IZNOS_FAKTURE_BEZPDV,'fm99999990.00');
+                             :P84_IZNOS_ULAZNOG_PDV := null;
+                             :P84_IZNOS_ULAZPDV_ODBITI := null;
+                             :P84_IZNOS_ULAZPDV_NEODBITI :=null;
+                             :P84_IZNOS_PDV_32POLJE := null;
+                             :P84_IZNOS_PDV_33POLJE := null;
+                             :P84_IZNOS_PDV_34POLJE := null;
+                            end if;
+                        when :P84_PS = 'N' then
+                            if(:P84_PIB_BROJ_DOBAVLJACA is not null and :P84_PIB_BROJ_DOBAVLJACA<> '000000000000') then
+                             v_sa_pdv := to_char(:P84_IZNOS_FAKTURE_BEZPDV*1.17,'fm99999990.00');
+                             v_pdv_in := v_sa_pdv - :P84_IZNOS_FAKTURE_BEZPDV;
+                             :P84_IZNOS_FAKTURE_SAPDV := to_char( v_sa_pdv, 'fm99999990.00');
+                             :P84_IZNOS_ULAZNOG_PDV := to_char ( v_pdv_in, 'fm99999990.00');
+                             :P84_IZNOS_ULAZPDV_ODBITI :=null;         
+                             :P84_IZNOS_ULAZPDV_NEODBITI := to_char ( v_pdv_in, 'fm99999990.00');
+                                case when substr(:APP_PDV_BROJ,0,1) in (2,3) then
+                                    :P84_IZNOS_PDV_32POLJE := to_char(v_pdv_in,'fm99999990.00');
+                                    when substr(:APP_PDV_BROJ,0,1) in (4,5) then
+                                    :P84_IZNOS_PDV_33POLJE := to_char(v_pdv_in,'fm99999990.00');
+                                    when substr(:APP_PDV_BROJ,0,1) in (6,7) then
+                                    :P84_IZNOS_PDV_34POLJE := to_char(v_pdv_in,'fm99999990.00');
+                                    else
+                                    null;
+                                end case;
+                                
+                            else
+                             :P84_IZNOS_FAKTURE_SAPDV := :P84_IZNOS_FAKTURE_BEZPDV;
+                             :P84_IZNOS_ULAZNOG_PDV := null;
+                             :P84_IZNOS_ULAZPDV_ODBITI := null;
+                             :P84_IZNOS_ULAZPDV_NEODBITI :=null;
+                             :P84_IZNOS_PDV_32POLJE := null;
+                             :P84_IZNOS_PDV_33POLJE := null;
+                             :P84_IZNOS_PDV_34POLJE := null;
+                            end if;
+                        /*else
+                            null;*/
+                        end case;
+                    end if;
+                    end;
+                    ```
+                itemsToSubmit: [
+                    P84_IZNOS_FAKTURE_BEZPDV
+                    P84_IZNOS_FAKTURE_SAPDV
+                    P84_IZNOS_PAUSAL
+                    P84_IZNOS_ULAZNOG_PDV
+                    P84_IZNOS_ULAZPDV_ODBITI
+                    P84_IZNOS_ULAZPDV_NEODBITI
+                    P84_IZNOS_PDV_32POLJE
+                    P84_IZNOS_PDV_33POLJE
+                    P84_IZNOS_PDV_34POLJE
+                    P84_PS
+                ]
+                itemsToReturn: [
+                    P84_IZNOS_PAUSAL
+                    P84_IZNOS_ULAZNOG_PDV
+                    P84_IZNOS_ULAZPDV_ODBITI
+                    P84_IZNOS_ULAZPDV_NEODBITI
+                    P84_IZNOS_PDV_32POLJE
+                    P84_IZNOS_PDV_33POLJE
+                    P84_IZNOS_PDV_34POLJE
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-poreski-period (
+        name: set poreski period
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P84_FAKTURA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P84_FAKTURA_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    declare
+                    v_mj varchar2(2);
+                    v_god varchar2(2);
+                    v_sa_pdv number;
+                    v_pdv_in number;
+                    v_app_pdv varchar2(12);
+                    begin
+                    if :P84_FAKTURA_ID is not null then
+                    
+                        select substr(datum_fakture,9,2),substr(datum_fakture,4,2),klijent_id into v_god,v_mj,:P84_KLIJENT_ID
+                        from kuf
+                        where id = :P84_FAKTURA_ID;
+                        select pib into v_app_pdv from core.ooj where id = :APP_OOJ_ID;
+                    
+                        :P84_PORESKI_PERIOD := v_god||v_mj;
+                    
+                        SEC_PKG.get_klijent (
+                                p_id     => :P84_KLIJENT_ID,
+                                p_naziv  => :P84_NAZIV_DOBAVLJACA,
+                                p_sjediste => :P84_SJEDISTE_DOBAVLJACA,
+                                
+                                p_pib    =>   :P84_PIB_BROJ_DOBAVLJACA,
+                                p_jib    =>   :P84_JIB_BROJ_DOBAVLJACA
+                            );
+                    else null;
+                    end if;
+                    end;
+                    ```
+                itemsToSubmit: [
+                    P84_FAKTURA_ID
+                    P84_PORESKI_PERIOD
+                    P84_KLIJENT_ID
+                ]
+                itemsToReturn: [
+                    P84_PORESKI_PERIOD
+                    P84_KLIJENT_ID
+                    P84_PIB_BROJ_DOBAVLJACA
+                    " P84_JIB_BROJ_DOBAVLJACA"
+                    P84_IZNOS_FAKTURE_BEZPDV
+                    P84_NAZIV_DOBAVLJACA
+                    P84_SJEDISTE_DOBAVLJACA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+    )
+
+    dynamicAction set-zeros-on-pib-jib (
+        name: set zeros on pib jib
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P84_TIP_DOKUMENTA
+        }
+        clientSideCondition {
+            type: item=value
+            item: P84_TIP_DOKUMENTA
+            value: 13
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: [
+                    P84_JIB_BROJ_DOBAVLJACA
+                    P84_PIB_BROJ_DOBAVLJACA
+                    P84_TIP_DOKUMENTA
+                ]
+                itemsToReturn: [
+                    P84_JIB_BROJ_DOBAVLJACA
+                    P84_PIB_BROJ_DOBAVLJACA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                value: 000000000000
+            }
+            affectedElements {
+                selectionType: items
+                items: P84_PIB_BROJ_DOBAVLJACA
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value-2 (
+            action: setValue
+            settings {
+                value: 000000000000
+            }
+            affectedElements {
+                selectionType: items
+                items: P84_PDV_BROJ_DOBAVLJACA
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-set-value-3 (
+            action: setValue
+            settings {
+                value: 0000000000000
+            }
+            affectedElements {
+                selectionType: items
+                items: P84_JIB_BROJ_DOBAVLJACA
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation faktura-zakljucena (
+        name: Faktura mora biti zaključena
+        execution {
+            sequence: 5
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                return kuf_pkg.razlog_zabrane_uio(p_kuf_id => :P84_FAKTURA_ID, p_ooj_id => :APP_OOJ_ID);
+                ```
+        }
+        error {
+            associatedItem: @P84_FAKTURA_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation broj-fakture-not-null (
+        name: broj fakture not null
+        execution {
+            sequence: 200
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_BROJ_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# Mora biti popunjen
+            associatedItem: @P84_BROJ_FAKTURE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation datum-not-null (
+        name: datum not null
+        execution {
+            sequence: 210
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_DATUM_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# mora biti popunjen
+            associatedItem: @P84_DATUM_FAKTURE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation datum-prijema-not-null (
+        name: datum prijema not null
+        execution {
+            sequence: 220
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_DATUM_PRIJEMA_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# mora biti popunjen
+            associatedItem: @P84_DATUM_PRIJEMA_FAKTURE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation duzina (
+        name: duzina=12
+        execution {
+            sequence: 140
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                if(length(:P84_PIB_BROJ_DOBAVLJACA) <> 12) then 
+                return false;
+                else 
+                return true;
+                end if;
+                ```
+        }
+        error {
+            errorMessage: PDV broj mora da sadrzi 12 cifara
+            associatedItem: @P84_PIB_BROJ_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation duzina-2 (
+        name: duzina 13
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                if(length(:P84_JIB_BROJ_DOBAVLJACA) <> 13) then 
+                return false;
+                else 
+                return true;
+                end if;
+                ```
+        }
+        error {
+            errorMessage: JIB broj mora da sadrži 13 cifara
+            associatedItem: @P84_JIB_BROJ_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation faktura-not-null (
+        name: faktura not null
+        execution {
+            sequence: 170
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_FAKTURA_ID
+        }
+        error {
+            errorMessage: Morate odabrati fakturu
+            associatedItem: @P84_FAKTURA_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation is-number (
+        name: is number_1
+        execution {
+            sequence: 40
+        }
+        validation {
+            plsqlExpression: "REGEXP_LIKE(:P84_JIB_BROJ_DOBAVLJACA, '^[[:digit:]]+$')"
+        }
+        error {
+            errorMessage: #LABEL# mora biti iskljucivo broj
+            associatedItem: @P84_JIB_BROJ_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation iznos-pdv-33-polje (
+        name: IZNOS PDV 33 POLJE
+        execution {
+            sequence: 320
+        }
+        validation {
+            type: itemIsNumeric
+            item: P84_IZNOS_PDV_33POLJE
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj.
+            associatedItem: @P84_IZNOS_PDV_33POLJE
+        }
+    )
+
+    validation iznos-pdv-34-polje (
+        name: IZNOS PDV 34 POLJE
+        execution {
+            sequence: 330
+        }
+        validation {
+            type: itemIsNumeric
+            item: P84_IZNOS_PDV_34POLJE
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj.
+            associatedItem: @P84_IZNOS_PDV_34POLJE
+        }
+    )
+
+    validation naziv-not-null (
+        name: naziv not null
+        execution {
+            sequence: 230
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_NAZIV_DOBAVLJACA
+        }
+        error {
+            errorMessage: #LABEL# mora biti popunjen
+            associatedItem: @P84_NAZIV_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation not-null (
+        name: not null
+        execution {
+            sequence: 180
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_TIP_DOKUMENTA
+        }
+        error {
+            errorMessage: #LABEL# mora biti odabran
+            associatedItem: @P84_TIP_DOKUMENTA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    validation pdv-num-is-number (
+        name: PDV_NUM is number
+        execution {
+            sequence: 160
+        }
+        validation {
+            plsqlExpression: "REGEXP_LIKE(:P84_PIB_BROJ_DOBAVLJACA, '^[[:digit:]]+$')"
+        }
+        error {
+            errorMessage: #LABEL# mora biti iskljucivo broj
+            associatedItem: @P84_PIB_BROJ_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation redni-broj-not-null (
+        name: redni broj not null
+        execution {
+            sequence: 190
+        }
+        validation {
+            type: itemIsNotNullOrZero
+            item: P84_REDNI_BR
+        }
+        error {
+            errorMessage: #LABEL# Mora biti popunjeno
+            associatedItem: @P84_REDNI_BR
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation sjediste-not-null (
+        name: sjediste not null
+        execution {
+            sequence: 240
+        }
+        validation {
+            type: itemIsNotNull
+            item: P84_SJEDISTE_DOBAVLJACA
+        }
+        error {
+            errorMessage: #LABEL# mora biti popunjen
+            associatedItem: @P84_SJEDISTE_DOBAVLJACA
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-f (
+        name: ZAPETA f32
+        execution {
+            sequence: 110
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_PDV_32POLJE,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_PDV_32POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-f-2 (
+        name: ZAPETA f33
+        execution {
+            sequence: 120
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_PDV_33POLJE,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_PDV_33POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-f-3 (
+        name: ZAPETA f34
+        execution {
+            sequence: 130
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_PDV_34POLJE,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_PDV_34POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju (
+        name: zapeta u broju
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_FAKTURE_BEZPDV,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_FAKTURE_BEZPDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju-pdv (
+        name: zapeta u broju_PDV
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_FAKTURE_SAPDV,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_FAKTURE_SAPDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju-pdv-2 (
+        name: zapeta u broju_PDV_1
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_PAUSAL,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_PAUSAL
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju-ulaz-pdv (
+        name: zapeta u broju_ULAZ_PDV
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_ULAZNOG_PDV,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_ULAZNOG_PDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju-ulaz-pdv-neodbit (
+        name: zapeta u broju_ULAZ_PDV_NEODBIT
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_ULAZPDV_NEODBITI,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_ULAZPDV_NEODBITI
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    validation zapeta-u-broju-ulaz-pdv-odbit (
+        name: zapeta u broju_ULAZ_PDV_ODBIT
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                declare
+                
+                zarez number;
+                begin
+                select instr(:P84_IZNOS_ULAZPDV_ODBITI,',') into zarez from dual;
+                
+                if(zarez > 0 ) then
+                return false;
+                else
+                return true;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        error {
+            errorMessage:
+                ```
+                Broj ne smije sadrzavati zarez kao separator!
+                Odvajanje decimalnih mjesta dozvoljeno je samo tačkom!
+                ```
+            associatedItem: @P84_IZNOS_ULAZPDV_ODBITI
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process inser-uio-kuf (
+        name: inser uio kuf
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    tip_doc VARCHAR2(2);
+                BEGIN
+                    SELECT 
+                        code  
+                    INTO  
+                        tip_doc 
+                    FROM  
+                        sif.acc_uio_tipovi_dokumenata 
+                    WHERE 
+                        id =:P84_TIP_DOKUMENTA;
+                 
+                 
+                 UIO_PKG.insert_uio_kuf(
+                    P_OOJ_ID                                  => :APP_OOJ_ID,
+                    P_FAKTURA_ID                              => :P84_FAKTURA_ID,
+                    P_VRSTA_SLOGA                             => 2,
+                    P_REDNI_BR                                => :P84_REDNI_BR,
+                    P_TIP_DOKUMENTA                           => tip_doc,
+                    P_BROJ_FAKTURE                            => :P84_BROJ_FAKTURE,
+                    P_DATUM_FAKTURE                           => :P84_DATUM_FAKTURE,
+                    P_DATUM_PRIJEMA_FAKTURE                   => :P84_DATUM_PRIJEMA_FAKTURE,
+                    P_NAZIV_DOBAVLJACA                        => :P84_NAZIV_DOBAVLJACA,
+                    P_SJEDISTE_DOBAVLJACA                     => :P84_SJEDISTE_DOBAVLJACA,
+                    P_PDV_BROJ_DOBAVLJACA                     => lpad(:P84_PIB_BROJ_DOBAVLJACA,12,0),
+                    P_JIB_BROJ_DOBAVLJACA                     => lpad(:P84_JIB_BROJ_DOBAVLJACA,13,0),
+                    P_IZNOS_FAKTURE_BEZPDV                    => to_char(nvl(:P84_IZNOS_FAKTURE_BEZPDV,0) ,'fm9999999990.00'),
+                    P_IZNOS_FAKTURE_SAPDV                     => to_char(nvl(:P84_IZNOS_FAKTURE_SAPDV ,0) ,'fm9999999990.00'),
+                    P_IZNOS_PAUSAL                            => to_char(nvl(:P84_IZNOS_PAUSAL        ,0) ,'fm9999999990.00'),
+                    P_IZNOS_ULAZNOG_PDV                       => to_char(nvl(:P84_IZNOS_ULAZNOG_PDV   ,0) ,'fm9999999990.00'),
+                    P_IZNOS_ULAZPDV_ODBITI                    => to_char(nvl(:P84_IZNOS_ULAZPDV_ODBITI,0) ,'fm9999999990.00'),
+                    P_IZNOS_ULAZPDV_NEODBITI                  => to_char(nvl(:P84_IZNOS_ULAZPDV_NEODBITI,0) ,'fm9999999990.00'),
+                    P_IZNOS_PDV_32POLJE                       => to_char(nvl(:P84_IZNOS_PDV_32POLJE   ,0) ,'fm9999999990.00'),
+                    P_IZNOS_PDV_33POLJE                       => to_char(nvl(:P84_IZNOS_PDV_33POLJE   ,0) ,'fm9999999990.00'),
+                    P_IZNOS_PDV_34POLJE                       => to_char(nvl(:P84_IZNOS_PDV_34POLJE   ,0) ,'fm9999999990.00'),
+                    P_PORESKI_PERIOD                          => :P84_PORESKI_PERIOD
+                );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 29283167617101124
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 1
+        }
+        behavior {
+            target: {
+                page: 83
+            }
+        }
+    )
+
+)
+

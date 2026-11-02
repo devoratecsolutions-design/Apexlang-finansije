@@ -1,0 +1,382 @@
+page 140 (
+    name: Radnici
+    alias: RADNICI
+    title: Radnici
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <b><em>Kontni okviri</em></b> služi za uspostavljanje i održavanje strukture kontnog plana koju koristi organizacija. 
+            Sistem podržava standardnu hijerarhiju klasa → grupa → konto → analitika, 
+            a svaki novi konto može se precizno definisati kroz sljedeća polja: </br>
+            <ul>
+                <li>Nadređena klasa (konto-klasa): postavlja lokaciju konta u hijerarhiji i osigurava usklađenost s propisanim klasama (0–9). </li>
+                <li>Šifra i naziv: jedinstvena oznaka i opis konta. </li>
+                <li>Osnovno sredstvo (obavezno/da-ne): označava da li se konto koristi za evidentiranje dugoročne imovine (npr. nekretnine, oprema), što utiče na obračun amortizacije i izvještavanje.</li>
+                <li>Klijent obavezan / Organizacijska jedinica / Radnik: poslovna pravila koja kontrolišu da li je pri knjiženju obavezno povezati konto s kupcem/dobavljačem, osnovnom organizacionom jedinicom ili zaposlenim — važno za precizno segmentno i odgovorno izvještavanje.</li>
+                <li>PDV indikator: određuje tretman prometa prema PDV pravilima (npr. ulazni odbitak, obračun izlaznog PDV-a, oslobođenja), čime se automatizuje knjiženje i umanjuje rizik od greške u obračunu. </li>
+            </ul>
+            
+            Na dugme <b><em>Novi Unos</em></b> kreiraj konto definisanjem nadređene klase, šifre, 
+            naziva i odgovarajućih “obavezno”/“nije obavezno” pravila (osnovno sredstvo, klijent, OOJ, radnik, PDV). </br>
+            </br>
+            Postoji i opcija na aplikaciji <b><em> Export / Import</em></b>:
+            da klijenti dostave fajl sistem administratoru. 
+            Administrator je zadužen da izvrši konfiguraciju dostavljenog fajla, 
+            a nakon što potvrdi da je konfiguracija uspješno završena, korisniku 
+            preostaje da koristi aplikaciju na jednostavan način kroz opcije Export i Import.  
+            
+            ```
+    }
+
+    region mjesto-troška-tree (
+        name: Radnici
+        title: Radnici
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select * from sif.vw_acc_radnici r
+                where r.ooj_id=:APP_OOJ_ID
+                order by r.ime, r.prezime
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-ir
+        }
+        advanced {
+            htmlDomId: MJESTO_TROSKA_ID
+            regionDisplaySelector: true
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        advanced {
+            savedReportMappingIdentifier: 281637967264374030
+        }
+
+        column EMAIL (
+            type: plainText
+            heading {
+                heading: Email
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column ID (
+            type: link
+            heading {
+                heading: Detalji
+                alignment: center
+            }
+            layout {
+                sequence: 100
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    page: 141
+                    items: {
+                        P141_ID: #ID#
+                    }
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column IME (
+            type: plainText
+            heading {
+                heading: Ime
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column INTERNI_BROJ (
+            type: plainText
+            heading {
+                heading: Interni broj radnika
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column NAZIV_OJ (
+            type: plainText
+            heading {
+                heading: Naziv Oraganizacione jedinice
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column NAZIV_OOJ (
+            type: hidden
+            heading {
+                heading: Naziv Ooj
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column OJ_ID (
+            type: hidden
+            heading {
+                heading: Oj Id
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column OOJ_ID (
+            type: hidden
+            heading {
+                heading: Ooj Id
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column PREZIME (
+            type: plainText
+            heading {
+                heading: Prezime
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+        pageHeader {
+            pageHeaderText: Radnici
+        }
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn EMAIL (
+                sequence: 6
+            )
+
+            displayColumn ID (
+                sequence: 9
+            )
+
+            displayColumn IME (
+                sequence: 4
+            )
+
+            displayColumn INTERNI_BROJ (
+                sequence: 3
+            )
+
+            displayColumn NAZIV_OJ (
+                sequence: 8
+            )
+
+            displayColumn NAZIV_OOJ (
+                sequence: 2
+            )
+
+            displayColumn OJ_ID (
+                sequence: 7
+            )
+
+            displayColumn OOJ_ID (
+                sequence: 1
+            )
+
+            displayColumn PREZIME (
+                sequence: 5
+            )
+
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @mjesto-troška-tree
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 141
+                items: {
+                    P141_ID:
+                }
+            }
+        }
+    )
+
+    dynamicAction close-dialog-new (
+        name: Close dialog -New
+        execution {
+            sequence: 90
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @mjesto-troška-tree
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @mjesto-troška-tree
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @mjesto-troška-tree
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode: :P140_SEARCH:=null;
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 20601614479388491
+        }
+    )
+
+)
+

@@ -1,0 +1,706 @@
+page 1002 (
+    name: Žiro računi / Detalji
+    alias: ŽIRO-RAČUNI-DETALJI
+    title: Žiro računi / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovna-organizaciona-jedinica-banka-detalji (
+        name: Osnovna organizaciona jedinica / Banka / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1002_BANKA_ID (
+        type: selectOne
+        label {
+            label: Banka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-banke
+        }
+        layout {
+            sequence: 30
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P1002_BROJ (
+        type: textField
+        label {
+            label: Broj
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P1002_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1002_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Konto
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    rpad(code, core.ooj_pkg.get_konto_duzina(:APP_OOJ_ID), '0') || ' - ' || naziv as d,
+                    id as r
+                FROM
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    length(code) >= 4 
+                    AND (ooj_id = :APP_OOJ_ID or ooj_id is null)
+                    and code like '24%'
+                ```
+        }
+        layout {
+            sequence: 90
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNotInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp_prosto
+            ]
+        }
+        help {
+            helpText: Analitički konto preko kojeg se prati priliv i odliv sa računa.
+        }
+    )
+
+    pageItem P1002_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1002_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+            height: 3
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Opis namjene žiro računa.
+        }
+    )
+
+    pageItem P1002_SIFRA (
+        type: textField
+        label {
+            label: Šifra
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            column: 1
+            columnSpan: 5
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText: Jedinstvena šifra računa, u svrhu lakšeg praćenja izvoda po žiro računu.
+        }
+    )
+
+    pageItem P1002_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 120
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        source {
+            type: staticValue
+            staticValue: 'DA'
+        }
+    )
+
+    pageItem P1002_VALUTA (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 60
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P1002_VRSTA_NALOGA_GK (
+        type: selectOne
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga-izvodi
+        }
+        layout {
+            sequence: 100
+            region: @osnovna-organizaciona-jedinica-banka-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNotInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp_prosto
+            ]
+        }
+        help {
+            helpText: Vrsta naloga Glavne knjige kroz koji će se knjižiti priliv i odliv sa žiro računa.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P1002_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1002_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1002_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation banka-not-null (
+        name: Banka NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1002_BANKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1002_BANKA_ID
+        }
+    )
+
+    validation sifra-not-null (
+        name: Sifra NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1002_SIFRA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1002_SIFRA
+        }
+    )
+
+    validation validacija-konta (
+        name: Validacija konta
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare 
+                
+                v_pom number;
+                
+                begin
+                
+                
+                
+                
+                
+                    if :P1002_KONTNA_KLASA_ID  is not null then 
+                
+                            select count(*) 
+                            into v_pom
+                            from sif.sif_ziro_racuni zr
+                            where zr.ooj_id=:APP_OOJ_ID
+                            and zr.kontna_klasa_id=:P1002_KONTNA_KLASA_ID
+                            and nvl(zr.id,0)<>nvl(:P1002_ID,0);
+                
+                
+                            if v_pom>0 then 
+                
+                                return 'Za jedno konto može biti vezan samo jedan žiro račun.';
+                
+                            end if;
+                
+                    end if;
+                
+                
+                end;
+                ```
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation ziro-racun-not-null (
+        name: Ziro racun NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1002_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1002_BROJ
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 269256883288153676
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.delete_ziro_racun (
+                                p_id              => :P1002_ID
+                    );
+                
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 269256478987153675
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                if :P1002_ID is not null then
+                
+                        core.ooj_pkg.get_ziro_racun (
+                                    p_id            =>  :P1002_ID,
+                                    p_ooj_id        =>  :P1002_OOJ_ID,
+                                    p_banka_id      =>  :P1002_BANKA_ID,
+                                    p_sifra         =>  :P1002_SIFRA,
+                                    p_broj          =>  :P1002_BROJ,
+                                    p_opis          =>  :P1002_OPIS,
+                                    p_valuta_id     =>  :P1002_VALUTA,
+                                  p_kontna_klasa_id =>  :P1002_KONTNA_KLASA_ID,
+                                  p_vrsta_naloga_id =>  :P1002_VRSTA_NALOGA_GK,
+                                    p_valid         =>  :P1002_VALID
+                            );
+                
+                else
+                
+                      
+                        
+                        :P1002_BANKA_ID:=null;
+                        :P1002_SIFRA:=null;
+                        :P1002_BROJ:=null;
+                        :P1002_OPIS:=null;
+                        :P1002_VALUTA:=null;
+                        :P1002_KONTNA_KLASA_ID:=null;
+                        :P1002_VRSTA_NALOGA_GK:=null;
+                        :P1002_VALID:='Y';
+                
+                end if;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 269255218963153672
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare 
+                v_id number;
+                
+                begin 
+                
+                        core.ooj_pkg.insert_ziro_racun (
+                                p_ooj_id            =>  :APP_OOJ_ID,
+                                p_banka_id          =>  :P1002_BANKA_ID,
+                                p_sifra             =>  :P1002_SIFRA,
+                                p_broj              =>  :P1002_BROJ,
+                                p_opis              =>  :P1002_OPIS,
+                                p_valuta_id         =>  :P1002_VALUTA,
+                                p_kontna_klasa_id   => :P1002_KONTNA_KLASA_ID,
+                                p_vrsta_naloga_id   => :P1002_VRSTA_NALOGA_GK, 
+                                p_valid             => :P1002_VALID,
+                                p_id                =>  v_id
+                            );
+                end;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 269255642513153674
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.update_ziro_racun (
+                                p_id              => :P1002_ID,
+                                p_ooj_id            =>  :APP_OOJ_ID,
+                                p_banka_id          =>  :P1002_BANKA_ID,
+                                p_sifra             =>  :P1002_SIFRA,
+                                p_broj              =>  :P1002_BROJ,
+                                p_opis              =>  :P1002_OPIS,
+                                p_valuta_id         =>  :P1002_VALUTA,
+                                p_kontna_klasa_id   => :P1002_KONTNA_KLASA_ID,
+                                p_vrsta_naloga_id   => :P1002_VRSTA_NALOGA_GK, 
+                                p_valid             => :P1002_VALID
+                            );
+                
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 269256055547153674
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

@@ -1,0 +1,390 @@
+page 114 (
+    name: Grupe stavki
+    alias: GRUPE-STAVKI
+    title: Grupe stavki
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            U okviru konfiguracije nalazi se sekcija <b><em>"Grupe stavki"</em></b>, čija je svrha olakšavanje klasifikacije 
+            i filtriranja stavki na stranici <b><em>"Stavke"</em></b>. </br>
+            Sistem omogućava kreiranje posebnih grupa koje se kasnije koriste u pretragama, posebno kada se 
+            unose stavke tipa roba ili proizvod. </br> 
+            Tada se automatski otvara dodatno polje putem kojeg se stavka može 
+            povezati s odgovarajućom grupom. </br>
+            </br>
+            Kreiranje nove grupe: </br> 
+            Klikom na dugme <b><em>"Novi unos"</em></b> otvara se modalni dijalog 
+            u kojem je obavezno unijeti šifru i naziv grupe. </br>
+            Pored toga, potrebno je odabrati tip kreiranja i 
+            povezati grupu sa odgovarajućom kontnom klasom. </br>
+            
+            U okviru grupe <b>1</b> nije moguće mijenjati stavke koje su već unesene (tip kreiranja i kontna klasa). </br>
+            Ova zabrana je uvedena radi očuvanja konzistentnosti sistema i integriteta unesenih podataka.
+            ```
+    }
+
+    region grupe-stavki (
+        name: Grupe stavki
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    
+                    sifra,
+                    naziv,
+                    updated,
+                    updated_by,
+                    
+                    apex_page.get_url(
+                        p_page   => 115,
+                        p_items  => 'P115_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-gears' as icon_class
+                FROM 
+                    sif.acc_grupe_stavki
+                WHERE
+                    (ooj_id IS null OR ooj_id = :APP_OOJ_ID) 
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #UPDATED# / #UPDATED_BY#
+                    </span>
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #SIFRA#
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Sifra
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: SINCE
+            }
+        )
+
+        column UPDATED_BY (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Updated By
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+    )
+
+    region grupe-stavki-2 (
+        name: Grupe stavki
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @grupe-stavki
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P114_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @grupe-stavki-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 115
+                clearCache: 115
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @grupe-stavki
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @grupe-stavki
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @grupe-stavki
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

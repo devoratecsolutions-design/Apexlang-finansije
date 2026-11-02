@@ -1,0 +1,1334 @@
+page 509 (
+    name: Unos budžetskih stavki
+    alias: UNOS-BUDŽETSKIH-STAVKI
+    title: Unos budžetskih stavki
+    pageGroup: @budžet
+    appearance {
+        pageTemplate: @left-side-column
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.js
+    }
+    css {
+        fileUrls: #WORKSPACE_FILES#left-side-toggle#MIN#.css
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region button-wrapper (
+        name: Button Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @left-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P509_OJ_ID IS NOT null AND :P509_STATUS_SIFRA = 10
+        }
+    )
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons-bar-2 (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons-wrapper (
+        name: Buttons Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: fullWidthContent
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region left-wrapper (
+        name: Left Wrapper
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: leftColumn
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-side
+        }
+        advanced {
+            htmlDomId: filter-region
+        }
+    )
+
+    region nacrt-je-već-poslat-za-ovu-organizacionu-jedinicu (
+        name: Nacrt je već poslat za ovu organizacionu jedinicu
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P509_OJ_ID IS NOT null AND :P509_STATUS_SIFRA != 10
+        }
+    )
+
+    region odaberite-organizacionu-jedinicu (
+        name: Odaberite organizacionu jedinicu
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P509_OJ_ID
+        }
+    )
+
+    region organizaciona-jedinica (
+        name: Organizaciona jedinica
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    oj_naziv,
+                    max_iznos,
+                    status_naziv,
+                    status_color_code
+                FROM
+                    vw_budzet_oj
+                WHERE
+                    budzet_id = :P509_BUDZET_ID
+                    AND oj_id = :P509_OJ_ID
+                ```
+            pageItemsToSubmit: [
+                P509_OJ_ID
+                P509_BUDZET_ID
+            ]
+        }
+        layout {
+            sequence: 30
+            parentRegion: @left-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column MAX_IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Maksimalan iznos budžeta
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+        )
+
+    )
+
+    region osnovne-informacije-report (
+        name: Osnovne informacije Report
+        title: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    godina,
+                    status_naziv,
+                    status_color_code,
+                    interval_naziv,
+                    valuta_naziv,
+                    napomena
+                FROM
+                    vw_budzeti
+                WHERE
+                    id = :P509_BUDZET_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @left-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+                margin-bottom-none
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column GODINA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+        )
+
+        column INTERVAL_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Interval
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column NAPOMENA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Napomena
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+        )
+
+        column VALUTA_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+    )
+
+    region unos-budžetskih-stavki (
+        name: Unos budžetskih stavki
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region unos-budžetskih-stavki-ig (
+        name: Unos budžetskih stavki IG
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH stavke AS (
+                    SELECT
+                        id,
+                        stavka_id,
+                        projekat_id,
+                        period,
+                        iznos,
+                        napomena
+                    FROM
+                        vw_budzet_stavke
+                    WHERE
+                        budzet_id = :P509_BUDZET_ID
+                        AND oj_id = :P509_OJ_ID
+                    ORDER BY
+                        stavka_id,
+                        period,
+                        projekat_id
+                )
+                SELECT
+                    id,
+                    stavka_id,
+                    projekat_id,
+                    period,
+                    iznos,
+                    napomena
+                FROM
+                    stavke
+                ```
+            pageItemsToSubmit: [
+                P509_BUDZET_ID
+                P509_OJ_ID
+            ]
+        }
+        layout {
+            sequence: 20
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-grid
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        componentAppearance {
+            selectFirstRow: false
+            fixedRowHeight: false
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    let $ = apex.jQuery,
+                        toolbarData = $.apex.interactiveGrid.copyDefaultToolbar();
+                        addrowAction = toolbarData.toolbarFind("selection-add-row"),
+                        addrowAction.label = "Nova stavka"; // Pick name you need
+                        editrowAction = toolbarData.toolbarFind("edit"),
+                        editrowAction.label = "Izmjeni"; // Pick name you need
+                        saverowAction = toolbarData.toolbarFind("save"),
+                        saverowAction.label = "Sačuvaj izmjene"
+                        options.toolbarData = toolbarData;
+                    
+                    options.defaultGridViewOptions = {
+                        reorderColumns: false
+                    }
+                    return options;
+                }
+                
+                
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 144449117325588973
+        }
+
+        savedReport 1444496 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @PROJEKAT_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @PERIOD
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @NAPOMENA
+                layout {
+                    sequence: 6
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column ID (
+            type: displayOnly
+            heading {
+                heading: Detalji
+            }
+            layout {
+                sequence: 110
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P509_BUDZET_ID.
+                        P510_ID: &ID.
+                        P510_STATUS_SIFRA: &P509_STATUS_SIFRA.
+                    }
+                    clearCache: 510
+                }
+                linkText: <img src="#APEX_FILES#app_ui/img/icons/apex-edit-view.png" class="apex-edit-view" alt="">
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column IZNOS (
+            type: numberField
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column NAPOMENA (
+            type: textarea
+            heading {
+                heading: Napomena
+            }
+            settings {
+                autoHeight: true
+                charCounter: true
+            }
+            layout {
+                sequence: 100
+            }
+            validation {
+                maxLength: 1000
+            }
+            source {
+                databaseColumn: NAPOMENA
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PERIOD (
+            type: selectList
+            heading {
+                heading: Period
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    WITH params AS (
+                        -- Parameters
+                        SELECT :P509_BROJ_MJESECI AS p_months,
+                               :P509_GODINA AS p_year
+                        FROM dual
+                    ),
+                    months AS (
+                        SELECT LEVEL AS month_num,
+                               ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                        FROM dual
+                        CROSS JOIN params p
+                        CONNECT BY LEVEL <= 12
+                    ),
+                    periods AS (
+                        SELECT m.month_num,
+                               m.first_day,
+                               CEIL(m.month_num / p.p_months) AS q_num,
+                               p.p_months
+                        FROM months m
+                        CROSS JOIN params p
+                    )
+                    SELECT 
+                        'P' || q_num || ' = ' ||
+                        TRIM(TO_CHAR(MIN(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                        CASE WHEN p_months > 1 
+                             THEN ' - ' || TRIM(TO_CHAR(MAX(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                             ELSE ''
+                        END AS display,
+                        TRUNC(MIN(first_day)) AS return_date
+                    FROM periods
+                    GROUP BY q_num, p_months
+                    ORDER BY q_num;
+                    
+                    ```
+                nullDisplayValue: - Izaberite period -
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: PERIOD
+                dataType: date
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PROJEKAT_ID (
+            type: selectList
+            heading {
+                heading: Projekat
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-projekti
+                nullDisplayValue: - Izaberite projekat -
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: PROJEKAT_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column STAVKA_ID (
+            type: popupLov
+            heading {
+                heading: Stavka
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        lpad(naziv, length(naziv) + (level - 1 ) * 4, '.') AS d,
+                        id AS r
+                    FROM
+                        vw_budzetske_stavke
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND (oj_id = :P509_OJ_ID OR oj_id IS null)
+                    CONNECT BY
+                        PRIOR id = stavka_id
+                    START WITH
+                        stavka_id IS null
+                    ORDER SIBLINGS BY
+                        id
+                    ```
+                nullDisplayValue: - Izaberite stavku -
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P509_OJ_ID IS NOT null AND :P509_STATUS_SIFRA = 10
+        }
+    )
+
+    pageItem P509_BROJ_MJESECI (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: body
+        }
+    )
+
+    pageItem P509_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P509_BUDZET_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    pageItem P509_GODINA (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: body
+        }
+    )
+
+    pageItem P509_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_naziv || ' ( ' || status_naziv || ' ) ' AS d,
+                    oj_id AS r
+                FROM
+                    vw_budzet_oj
+                WHERE
+                    budzet_id = :P509_BUDZET_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            region: @left-wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-none
+                margin-bottom-md
+            ]
+            width: 30
+        }
+    )
+
+    pageItem P509_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    button check (
+        buttonName: CHECK
+        label: Provjeri unos
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--stretch
+                t-Button--gapBottom
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 513
+                items: {
+                    P513_BUDZET_ID: &P509_BUDZET_ID.
+                    P513_OJ_ID: &P509_OJ_ID.
+                }
+                clearCache: 513
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button check-down (
+        buttonName: CHECK_DOWN
+        label: Provjeri unos
+        layout {
+            sequence: 20
+            region: @buttons-bar-2
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--stretch
+                t-Button--gapBottom
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 513
+                items: {
+                    P513_BUDZET_ID: &P509_BUDZET_ID.
+                    P513_OJ_ID: &P509_OJ_ID.
+                }
+                clearCache: 513
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Sačuvaj stavke
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--stretch
+                t-Button--gapBottom
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save-down (
+        buttonName: SAVE_DOWN
+        label: Sačuvaj stavke
+        layout {
+            sequence: 10
+            region: @buttons-bar-2
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button send (
+        buttonName: SEND
+        label: Završi nacrt budžeta
+        layout {
+            sequence: 10
+            region: @button-wrapper
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+                t-Button--gapTop
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 514
+                items: {
+                    P514_BUDZET_ID: &P509_BUDZET_ID.
+                    P514_OJ_ID: &P509_OJ_ID.
+                }
+                clearCache: 514
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button toggle (
+        buttonName: TOGGLE
+        label: Expand / Collapse Side Column
+        layout {
+            sequence: 10
+            region: @buttons-wrapper
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--pillEnd
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        advanced {
+            htmlDomId: toggle-btn
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 50
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: columns
+            interactiveGrid: @unos-budžetskih-stavki-ig
+            columns: ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @unos-budžetskih-stavki-ig
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 60
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @unos-budžetskih-stavki-ig
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @unos-budžetskih-stavki-ig
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction expand-collapse-side-column (
+        name: Expand / Collapse Side Column
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @toggle
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: toggleSidebar();
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P509_OJ_ID
+        }
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: REFRESH
+                showProcessing: false
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-oj-data (
+        name: Get OJ data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet_oj (
+                    p_budzet_id    => :P509_BUDZET_ID,
+                    p_oj_id        => :P509_OJ_ID,
+                    p_status_sifra => :P509_STATUS_SIFRA
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 145404685097423413
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P509_OJ_ID
+        }
+    )
+
+    process setup-oj (
+        name: Setup OJ
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                hrm.evidencija_pkg.get_radnik (
+                    p_radnik_id => :APP_RADNIK_ID,
+                    p_oj_id     => :P509_OJ_ID
+                );
+                
+                budzet_pkg.get_budzet (
+                    p_id           => :P509_BUDZET_ID,
+                    p_broj_mjeseci => :P509_BROJ_MJESECI,
+                    p_godina       => :P509_GODINA,
+                    p_status_sifra => :P509_BUDZET_STATUS_SIFRA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 144394648155239242
+        }
+        serverSideCondition {
+            type: request=Value
+            value: setup
+        }
+    )
+
+    process stavke-stavke-ig (
+        name: Stavke stavke IG
+        type: executeCode
+        editableRegion: @unos-budžetskih-stavki-ig
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'D' THEN -- DELETE
+                    budzet_pkg.delete_budzet_stavka (
+                        p_id => :ID
+                    );
+                
+                ELSIF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                    budzet_pkg.insert_budzet_stavka (
+                        p_budzet_id         => :P509_BUDZET_ID,
+                        p_oj_id             => :P509_OJ_ID,
+                        p_stavka_id         => :STAVKA_ID,
+                        p_projekat_id       => :PROJEKAT_ID,
+                        p_period            => :PERIOD,
+                        p_iznos             => to_number(:IZNOS, '999G999G999G999G990D00'),
+                        p_napomena          => :NAPOMENA
+                    );
+                
+                    RETURN;
+                ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    budzet_pkg.update_budzet_stavka (
+                        p_id                => :ID,
+                        p_budzet_id         => :P509_BUDZET_ID,
+                        p_oj_id             => :P509_OJ_ID,
+                        p_stavka_id         => :STAVKA_ID,
+                        p_projekat_id       => :PROJEKAT_ID,
+                        p_period            => :PERIOD,
+                        p_iznos             => to_number(:IZNOS, '999G999G999G999G990D00'),
+                        p_napomena          => :NAPOMENA
+                    );
+                
+                    RETURN;
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 144769267410894001
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: requestIsContainedInValue
+            value: SAVE,SAVE_DOWN
+        }
+    )
+
+)
+

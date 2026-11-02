@@ -1,0 +1,467 @@
+page 515 (
+    name: Nacrt budžeta / Odobravanje
+    alias: NACRT-BUDŽETA-ODOBRAVANJE
+    title: Nacrt budžeta / Odobravanje
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region lista-organizacionih-jedinica (
+        name: Lista organizacionih jedinica
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_naziv,
+                    status_naziv,
+                    status_color_code,
+                    max_iznos,
+                    stavke_sum,
+                    CASE
+                        WHEN stavke_sum > max_iznos THEN
+                            'Y'
+                        ELSE
+                            'N'
+                    END AS over_limit
+                FROM
+                    vw_budzet_oj
+                WHERE
+                    budzet_id = :P515_BUDZET_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column MAX_IZNOS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Maksimalan iznos
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OVER_LIMIT (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: "Status "
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if !=OVER_LIMIT/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    {else/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-exclamation-circle-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKE_SUM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Suma stavki
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    pageItem P515_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P515_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    button accept (
+        buttonName: ACCEPT
+        label: Odobri
+        layout {
+            sequence: 30
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-5
+            icon: fa-check-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button reject (
+        buttonName: REJECT
+        label: "Odbij "
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-ban
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P515_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P515_KOMENTAR
+        }
+        serverSideCondition {
+            whenButtonPressed: @reject
+        }
+    )
+
+    process odbij (
+        name: Odbij
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                FOR c1 IN (
+                    SELECT
+                        oj_id
+                    FROM
+                        budzet_oj
+                    WHERE
+                        budzet_id = :P515_BUDZET_ID
+                ) LOOP
+                    budzet_pkg.insert_budzet_oj_hist (
+                        p_budzet_id => :P515_BUDZET_ID,
+                        p_oj_id     => c1.oj_id,
+                        p_status_id => sif.budzet_pkg.get_status_with_sifra('30'),
+                        p_radnik_id => :APP_RADNIK_ID,
+                        p_komentar  => null,
+                        p_datum     => current_date
+                    );
+                    
+                    budzet_pkg.insert_budzet_oj_hist (
+                        p_budzet_id => :P515_BUDZET_ID,
+                        p_oj_id     => c1.oj_id,
+                        p_status_id => sif.budzet_pkg.get_status_with_sifra('50'),
+                        p_radnik_id => :APP_RADNIK_ID,
+                        p_komentar  => :P515_KOMENTAR,
+                        p_datum     => current_date
+                    );
+                
+                    budzet_pkg.insert_budzet_oj_hist (
+                        p_budzet_id => :P515_BUDZET_ID,
+                        p_oj_id     => c1.oj_id,
+                        p_status_id => sif.budzet_pkg.get_status_with_sifra('10'),
+                        p_radnik_id => :APP_RADNIK_ID,
+                        p_komentar  => null,
+                        p_datum     => current_date
+                    );
+                END LOOP;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 145491981390782333
+        }
+        serverSideCondition {
+            whenButtonPressed: @reject
+        }
+    )
+
+    process prihvati (
+        name: Prihvati
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                FOR c1 IN (
+                    SELECT
+                        oj_id
+                    FROM
+                        budzet_oj
+                    WHERE
+                        budzet_id = :P515_BUDZET_ID
+                ) LOOP
+                    budzet_pkg.insert_budzet_oj_hist (
+                        p_budzet_id => :P515_BUDZET_ID,
+                        p_oj_id     => c1.oj_id,
+                        p_status_id => sif.budzet_pkg.get_status_with_sifra('30'),
+                        p_radnik_id => :APP_RADNIK_ID,
+                        p_komentar  => null,
+                        p_datum     => current_date
+                    );
+                
+                    budzet_pkg.insert_budzet_oj_hist (
+                        p_budzet_id => :P515_BUDZET_ID,
+                        p_oj_id     => c1.oj_id,
+                        p_status_id => sif.budzet_pkg.get_status_with_sifra('40'),
+                        p_radnik_id => :APP_RADNIK_ID,
+                        p_komentar  => :P515_KOMENTAR,
+                        p_datum     => current_date
+                    );
+                END LOOP;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 145721788471057118
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 506
+            }
+        }
+    )
+
+)
+

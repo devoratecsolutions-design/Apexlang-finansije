@@ -1,0 +1,7 @@
+restDataSourceServer epdv_ba_web_csv (
+    name: epdv-ba-web-csv
+    endpointUrl {
+        url: https://epdv.ba/
+    }
+)
+

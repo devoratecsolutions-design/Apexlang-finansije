@@ -1,0 +1,67 @@
+page 102 (
+    name: Izgled faktura / Pregled
+    alias: IZGLED-FAKTURA-PREGLED
+    title: Izgled faktura / Pregled
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    pageItem P102_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    dynamicAction preview-file (
+        name: Preview File
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P102_ID
+        }
+
+        action native-download (
+            action: download
+            fileHandling {
+                viewFileAs: inline
+            }
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        dokument,
+                        dokument_filename,
+                        dokument_mimetype
+                    FROM
+                        sif.acc_obrasci_faktura
+                    WHERE
+                        id = :P102_ID
+                    ```
+                itemsToSubmit: P102_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+)
+

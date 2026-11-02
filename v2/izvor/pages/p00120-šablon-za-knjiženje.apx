@@ -1,0 +1,1396 @@
+page 120 (
+    name: Šablon za knjiženje
+    alias: ŠABLON-ZA-KNJIŽENJE
+    title: Šablon za knjiženje
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region avansne-fakture (
+        name: Avansne fakture
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 as id,
+                    c002 as automatsko_knjizenje_id,
+                    c003 as automatsko_knjizenje_naziv,
+                    c004 as kontna_klasa_id
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'SABLONI_KONTA_AV'
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: av
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+            ]
+        }
+        componentAppearance {
+            selectFirstRow: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.defaultGridViewOptions = {
+                       reorderColumns:false,
+                       hideEmptyFooter:true,
+                       footer:false,
+                       rowsPerPage:100,
+                       skipReadonlyCells:true
+                }
+                 return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 155853956576435322
+        }
+
+        savedReport 1560372 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @AUTOMATSKO_KNJIZENJE_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @AUTOMATSKO_KNJIZENJE_NAZIV
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @KONTNA_KLASA_ID
+                layout {
+                    sequence: 5
+                }
+            )
+
+            sort (
+                column: @AUTOMATSKO_KNJIZENJE_NAZIV
+                sort {
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column AUTOMATSKO_KNJIZENJE_ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: AUTOMATSKO_KNJIZENJE_ID
+                dataType: varchar2
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column AUTOMATSKO_KNJIZENJE_NAZIV (
+            type: displayOnly
+            heading {
+                heading: Automatsko knjiženje
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: AUTOMATSKO_KNJIZENJE_NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: varchar2
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            type: popupLov
+            heading {
+                heading: Konto
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: KONTNA_KLASA_ID
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region izlazne-fakture (
+        name: Izlazne fakture
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c001 as id,
+                    c002 as automatsko_knjizenje_id,
+                    c003 as automatsko_knjizenje_naziv,
+                    c004 as kontna_klasa_id
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'SABLONI_KONTA_IF'
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: if
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            selectFirstRow: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.defaultGridViewOptions = {
+                       reorderColumns:false,
+                       hideEmptyFooter:true,
+                       footer:false,
+                       rowsPerPage:100,
+                       skipReadonlyCells:true
+                }
+                 return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 155851860856435301
+        }
+
+        savedReport 1558582 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @AUTOMATSKO_KNJIZENJE_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @KONTNA_KLASA_ID
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @AUTOMATSKO_KNJIZENJE_NAZIV
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @SEQ_ID
+                layout {
+                    sequence: 6
+                }
+            )
+
+            sort (
+                column: @AUTOMATSKO_KNJIZENJE_NAZIV
+                sort {
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+        column AUTOMATSKO_KNJIZENJE_ID (
+            type: hidden
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: AUTOMATSKO_KNJIZENJE_ID
+                dataType: varchar2
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column AUTOMATSKO_KNJIZENJE_NAZIV (
+            type: displayOnly
+            heading {
+                heading: Automatsko knjiženje
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: AUTOMATSKO_KNJIZENJE_NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: ID
+                dataType: varchar2
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            type: popupLov
+            heading {
+                heading: Konto
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 80
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: KONTNA_KLASA_ID
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column SEQ_ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: SEQ_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    region tabs (
+        name: Tabs
+        type: staticContent
+        layout {
+            sequence: 70
+            parentRegion: @šablon-za-knjiženje
+            slot: regionBody
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                t-TabsRegion-mod--fillLabels
+                t-TabsRegion-mod--pill
+                t-TabsRegion-mod--large
+            ]
+        }
+    )
+
+    region šablon-za-knjiženje (
+        name: Šablon za knjiženje
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P120_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @šablon-za-knjiženje
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P120_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 40
+            region: @šablon-za-knjiženje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P120_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @šablon-za-knjiženje
+            slot: regionBody
+        }
+    )
+
+    pageItem P120_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @šablon-za-knjiženje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 4
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P120_SUBSCRIBE_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @šablon-za-knjiženje
+            slot: regionBody
+        }
+    )
+
+    pageItem P120_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 60
+            region: @šablon-za-knjiženje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P120_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 119
+                clearCache: 119
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P120_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P120_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P120_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation konto-not-null (
+        name: Konto NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            editableRegion: @izlazne-fakture
+            type: columnIsNotNull
+            column: KONTNA_KLASA_ID
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# must have a value.
+            associatedColumn: KONTNA_KLASA_ID
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P120_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P120_NAZIV
+        }
+    )
+
+    process avansne-fakture (
+        name: Avansne fakture
+        type: executeCode
+        executionChain: @insert-update-konta
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_sabloni_konta IS (
+                        SELECT
+                            seq_id,
+                            c001 as id,
+                            c002 as automatsko_knjizenje_id,
+                            c003 as automatsko_knjizenje_naziv,
+                            c004 as kontna_klasa_id
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'SABLONI_KONTA_AV'
+                    );
+                BEGIN
+                    FOR c1 IN c_sabloni_konta LOOP
+                        IF c1.id IS null THEN
+                            sabloni_pkg.insert_sablon_konto (
+                                p_sablon_id               => :P120_ID,
+                                p_automatsko_knjizenje_id => c1.automatsko_knjizenje_id,
+                                p_kontna_klasa_id         => c1.kontna_klasa_id
+                            );
+                        ELSE
+                            sabloni_pkg.update_sablon_konto (
+                                p_id                      => c1.id,
+                                p_sablon_id               => :P120_ID,
+                                p_automatsko_knjizenje_id => c1.automatsko_knjizenje_id,
+                                p_kontna_klasa_id         => c1.kontna_klasa_id
+                            );
+                        END IF;
+                    END LOOP;
+                END;
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 156102144244662422
+        }
+    )
+
+    process avansne-fakture-ig (
+        name: Avansne fakture - IG
+        type: executeCode
+        executionChain: @update-collection
+        editableRegion: @avansne-fakture
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                    apex_collection.add_member (
+                        p_collection_name => 'SABLONI_KONTA_AV',
+                        p_c001            => null,
+                        p_c002            => :AUTOMATSKO_KNJIZENJE_ID,
+                        p_c003            => :AUTOMATSKO_KNJIZENJE_NAZIV,
+                        p_c004            => :KONTNA_KLASA_ID
+                    );
+                
+                ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    apex_collection.update_member (
+                        p_collection_name => 'SABLONI_KONTA_AV',
+                        p_seq             => :SEQ_ID,
+                        p_c001            => :ID,
+                        p_c002            => :AUTOMATSKO_KNJIZENJE_ID,
+                        p_c003            => :AUTOMATSKO_KNJIZENJE_NAZIV,
+                        p_c004            => :KONTNA_KLASA_ID
+                    );
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 155856280693435345
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+    )
+
+    process clear-id (
+        name: Clear ID
+        type: clearSessionState
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 84978012229158731
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 154956381970667018
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process copy-basic (
+        name: Copy basic
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_id NUMBER;
+                BEGIN
+                    l_id := sabloni_pkg.get_basic_sablon_id;
+                apex_debug.message('copy basic');
+                
+                    sabloni_pkg.get_sablon (
+                        p_id           => l_id,
+                        p_ooj_id       => :P120_OOJ_ID,
+                        p_naziv        => :P120_NAZIV,
+                        p_opis         => :P120_OPIS,
+                        p_subscribe_id => :P120_SUBSCRIBE_ID,
+                        p_valid        => :P120_VALID
+                    );
+                
+                    :P120_SUBSCRIBE_ID := l_id;
+                
+                    IF apex_collection.collection_exists ('SABLONI_KONTA_IF') THEN
+                        apex_collection.delete_collection(
+                            p_collection_name => 'SABLONI_KONTA_IF'
+                        );
+                    END IF;
+                
+                    IF apex_collection.collection_exists ('SABLONI_KONTA_AV') THEN
+                        apex_collection.delete_collection(
+                            p_collection_name => 'SABLONI_KONTA_AV'
+                        );
+                    END IF;
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'SABLONI_KONTA_IF',
+                        p_query           => '
+                            SELECT
+                                null,
+                                automatsko_knjizenje_id,
+                                automatsko_knjizenje_naziv,
+                                kontna_klasa_id
+                            FROM
+                                vw_sabloni_konta
+                            WHERE
+                                sablon_id = ' || l_id || '
+                                AND lower(vrsta_naloga_sifra) = ''if''
+                    ');
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'SABLONI_KONTA_AV',
+                        p_query           => '
+                            SELECT
+                                null,
+                                automatsko_knjizenje_id,
+                                automatsko_knjizenje_naziv,
+                                kontna_klasa_id
+                            FROM
+                                vw_sabloni_konta
+                            WHERE
+                                sablon_id = ' || l_id || '
+                                AND lower(vrsta_naloga_sifra) = ''av''
+                    ');
+                END;
+                ```
+        }
+        execution {
+            sequence: 30
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157491633347763006
+        }
+        serverSideCondition {
+            type: request=Value
+            value: copy_basic
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sabloni_pkg.delete_sablon (
+                    p_id => :P120_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 154757130492158443
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sabloni_pkg.get_sablon (
+                    p_id           => :P120_ID,
+                    p_ooj_id       => :P120_OOJ_ID,
+                    p_naziv        => :P120_NAZIV,
+                    p_opis         => :P120_OPIS,
+                    p_subscribe_id => :P120_SUBSCRIBE_ID,
+                    p_valid        => :P120_VALID
+                );
+                apex_debug.message('dbg get data');
+                
+                IF apex_collection.collection_exists ('SABLONI_KONTA_IF') THEN
+                    apex_collection.delete_collection(
+                        p_collection_name => 'SABLONI_KONTA_IF'
+                    );
+                END IF;
+                
+                IF apex_collection.collection_exists ('SABLONI_KONTA_AV') THEN
+                    apex_collection.delete_collection(
+                        p_collection_name => 'SABLONI_KONTA_AV'
+                    );
+                END IF;
+                
+                apex_collection.create_collection_from_query (
+                    p_collection_name => 'SABLONI_KONTA_IF',
+                    p_query           => '
+                        SELECT
+                            id,
+                            automatsko_knjizenje_id,
+                            automatsko_knjizenje_naziv,
+                            kontna_klasa_id
+                        FROM
+                            vw_sabloni_konta
+                        WHERE
+                            sablon_id = ' || :P120_ID || '
+                            AND lower(vrsta_naloga_sifra) = ''if''
+                ');
+                
+                apex_collection.create_collection_from_query (
+                    p_collection_name => 'SABLONI_KONTA_AV',
+                    p_query           => '
+                        SELECT
+                            id,
+                            automatsko_knjizenje_id,
+                            automatsko_knjizenje_naziv,
+                            kontna_klasa_id
+                        FROM
+                            vw_sabloni_konta
+                        WHERE
+                            sablon_id = ' || :P120_ID || '
+                            AND lower(vrsta_naloga_sifra) = ''av''
+                ');
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 154757279065158444
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P120_ID IS NOT null OR :REQUEST != 'copy_basic'
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P120_ID := sabloni_pkg.insert_sablon (
+                    p_ooj_id       => :APP_OOJ_ID,
+                    p_naziv        => :P120_NAZIV,
+                    p_opis         => :P120_OPIS,
+                    p_subscribe_id => :P120_SUBSCRIBE_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 154756969274158441
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process insert-update-konta (
+        name: Insert/Update - Konta
+        type: executionChain
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 156102007571662421
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    process izlazne-fakture (
+        name: Izlazne fakture
+        type: executeCode
+        executionChain: @insert-update-konta
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_sabloni_konta IS (
+                        SELECT
+                            seq_id,
+                            c001 as id,
+                            c002 as automatsko_knjizenje_id,
+                            c003 as automatsko_knjizenje_naziv,
+                            c004 as kontna_klasa_id
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'SABLONI_KONTA_IF'
+                    );
+                BEGIN
+                    FOR c1 IN c_sabloni_konta LOOP
+                        IF c1.id IS null THEN
+                            sabloni_pkg.insert_sablon_konto (
+                                p_sablon_id               => :P120_ID,
+                                p_automatsko_knjizenje_id => c1.automatsko_knjizenje_id,
+                                p_kontna_klasa_id         => c1.kontna_klasa_id
+                            );
+                        ELSE
+                            sabloni_pkg.update_sablon_konto (
+                                p_id                      => c1.id,
+                                p_sablon_id               => :P120_ID,
+                                p_automatsko_knjizenje_id => c1.automatsko_knjizenje_id,
+                                p_kontna_klasa_id         => c1.kontna_klasa_id
+                            );
+                        END IF;
+                    END LOOP;
+                END;
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 156100216776662403
+        }
+    )
+
+    process izlazne-fakture-ig (
+        name: Izlazne fakture - IG
+        type: executeCode
+        executionChain: @update-collection
+        editableRegion: @izlazne-fakture
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                    apex_collection.add_member (
+                        p_collection_name => 'SABLONI_KONTA_IF',
+                        p_c001            => null,
+                        p_c002            => :AUTOMATSKO_KNJIZENJE_ID,
+                        p_c003            => :AUTOMATSKO_KNJIZENJE_NAZIV,
+                        p_c004            => :KONTNA_KLASA_ID
+                    );
+                
+                ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    apex_collection.update_member (
+                        p_collection_name => 'SABLONI_KONTA_IF',
+                        p_seq             => :SEQ_ID,
+                        p_c001            => :ID,
+                        p_c002            => :AUTOMATSKO_KNJIZENJE_ID,
+                        p_c003            => :AUTOMATSKO_KNJIZENJE_NAZIV,
+                        p_c004            => :KONTNA_KLASA_ID
+                    );
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 156100041826662401
+        }
+    )
+
+    process setup-new (
+        name: Setup NEW
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                IF apex_collection.collection_exists ('SABLONI_KONTA_IF') THEN
+                    apex_collection.delete_collection(
+                        p_collection_name => 'SABLONI_KONTA_IF'
+                    );
+                END IF;
+                
+                IF apex_collection.collection_exists ('SABLONI_KONTA_AV') THEN
+                    apex_collection.delete_collection(
+                        p_collection_name => 'SABLONI_KONTA_AV'
+                    );
+                END IF;
+                
+                apex_debug.message('dbg setup new');
+                apex_collection.create_collection_from_query (
+                    p_collection_name => 'SABLONI_KONTA_IF',
+                    p_query           => '
+                        SELECT
+                            null as id,
+                            id as automatsko_knjizenje_id,
+                            naziv as automatsko_knjizenje_naziv,
+                            null as kontna_klasa_id
+                        FROM
+                            sif.vw_automatska_knjizenja
+                        WHERE
+                            valid = ''Y''
+                            AND lower(vrsta_naloga_sifra) = ''if''
+                ');
+                
+                apex_collection.create_collection_from_query (
+                    p_collection_name => 'SABLONI_KONTA_AV',
+                    p_query           => '
+                        SELECT
+                            null as id,
+                            id as automatsko_knjizenje_id,
+                            naziv as automatsko_knjizenje_naziv,
+                            null as kontna_klasa_id
+                        FROM
+                            sif.vw_automatska_knjizenja
+                        WHERE
+                            valid = ''Y''
+                            AND lower(vrsta_naloga_sifra) = ''av''
+                ');
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 154757337578158445
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P120_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sabloni_pkg.update_sablon (
+                    p_id           => :P120_ID,
+                    p_ooj_id       => :APP_OOJ_ID,
+                    p_naziv        => :P120_NAZIV,
+                    p_opis         => :P120_OPIS,
+                    p_subscribe_id => :P120_SUBSCRIBE_ID,
+                    p_valid        => :P120_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 154757038911158442
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process update-collection (
+        name: Update collection
+        type: executionChain
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 156101964139662420
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    process update-subscriptions (
+        name: Update Subscriptions
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sabloni_pkg.update_sablon_subscriptions (
+                    p_id => :P120_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 84978197736158732
+        }
+        serverSideCondition {
+            type: request!=Value
+            value: DELETE
+        }
+    )
+
+)
+

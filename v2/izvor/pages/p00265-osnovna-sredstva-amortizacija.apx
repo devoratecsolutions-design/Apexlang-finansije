@@ -1,0 +1,565 @@
+page 265 (
+    name: Osnovna sredstva / Amortizacija
+    alias: OSNOVNA-SREDSTVA-AMORTIZACIJA
+    title: Osnovna sredstva / Amortizacija
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region osnovna-sredstva-koja-će-biti-amortizovana (
+        name: Osnovna sredstva koja će biti amortizovana
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 as id,
+                    c002 as naziv,
+                    c003 as inventurni_naziv,
+                    c004 as inventurni_broj,
+                    c005 as datum
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'AM_LIST'
+                ORDER BY
+                    to_date(c005, 'MM.YYYY') DESC, inventurni_broj DESC
+                ```
+            pageItemsToSubmit: P265_PP
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DATUM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column INVENTURNI_BROJ (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 40
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    pageItem P265_COUNT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P265_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+                
+                ```
+        }
+    )
+
+    pageItem P265_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P265_PP (
+        type: selectMany
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH month_generator (month_date) AS (
+                    SELECT
+                        trunc(min(add_months(datum, 1)), 'MM') as month_date
+                    FROM
+                        sec_osnovna_sredstva
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND valid = 'Y'
+                    
+                    UNION ALL
+                    
+                    SELECT ADD_MONTHS(month_date, 1) as month_date
+                    FROM month_generator
+                    WHERE month_date < add_months(sysdate, -1) 
+                )
+                SELECT 
+                    trim(to_char(month_date, 'Month', 'NLS_DATE_LANGUAGE = ''LATIN SERBIAN''')) || ', ' || extract(year from month_date) AS d,
+                    to_char(month_date, 'MMYY') as r
+                FROM 
+                    month_generator
+                -- WHERE 
+                --     TRUNC(month_date, 'MM') NOT IN (
+                --         SELECT 
+                --             trunc(datum, 'MM') 
+                --         FROM 
+                --             vw_osnovno_sredstvo_vrijednosti
+                --         WHERE
+                --             ooj_id = :APP_OOJ_ID
+                --             AND lower(transakcija_sifra) = 'am_d'
+                --     )
+                ORDER BY month_date DESC;
+                
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button amortizacija (
+        buttonName: AMORTIZACIJA
+        label: Amortizacija
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-trend-down
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction count-togglee-report-button (
+        name: Count - Togglee- Report/Button
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P265_COUNT
+        }
+        clientSideCondition {
+            type: item>value
+            item: P265_COUNT
+            value: 0
+        }
+
+        action hide-button (
+            name: Hide - Button
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @amortizacija
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action hide-region (
+            name: Hide - Region
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @osnovna-sredstva-koja-će-biti-amortizovana
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @osnovna-sredstva-koja-će-biti-amortizovana
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action show-button (
+            name: Show - Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @amortizacija
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action show-region (
+            name: Show - Region
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @osnovna-sredstva-koja-će-biti-amortizovana
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-report-button (
+        name: Toggle - Report/Button
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P265_PP
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        CURSOR c_pp_list IS (
+                            SELECT
+                                to_date(column_value, 'MMYY') as datum
+                            FROM
+                                apex_string.split(:P265_PP, ':')
+                    
+                        );
+                    
+                        CURSOR c_os (p_pp IN DATE) IS (
+                            SELECT
+                                os.id,
+                                os.naziv,
+                                os.inventurni_naziv,
+                                os.inventurni_broj,
+                                to_char(p_pp, 'MM.YYYY') as datum
+                            FROM
+                                sec_osnovna_sredstva os
+                            WHERE
+                                os.ooj_id = :APP_OOJ_ID
+                                AND os.aktivirano = 'Y'
+                                AND os.valid = 'Y'
+                                AND os.datum < p_pp
+                                    AND os.id NOT IN (
+                                        SELECT
+                                            gks.osnovno_sredstvo_id
+                                        FROM
+                                            vw_glavna_knjiga_stavke gks
+                                        WHERE
+                                            trunc(p_pp, 'MM') = trunc(gks.glavna_knjiga_datum_knjizenja, 'MM')
+                                            AND lower(transakcija_sifra) = 'am_p'
+                                    )
+                                AND os.history_id IS null
+                        );
+                    BEGIN
+                        apex_collection.create_or_truncate_collection (
+                            p_collection_name => 'AM_LIST'
+                        );
+                    
+                        :P265_COUNT := 0;
+                        FOR pp IN c_pp_list LOOP
+                            FOR os IN c_os (pp.datum) LOOP
+                                apex_collection.add_member (
+                                    p_collection_name => 'AM_LIST',
+                                    p_c001            => os.id,
+                                    p_c002            => os.naziv,
+                                    p_c003            => os.inventurni_naziv,
+                                    p_c004            => os.inventurni_broj,
+                                    p_c005            => os.datum
+                                );
+                    
+                                :P265_COUNT := :P265_COUNT + 1;
+                            END LOOP;
+                        END LOOP;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P265_PP
+                    P265_COUNT
+                ]
+                itemsToReturn: P265_COUNT
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P265_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P265_KNJIZI_YN
+        }
+    )
+
+    process amortizacija (
+        name: Amortizacija
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P265_NALOG_ID := glavna_knjiga_pkg.knjizi_os_amortizcija_pp_list (
+                    p_ooj_id      => :APP_OOJ_ID,
+                    p_pp_list     => :P265_PP,
+                    p_proknjizeno => :P265_KNJIZI_YN
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 95832156622797308
+        }
+        serverSideCondition {
+            whenButtonPressed: @amortizacija
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P265_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+    )
+
+)
+

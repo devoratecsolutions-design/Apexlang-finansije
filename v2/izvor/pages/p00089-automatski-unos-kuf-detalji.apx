@@ -1,0 +1,664 @@
+page 89 (
+    name: Automatski unos KUF / Detalji
+    alias: AUTOMATSKI-UNOS-KUF-DETALJI
+    title: Automatski unos KUF / Detalji
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region učitani-kuf-fajl-pregled (
+        name: Učitani KUF fajl (pregled)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    c001 as vrsta_sloga,
+                    c002 as redni_br,
+                    c003 as poreski_period,
+                    c004 as tip_dokumenta,
+                    c005 as broj_fakture,
+                    -- to_date(c006, :P89_KUF_DATE_FORMAT) as datum_fakture,
+                    -- to_date(c007, :P89_KUF_DATE_FORMAT) as datum_prijema_fakture,
+                    c006 as datum_fakture,
+                    c007 as datum_prijema_fakture,
+                    c008 as naziv_dobavljaca,
+                    c009 as sjediste_dobavljaca,
+                    c010 as pdv_broj_dobavljaca,
+                    c011 as jib_broj_dobavljaca,
+                    c012 as iznos_fakture_bezpdv,
+                    c013 as iznos_fakture_sapdv,
+                    c014 as iznos_pausal,
+                    c015 as iznos_ulaznog_pdv,
+                    c016 as iznos_ulazpdv_odbiti,
+                    c017 as iznos_ulazpdv_neodbiti,
+                    c018 as iznos_pdv_32polje,
+                    c019 as iznos_pdv_33polje,
+                    c020 as iznos_pdv_34polje
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'LOAD_KUF'
+                
+                
+                    
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+
+        column BROJ_FAKTURE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Broj fakture
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_PRIJEMA_FAKTURE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Datum prijema fakture
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_BEZPDV (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_SAPDV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PAUSAL (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Paušal
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_32POLJE (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: PDV - 32 polje
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_33POLJE (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            heading {
+                heading: PDV - 33 polje
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_34POLJE (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            heading {
+                heading: PDV - 34 polje
+                alignment: end
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZNOG_PDV (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZPDV_NEODBITI (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV koji se ne može odbiti
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_ULAZPDV_ODBITI (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV koji se može odbiti
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JIB_BROJ_DOBAVLJACA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: JIB broj dobavljača
+            }
+            layout {
+                sequence: 130
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_DOBAVLJACA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Naziv dobavljača
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_BROJ_DOBAVLJACA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: PDV broj dobavljača
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PORESKI_PERIOD (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Poreski period
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BR (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SJEDISTE_DOBAVLJACA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Sjedište dobavljača
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_DOKUMENTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Tip dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_SLOGA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    pageItem P89_ERROR_COUNT (
+        type: displayOnly
+        label {
+            label: Broj grešaka
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P89_FILENAME (
+        type: displayOnly
+        label {
+            label: Filename
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P89_KUF_DATE_FORMAT (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P89_PP (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Unos u UIO
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    computation p89-kuf-date-format (
+        itemName: P89_KUF_DATE_FORMAT
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    data_load_kuf_date_format
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    process clear-cache (
+        name: Clear Cache
+        type: clearSessionState
+        clear {
+            type: pages
+            pages: 86
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 51201694146049106
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR loaded_rows IS (
+                        SELECT 
+                            c001 as vrsta_sloga,
+                            c002 as redni_br,
+                            c003 as poreski_period,
+                            c004 as tip_dokumenta,
+                            c005 as broj_fakture,
+                            -- to_date(c006, :P89_KUF_DATE_FORMAT) as datum_fakture,
+                            -- to_date(c007, :P89_KUF_DATE_FORMAT) as datum_prijema_fakture,
+                            c006 as datum_fakture,
+                            c007 as datum_prijema_fakture,
+                            c008 as naziv_dobavljaca,
+                            c009 as sjediste_dobavljaca,
+                            c010 as pdv_broj_dobavljaca,
+                            c011 as jib_broj_dobavljaca,
+                            c012 as iznos_fakture_bezpdv,
+                            c013 as iznos_fakture_sapdv,
+                            c014 as iznos_pausal,
+                            c015 as iznos_ulaznog_pdv,
+                            c016 as iznos_ulazpdv_odbiti,
+                            c017 as iznos_ulazpdv_neodbiti,
+                            c018 as iznos_pdv_32polje,
+                            c019 as iznos_pdv_33polje,
+                            c020 as iznos_pdv_34polje
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'LOAD_KUF'
+                    ) ORDER BY seq_id ASC;
+                
+                    l_id NUMBER;
+                BEGIN
+                    FOR c1 IN loaded_rows LOOP
+                        uio_pkg.insert_uio_kuf (
+                            p_ooj_id                 => :APP_OOJ_ID,
+                            p_faktura_id             => null,
+                            p_vrsta_sloga            => c1.vrsta_sloga,
+                            p_redni_br               => c1.redni_br,
+                            p_poreski_period         => c1.poreski_period,
+                            p_tip_dokumenta          => c1.tip_dokumenta,
+                            p_broj_fakture           => c1.broj_fakture,
+                            p_datum_fakture          => to_date(c1.datum_fakture, :P89_KUF_DATE_FORMAT),
+                            p_datum_prijema_fakture  => to_date(c1.datum_prijema_fakture, :P89_KUF_DATE_FORMAT),
+                            p_naziv_dobavljaca       => c1.naziv_dobavljaca,
+                            p_sjediste_dobavljaca    => c1.sjediste_dobavljaca,
+                            p_pdv_broj_dobavljaca    => c1.pdv_broj_dobavljaca,
+                            p_jib_broj_dobavljaca    => c1.jib_broj_dobavljaca,
+                            p_iznos_fakture_bezpdv   => c1.iznos_fakture_bezpdv,
+                            p_iznos_fakture_sapdv    => c1.iznos_fakture_sapdv,
+                            p_iznos_pausal           => c1.iznos_pausal,
+                            p_iznos_ulaznog_pdv      => c1.iznos_ulaznog_pdv,
+                            p_iznos_ulazpdv_odbiti   => c1.iznos_ulazpdv_odbiti,
+                            p_iznos_ulazpdv_neodbiti => c1.iznos_ulazpdv_neodbiti,
+                            p_iznos_pdv_32polje      => c1.iznos_pdv_32polje,
+                            p_iznos_pdv_33polje      => c1.iznos_pdv_33polje,
+                            p_iznos_pdv_34polje      => c1.iznos_pdv_34polje
+                        );
+                
+                        :P89_PP := c1.poreski_period;
+                    END LOOP;
+                
+                    uio_pkg.insert_history (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_status_sifra => 'success',
+                        p_filename     => :P89_FILENAME,
+                        p_komentar     => 'Uspješno učitan KUF dokument u UIO KUF.'
+                    );
+                
+                    IF :P89_ERROR_COUNT > 0 THEN
+                        uio_pkg.insert_history (
+                            p_ooj_id       => :APP_OOJ_ID,
+                            p_status_sifra => 'error',
+                            p_filename     => :P89_FILENAME,
+                            p_komentar     => 'Učitani KUF dokument ima ' || :P89_ERROR_COUNT || ' grešaka.'
+                        );
+                    END IF;
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 51201259554049111
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 83
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 83
+                items: {
+                    P83_PORESKI_PERIOD: &P89_PP.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 86
+                clearCache: 86
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancel
+        }
+    )
+
+)
+

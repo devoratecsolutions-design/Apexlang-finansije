@@ -1,0 +1,262 @@
+page 1853 (
+    name: Nalog / Storno
+    alias: NALOG-STORNO
+    title: Nalog / Storno
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1853_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P1853_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P1853_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+    )
+
+    pageItem P1853_VRSTA_NALOGA_SIFRA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button storniraj (
+        buttonName: STORNIRAJ
+        label: Storniraj
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-undo-arrow
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation storniraj (
+        name: Storniraj
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                if :P1853_DATUM is null then 
+                    
+                    return 'Datum naloga je obavezno polje';
+                elsif :P1853_OPIS is null then 
+                    
+                    return 'Opis je obavezno polje';
+                
+                elsif core.ooj_pkg.valid_date_op(:P1853_DATUM,:APP_OOJ_ID)='N' then 
+                
+                    return 'Datum naloga ne može biti u zatvorenom obračunskom periodu!';
+                
+                end if;
+                
+                return accounting.glavna_knjiga_pkg.check_storno_glavna_knjiga (:P1853_ID);
+                ```
+        }
+        serverSideCondition {
+            whenButtonPressed: @storniraj
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P1853_DATUM:=null;
+                :P1853_OPIS:=null;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 274471542525735414
+        }
+    )
+
+    process storniraj (
+        name: Storniraj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_id NUMBER;
+                BEGIN
+                    l_id := glavna_knjiga_pkg.storniraj_glavna_knjiga (
+                        p_id    => :P1853_ID,
+                        p_datum => :P1853_DATUM,
+                        P_opis  => :P1853_OPIS,
+                        p_auto  => 'Y'
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Nalog storniran.
+        }
+        advanced {
+            executionMappingIdentifier: 274500823925893411
+        }
+        serverSideCondition {
+            whenButtonPressed: @storniraj
+        }
+    )
+
+    branch (
+        name: Go To Page 1851
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 1851
+                items: {
+                    P1851_NALOG_ID: &P1853_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @storniraj
+        }
+    )
+
+)
+

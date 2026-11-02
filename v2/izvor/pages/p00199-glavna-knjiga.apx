@@ -1,0 +1,769 @@
+page 199 (
+    name: Glavna knjiga
+    alias: GLAVNA-KNJIGA
+    title: Glavna knjiga
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    css {
+        inline:
+            ```css
+            #P199_OOJ_BANKA_ID_CONTAINER > div.t-Form-labelContainer,
+            #P199_OOJ_BANKA_ID_CONTAINER > div.t-Form-inputContainer {
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @glavna-knjiga-osnovna
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region glavna-knjiga (
+        name: Glavna knjiga
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_glavna_knjiga(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region salda-po-kontima (
+        name: Salda po grupama konta
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: #DEFAULT#
+            cssClasses: fin-panel
+        }
+    )
+
+    region cash-flow (
+        name: Kretanje stanja na računu
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+            columnSpan: 8
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        advanced {
+            htmlDomId: Q3
+        }
+    )
+
+    region cash-flow-chart (
+        name: Cash flow Chart
+        type: chart
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    datum_dokumenta,
+                    opis,
+                    pocetno_stanje,
+                
+                    '<b>' || opis || '</b>
+                    <b>Datum: </b> ' || datum_dokumenta || '
+                    <b>Iznos: </b> ' || pocetno_stanje || ' KM' AS custom_tooltip
+                
+                FROM
+                    vw_glavna_knjiga
+                WHERE
+                    vrsta_naloga_sifra = 'IZ'
+                    AND ooj_id = :APP_OOJ_ID
+                    AND ooj_banka_id = :P199_OOJ_BANKA_ID
+                ORDER BY
+                    datum_dokumenta
+                ```
+            pageItemsToSubmit: P199_OOJ_BANKA_ID
+        }
+        layout {
+            sequence: 10
+            parentRegion: @cash-flow
+            slot: subRegions
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        chart {
+            type: line
+        }
+        chartAppearance {
+            stack: true
+        }
+        chartLayout {
+            height: 240
+        }
+        dataCursor {
+            cursor: true
+            behavior: snap
+        }
+        settings {
+            timeAxisType: enabled
+        }
+        tooltip {
+            showSeriesName: false
+            showGroupName: false
+            showValue: false
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.styleDefaults = {
+                       maxBarWidth:"64"
+                }
+                 return options;
+                }
+                ```
+        }
+
+        series izvodi (
+            name: Izvodi
+            execution {
+                sequence: 10
+            }
+            source {
+                location: regionSource
+            }
+            columnMapping {
+                label: DATUM_DOKUMENTA
+                value: POCETNO_STANJE
+                customTooltip: CUSTOM_TOOLTIP
+            }
+            appearance {
+                color: #2271b1
+            }
+        )
+
+        axis x (
+            name: x
+            value {
+                format: dateLong
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: currency
+                currency: 977
+                pattern: ###,###,###
+                formatScaling: none
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region novčana-sredstva (
+        name: Novčana sredstva
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT  
+                    c.id,
+                    c.naziv AS chart_naziv,
+                    to_char(abs(SUM(gks.iznos)), '999G999G999G999G990D00') AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                    JOIN sif.acc_chart c ON c.id = ck.chart_id
+                WHERE 
+                    c.sifra = 'NS'
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                GROUP BY
+                    c.id,
+                    c.naziv
+                ORDER BY
+                    c.naziv
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @novčana-sredstva-2
+            slot: subRegions
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+                t-CardsRegion--styleB
+                margin-bottom-none
+            ]
+        }
+        componentAppearance {
+            layout: float
+        }
+        card {
+            primaryKeyColumn1: ID
+        }
+        title {
+            column: SUMA_IZNOS
+        }
+        subtitle {
+            column: CHART_NAZIV
+        }
+        pagination {
+            type: page
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        action action (
+            type: fullCard
+            layout {
+                sequence: 10
+            }
+            behavior {
+                target: {
+                    page: 5
+                    items: {
+                        P5_ID: &ID.
+                    }
+                    clearCache: 5
+                }
+            }
+        )
+
+    )
+
+    region novčana-sredstva-2 (
+        name: Novčana sredstva
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @salda-po-kontima
+            slot: subRegions
+            columnSpan: 3
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--noBorder
+                t-Region--scrollBody
+                margin-bottom-none
+            ]
+        }
+    )
+
+    region obaveze (
+        name: Obaveze
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @salda-po-kontima
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--noBorder
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region obaveze-2 (
+        name: Obaveze
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT  
+                    c.id,
+                    c.naziv AS chart_naziv,
+                    to_char(abs(SUM(gks.iznos)), '999G999G999G999G990D00') AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                    JOIN sif.acc_chart c ON c.id = ck.chart_id
+                WHERE 
+                    c.sifra = 'O'
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                GROUP BY
+                    c.id,
+                    c.naziv
+                ORDER BY
+                    c.naziv
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @obaveze
+            slot: subRegions
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: float
+        }
+        title {
+            column: SUMA_IZNOS
+        }
+        subtitle {
+            column: CHART_NAZIV
+        }
+        pagination {
+            type: page
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        action action (
+            type: fullCard
+            layout {
+                sequence: 10
+            }
+            behavior {
+                target: {
+                    page: 5
+                    items: {
+                        P5_ID: &ID.
+                    }
+                    clearCache: 5
+                }
+            }
+        )
+
+    )
+
+    region pdv-u-tekućem-mjesecu (
+        name: PDV u tekućem mjesecu
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @salda-po-kontima
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--noBorder
+                t-Region--scrollBody
+                margin-bottom-none
+            ]
+        }
+    )
+
+    region pdv-u-tekućem-mjesecu-2 (
+        name: PDV u tekućem mjesecu
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT  
+                    c.id,
+                    c.naziv AS chart_naziv,
+                    to_char(SUM(gks.iznos), '999G999G999G999G990D00') AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                    JOIN sif.acc_chart c ON c.id = ck.chart_id
+                WHERE 
+                    c.sifra = 'PDV'
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                    AND trunc(gks.glavna_knjiga_datum_knjizenja, 'MM') = trunc(sysdate, 'MM')
+                GROUP BY
+                    c.id,
+                    c.naziv
+                ORDER BY
+                    c.naziv
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @pdv-u-tekućem-mjesecu
+            slot: subRegions
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+                t-CardsRegion--styleB
+                margin-bottom-none
+            ]
+        }
+        componentAppearance {
+            layout: float
+        }
+        title {
+            column: SUMA_IZNOS
+        }
+        subtitle {
+            column: CHART_NAZIV
+        }
+        pagination {
+            type: page
+            cardsPerPage: 100
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        action action (
+            type: fullCard
+            layout {
+                sequence: 10
+            }
+            behavior {
+                target: {
+                    page: 5
+                    items: {
+                        P5_ID: &ID.
+                    }
+                    clearCache: 5
+                }
+            }
+        )
+
+    )
+
+    region potraživanja (
+        name: Potraživanja
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @salda-po-kontima
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--noBorder
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region potraživanja-2 (
+        name: Potraživanja
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT  
+                    c.id,
+                    c.naziv AS chart_naziv,
+                    to_char(abs(SUM(gks.iznos)), '999G999G999G999G990D00') AS suma_iznos
+                FROM 
+                    accounting.vw_glavna_knjiga_stavke gks
+                    JOIN sif.acc_kontni_okvir_klase kk ON gks.kontna_klasa_code LIKE kk.code || '%'
+                    JOIN sif.acc_chart_konta ck ON ck.kontna_klasa_id = kk.id
+                    JOIN sif.acc_chart c ON c.id = ck.chart_id
+                WHERE 
+                    c.sifra = 'P'
+                    AND gks.glavna_knjiga_godina = :APP_GODINA
+                    AND gks.ooj_id = :APP_OOJ_ID
+                GROUP BY
+                    c.id,
+                    c.naziv
+                ORDER BY
+                    c.naziv
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @potraživanja
+            slot: subRegions
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: float
+        }
+        title {
+            column: SUMA_IZNOS
+        }
+        subtitle {
+            column: CHART_NAZIV
+        }
+        pagination {
+            type: page
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        action action (
+            type: fullCard
+            layout {
+                sequence: 10
+            }
+            behavior {
+                target: {
+                    page: 5
+                    items: {
+                        P5_ID: &ID.
+                    }
+                    clearCache: 5
+                }
+            }
+        )
+
+    )
+
+    region nalozi-po-vrsti (
+        name: Nalozi po vrsti
+        type: chart
+        layout {
+            sequence: 40
+            slot: body
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 280
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series nalozi (
+            name: Broj naloga
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        coalesce(vn.naziv, 'Ostalo') AS vrsta,
+                        count(*) AS broj
+                    FROM
+                        glavna_knjiga gk
+                        LEFT JOIN sif.sif_vrste_naloga vn ON vn.id = gk.vrsta_naloga_id
+                    WHERE
+                        gk.ooj_id = :APP_OOJ_ID
+                        AND gk.godina = :APP_GODINA
+                        AND gk.valid = 'Y'
+                        AND coalesce(gk.stornirano, 'N') = 'N'
+                    GROUP BY
+                        vn.naziv
+                    ORDER BY
+                        2 DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    ```
+            }
+            columnMapping {
+                label: VRSTA
+                value: BROJ
+            }
+            appearance {
+                color: #112340
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    pageItem P199_OOJ_BANKA_ID (
+        type: selectOne
+        label {
+            label: Banka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @ooj-banke
+        }
+        layout {
+            sequence: 10
+            region: @cash-flow
+            slot: edit
+            alignment: left
+        }
+        appearance {
+            template: @required
+            templateOptions: [
+                #DEFAULT#
+                margin-top-none
+                margin-bottom-none
+            ]
+            width: 30
+        }
+    )
+
+    dynamicAction change-banka (
+        name: Change - Banka
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P199_OOJ_BANKA_ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @cash-flow-chart
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

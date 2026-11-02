@@ -1,0 +1,440 @@
+page 263 (
+    name: Amortizacija osnovnih sredstava
+    alias: AMORTIZACIJA-OSNOVNIH-SREDSTAVA
+    title: Amortizacija osnovnih sredstava
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-amortizacija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>“Amortizacija”</em></b> dostupan je pregled sredstava sa opštim podacima, uključujući 
+            lokaciju, nabavnu vrijednost, amortizovanu vrijednost i stepen amortizovanosti, a osnovica 
+            za obračun uvijek je nabavna vrijednost osnovnog sredstva. </br>
+            Na dnu se nalaze opcije za preuzimanje dokumenta o amortizaciji u formatu CSV fajla 
+            ili za generisanje i štampu dokumenta u formatu PDF.</br>
+            
+            </br>
+            Klikom na ikonicu lupe otvara se pregled amortizacije za odabrano sredstvo, gdje se u modalnom dijalogu 
+            prikazuju dosadašnje amortizacije kao i plan amortizacije po periodima.</br>
+            
+            </br>
+            Ukoliko postoji potreba da osnovno sredstvo amortizujete ručno, potrebno je da odaberete poreski period 
+            i definišete da li želite da izvršite knjiženje kompleta ili ne.
+            ```
+    }
+
+    region amortizacija (
+        name: Amortizacija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stepen-amortizovanosti-report (
+        name: Stepen amortizovanosti Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    inventurni_naziv,
+                    naziv,
+                    kolicina,
+                
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv,
+                
+                    nabavna_vrijednost,
+                    knjigovodstvena_vrijednost,
+                    amortizacija_vrijednost,
+                    datum,
+                    stepen_amortizovanosti
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND valid = 'Y'
+                    AND aktivirano = 'Y'
+                    AND history_id IS null
+                ORDER BY
+                    inventurni_broj DESC
+                ```
+            pageItemsToSubmit: [
+                P263_STEPEN_OD
+                P263_STEPEN_DO
+            ]
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlightOff
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+        download {
+            csvExportEnabled: true
+        }
+        printing {
+            enabled: true
+        }
+        output {
+            linkText: Print
+            format: pdf
+        }
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        column AMORTIZACIJA_VRIJEDNOST (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Amortizovana vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #AMORTIZACIJA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled amortizacije
+            }
+            layout {
+                sequence: 40
+            }
+            link {
+                target: {
+                    page: 264
+                    items: {
+                        P264_ID: #ID#
+                    }
+                    clearCache: 264
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KNJIGOVODSTVENA_VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstvena vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #KNJIGOVODSTVENA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Nabavna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #NABAVNA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STEPEN_AMORTIZOVANOSTI (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Stepen amortizovanosti
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #STEPEN_AMORTIZOVANOSTI# %
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @stepen-amortizovanosti-report
+        }
+        layout {
+            sequence: 39
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P263_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button amortizacija (
+        buttonName: AMORTIZACIJA
+        label: Amortizacija
+        layout {
+            sequence: 10
+            region: @amortizacija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 265
+                clearCache: 265
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+)
+

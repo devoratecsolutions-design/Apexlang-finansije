@@ -1,0 +1,204 @@
+page 45 (
+    name: Ulazna faktura / Uplaćeno (ručno)
+    alias: ULAZNA-FAKTURA-UPLAĆENO-RUČNO
+    title: Ulazna faktura / Uplaćeno (ručno)
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P45_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P45_UPLACENO_RUCNO (
+        type: numberField
+        label {
+            label: Uplaćen iznos (novi unos)
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P45_UPLACENO_RUCNO_DISPLAY (
+        type: displayOnly
+        label {
+            label: Uplaćeno (prethodno stanje)
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button update (
+        buttonName: UPDATE
+        label: Ažuriraj plaćanje
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-receipt
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    computation p45-uplaceno-rucno-display (
+        itemName: P45_UPLACENO_RUCNO_DISPLAY
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    to_char(coalesce(uplaceno_rucno, 0), '999G999G999G999G990D00')
+                FROM
+                    kuf
+                WHERE
+                    id = :P45_ID
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 189004157408410139
+        }
+        serverSideCondition {
+            whenButtonPressed: @update
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.update_kuf (
+                    p_id             => :P45_ID,
+                    p_uplaceno_rucno => to_number(:P45_UPLACENO_RUCNO, '999G999G999G999G990D00') + to_number(:P45_UPLACENO_RUCNO_DISPLAY, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 189004028149410138
+        }
+        serverSideCondition {
+            whenButtonPressed: @update
+        }
+    )
+
+)
+

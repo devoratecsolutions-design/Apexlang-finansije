@@ -1,0 +1,281 @@
+restDataSource era_firme (
+    name: eRA - Firme
+    source {
+        type: ords
+        remoteServer: @epdv_ba_web_csv
+        urlPathPrefix: web/csv/era/firme
+    }
+    synchronization {
+        localTableOwner: ACCOUNTING
+        localTableName: CSV_FIRME
+        type: fullRefreshDelete
+        httpRequestLimit: 1000
+    }
+
+    operation get (
+        label: GET
+        operation {
+            urlPattern: .
+            httpMethod: get
+            databaseOperation: fetchRows
+        }
+    )
+
+    dataProfile {
+        name: eRA - Firme
+        rowSelector: items
+    }
+
+    dataProfileColumn email (
+        columnName: EMAIL
+        source {
+            sequence: 3
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: email
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn enabled (
+        columnName: ENABLED
+        source {
+            sequence: 7
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: enabled
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn first-name (
+        columnName: FIRST_NAME
+        source {
+            sequence: 13
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: first_name
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn jib (
+        columnName: JIB
+        source {
+            sequence: 1
+            dataType: number
+        }
+        parsing {
+            pathExpression: jib
+        }
+        advanced {
+            sourceDataType: number
+        }
+    )
+
+    dataProfileColumn kb-id (
+        columnName: KB_ID
+        source {
+            sequence: 4
+            dataType: number
+        }
+        parsing {
+            pathExpression: kb_id
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn last-name (
+        columnName: LAST_NAME
+        source {
+            sequence: 12
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: last_name
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn mobile (
+        columnName: MOBILE
+        source {
+            sequence: 6
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: mobile
+        }
+        advanced {
+            sourceDataType: null
+        }
+    )
+
+    dataProfileColumn obradjen-kif (
+        columnName: OBRADJEN_KIF
+        source {
+            sequence: 15
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: obradjen_kif
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn obradjen-kuf (
+        columnName: OBRADJEN_KUF
+        source {
+            sequence: 16
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: obradjen_kuf
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn ou-id (
+        columnName: OU_ID
+        source {
+            sequence: 17
+            dataType: number
+        }
+        parsing {
+            pathExpression: ou_id
+        }
+        advanced {
+            sourceDataType: number
+        }
+    )
+
+    dataProfileColumn ou-location (
+        columnName: OU_LOCATION
+        source {
+            sequence: 14
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: ou_location
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn ou-name (
+        columnName: OU_NAME
+        source {
+            sequence: 8
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: ou_name
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn ou-type (
+        columnName: OU_TYPE
+        source {
+            sequence: 9
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: ou_type
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn phone (
+        columnName: PHONE
+        source {
+            sequence: 5
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: phone
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn pib (
+        columnName: PIB
+        source {
+            sequence: 2
+            dataType: number
+        }
+        parsing {
+            pathExpression: pib
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn username (
+        columnName: USERNAME
+        source {
+            sequence: 10
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            pathExpression: username
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+    dataProfileColumn valid-to (
+        columnName: VALID_TO
+        source {
+            sequence: 11
+            dataType: date
+        }
+        parsing {
+            pathExpression: valid_to
+            formatMask: YYYY"-"MM"-"DD"T"HH24":"MI:SS.FF9TZR
+        }
+        advanced {
+            sourceDataType: string
+        }
+    )
+
+)
+

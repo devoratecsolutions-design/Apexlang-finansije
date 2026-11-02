@@ -1,0 +1,1878 @@
+page 81 (
+    name: UIO - KIF
+    alias: UIO-KIF
+    title: UIO - KIF
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#download_with_token#MIN#.js
+    }
+    css {
+        inline:
+            ```css
+            #kif_grid_ig_report_settings {
+                display: none;
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @uio-kif
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>"UIO KIF"</em></b> potrebno je unijeti poreski period i odabrati mjesec za koji želite 
+            da dobijete podatke o unosima. </br>
+            Ako ne postoje kreirani podaci, novi unos se pokreće klikom na dugme <b><em>"Novi unos".</em></b> </br>
+            </br>
+            Odabirom određenog perioda u izvještaju se prikazuju 
+            detaljne informacije, a putem linka <b><em>"Obriši"</em></b> moguće je ukloniti izlaznu fakturu za UIO.</br>
+            Dvoklikom na neko od polja u izvještaju otvara se opcija za ažuriranje, koje se potvrđuje 
+            klikom na dugme <b><em>"Ažuriraj – UIO KIF."</em></b> </br>
+            </br>
+            Funkcija <b><em>"Generiši CSV"</em></b> omogućava kreiranje datoteke sa podacima iz KIF-a, 
+            pri čemu se nakon potvrde otvara stranica sa opcijom preuzimanja. </br>
+            </br>
+            <b><em>"Obriši poreski period"</em></b> koja uklanja sve podatke za izabrani period, što je korisno u 
+            slučaju grešaka ili potrebe za ponovnim unosom. </br>
+            Na dugme <b><em>"Generiši KIF"</em></b> otvara se modalni dijalog u kojem se bira željeni period, 
+            a odabirom mjeseca dobija se izvještaj faktura koje se trebaju generisati. 
+            Klikom na dugme <b><em>"Generiši"</em></b> postupak se završava i fakture se uspješno generišu.
+            ```
+    }
+
+    region download-overlay (
+        name: Download Overlay
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div style="text-align:center;">
+                    <div style="font-size:14px; color:#666; margin-bottom:8px;">Molimo sačekajte...</div>
+                    <div style="font-weight:600; font-size:18px; margin-bottom:16px;">Generisanje vašeg fajla</div>
+                    <div class="dl-spinner" style="width:36px; height:36px; margin:0 auto 14px; border:3px solid rgba(0,0,0,.1); border-top-color:#2271B1; border-radius:50%; animation:dlspin 1s linear infinite;"></div>
+                    <div style="font-size:12px; color:#888;">Ne osvježavajte stranicu dok se ne završi.</div>
+                </div>
+                
+                <style>
+                    @keyframes dlspin { 
+                    to { transform: rotate(360deg); } 
+                    }
+                </style>
+                
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: dialogsDrawersAndPopups
+        }
+        appearance {
+            template: @inline-popup
+            templateOptions: [
+                #DEFAULT#
+                js-dialog-autoheight
+                js-dialog-size480x320
+            ]
+        }
+        advanced {
+            htmlDomId: download_popup
+        }
+    )
+
+    region uio-kif (
+        name: UIO - KIF
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region uio-kif-grid (
+        name: UIO KIF - Grid
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    vrsta_sloga,
+                    poreski_period,
+                    redni_br,
+                    tip_dokumenta,
+                    broj_fakture,
+                    to_date(datum_fakture, 'YYYY-MM-DD') AS datum_fakture,
+                    naziv_kupca,
+                    sjediste_kupca,
+                    pdv_broj_kupca,
+                    jib_broj_kupca,
+                    
+                    iznos_fakture,
+                    iznos_fakture_interne,
+                    iznos_fakture_izvozne,
+                    iznos_ostale_bez_pdv,
+                    iznos_osnovice_za_pdv,
+                    iznos_izlaz_pdv_za_pdv,
+                    iznos_osnovice_za_nepdv,
+                    iznos_izlaz_pdv_za_nepdv,
+                    iznos_pdv_32polje,
+                    iznos_pdv_33polje,
+                    iznos_pdv_34polje
+                FROM
+                    vw_uio_kif
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND poreski_period = to_char(:P81_PORESKI_PERIOD)
+                ```
+            pageItemsToSubmit: P81_PORESKI_PERIOD
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: fin-grid
+        }
+        advanced {
+            htmlDomId: kif_grid
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P81_PORESKI_PERIOD
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+        }
+        download {
+            formats: [
+                pdf
+                excel
+            ]
+            sendAsEmail: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.defaultGridViewOptions = {
+                        reorderColumns:false,
+                        hideEmptyFooter:true,
+                        noDataIcon:"fa fa-404",
+                        skipReadonlyCells:true,
+                        rowsPerPage:25
+                    }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 29499019906291743
+        }
+
+        savedReport 296027 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @DELETE
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_FAKTURE
+                layout {
+                    sequence: 14
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_FAKTURE_INTERNE
+                layout {
+                    sequence: 15
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_FAKTURE_IZVOZNE
+                layout {
+                    sequence: 16
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_OSTALE_BEZ_PDV
+                layout {
+                    sequence: 17
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_OSNOVICE_ZA_PDV
+                layout {
+                    sequence: 18
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_IZLAZ_PDV_ZA_PDV
+                layout {
+                    sequence: 19
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_OSNOVICE_ZA_NEPDV
+                layout {
+                    sequence: 20
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_IZLAZ_PDV_ZA_NEPDV
+                layout {
+                    sequence: 21
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_PDV_32POLJE
+                layout {
+                    sequence: 22
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_PDV_33POLJE
+                layout {
+                    sequence: 23
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_PDV_34POLJE
+                layout {
+                    sequence: 24
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @VRSTA_SLOGA
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @PORESKI_PERIOD
+                layout {
+                    width: 96
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @REDNI_BR
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @TIP_DOKUMENTA
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @BROJ_FAKTURE
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @DATUM_FAKTURE
+                layout {
+                    sequence: 9
+                }
+            )
+
+            displayColumn (
+                column: @NAZIV_KUPCA
+                layout {
+                    sequence: 10
+                }
+            )
+
+            displayColumn (
+                column: @SJEDISTE_KUPCA
+                layout {
+                    sequence: 11
+                }
+            )
+
+            displayColumn (
+                column: @PDV_BROJ_KUPCA
+                layout {
+                    sequence: 12
+                }
+            )
+
+            displayColumn (
+                column: @JIB_BROJ_KUPCA
+                layout {
+                    width: 100
+                    sequence: 13
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+            aggregate sum (
+                column: @IZNOS_FAKTURE
+            )
+
+            aggregate sum-10 (
+                column: @IZNOS_PDV_33POLJE
+            )
+
+            aggregate sum-11 (
+                column: @IZNOS_PDV_34POLJE
+            )
+
+            aggregate sum-2 (
+                column: @IZNOS_FAKTURE_INTERNE
+            )
+
+            aggregate sum-3 (
+                column: @IZNOS_FAKTURE_IZVOZNE
+            )
+
+            aggregate sum-4 (
+                column: @IZNOS_OSTALE_BEZ_PDV
+            )
+
+            aggregate sum-5 (
+                column: @IZNOS_OSNOVICE_ZA_PDV
+            )
+
+            aggregate sum-6 (
+                column: @IZNOS_IZLAZ_PDV_ZA_PDV
+            )
+
+            aggregate sum-7 (
+                column: @IZNOS_OSNOVICE_ZA_NEPDV
+            )
+
+            aggregate sum-8 (
+                column: @IZNOS_IZLAZ_PDV_ZA_NEPDV
+            )
+
+            aggregate sum-9 (
+                column: @IZNOS_PDV_32POLJE
+            )
+
+        )
+
+        columnGroup iznosi (
+            heading: Iznosi
+        )
+
+        columnGroup kupac (
+            heading: Kupac
+        )
+
+        columnGroup osnovne-informacije (
+            heading: Osnovne informacije
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column BROJ_FAKTURE (
+            type: textField
+            heading {
+                heading: Broj fakture
+            }
+            layout {
+                sequence: 90
+                group: @osnovne-informacije
+                stretch: always
+            }
+            validation {
+                maxLength: 100
+            }
+            source {
+                databaseColumn: BROJ_FAKTURE
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column DATUM_FAKTURE (
+            type: datePicker
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 100
+                group: @osnovne-informacije
+                stretch: always
+            }
+            source {
+                databaseColumn: DATUM_FAKTURE
+                dataType: date
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column DELETE (
+            type: link
+            heading {
+                heading: Obriši
+            }
+            layout {
+                sequence: 30
+                group: @osnovne-informacije
+                stretch: always
+            }
+            link {
+                target: {
+                    type: url
+                    url: javascript:void(null);
+                }
+                linkText: <span aria-label="Obriši" class="fa fa-trash-o delete-kif" aria-hidden="true" title="Obriši"></span>
+                linkAttributes: data-id=&ID.
+            }
+            source {
+                type: none
+            }
+            enableUsersTo {
+                hide: false
+            }
+            serverSideCondition {
+                type: functionBody
+                plsqlFunctionBody: return uio_pkg.is_pp_editable(:APP_OOJ_ID, :P81_PORESKI_PERIOD);
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            type: numberField
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_FAKTURE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_FAKTURE_INTERNE (
+            type: numberField
+            heading {
+                heading: Iznos interne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_FAKTURE_INTERNE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_FAKTURE_IZVOZNE (
+            type: numberField
+            heading {
+                heading: Izvozne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_FAKTURE_IZVOZNE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_NEPDV (
+            type: numberField
+            heading {
+                heading: Izlaz PDV za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_IZLAZ_PDV_ZA_NEPDV
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_PDV (
+            type: numberField
+            heading {
+                heading: Izlaz PDV za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_IZLAZ_PDV_ZA_PDV
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_NEPDV (
+            type: numberField
+            heading {
+                heading: Osnovica za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_OSNOVICE_ZA_NEPDV
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_PDV (
+            type: numberField
+            heading {
+                heading: Osnovica za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_OSNOVICE_ZA_PDV
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_OSTALE_BEZ_PDV (
+            type: numberField
+            heading {
+                heading: Ostale bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_OSTALE_BEZ_PDV
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_PDV_32POLJE (
+            type: numberField
+            heading {
+                heading: PDV - 32 polje
+                alignment: end
+            }
+            layout {
+                sequence: 230
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_PDV_32POLJE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_PDV_33POLJE (
+            type: numberField
+            heading {
+                heading: PDV - 33 polje
+                alignment: end
+            }
+            layout {
+                sequence: 240
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_PDV_33POLJE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column IZNOS_PDV_34POLJE (
+            type: numberField
+            heading {
+                heading: PDV - 34 polje
+                alignment: end
+            }
+            layout {
+                sequence: 250
+                columnAlignment: end
+                group: @iznosi
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_PDV_34POLJE
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+
+        column JIB_BROJ_KUPCA (
+            type: textField
+            heading {
+                heading: JIB broj kupca
+            }
+            layout {
+                sequence: 140
+                group: @kupac
+                stretch: always
+            }
+            validation {
+                maxLength: 20
+            }
+            source {
+                databaseColumn: JIB_BROJ_KUPCA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column NAZIV_KUPCA (
+            type: textField
+            heading {
+                heading: Naziv kupca
+            }
+            layout {
+                sequence: 110
+                group: @kupac
+                stretch: always
+            }
+            validation {
+                maxLength: 100
+            }
+            source {
+                databaseColumn: NAZIV_KUPCA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PDV_BROJ_KUPCA (
+            type: textField
+            heading {
+                heading: PDV broj kupca
+            }
+            layout {
+                sequence: 130
+                group: @kupac
+                stretch: always
+            }
+            validation {
+                maxLength: 20
+            }
+            source {
+                databaseColumn: PDV_BROJ_KUPCA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PORESKI_PERIOD (
+            type: textField
+            heading {
+                heading: Poreski period
+            }
+            layout {
+                sequence: 70
+                group: @osnovne-informacije
+                stretch: always
+            }
+            validation {
+                maxLength: 5
+            }
+            source {
+                databaseColumn: PORESKI_PERIOD
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column REDNI_BR (
+            type: textField
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 60
+                group: @osnovne-informacije
+                stretch: always
+            }
+            validation {
+                maxLength: 10
+            }
+            source {
+                databaseColumn: REDNI_BR
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column SJEDISTE_KUPCA (
+            type: textField
+            heading {
+                heading: Sjedište kupca
+            }
+            layout {
+                sequence: 120
+                group: @kupac
+                stretch: always
+            }
+            validation {
+                maxLength: 100
+            }
+            source {
+                databaseColumn: SJEDISTE_KUPCA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column TIP_DOKUMENTA (
+            type: textField
+            heading {
+                heading: Tip dokumenta
+            }
+            layout {
+                sequence: 80
+                group: @osnovne-informacije
+                stretch: always
+            }
+            validation {
+                maxLength: 2
+            }
+            source {
+                databaseColumn: TIP_DOKUMENTA
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column VRSTA_SLOGA (
+            type: hidden
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: VRSTA_SLOGA
+                dataType: varchar2
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    pageItem P81_DELETE_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P81_DOWNLOAD_TOKEN (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    pageItem P81_PORESKI_PERIOD (
+        type: selectOne
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @poreski-period-yymm
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 20
+            region: @uio-kif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 82
+                clearCache: 82
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši poreski period
+        layout {
+            sequence: 30
+            region: @wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite obrisati izabrani poreski period?
+            style: danger
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                DECLARE
+                    l_count NUMBER;
+                BEGIN
+                    IF uio_pkg.is_pp_editable(:APP_OOJ_ID, :P81_PORESKI_PERIOD) THEN
+                        RETURN true;
+                    END IF;
+                
+                    SELECT
+                        count(*)
+                    INTO
+                        l_count
+                    FROM
+                        uio_kif
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND poreski_period = to_char(:P81_PORESKI_PERIOD);
+                    
+                    IF l_count > 0 THEN
+                        RETURN true;
+                    END IF;
+                
+                    RETURN false; 
+                
+                END;
+                ```
+        }
+    )
+
+    button generate-csv (
+        buttonName: GENERATE_CSV
+        label: Generiši CSV
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-file-csv-o
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    uio_kif
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND poreski_period = to_char(:P81_PORESKI_PERIOD)
+                ```
+        }
+    )
+
+    button generate-kif-uio (
+        buttonName: GENERATE_KIF_UIO
+        label: Generiši KIF
+        layout {
+            sequence: 10
+            region: @uio-kif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 90
+                items: {
+                    P90_TIP: KIF
+                }
+                clearCache: 90
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj - UIO KIF
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: return uio_pkg.is_pp_editable(:APP_OOJ_ID, :P81_PORESKI_PERIOD);
+        }
+    )
+
+    dynamicAction delete-row (
+        name: Delete Row
+        execution {
+            sequence: 20
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .delete-kif
+        }
+
+        action da-li-ste-sigurni (
+            name: Da li ste sigurni
+            action: confirm
+            settings {
+                title: Brisanje Fakture
+                message: Da li ste sigurni?
+                style: warning
+                icon: fa-remove
+                confirmLabel: Da, obriši
+                cancelLabel: Ne, odustani
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @uio-kif-grid
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).parent().data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P81_DELETE_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action procedura-brisanja (
+            name: procedura brisanja
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    uio_pkg.delete_uio_kif (
+                        p_id => :P81_DELETE_ID
+                    );
+                    
+                    :P81_DELETE_ID := null;
+                    ```
+                itemsToSubmit: P81_DELETE_ID
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @generate-kif-uio
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @uio-kif-grid
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: dialogReturnItem
+                returnItem: P90_PP
+            }
+            affectedElements {
+                selectionType: items
+                items: P81_PORESKI_PERIOD
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction start-download (
+        name: Start Download
+        execution {
+            sequence: 60
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @generate-csv
+        }
+
+        action native-confirm (
+            action: confirm
+            settings {
+                title: Generisanje CSV fajlova
+                message: Da li ste sigurni da želite preuzeti CSV fajlove?
+                style: information
+                icon: fa-arrow-circle-o-down fa-lg
+                confirmLabel: Preuzmi
+                cancelLabel: Odustani
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: startDownload('P81_DOWNLOAD_TOKEN');
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: DOWNLOAD_UIO
+                showProcessing: false
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction submit-page (
+        name: Submit Page
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P81_PORESKI_PERIOD
+        }
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                showProcessing: false
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation izlaz-pdv-za-nepdv-zarez (
+        name: Izlaz PDV za NEPDV ZAREZ
+        execution {
+            sequence: 110
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_IZLAZ_PDV_ZA_NEPDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_IZLAZ_PDV_ZA_NEPDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation izlaz-pdv-za-pdv-zarez (
+        name: Izlaz PDV za PDV ZAREZ
+        execution {
+            sequence: 90
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_IZLAZ_PDV_ZA_PDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_IZLAZ_PDV_ZA_PDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation iznos-interne-fakture-zarez (
+        name: Iznos interne fakture ZAREZ
+        execution {
+            sequence: 50
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_FAKTURE_INTERNE), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_FAKTURE_INTERNE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation iznos-zarez (
+        name: Iznos ZAREZ
+        execution {
+            sequence: 40
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_FAKTURE_BEZPDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_FAKTURE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation izvozne-fakture-zarez (
+        name: Izvozne fakture ZAREZ
+        execution {
+            sequence: 60
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_FAKTURE_IZVOZNE), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_FAKTURE_IZVOZNE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation osnovica-za-nepdv-zarez (
+        name: Osnovica za NEPDV ZAREZ
+        execution {
+            sequence: 100
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_OSNOVICE_ZA_NEPDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_OSNOVICE_ZA_NEPDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation osnovica-za-pdv-zarez (
+        name: Osnovica za PDV ZAREZ
+        execution {
+            sequence: 80
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_OSNOVICE_ZA_PDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_OSNOVICE_ZA_PDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation ostale-bez-pdv-zarez (
+        name: Ostale bez PDV ZAREZ
+        execution {
+            sequence: 70
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_OSTALE_BEZ_PDV), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_OSTALE_BEZ_PDV
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation pdv-32-polje-zarez (
+        name: PDV - 32 polje ZAREZ
+        execution {
+            sequence: 120
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_PDV_32POLJE), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_PDV_32POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation pdv-33-polje-zarez (
+        name: PDV - 33 polje ZAREZ
+        execution {
+            sequence: 130
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_PDV_33POLJE), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_PDV_33POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation pdv-34-polje-zarez (
+        name: PDV - 34 polje ZAREZ
+        execution {
+            sequence: 140
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: instr(to_char(:IZNOS_PDV_34POLJE), ',') = 0
+        }
+        error {
+            errorMessage: Odvajanje decimalnih mjesta dozvoljeno je samo tačkom.
+            associatedColumn: IZNOS_PDV_34POLJE
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation tip-dokumenta-expression (
+        name: Tip dokumenta EXPRESSION
+        execution {
+            sequence: 10
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: :TIP_DOKUMENTA >= 1 and :TIP_DOKUMENTA <= 9
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# mora biti u rasponu 01-09.
+            associatedColumn: TIP_DOKUMENTA
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation tip-dokumenta-length (
+        name: Tip dokumenta LENGTH
+        execution {
+            sequence: 30
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            plsqlExpression: length(:TIP_DOKUMENTA) = 2
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# mora biti u formatu: 0X
+            associatedColumn: TIP_DOKUMENTA
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation tip-dokumenta-not-null (
+        name: Tip dokumenta NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            editableRegion: @uio-kif-grid
+            type: columnIsNotNull
+            column: TIP_DOKUMENTA
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos.
+            associatedColumn: TIP_DOKUMENTA
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                uio_pkg.delete_uio_kif (
+                    p_id => :P81_DELETE_ID
+                );
+                
+                :P81_DELETE_ID := null;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 29599370882573839
+        }
+        serverSideCondition {
+            type: request=Value
+            value: delete
+        }
+    )
+
+    process delete-pp (
+        name: Delete PP
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                uio_pkg.delete_uio_kif (
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_poreski_period => :P81_PORESKI_PERIOD
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 29599176405573837
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process update-uio-kif (
+        name: Update UIO KIF
+        type: executeCode
+        editableRegion: @uio-kif-grid
+        source {
+            plsqlCode:
+                ```plsql
+                uio_pkg.update_uio_kif (
+                    p_id                       => :ID,
+                    p_ooj_id                   => :APP_OOJ_ID,
+                    p_vrsta_sloga              => :VRSTA_SLOGA,
+                    p_poreski_period           => :PORESKI_PERIOD,
+                    p_redni_br                 => :REDNI_BR,
+                    p_tip_dokumenta            => :TIP_DOKUMENTA,
+                    p_broj_fakture             => :BROJ_FAKTURE,
+                    p_datum_fakture            => :DATUM_FAKTURE,
+                    p_naziv_kupca              => :NAZIV_KUPCA,
+                    p_sjediste_kupca           => :SJEDISTE_KUPCA,
+                    p_pdv_broj_kupca           => :PDV_BROJ_KUPCA,
+                    p_jib_broj_kupca           => :JIB_BROJ_KUPCA,
+                    p_iznos_fakture            => :IZNOS_FAKTURE,
+                    p_iznos_fakture_interne    => :IZNOS_FAKTURE_INTERNE,
+                    p_iznos_fakture_izvozne    => :IZNOS_FAKTURE_IZVOZNE,
+                    p_iznos_ostale_bez_pdv     => :IZNOS_OSTALE_BEZ_PDV,
+                    p_iznos_osnovice_za_pdv    => :IZNOS_OSNOVICE_ZA_PDV,
+                    p_iznos_izlaz_pdv_za_pdv   => :IZNOS_IZLAZ_PDV_ZA_PDV,
+                    p_iznos_osnovice_za_nepdv  => :IZNOS_OSNOVICE_ZA_NEPDV,
+                    p_iznos_izlaz_pdv_za_nepdv => :IZNOS_IZLAZ_PDV_ZA_NEPDV,
+                    p_iznos_pdv_32polje        => :IZNOS_PDV_32POLJE,
+                    p_iznos_pdv_33polje        => :IZNOS_PDV_33POLJE,
+                    p_iznos_pdv_34polje        => :IZNOS_PDV_34POLJE
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 29598626924573832
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+            executionScope: allSubmittedRows
+        }
+    )
+
+    branch (
+        name: Go To Page 85 - Download Only
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 85
+                items: {
+                    P85_DOWNLOAD_TOKEN: &P81_DOWNLOAD_TOKEN.
+                    P85_PORESKI_PERIOD: &P81_PORESKI_PERIOD.
+                    P85_TYPE: 2
+                }
+                clearCache: 85
+                request: DOWNLOAD_UIO
+            }
+        }
+        serverSideCondition {
+            type: request=Value
+            value: DOWNLOAD_UIO
+        }
+    )
+
+)
+

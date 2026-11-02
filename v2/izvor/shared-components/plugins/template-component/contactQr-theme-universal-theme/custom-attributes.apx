@@ -1,0 +1,56 @@
+customAttribute EMP_CELL (
+    apexlangName: empCell
+    attribute: 1
+    name: Emp Cell
+    type: sessionStateValue
+    appearance {
+        sequence: 10
+    }
+)
+
+customAttribute EMP_EMAIL (
+    apexlangName: empEmail
+    attribute: 2
+    name: Emp Email
+    type: sessionStateValue
+    appearance {
+        sequence: 20
+    }
+)
+
+customAttribute EMP_NAME (
+    apexlangName: empName
+    attribute: 3
+    name: Emp Name
+    type: sessionStateValue
+    appearance {
+        sequence: 30
+    }
+)
+
+customAttribute X_SIZE (
+    apexlangName: xSize
+    attribute: 4
+    name: X Size
+    type: sessionStateValue
+    appearance {
+        sequence: 40
+    }
+    supports {
+        dataTypes: number
+    }
+)
+
+customAttribute Y_SIZE (
+    apexlangName: ySize
+    attribute: 5
+    name: Y Size
+    type: sessionStateValue
+    appearance {
+        sequence: 50
+    }
+    supports {
+        dataTypes: number
+    }
+)
+

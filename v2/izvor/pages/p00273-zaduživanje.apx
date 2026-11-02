@@ -1,0 +1,1357 @@
+page 273 (
+    name: Zaduživanje
+    alias: ZADUŽIVANJE
+    title: Zaduživanje
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-pregled
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Stranica <b><em>“Zaduživanje”</em></b> namijenjena je za pregled zaduženih osnovnih sredstava, sredstava koja 
+            su ostala evidentirana na radnicima koji više nisu zaposleni, kao i onih koja su trenutno 
+            nezadužena, čime se omogućava jasan uvid u stanje i identifikacija sredstava koja je 
+            potrebno dodijeliti. </br>
+            </br>
+            Nakon unosa zaduženja podaci se prikazuju u tabu <b><em>“Zadužena osnovna sredstva”.</em></b>
+            Klikom na ikonicu pregleda otvara se stranica <b><em>“Osnovno sredstvo / Profil”</em></b> na kojoj su prikazani 
+            svi relevantni podaci o sredstvu. </br>
+            Odabirom opcije <b><em>“Transfer”</em></b> otvara se stranica <b><em>“Osnovno sredstvo / Zaduživanje”,</em></b>
+            gdje su dostupne informacije o samom osnovnom sredstvu i radniku kojem je sredstvo dodijeljeno. </br>
+            Ukoliko želite da izvršite pojedinačni transfer, potrebno je da izaberete novog 
+            radnika kojem se sredstvo dodjeljuje i da unesete komentar ažuriranja, nakon čega se promjena potvrđuje. </br>
+            </br>
+            Klikom na dugme <b><em>“Grupni transfer”</em></b> otvara se modalni dijalog u kojem je potrebno odabrati 
+            radnika sa kojeg se vrši transfer, označiti sredstva koja se prenose, definisati radnika 
+            na kojeg se sredstva prebacuju, odabrati organizacionu jedinicu i unijeti komentar 
+            ažuriranja, a zatim potvrditi izbor klikom na dugme <b><em>“Transfer”.</em></b>
+            ```
+    }
+
+    region nezadužena-osnovna-sredstva-report (
+        name: Nezadužena osnovna sredstva Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    inventurni_naziv,
+                    kolicina,
+                
+                    radnik_naziv,
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv,
+                
+                    apex_page.get_url (
+                        p_page        => 274,
+                        p_items       => 'P274_OSNOVNO_SREDSTVO_ID',
+                        p_values      => id,
+                        p_clear_cache => 274
+                    ) AS transfer_link,
+                
+                    radnik_id,
+                    oj_id,
+                    lokacija_id,
+                    prostorija_id
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND radnik_id IS null
+                    AND history_id IS null
+                    AND aktivirano = 'Y'
+                    AND priprema = 'N'
+                    AND valid = 'Y'
+                ORDER BY
+                    inventurni_broj DESC
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @nezadužena-osnovna-sredstva-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        download {
+            csvExportEnabled: true
+        }
+        printing {
+            enabled: true
+        }
+        output {
+            linkText: Print
+            format: pdf
+        }
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LOKACIJA_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 110
+            }
+        )
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 100
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROSTORIJA_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 120
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 90
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TRANSFER_LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Transfer
+            }
+            layout {
+                sequence: 130
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <a href="#TRANSFER_LINK#">
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-arrow-up"></span>
+                        </span>
+                    </a>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region nezadužena-osnovna-sredstva-search (
+        name: Nezadužena osnovna sredstva Search
+        type: smartFilters
+        source {
+            filteredRegion: @nezadužena-osnovna-sredstva-report
+        }
+        layout {
+            sequence: 10
+            parentRegion: @nezadužena-osnovna-sredstva-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P273_RADNIK_ID_2 (
+            type: checkboxGroup
+            label {
+                label: Radnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: RADNIK_ID
+            }
+        )
+
+        filter P273_SEARCH_2 (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region nezadužena-osnovna-sredstva-wrapper (
+        name: Nezadužena osnovna sredstva Wrapper
+        title: Nezadužena osnovna sredstva
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region sredstva-na-radnicima-koji-više-nisu-zaposleni-report (
+        name: Sredstva na radnicima koji više nisu zaposleni Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    inventurni_naziv,
+                    kolicina,
+                
+                    radnik_naziv,
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv,
+                
+                    apex_page.get_url (
+                        p_page        => 274,
+                        p_items        => 'P274_OSNOVNO_SREDSTVO_ID',
+                        p_values       => id,
+                        p_clear_cache => 274
+                    ) AS transfer_link,
+                
+                    radnik_id,
+                    oj_id,
+                    lokacija_id,
+                    prostorija_id
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND radnik_id IS NOT null
+                    AND radnik_zaposlen_do IS NOT null
+                    AND history_id IS null
+                    AND aktivirano = 'Y'
+                    AND priprema = 'N'
+                    AND valid = 'Y'
+                ORDER BY
+                    inventurni_broj DESC
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @sredstva-na-radnicima-koji-više-nisu-zaposleni-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        download {
+            csvExportEnabled: true
+        }
+        printing {
+            enabled: true
+        }
+        output {
+            linkText: Print
+            format: pdf
+        }
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LOKACIJA_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 120
+            }
+        )
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 110
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROSTORIJA_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 130
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 100
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TRANSFER_LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Transfer
+            }
+            layout {
+                sequence: 90
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <a href="#TRANSFER_LINK#">
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-arrows-h"></span>
+                        </span>
+                    </a>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region sredstva-na-radnicima-koji-više-nisu-zaposleni-search (
+        name: Sredstva na radnicima koji više nisu zaposleni Search
+        type: smartFilters
+        source {
+            filteredRegion: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+        }
+        layout {
+            sequence: 10
+            parentRegion: @sredstva-na-radnicima-koji-više-nisu-zaposleni-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P273_RADNIK_ID_1 (
+            type: checkboxGroup
+            label {
+                label: Radnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: RADNIK_ID
+            }
+        )
+
+        filter P273_SEARCH_1 (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region sredstva-na-radnicima-koji-više-nisu-zaposleni-wrapper (
+        name: Sredstva na radnicima koji više nisu zaposleni Wrapper
+        title: Sredstva na radnicima koji više nisu zaposleni
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region zadužena-osnovna-sredstva-report (
+        name: Zadužena osnovna sredstva Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    inventurni_naziv,
+                    kolicina,
+                
+                    radnik_naziv,
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv,
+                
+                    apex_page.get_url (
+                        p_page         => 274,
+                        p_items        => 'P274_OSNOVNO_SREDSTVO_ID',
+                        p_values       => id,
+                        p_clear_cache => 274
+                    ) AS transfer_link,
+                
+                    radnik_id,
+                    oj_id,
+                    lokacija_id,
+                    prostorija_id
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND radnik_id IS NOT null
+                    AND history_id IS null
+                    AND aktivirano = 'Y'
+                    AND priprema = 'N'
+                    AND valid = 'Y'
+                ORDER BY
+                    inventurni_broj DESC
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @zadužena-osnovna-sredstva-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        download {
+            csvExportEnabled: true
+        }
+        printing {
+            enabled: true
+        }
+        output {
+            linkText: Print
+            format: pdf
+        }
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 11
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 41
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LOKACIJA_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 121
+            }
+        )
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 71
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 21
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 111
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 61
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROSTORIJA_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 131
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 81
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 101
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 51
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TRANSFER_LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: "Transfer "
+            }
+            layout {
+                sequence: 91
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <a href="#TRANSFER_LINK#">
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-arrows-h"></span>
+                        </span>
+                    </a>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region zadužena-osnovna-sredstva-search (
+        name: Zadužena osnovna sredstva Search
+        type: smartFilters
+        source {
+            filteredRegion: @zadužena-osnovna-sredstva-report
+        }
+        layout {
+            sequence: 10
+            parentRegion: @zadužena-osnovna-sredstva-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P273_RADNIK_ID (
+            type: checkboxGroup
+            label {
+                label: Radnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: RADNIK_ID
+            }
+        )
+
+        filter P273_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region zadužena-osnovna-sredstva-wrapper (
+        name: Zadužena osnovna sredstva Wrapper
+        title: Zadužena osnovna sredstva
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region zaduživanje (
+        name: Zaduživanje
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button group-transfer (
+        buttonName: GROUP_TRANSFER
+        label: Grupni transfer
+        layout {
+            sequence: 10
+            region: @zaduživanje
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 275
+                clearCache: 275
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @zadužena-osnovna-sredstva-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nezadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-3 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 3
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @nezadužena-osnovna-sredstva-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nezadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-3 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-3 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nezadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-3 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-4 (
+        name: Dialog Closed - Refresh 4
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @group-transfer
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nezadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sredstva-na-radnicima-koji-više-nisu-zaposleni-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-3 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @zadužena-osnovna-sredstva-report
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

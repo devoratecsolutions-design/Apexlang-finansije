@@ -1,0 +1,337 @@
+page 18 (
+    name: Firma / Osnovne informacije
+    alias: FIRMA-OSNOVNE-INFORMACIJE
+    title: Firma / Osnovne informacije
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region firma-osnovne-informacije (
+        name: Firma / Osnovne informacije
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P18_ACTIVE_TO (
+        type: displayOnly
+        label {
+            label: Active To
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P18_EMAIL (
+        type: displayOnly
+        label {
+            label: Email
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P18_ESSCOM_ID (
+        type: selectOne
+        label {
+            label: Esscom klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv AS d,
+                    id AS r
+                FROM
+                    accounting.sec_klijenti
+                WHERE
+                    ooj_id = apex_app_setting.get_value('ESSCOM_OOJ_ID')
+                ```
+        }
+        layout {
+            sequence: 80
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P18_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @firma-osnovne-informacije
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P18_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P18_ODGOVORNO_LICE (
+        type: displayOnly
+        label {
+            label: Odgovorno Lice
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P18_POPUST (
+        type: numberField
+        label {
+            label: Popust
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @firma-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P18_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 241129120525210228
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.firma_pkg.get_firma (
+                    p_id             => :P18_ID,
+                    p_naziv          => :P18_NAZIV,
+                    p_odgovorno_lice => :P18_ODGOVORNO_LICE,
+                    p_email          => :P18_EMAIL,
+                    p_active_to      => :P18_ACTIVE_TO,
+                    p_popust         => :P18_POPUST,
+                    p_esscom_id      => :P18_ESSCOM_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 241080185481251505
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P18_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.firma_pkg.update_firma (
+                    p_id        => :P18_ID,
+                    p_popust    => :P18_POPUST,
+                    p_esscom_id => :P18_ESSCOM_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 241080228473251506
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

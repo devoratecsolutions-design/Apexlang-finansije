@@ -1,0 +1,14 @@
+# Privremeni Office fajlovi (nastaju dok je dokument otvoren)
+~$*
+
+# Windows / macOS smeće
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Zapisnici pokretanja skripti
+*.log
+
+# Lokalna podešavanja editora
+.vscode/
+*.swp

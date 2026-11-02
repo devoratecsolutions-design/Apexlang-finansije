@@ -1,0 +1,48 @@
+plugin numberCounting2 (
+    name: Number Counting
+    staticId: NUMBER_COUNTING
+    templateComponent {
+        availableAs: [
+            partial
+            report
+        ]
+        partial:
+            ```html
+            {if APEX$IS_LAZY_LOADING/}
+              <div></div>
+            {else/}
+                <div class="tc_col"> 
+                    <span class="tc_icon #ICON# fa-2x"></span>
+                    <h4 class="tc_color" data-max="#VALUE#">+ #TEXT#</h4>
+                </div>
+            {endif/}
+            ```
+        reportBody:
+            ```html
+            <div class="tc_div">#APEX$ROWS#</div>
+            
+            ```
+        reportRow:
+            ```html
+            <div class="tc_row" #APEX$ROW_IDENTIFICATION#>#APEX$PARTIAL#</div>
+            
+            ```
+        numberOfLazyLoadingSkeletons: 3
+    }
+    component {
+        standardAttributes: regionTemplateAttr
+    }
+    css {
+        fileUrls: #PLUGIN_FILES#responsive_counter#MIN#.css
+    }
+    javaScript {
+        fileUrls: #PLUGIN_FILES#responsive_counter#MIN#.js
+    }
+    information {
+        version: 1.0
+    }
+    subscription {
+        master: @/200/templateComponent/numberCounting2
+    }
+)
+

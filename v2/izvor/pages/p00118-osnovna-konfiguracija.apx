@@ -1,0 +1,585 @@
+page 118 (
+    name: Osnovna konfiguracija
+    alias: OSNOVNA-KONFIGURACIJA
+    title: Osnovna konfiguracija
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            U ovoj sekciji definišu se parametri koji su od suštinskog značaja 
+            za ispravan rad sistema i usklađenost sa zakonskim propisima.</br>
+            Prvo se podešava dužina konta u izvještajima. </br>
+            Ovo podešavanje direktno određuje način na koji će konta biti 
+            prikazana i obrađena u izvještajima.</br>
+            Polje <b><em>"Period zaključan do"</em></b> definiše vremenski okvir u kojem se mogu kreirati i 
+            obrađivati fakture. </br>Sve fakture čiji bi datum bio izvan ovog perioda neće biti 
+            moguće evidentirati, čime se obezbjeđuje kontrola i sprječava naknadna manipulacija podacima.
+            
+            U dijelu koji se odnosi na identifikacione podatke, obavezno je unijeti:
+            <ul>
+                <li><b><em>MB (Matični broj)</em></b></li>
+                <li><b><em>MBS (Matični broj subjekta)</em></b></li>
+            </ul>
+            Pored toga, administrator definiše podrazumijevani tip cijene – <b><em>maloprodajnu (MPC)</em></b> ili <b><em>veleprodajnu (VPC)</em></b>, 
+            čime se unaprijed određuje osnovni način obračuna i prikaza cijena u aplikaciji.</br>
+            Ukoliko je pravno lice dio PDV sistema, neophodno je označiti tu opciju. 
+            Ova postavka utiče na način obračuna poreza kroz aplikaciju.</br>
+            Na kraju, u sekciji <b><em>"Izvještaj fiskal"</em></b>, potrebno je definisati da li organizacija 
+            posjeduje rješenje o neizdavanju fiskalnih računa. </br>
+            Ako takvo rješenje postoji, obavezno se unose podaci o njegovom broju, datumu izdavanja, 
+            te instituciji koja ga je izdala. 
+            ```
+    }
+
+    region fiskal (
+        name: Fiskal
+        type: staticContent
+        layout {
+            sequence: 70
+            parentRegion: @wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                margin-top-md
+            ]
+        }
+    )
+
+    region osnovna-konfiguracija (
+        name: Osnovna konfiguracija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+            column: 3
+            columnSpan: 8
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P118_BROJ_RJESENJA (
+        type: textField
+        label {
+            label: Broj rješenja
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @fiskal
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_DATUM_RJESENJA (
+        type: datePicker
+        label {
+            label: Datum rješenja
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @fiskal
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_IZDAVAOC_RJESENJA (
+        type: textField
+        label {
+            label: Izdato od strane
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @fiskal
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_KONTO_DUZINA (
+        type: numberField
+        label {
+            label: Dužina konta u izvještajima
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_MB (
+        type: numberField
+        label {
+            label: MB
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_MBS (
+        type: textField
+        label {
+            label: MBS
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_PDV_SISTEM (
+        type: radioGroup
+        label {
+            label: Da li ste u PDV sistemu
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 60
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: msp
+        }
+    )
+
+    pageItem P118_PERIOD_ZAKLJUCAN_DO (
+        type: datePicker
+        label {
+            label: Period zaključan do
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P118_RJESENJE (
+        type: radioGroup
+        label {
+            label: Posjedujem rješenje o neizdavanju fiskalnog računa
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @fiskal
+            slot: regionBody
+            alignment: left
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P118_TIP_CIJENE (
+        type: radioGroup
+        label {
+            label: Tip podrazumijevane cijene
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @tip-cijene
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 20
+            slot: body
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction pdv (
+        name: PDV
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P118_PDV_SISTEM
+        }
+        clientSideCondition {
+            type: item=value
+            item: P118_PDV_SISTEM
+            value: N
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @fiskal
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @fiskal
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction rjesenje (
+        name: Rjesenje
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P118_RJESENJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P118_RJESENJE
+            value: Y
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: [
+                    P118_BROJ_RJESENJA
+                    P118_DATUM_RJESENJA
+                    P118_IZDAVAOC_RJESENJA
+                ]
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: [
+                    P118_BROJ_RJESENJA
+                    P118_DATUM_RJESENJA
+                    P118_IZDAVAOC_RJESENJA
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation konto-duzina-not-null (
+        name: Konto duzina NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P118_KONTO_DUZINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P118_KONTO_DUZINA
+        }
+    )
+
+    validation pdv-sistem-not-null (
+        name: PDV Sistem NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P118_PDV_SISTEM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P118_PDV_SISTEM
+        }
+    )
+
+    validation period-zakljucan-do-not-null (
+        name: Period zakljucan do NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P118_PERIOD_ZAKLJUCAN_DO
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P118_PERIOD_ZAKLJUCAN_DO
+        }
+    )
+
+    validation tip-cijene-not-null (
+        name: Tip cijene NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P118_TIP_CIJENE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P118_TIP_CIJENE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.get_ooj (
+                    p_id                  => :APP_OOJ_ID,
+                    p_mbs                 => :P118_MBS,
+                    p_mb                  => :P118_MB,
+                    p_pdv_sistem          => :P118_PDV_SISTEM,
+                    p_rjesenje            => :P118_RJESENJE,
+                    p_broj_rjesenja       => :P118_BROJ_RJESENJA,
+                    p_datum_rjesenja      => :P118_DATUM_RJESENJA,
+                    p_izdavaoc_rjesenja   => :P118_IZDAVAOC_RJESENJA,
+                    p_konto_duzina        => :P118_KONTO_DUZINA,
+                    p_period_zakljucan_do => :P118_PERIOD_ZAKLJUCAN_DO,
+                    p_tip_cijene          => :P118_TIP_CIJENE
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 114517817859798920
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.update_ooj (
+                    p_id                  => :APP_OOJ_ID,
+                    p_mbs                 => :P118_MBS,
+                    p_mb                  => :P118_MB,
+                    p_pdv_sistem          => :P118_PDV_SISTEM,
+                    p_rjesenje            => :P118_RJESENJE,
+                    p_broj_rjesenja       => :P118_BROJ_RJESENJA,
+                    p_datum_rjesenja      => :P118_DATUM_RJESENJA,
+                    p_izdavaoc_rjesenja   => :P118_IZDAVAOC_RJESENJA,
+                    p_konto_duzina        => :P118_KONTO_DUZINA,
+                    p_period_zakljucan_do => :P118_PERIOD_ZAKLJUCAN_DO,
+                    p_tip_cijene          => :P118_TIP_CIJENE
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 114517979963798921
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

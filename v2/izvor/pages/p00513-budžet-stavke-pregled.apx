@@ -1,0 +1,1462 @@
+page 513 (
+    name: Budžet stavke / Pregled
+    alias: BUDŽET-STAVKE-PREGLED
+    title: Budžet stavke / Pregled
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region greške-u-unosu-oj (
+        name: Greške u unosu / OJ
+        title: Greške u unosu
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P513_OJ_ID
+        }
+    )
+
+    region greške-u-unosu-ukupno (
+        name: Greške u unosu / Ukupno
+        title: Greške u unosu
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P513_OJ_ID
+        }
+    )
+
+    region potrebni-periodi (
+        name: Potrebni periodi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH params AS (
+                    -- Parameters
+                    SELECT :P513_BROJ_MJESECI AS p_months,
+                           :P513_GODINA AS p_year
+                    FROM dual
+                ),
+                months AS (
+                    SELECT LEVEL AS month_num,
+                           ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                    FROM dual
+                    CROSS JOIN params p
+                    CONNECT BY LEVEL <= 12
+                ),
+                periods AS (
+                    SELECT m.month_num,
+                           m.first_day,
+                           CEIL(m.month_num / p.p_months) AS q_num,
+                           p.p_months
+                    FROM months m
+                    CROSS JOIN params p
+                )
+                SELECT 
+                    'P' || q_num || ' = ' ||
+                    TRIM(TO_CHAR(MIN(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                    CASE WHEN p_months > 1 
+                         THEN ' - ' || TRIM(TO_CHAR(MAX(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                         ELSE ''
+                    END AS display
+                FROM periods
+                GROUP BY q_num, p_months
+                ORDER BY q_num;
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @value-attribute-pairs-row
+            templateOptions: [
+                #DEFAULT#
+                t-AVPList--leftAligned
+            ]
+        }
+        heading {
+            type: none
+        }
+
+        column DISPLAY (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Display
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region premašen-budžet (
+        name: Premašen budžet!
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                Maksimalan budžet organizacione jedinice iznosi: <b>&P513_MAX_IZNOS.</b>
+                <br>
+                Trenutni budžet iznosi: <b>&P513_SUMA.</b>
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @suma-stavki-oj
+            slot: subRegions
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: to_number(:P513_SUMA, '999G999G999G999G990D00') > to_number(:P513_MAX_IZNOS, '999G999G999G999G990D00')
+        }
+    )
+
+    region premašen-budžet-2 (
+        name: Premašen budžet!
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                Maksimalan budžet organizacione jedinice iznosi: <b>&P513_MAX_IZNOS.</b>
+                <br>
+                Trenutni budžet iznosi: <b>&P513_SUMA.</b>
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @suma-stavki-ukupno
+            slot: subRegions
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: to_number(:P513_SUMA, '999G999G999G999G990D00') > to_number(:P513_MAX_IZNOS, '999G999G999G999G990D00')
+        }
+    )
+
+    region search (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @stavke-oj
+        }
+        layout {
+            sequence: 10
+            parentRegion: @greške-u-unosu-oj
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P513_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P513_STATUS_SIFRA (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Dupli period;D,Nepostojeći period;M,OK;O
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS_SIFRA
+            }
+        )
+
+        filter P513_STAVKA_ID (
+            type: checkboxGroup
+            label {
+                label: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: STAVKA_ID
+            }
+        )
+
+    )
+
+    region search-2 (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @stavke-ukupno
+        }
+        layout {
+            sequence: 10
+            parentRegion: @greške-u-unosu-ukupno
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P513_SEARCH_1 (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P513_SEARCH_2 (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P513_STATUS_SIFRA_1 (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Dupli period;D,Nepostojeći period;M,OK;O
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS_SIFRA
+            }
+        )
+
+        filter P513_STATUS_SIFRA_2 (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Dupli period;D,Nepostojeći period;M,OK;O
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS_SIFRA
+            }
+        )
+
+        filter P513_STAVKA_ID_1 (
+            type: checkboxGroup
+            label {
+                label: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: STAVKA_ID
+            }
+        )
+
+        filter P513_STAVKA_ID_2 (
+            type: checkboxGroup
+            label {
+                label: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: STAVKA_ID
+            }
+        )
+
+    )
+
+    region stavke-oj (
+        name: Stavke OJ
+        title: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH params AS (
+                    SELECT :P513_BROJ_MJESECI AS p_months,
+                           :P513_GODINA AS p_year
+                    FROM dual
+                ),
+                months AS (
+                    SELECT LEVEL AS month_num,
+                           ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                    FROM dual
+                    CROSS JOIN params p
+                    CONNECT BY LEVEL <= 12
+                ),
+                periods AS (
+                    SELECT CEIL(m.month_num / p.p_months) AS q_num,
+                           MIN(m.first_day) AS period_start,
+                           MAX(m.first_day) AS period_end
+                    FROM months m
+                    CROSS JOIN params p
+                    GROUP BY CEIL(m.month_num / p.p_months)
+                ),
+                stavke AS (
+                    SELECT DISTINCT 
+                        stavka_id 
+                    FROM 
+                        vw_budzet_stavke
+                    WHERE
+                        budzet_id = :P513_BUDZET_ID
+                        AND oj_id = :P513_OJ_ID
+                ),
+                stavke_periods AS (
+                    SELECT 
+                        s.stavka_id,
+                        p.q_num,
+                        p.period_start,
+                        p.period_end
+                    FROM stavke s
+                    CROSS JOIN periods p
+                ),
+                stavke_existing AS (
+                    SELECT b.stavka_id,
+                           CEIL(EXTRACT(MONTH FROM b.period) / p.p_months) AS q_num,
+                           COUNT(DISTINCT NVL(b.projekat_id, -1)) AS projekti_cnt,
+                           COUNT(*) AS cnt
+                    FROM 
+                        vw_budzet_stavke b
+                        CROSS JOIN params p
+                    WHERE 
+                        EXTRACT(YEAR FROM b.period) = p.p_year
+                        AND budzet_id = :P513_BUDZET_ID
+                        AND oj_id = :P513_OJ_ID
+                
+                    GROUP BY 
+                        b.stavka_id, 
+                        CEIL(EXTRACT(MONTH FROM b.period) / p.p_months)
+                )
+                SELECT sp.stavka_id,
+                       'P' || sp.q_num || ' = ' ||
+                       TRIM(TO_CHAR(sp.period_start, 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                       CASE WHEN :P513_BROJ_MJESECI > 1 
+                            THEN ' - ' || TRIM(TO_CHAR(sp.period_end, 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                            ELSE ''
+                       END AS display,
+                       sp.period_start,
+                       se.cnt,
+                       se.projekti_cnt,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'Nepostojeći period'
+                            WHEN se.cnt > se.projekti_cnt THEN 'Dupli period'
+                            ELSE 'OK'
+                       END AS status,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'M'
+                            WHEN se.cnt > se.projekti_cnt THEN 'D'
+                            ELSE 'O'
+                       END AS status_sifra,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'u-color-9'
+                            WHEN se.cnt > se.projekti_cnt THEN 'u-color-9'
+                            ELSE 'u-color-5'
+                       END AS status_color_code
+                FROM stavke_periods sp
+                LEFT JOIN stavke_existing se
+                       ON sp.stavka_id = se.stavka_id
+                      AND sp.q_num = se.q_num
+                WHERE
+                    se.q_num IS null 
+                    OR se.cnt > se.projekti_cnt
+                ORDER BY sp.stavka_id, sp.q_num;
+                
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @greške-u-unosu-oj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CNT (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Broj stavki
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DISPLAY (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Period
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PERIOD_START (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column PROJEKTI_CNT (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Broj projekata
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column STATUS_SIFRA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region stavke-ukupno (
+        name: Stavke Ukupno
+        title: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH params AS (
+                    SELECT :P513_BROJ_MJESECI AS p_months,
+                           :P513_GODINA AS p_year
+                    FROM dual
+                ),
+                months AS (
+                    SELECT LEVEL AS month_num,
+                           ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                    FROM dual
+                    CROSS JOIN params p
+                    CONNECT BY LEVEL <= 12
+                ),
+                periods AS (
+                    SELECT CEIL(m.month_num / p.p_months) AS q_num,
+                           MIN(m.first_day) AS period_start,
+                           MAX(m.first_day) AS period_end
+                    FROM months m
+                    CROSS JOIN params p
+                    GROUP BY CEIL(m.month_num / p.p_months)
+                ),
+                stavke AS (
+                    SELECT DISTINCT 
+                        stavka_id 
+                    FROM 
+                        vw_budzet_stavke bs
+                    WHERE
+                        budzet_id = :P513_BUDZET_ID
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                vw_budzet_oj oj
+                            WHERE
+                                oj.budzet_id = bs.budzet_id
+                                AND oj.oj_id = bs.oj_id
+                                AND oj.status_sifra != 10
+                        )
+                ),
+                stavke_periods AS (
+                    SELECT 
+                        s.stavka_id,
+                        p.q_num,
+                        p.period_start,
+                        p.period_end
+                    FROM stavke s
+                    CROSS JOIN periods p
+                ),
+                stavke_existing AS (
+                    SELECT b.stavka_id,
+                           CEIL(EXTRACT(MONTH FROM b.period) / p.p_months) AS q_num,
+                           COUNT(DISTINCT NVL(b.projekat_id, -1)) AS projekti_cnt,
+                           COUNT(*) AS cnt
+                    FROM 
+                        vw_budzet_stavke b
+                        CROSS JOIN params p
+                    WHERE 
+                        EXTRACT(YEAR FROM b.period) = p.p_year
+                        AND budzet_id = :P513_BUDZET_ID
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                vw_budzet_oj oj
+                            WHERE
+                                oj.budzet_id = b.budzet_id
+                                AND oj.oj_id = b.oj_id
+                                AND oj.status_sifra != 10
+                        )
+                
+                    GROUP BY 
+                        b.stavka_id, 
+                        CEIL(EXTRACT(MONTH FROM b.period) / p.p_months)
+                )
+                SELECT sp.stavka_id,
+                       'P' || sp.q_num || ' = ' ||
+                       TRIM(TO_CHAR(sp.period_start, 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                       CASE WHEN :P513_BROJ_MJESECI > 1 
+                            THEN ' - ' || TRIM(TO_CHAR(sp.period_end, 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                            ELSE ''
+                       END AS display,
+                       sp.period_start,
+                       se.cnt,
+                       se.projekti_cnt,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'Nepostojeći period'
+                            WHEN se.cnt > se.projekti_cnt THEN 'Dupli period'
+                            ELSE 'OK'
+                       END AS status,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'M'
+                            WHEN se.cnt > se.projekti_cnt THEN 'D'
+                            ELSE 'O'
+                       END AS status_sifra,
+                       CASE 
+                            WHEN se.q_num IS NULL THEN 'u-color-9'
+                            WHEN se.cnt > se.projekti_cnt THEN 'u-color-9'
+                            ELSE 'u-color-5'
+                       END AS status_color_code
+                FROM stavke_periods sp
+                LEFT JOIN stavke_existing se
+                       ON sp.stavka_id = se.stavka_id
+                      AND sp.q_num = se.q_num
+                WHERE
+                    se.q_num IS null 
+                    OR se.cnt > se.projekti_cnt
+                ORDER BY sp.stavka_id, sp.q_num;
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @greške-u-unosu-ukupno
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CNT (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Broj stavki
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DISPLAY (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Period
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PERIOD_START (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column PROJEKTI_CNT (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Broj projekata
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column STATUS_SIFRA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region suma-stavki (
+        name: Suma stavki
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH all_links AS (
+                    -- Build parent-child relationships for all levels
+                    SELECT CONNECT_BY_ROOT id AS root_id,
+                           id AS child_id,
+                           LEVEL AS lvl
+                    FROM budzetske_stavke
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND (oj_id = :P513_OJ_ID OR oj_id is null)
+                    CONNECT BY PRIOR id = stavka_id
+                    ORDER SIBLINGS BY
+                        id
+                ),
+                sums AS (
+                    SELECT bs.stavka_id,
+                           SUM(bs.iznos) AS iznos
+                    FROM vw_budzet_stavke bs
+                    WHERE bs.oj_id = :P513_OJ_ID
+                      AND bs.budzet_id = :P513_BUDZET_ID
+                    GROUP BY bs.stavka_id
+                )
+                SELECT a.root_id AS stavka_id,
+                       -- sum of itself
+                       SUM(CASE WHEN a.root_id = a.child_id THEN NVL(s.iznos,0) END) AS sum_self,
+                       -- sum of children only
+                       SUM(CASE WHEN a.root_id <> a.child_id THEN NVL(s.iznos,0) END) AS sum_children,
+                       -- total sum (self + children)
+                       SUM(NVL(s.iznos,0)) AS sum_total
+                FROM all_links a
+                LEFT JOIN sums s
+                       ON a.child_id = s.stavka_id
+                GROUP BY a.root_id
+                ORDER BY a.root_id;
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @suma-stavki-oj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUM_CHILDREN (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Suma podređenih stavki (2)
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUM_SELF (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Suma stavke (1)
+            }
+            layout {
+                sequence: 20
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column SUM_TOTAL (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Zbir (1 + 2)
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region suma-stavki-2 (
+        name: Suma stavki
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH all_links AS (
+                    -- Build parent-child relationships for all levels
+                    SELECT CONNECT_BY_ROOT id AS root_id,
+                           id AS child_id,
+                           LEVEL AS lvl
+                    FROM budzetske_stavke
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                    CONNECT BY PRIOR id = stavka_id
+                    ORDER SIBLINGS BY
+                        id
+                ),
+                sums AS (
+                    SELECT bs.stavka_id,
+                           SUM(bs.iznos) AS iznos
+                    FROM vw_budzet_stavke bs
+                    WHERE 
+                        bs.budzet_id = :P513_BUDZET_ID
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                vw_budzet_oj oj
+                            WHERE
+                                oj.budzet_id = bs.budzet_id
+                                AND oj.oj_id = bs.oj_id
+                                AND oj.status_sifra != 10
+                        )
+                    GROUP BY bs.stavka_id
+                )
+                SELECT a.root_id AS stavka_id,
+                       -- sum of itself
+                       SUM(CASE WHEN a.root_id = a.child_id THEN NVL(s.iznos,0) END) AS sum_self,
+                       -- sum of children only
+                       SUM(CASE WHEN a.root_id <> a.child_id THEN NVL(s.iznos,0) END) AS sum_children,
+                       -- total sum (self + children)
+                       SUM(NVL(s.iznos,0)) AS sum_total
+                FROM all_links a
+                LEFT JOIN sums s
+                       ON a.child_id = s.stavka_id
+                GROUP BY a.root_id
+                ORDER BY a.root_id;
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @suma-stavki-ukupno
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUM_CHILDREN (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Suma podređenih stavki (2)
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SUM_SELF (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Suma stavke (1)
+            }
+            layout {
+                sequence: 20
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column SUM_TOTAL (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Zbir (1 + 2)
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region suma-stavki-oj (
+        name: Suma stavki / OJ
+        title: Suma stavki
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P513_OJ_ID
+        }
+    )
+
+    region suma-stavki-ukupno (
+        name: Suma stavki / Ukupno
+        title: Suma stavki
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @tabs
+            slot: tabs
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P513_OJ_ID
+        }
+    )
+
+    region tabs (
+        name: Tabs
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: contentBody
+        }
+        appearance {
+            template: @tabs-container
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                t-TabsRegion-mod--fillLabels
+                t-TabsRegion-mod--pill
+            ]
+        }
+        settings {
+            expandShortcuts: true
+        }
+    )
+
+    pageItem P513_BROJ_MJESECI (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_BUDZET_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_GODINA (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_MAX_IZNOS (
+        type: hidden
+        layout {
+            sequence: 70
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_OJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    pageItem P513_SUMA (
+        type: hidden
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet (
+                    p_id           => :P513_BUDZET_ID,
+                    p_broj_mjeseci => :P513_BROJ_MJESECI,
+                    p_godina       => :P513_GODINA,
+                    p_status_sifra => :P513_BUDZET_STATUS_SIFRA
+                );
+                
+                IF :P513_OJ_ID IS NOT null THEN
+                    budzet_pkg.get_budzet_oj (
+                        p_budzet_id => :P513_BUDZET_ID,
+                        p_oj_id     => :P513_OJ_ID,
+                        p_max_iznos => :P513_MAX_IZNOS,
+                        p_suma      => :P513_SUMA
+                    );
+                ELSE
+                    budzet_pkg.get_budzet (
+                        p_id           => :P513_BUDZET_ID,
+                        p_max_iznos    => :P513_MAX_IZNOS,
+                        p_suma         => :P513_SUMA
+                    );
+                END IF;
+                
+                :P513_MAX_IZNOS := to_char(:P513_MAX_IZNOS, '999G999G999G999G990D00');
+                :P513_SUMA := to_char(:P513_SUMA, '999G999G999G999G990D00');
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 145015409169488802
+        }
+    )
+
+)
+

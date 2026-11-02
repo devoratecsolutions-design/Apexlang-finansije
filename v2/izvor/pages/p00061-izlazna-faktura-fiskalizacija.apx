@@ -1,0 +1,476 @@
+page 61 (
+    name: Izlazna faktura / Fiskalizacija
+    alias: IZLAZNA-FAKTURA-FISKALIZACIJA
+    title: Izlazna faktura / Fiskalizacija
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--sm
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    css {
+        inline:
+            ```css
+            iframe {
+                height: 92vh;
+                width: 420px;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region iframe (
+        name: IFrame
+        type: url
+        layout {
+            sequence: 70
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: racun
+        }
+        serverSideCondition {
+            type: item=value
+            item: P61_ACCEPTED
+            value: Y
+        }
+        settings {
+            url: &P61_URL.
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item=value
+            item: P61_ACCEPTED
+            value: N
+        }
+    )
+
+    pageItem P61_ACCEPTED (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    pageItem P61_EMAIL (
+        type: radioGroup
+        label {
+            label: Pošalji E-mail o fiskalizaciji na E-mail osnovne ogranizacione jedinice
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 30
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P61_EMAIL_DISPLAY (
+        type: displayOnly
+        label {
+            label: E-mail osnovne ogranizacione jedinice
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P61_FOOTER (
+        type: radioGroup
+        label {
+            label: Ime kupca na dnu računa
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+    )
+
+    pageItem P61_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P61_ORIG (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P61_PRINT_ON_DEVICE (
+        type: radioGroup
+        label {
+            label: Štampa na uređaju
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P61_TRAINING (
+        type: radioGroup
+        label {
+            label: Obuka
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P61_URL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    button finish (
+        buttonName: FINISH
+        label: Završi fiskalizaciju
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P61_ACCEPTED = 'Y' AND :P61_ORIG = 53
+        }
+    )
+
+    button fiskalizacija (
+        buttonName: FISKALIZACIJA
+        label: Fiskalizacija računa
+        layout {
+            sequence: 60
+            region: @wrapper
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+                t-Button--padTop
+            ]
+            icon: fa-cash-register
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction toggle (
+        name: Toggle
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P61_EMAIL
+        }
+        clientSideCondition {
+            type: item=value
+            item: P61_EMAIL
+            value: N
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P61_EMAIL_DISPLAY
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P61_EMAIL_DISPLAY
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+    )
+
+    process accept (
+        name: Accept
+        type: executeCode
+        source {
+            plsqlCode: :P61_ACCEPTED := 'Y';
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55332152930090924
+        }
+        serverSideCondition {
+            whenButtonPressed: @fiskalizacija
+        }
+    )
+
+    process finish (
+        name: Finish
+        type: executeCode
+        source {
+            plsqlCode: null;
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Uspješno ste fiskalizovali račun.
+        }
+        advanced {
+            executionMappingIdentifier: 102838784859921327
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    process generate-middleware-url (
+        name: Generate Middleware URL
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P61_URL := kasa_pkg.generate_middleware_url (
+                    p_kasa_id         => :APP_KASA_ID,
+                    p_korisnik_id     => :APP_USER_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_kif_id          => :P61_ID,
+                    p_print_on_device => :P61_PRINT_ON_DEVICE,
+                    p_training        => :P61_TRAINING,
+                    p_email           => :P61_EMAIL
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 97390732547426511
+        }
+        serverSideCondition {
+            type: item=value
+            item: P61_ACCEPTED
+            value: Y
+        }
+    )
+
+    process get-email (
+        name: Get Email
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.get_ooj_email (
+                    p_id    => :APP_OOJ_ID,
+                    p_email => :P61_EMAIL_DISPLAY
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 115610123624756612
+        }
+        serverSideCondition {
+            type: item=value
+            item: P61_ACCEPTED
+            value: N
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 50
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+)
+

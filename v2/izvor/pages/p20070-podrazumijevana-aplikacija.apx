@@ -1,0 +1,165 @@
+page 20070 (
+    name: Podrazumijevana aplikacija
+    alias: PODRAZUMIJEVANA-APLIKACIJA
+    title: Podrazumijevana aplikacija
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    pageItem P20070_SIF_APPLICATION_ID (
+        type: selectOne
+        label {
+            label: Aplikacija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-aplikacije-dostupne
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Podešavanja
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+                t-Button--iconLeft
+            ]
+            cssClasses: t-Button--inlineLink
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 20000
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button change (
+        buttonName: CHANGE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation application-id-not-null (
+        name: Application ID NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P20070_SIF_APPLICATION_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P20070_SIF_APPLICATION_ID
+        }
+    )
+
+    computation p20070-sif-application-id (
+        itemName: P20070_SIF_APPLICATION_ID
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    sif_application_id 
+                FROM
+                    core.korisnici
+                WHERE
+                    id = :APP_USER_ID
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 98516477790146263
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.update_korisnik (
+                    p_id                 => :APP_USER_ID,
+                    p_sif_application_id => :P20070_SIF_APPLICATION_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 98516088130146263
+        }
+    )
+
+)
+

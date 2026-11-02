@@ -1,0 +1,441 @@
+page 508 (
+    name: Budžet / Organizaciona jedinica
+    alias: BUDŽET-ORGANIZACIONA-JEDINICA
+    title: Budžet / Organizaciona jedinica
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet-organizaciona-jedinica (
+        name: Budžet / Organizaciona jedinica
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P508_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @budžet-organizaciona-jedinica
+            slot: regionBody
+        }
+    )
+
+    pageItem P508_MAX_IZNOS (
+        type: numberField
+        label {
+            label: Maksimalan iznos budžeta
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @budžet-organizaciona-jedinica
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P508_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv AS d,
+                    id AS r
+                FROM
+                    core.oj
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND parent_id IS null
+                    AND id NOT IN (
+                        SELECT 
+                            oj_id
+                        FROM 
+                            budzet_oj
+                        WHERE
+                            budzet_id = :P508_BUDZET_ID
+                    )
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @budžet-organizaciona-jedinica
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P508_OJ_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P508_OJ_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P508_OJ_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P508_OJ_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation max-iznos-not-null (
+        name: Max iznos NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P508_MAX_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P508_MAX_IZNOS
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.delete_budzet_oj (
+                    p_budzet_id => :P508_BUDZET_ID,
+                    p_oj_id     => :P508_OJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 144392105027239217
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet_oj (
+                    p_budzet_id => :P508_BUDZET_ID,
+                    p_oj_id     => :P508_OJ_ID,
+                    p_max_iznos => :P508_MAX_IZNOS
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 144391990903239215
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P508_OJ_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.insert_budzet_oj (
+                    p_budzet_id => :P508_BUDZET_ID,
+                    p_oj_id     => :P508_OJ_ID,
+                    p_max_iznos => to_number(:P508_MAX_IZNOS, '999G999G999G999G990D00'),
+                    p_radnik_id => :APP_RADNIK_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 144393221564239228
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.update_budzet_oj (
+                    p_budzet_id => :P508_BUDZET_ID,
+                    p_oj_id     => :P508_OJ_ID,
+                    p_max_iznos => to_number(:P508_MAX_IZNOS, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 144392015788239216
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 506 - Insert
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 506
+                items: {
+                    P506_BUDZET_ID: &P508_BUDZET_ID.
+                    P506_OJ_ID: &P508_OJ_ID.
+                }
+                clearCache: 506
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        name: Go To Page 506 - Delete
+        execution {
+            sequence: 40
+        }
+        behavior {
+            target: {
+                page: 506
+                items: {
+                    P506_BUDZET_ID: &P508_BUDZET_ID.
+                }
+                clearCache: 506
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch (
+        name: Go To Page 506 - Update
+        execution {
+            sequence: 30
+        }
+        behavior {
+            target: {
+                page: 506
+                items: {
+                    P506_BUDZET_ID: &P508_BUDZET_ID.
+                    P506_OJ_ID: &P508_OJ_ID.
+                }
+                clearCache: 506
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

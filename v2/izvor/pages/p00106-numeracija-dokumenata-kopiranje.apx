@@ -1,0 +1,531 @@
+page 106 (
+    name: Numeracija dokumenata / Kopiranje
+    alias: NUMERACIJA-DOKUMENATA-KOPIRANJE
+    title: Numeracija dokumenata / Kopiranje
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavke-ig (
+        name: Stavke IG
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    seq_id,
+                    c001 AS vrsta_naloga_id,
+                    c002 AS prefix,
+                    c003 AS duzina,
+                    c004 AS sufix,
+                    c005 AS auto_restart
+                from
+                    apex_collections
+                where
+                    collection_name = 'NUMERACIJA_STAVKE'
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            selectFirstRow: false
+            fixedRowHeight: false
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            show: false
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 233827266516544613
+        }
+
+        savedReport 2338962 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @VRSTA_NALOGA_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @PREFIX
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @DUZINA
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @SUFIX
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @AUTO_RESTART
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @SEQ_ID
+                layout {
+                    sequence: 6
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column AUTO_RESTART (
+            type: radioGroup
+            heading {
+                heading: Auto restart
+            }
+            settings {
+                noOfCols: 2
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: AUTO_RESTART
+                dataType: varchar2
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column DUZINA (
+            type: textField
+            heading {
+                heading: Dužina brojača
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: DUZINA
+                dataType: varchar2
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column PREFIX (
+            type: textField
+            heading {
+                heading: Prefix
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: PREFIX
+                dataType: varchar2
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column SEQ_ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: SEQ_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column SUFIX (
+            type: textField
+            heading {
+                heading: Sufix
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                maxLength: 32767
+            }
+            source {
+                databaseColumn: SUFIX
+                dataType: varchar2
+            }
+            default {
+                duplicateCopiesExistingValue: false
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column VRSTA_NALOGA_ID (
+            type: displayOnly
+            heading {
+                heading: Vrsta naloga
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-vrste-naloga
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: VRSTA_NALOGA_ID
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: useLov
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy (
+        buttonName: COPY
+        label: Kopiraj
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 233828663482544627
+        }
+        serverSideCondition {
+            whenButtonPressed: @copy
+        }
+    )
+
+    process copy (
+        name: Copy
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.insert_from_collection (
+                    p_ooj_id => :APP_OOJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 233828202064544623
+        }
+        serverSideCondition {
+            whenButtonPressed: @copy
+        }
+    )
+
+    process create-collection (
+        name: Create collection
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    IF APEX_COLLECTION.COLLECTION_EXISTS (
+                        p_collection_name => 'NUMERACIJA_STAVKE'
+                    ) THEN
+                        APEX_COLLECTION.DELETE_COLLECTION (
+                            p_collection_name => 'NUMERACIJA_STAVKE'
+                        );
+                    END IF;
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'NUMERACIJA_STAVKE',
+                        p_query           => '
+                select
+                    vrsta_naloga_id,
+                    prefix,
+                    duzina,
+                    ''-'' || to_char(trunc(sysdate), ''YY'') AS sufix,
+                    auto_restart
+                from
+                    core.protokoli
+                where
+                    godina is null
+                    and ooj_id is null
+                    and vrsta_naloga_id not in (
+                        select
+                            vrsta_naloga_id
+                        from
+                            core.protokoli
+                        where
+                            ooj_id = ' || :APP_OOJ_ID || '
+                            AND godina = extract(year from sysdate)
+                    )
+                order by
+                    prefix
+                    ');
+                    
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 233826883706544609
+        }
+        serverSideCondition {
+            type: request=Value
+            value: copy_basic
+        }
+    )
+
+    process stavke-ig-save-interactive-grid-data (
+        name: Stavke IG - Save Interactive Grid Data
+        type: executeCode
+        editableRegion: @stavke-ig
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'U' THEN
+                    APEX_COLLECTION.UPDATE_MEMBER (
+                        p_collection_name => 'NUMERACIJA_STAVKE',
+                        p_seq             => :SEQ_ID,
+                        p_c001            => :VRSTA_NALOGA_ID,
+                        p_c002            => :PREFIX,
+                        p_c003            => :DUZINA,
+                        p_c004            => :SUFIX,
+                        p_c005            => :AUTO_RESTART
+                    );
+                
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 233828085866544621
+        }
+        serverSideCondition {
+            whenButtonPressed: @copy
+        }
+    )
+
+)
+

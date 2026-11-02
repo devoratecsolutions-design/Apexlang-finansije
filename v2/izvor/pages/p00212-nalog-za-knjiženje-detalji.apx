@@ -1,0 +1,1498 @@
+page 212 (
+    name: Nalog za knjiženje / Detalji
+    alias: NALOG-ZA-KNJIŽENJE-DETALJI
+    title: Nalog za knjiženje / Detalji
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region dodatne-informacije (
+        name: Dodatne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT    
+                    tip_placanja_naziv,
+                    fiskalni_racun_broj,
+                    uio_tip_dokumenta_code,
+                    uio_tip_dokumenta_naziv,
+                    system,
+                    stornirano,
+                    storniran_naziv,
+                    vrsta_fakture_naziv,
+                    vrsta_naloga_naziv
+                FROM
+                    vw_kif
+                WHERE
+                    glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                ```
+            pageItemsToSubmit: P212_GLAVNA_KNJIGA_ID
+        }
+        layout {
+            sequence: 30
+            parentRegion: @faktura
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column FISKALNI_RACUN_BROJ (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Broj fiskalnog računa
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column STORNIRANO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Storniran
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 150
+            }
+        )
+
+        column STORNIRAN_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Stornirana
+            }
+            layout {
+                sequence: 160
+            }
+        )
+
+        column SYSTEM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Sistemska faktura
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 140
+            }
+        )
+
+        column TIP_PLACANJA_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Tip plaćanja
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column UIO_TIP_DOKUMENTA_CODE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: UIO tip dokumenta
+            }
+            layout {
+                sequence: 100
+            }
+            columnFormatting {
+                htmlExpression: #UIO_TIP_DOKUMENTA_CODE# - #UIO_TIP_DOKUMENTA_NAZIV#
+            }
+        )
+
+        column UIO_TIP_DOKUMENTA_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 110
+            }
+        )
+
+        column VRSTA_FAKTURE_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Vrsta fakture
+            }
+            layout {
+                sequence: 120
+            }
+        )
+
+        column VRSTA_NALOGA_NAZIV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Vrsta naloga
+            }
+            layout {
+                sequence: 130
+            }
+        )
+
+    )
+
+    region faktura (
+        name: Faktura
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    kif
+                WHERE
+                    glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                ```
+        }
+    )
+
+    region informacije-o-klijentu (
+        name: Informacije o klijentu
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    klijent_naziv,
+                    klijent_grad,
+                    klijent_adresa,
+                    klijent_postanski_broj,
+                    klijent_jib,
+                    klijent_pib,
+                    klijent_stranac,
+                    klijent_pdv_obaveznik
+                FROM
+                    vw_kif
+                WHERE
+                    glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                ```
+            pageItemsToSubmit: P212_GLAVNA_KNJIGA_ID
+        }
+        layout {
+            sequence: 20
+            parentRegion: @faktura
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column KLIJENT_ADRESA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Adresa
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column KLIJENT_GRAD (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Grad
+            }
+            layout {
+                sequence: 190
+            }
+        )
+
+        column KLIJENT_JIB (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: JIB
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column KLIJENT_PDV_OBAVEZNIK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: PDV Obaveznik
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 210
+            }
+        )
+
+        column KLIJENT_PIB (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: PIB
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column KLIJENT_POSTANSKI_BROJ (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Poštanski broj
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column KLIJENT_STRANAC (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stranac
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 200
+            }
+        )
+
+    )
+
+    region nalog (
+        name: Nalog
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    vrsta_naloga_id,
+                    godina,
+                    broj,
+                    datum_dokumenta,
+                    datum_knjizenja,
+                    proknjizeno,
+                    opis,
+                    stornirano,
+                    storniran_id
+                FROM
+                    glavna_knjiga
+                WHERE
+                    id = :P212_GLAVNA_KNJIGA_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+            cssClasses: js-master-region
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-label--stacked
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: No Record Selected
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column BROJ (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Broj
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_DOKUMENTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_KNJIZENJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Datum knjiženja
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Godina
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column PROKNJIZENO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Proknjiženo
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STORNIRANO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stornirano
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column STORNIRAN_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Stornirani nalog
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            link {
+                target: {
+                    page: 201
+                    items: {
+                        P201_ID: #STORNIRAN_ID#
+                    }
+                }
+                linkText: Prelazak na stornirani nalog
+            }
+        )
+
+        column VRSTA_NALOGA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Vrsta naloga
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-vrste-naloga
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region osnovne-informacije (
+        name: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    predracun_naziv,
+                    naziv_fakture,
+                    datum_fakture,
+                    datum_valute,
+                    oj_naziv,
+                    ugovor_naziv,
+                    ugovor_predmet,
+                    iznos_fakture_nopdv,
+                    pdv,
+                    iznos_fakture,
+                    iznos_slovima,
+                    uplaceno_izvod,
+                    uplaceno_rucno
+                FROM
+                    vw_kif
+                WHERE
+                    glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @faktura
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum valute
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+        )
+
+        column IZNOS_FAKTURE_NOPDV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+        )
+
+        column IZNOS_SLOVIMA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Iznos slovima
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: PDV
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+        )
+
+        column PREDRACUN_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Predračun
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column UGOVOR_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Ugovor
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column UGOVOR_PREDMET (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Predmet ugovora
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column UPLACENO_IZVOD (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Uplaceno (izvod)
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+        )
+
+        column UPLACENO_RUCNO (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Uplaćeno (ručno)
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+        )
+
+    )
+
+    region stavke-fakture (
+        name: Stavke fakture
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    valuta_naziv,
+                    stavka_naziv,
+                    jm_naziv,
+                    kolicina,
+                    cijena_char,
+                    cijena_pdv_char,
+                    rabat,
+                    pdv,
+                    iznos_char,
+                    iznos_pdv_char,
+                    pdv_indikator_sifra,
+                    pdv_indikator_naziv
+                FROM 
+                    vw_kif_stavke
+                WHERE
+                    kif_id IN (
+                        SELECT 
+                            id 
+                        FROM 
+                            kif 
+                        WHERE
+                            glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                    )
+                ```
+            pageItemsToSubmit: P212_GLAVNA_KNJIGA_ID
+        }
+        layout {
+            sequence: 40
+            parentRegion: @faktura
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column CIJENA_CHAR (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Cijena bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA_PDV_CHAR (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Cijena sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_CHAR (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_CHAR (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 140
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 130
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: PDV
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_INDIKATOR_NAZIV (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 230
+            }
+        )
+
+        column PDV_INDIKATOR_SIFRA (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Pdv Indikator Sifra
+            }
+            layout {
+                sequence: 220
+            }
+            columnFormatting {
+                htmlExpression: #PDV_INDIKATOR_SIFRA# - #PDV_INDIKATOR_NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RABAT (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Rabat
+            }
+            layout {
+                sequence: 170
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALUTA_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Valuta Naziv
+            }
+            layout {
+                sequence: 210
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region stavke-naloga (
+        name: Stavke naloga
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region stavke-naloga-report (
+        name: Stavke naloga Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    redni_broj,
+                	glavna_knjiga_id,
+                  	kontna_klasa_id,
+                    iznos,
+                    tip_stavke,
+                    opis,
+                    klijent_id,
+                    grad_id,
+                    osnovno_sredstvo_id,
+                    transakcija_id,
+                    pdv_indikator_sifra || ' - ' || pdv_indikator_naziv AS pdv_indikator_naziv,
+                    oj_id,
+                    radnik_id
+                FROM
+                    vw_glavna_knjiga_stavke
+                WHERE
+                    glavna_knjiga_id = :P212_GLAVNA_KNJIGA_ID
+                ORDER BY
+                    redni_broj ASC
+                ```
+            pageItemsToSubmit: P212_ID
+        }
+        layout {
+            sequence: 60
+            parentRegion: @stavke-naloga
+            slot: regionBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: js-detail-region
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column GLAVNA_KNJIGA_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column GRAD_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Grad
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        lpad(sifra, 3, '0') as d,
+                        id as r
+                    FROM
+                        sif.sif_gradovi
+                    WHERE
+                        (
+                            :KLIJENT_ID IS NOT NULL 
+                            AND drzava_id = (
+                                SELECT drzava_id
+                                FROM sec_klijenti k
+                                WHERE k.id = :KLIJENT_ID
+                            )
+                        ) OR (
+                            :KLIJENT_ID IS NULL 
+                            AND drzava_id = 28
+                        )
+                    ```
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KLIJENT_ID (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Klijent
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 130
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Osnovno sredstvo
+            }
+            lov {
+                type: sharedComponent
+                lov: @osnovna-sredstva-display
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P212_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column PDV_INDIKATOR_NAZIV (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: PDV indikator
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P212_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    if
+                    av
+                    ifs
+                    avs
+                    in
+                    ins
+                    ko
+                    kos
+                    kz
+                    kzs
+                ]
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Radnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 140
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BROJ (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column TIP_STAVKE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Duguje / potražuje
+            }
+            lov {
+                type: sharedComponent
+                lov: @duguje-potrazuje
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column TRANSAKCIJA_ID (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Transakcija
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-transakcije-os
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P212_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+    )
+
+    pageItem P212_GLAVNA_KNJIGA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P212_VRSTA_NALOGA_SIFRA (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-close (
+            action: closeDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    computation p212-vrsta-naloga-sifra (
+        itemName: P212_VRSTA_NALOGA_SIFRA
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    vrsta_naloga_sifra 
+                FROM
+                    vw_glavna_knjiga
+                WHERE
+                    id = :P212_GLAVNA_KNJIGA_ID
+                ```
+        }
+    )
+
+)
+

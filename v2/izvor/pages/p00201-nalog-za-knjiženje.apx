@@ -1,0 +1,4399 @@
+page 201 (
+    name: Nalog za knjiženje
+    alias: NALOG-ZA-KNJIŽENJE
+    title: Nalog za knjiženje
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    css {
+        inline:
+            ```css
+            /* Scroll Results Only in Side Column */
+            .t-Body-side {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .search-results {
+                flex: 1;
+                overflow: auto;
+            }
+            /* Format Search Region */
+            .search-region {
+                border-bottom: 1px solid rgba(0,0,0,.1);
+                flex-shrink: 0;
+            }
+            
+            #stavke_ig_ig_report_settings {
+                display: none;
+            }
+            
+            #ui-id-1 > th > span {
+                display: none;
+            }
+            
+            #P201_TOTAL_CONTAINER > div.t-Form-labelContainer {
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }
+            #P201_TOTAL_CONTAINER > div.t-Form-inputContainer {
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+
+    region item-wrapper (
+        name: Item Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region kif (
+        name: KIF
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv_fakture,
+                    klijent_naziv,
+                    datum_fakture,
+                    datum_valute,
+                    iznos_fakture,
+                    pdv,
+                    iznos_fakture_nopdv
+                FROM
+                    vw_kif
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    kif
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ```
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo-label--stacked
+            ]
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum valute
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos fakture sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column IZNOS_FAKTURE_NOPDV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Iznos fakture bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: PDV
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+    )
+
+    region kuf (
+        name: KUF
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv_fakture,
+                    naziv,
+                    klijent_naziv,
+                    datum_prijema,
+                    datum_fakture,
+                    datum_valute,
+                    iznos_bez_pdv,
+                    pdv,
+                    iznos_sa_pdv
+                FROM
+                    vw_kuf
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT
+                    1
+                FROM
+                    kuf
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ```
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo-label--stacked
+            ]
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column DATUM_PRIJEMA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum prijema fakture
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Datum valute
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Iznos fakture bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column IZNOS_SA_PDV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Iznos fakture sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Interni naziv
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv fakture
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: PDV
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+    )
+
+    region nalog (
+        name: Nalog
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    vrsta_naloga_id,
+                    godina,
+                    broj,
+                    datum_dokumenta,
+                    datum_knjizenja,
+                    proknjizeno,
+                    opis,
+                    stornirano,
+                    storniran_id
+                FROM
+                    glavna_knjiga
+                WHERE
+                    id = :P201_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+            cssClasses: js-master-region
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P201_ID
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-label--stacked
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: No Record Selected
+        }
+        componentAdvanced {
+            stripHtml: true
+        }
+
+        column BROJ (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Broj
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "BROJ" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column DATUM_DOKUMENTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "DATUM_DOKUMENTA" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column DATUM_KNJIZENJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Datum knjiženja
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "DATUM_KNJIZENJA" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Godina
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "GODINA" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 40
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "OPIS" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column PROKNJIZENO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Proknjiženo
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "PROKNJIZENO" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column STORNIRANO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stornirano
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 90
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "STORNIRANO" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column STORNIRAN_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Stornirani nalog
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            link {
+                target: {
+                    page: 201
+                    items: {
+                        P201_ID: #STORNIRAN_ID#
+                    }
+                }
+                linkText: Prelazak na stornirani nalog
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "STORNIRAN_ID" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+        column VRSTA_NALOGA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Vrsta naloga
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-vrste-naloga
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    select 1 from "GLAVNA_KNJIGA"
+                    where "VRSTA_NALOGA_ID" is not null
+                    and "ID" = :P201_ID
+                    ```
+            }
+        )
+
+    )
+
+    region nalog-za-knjiženje (
+        name: Nalog za knjiženje
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region niste-izabrali-nalog (
+        name: Niste izabrali nalog
+        type: staticContent
+        layout {
+            sequence: 110
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P201_ID
+        }
+    )
+
+    region region-display-selector (
+        name: Region Display Selector
+        type: regionDisplaySelector
+        layout {
+            sequence: 100
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-md
+            ]
+            cssClasses: js-detail-rds
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P201_ID
+        }
+        settings {
+            rememberSelection: false
+        }
+    )
+
+    region stavke-konta-grid-neknjizeno (
+        name: Stavke konta Grid - Neknjizeno
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH stavke AS (
+                    SELECT 	
+                        id,
+                        redni_broj,
+                        glavna_knjiga_id,
+                        kontna_klasa_id,
+                        iznos,
+                        tip_stavke,
+                        opis,
+                        klijent_id,
+                        grad_id,
+                        osnovno_sredstvo_id,
+                        transakcija_id,
+                        os_datum,
+                        interni_nalog,
+                        pdv_indikator_id,
+                        oj_id,
+                        radnik_id,
+                        dodjela
+                    FROM
+                        glavna_knjiga_stavke
+                    WHERE
+                        glavna_knjiga_id = :P201_ID
+                    ORDER BY
+                        redni_broj ASC
+                ) 
+                SELECT
+                    *
+                FROM
+                    stavke
+                
+                ```
+            pageItemsToSubmit: P201_ID
+        }
+        layout {
+            sequence: 20
+            parentRegion: @stavke-konta-neknjizeno
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                js-detail-region
+                fin-grid
+            ]
+        }
+        advanced {
+            htmlDomId: StavkeIG
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    let $ = apex.jQuery,
+                        toolbarData = $.apex.interactiveGrid.copyDefaultToolbar();
+                        addrowAction = toolbarData.toolbarFind("selection-add-row"),
+                        addrowAction.label = "Nova stavka"; // Pick name you need
+                        editrowAction = toolbarData.toolbarFind("edit"),
+                        editrowAction.label = "Izmjeni"; // Pick name you need
+                        saverowAction = toolbarData.toolbarFind("save"),
+                        saverowAction.label = "Sačuvaj izmjene"
+                        options.toolbarData = toolbarData;
+                    
+                    options.defaultGridViewOptions = {
+                        reorderColumns: false
+                    }
+                    return options;
+                }
+                
+                
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 45492987914322208
+        }
+
+        savedReport 455212 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @ID
+                layout {
+                    frozen: true
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @GLAVNA_KNJIGA_ID
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @KONTNA_KLASA_ID
+                layout {
+                    width: 234
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @TIP_STAVKE
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @OPIS
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @KLIJENT_ID
+                layout {
+                    sequence: 9
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    width: 41
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @GRAD_ID
+                layout {
+                    sequence: 10
+                }
+            )
+
+            displayColumn (
+                column: @OSNOVNO_SREDSTVO_ID
+                layout {
+                    sequence: 12
+                }
+            )
+
+            displayColumn (
+                column: @TRANSAKCIJA_ID
+                layout {
+                    sequence: 11
+                }
+            )
+
+            displayColumn (
+                column: @EDIT
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @INTERNI_NALOG
+                layout {
+                    sequence: 13
+                }
+            )
+
+            displayColumn (
+                column: @PDV_INDIKATOR_ID
+                layout {
+                    sequence: 15
+                }
+            )
+
+            displayColumn (
+                column: @REDNI_BROJ
+                layout {
+                    sequence: 16
+                }
+            )
+
+            displayColumn (
+                column: @OJ_ID
+                layout {
+                    sequence: 17
+                }
+            )
+
+            displayColumn (
+                column: @RADNIK_ID
+                layout {
+                    sequence: 18
+                }
+            )
+
+            displayColumn (
+                column: @OS_DATUM
+                layout {
+                    sequence: 14
+                }
+            )
+
+            displayColumn (
+                column: @DODJELA
+                layout {
+                    sequence: 19
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column DODJELA (
+            type: textarea
+            heading {
+                heading: Dodjela
+            }
+            settings {
+                autoHeight: true
+                charCounter: true
+            }
+            layout {
+                sequence: 210
+            }
+            validation {
+                maxLength: 255
+            }
+            source {
+                databaseColumn: DODJELA
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column EDIT (
+            type: displayOnly
+            heading {
+                heading: Ažuriraj
+            }
+            layout {
+                sequence: 60
+            }
+            link {
+                target: {
+                    page: 203
+                    items: {
+                        P203_ID: &ID.
+                    }
+                    clearCache: 203
+                }
+                linkText: <span role="img" aria-label="Edit" class="fa fa-edit" title="Edit"></span>
+            }
+            source {
+                type: none
+            }
+            enableUsersTo {
+                hide: false
+            }
+        )
+
+        column GLAVNA_KNJIGA_ID (
+            type: hidden
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: GLAVNA_KNJIGA_ID
+                dataType: number
+            }
+            default {
+                type: item
+                item: P201_ID
+                duplicateCopiesExistingValue: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column GRAD_ID (
+            type: popupLov
+            heading {
+                heading: Grad
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        lpad(sifra, 3, '0') as d,
+                        id as r
+                    FROM
+                        sif.sif_gradovi g
+                    WHERE
+                        (
+                            :KLIJENT_ID IS NOT NULL 
+                            AND g.drzava_id = (
+                                SELECT k.drzava_id
+                                FROM sec_klijenti k
+                                WHERE k.id = :KLIJENT_ID
+                            )
+                        ) OR (
+                            :KLIJENT_ID IS NULL 
+                            AND drzava_id = 28
+                        )
+                    ```
+                displayExtraValues: false
+                nullDisplayValue: - Izaberite grad -
+            }
+            cascadingLov {
+                parentColumns: KLIJENT_ID
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                databaseColumn: GRAD_ID
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                hide: false
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INTERNI_NALOG (
+            type: hidden
+            layout {
+                sequence: 220
+            }
+            source {
+                databaseColumn: INTERNI_NALOG
+                dataType: varchar2
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IZNOS (
+            type: numberField
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            settings {
+                virtualKeyboard: numeric
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column KLIJENT_ID (
+            type: popupLov
+            heading {
+                heading: Klijent
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti
+                displayExtraValues: false
+                nullDisplayValue: - Izaberite klijenta -
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                databaseColumn: KLIJENT_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            type: popupLov
+            heading {
+                heading: Konto
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            search {
+                matchType: startsWith
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: KONTNA_KLASA_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OJ_ID (
+            type: popupLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+                nullDisplayValue: - Izaberite organizacionu jedinicu -
+            }
+            layout {
+                sequence: 190
+            }
+            source {
+                databaseColumn: OJ_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OPIS (
+            type: textarea
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 100
+            }
+            validation {
+                maxLength: 1020
+            }
+            source {
+                databaseColumn: OPIS
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_ID (
+            type: popupLov
+            heading {
+                heading: Osnovno sredstvo
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        os.naziv || ' ( ' || os.inventurni_naziv || ' )' as d,
+                        os.id as r
+                    FROM
+                        sec_osnovna_sredstva os
+                        JOIN sif.acc_klase_os_konta k ON k.klasa_id = os.klasa_id
+                    WHERE
+                        os.ooj_id = :APP_OOJ_ID
+                        AND os.valid = 'Y'
+                        AND os.history_id IS null
+                        AND k.kontna_klasa_id = :KONTNA_KLASA_ID
+                        AND k.transakcija_id = :TRANSAKCIJA_ID
+                        AND ((:TRANSAKCIJA_ID = 161 AND os.priprema = 'Y') OR :TRANSAKCIJA_ID != 161)
+                    ```
+                nullDisplayValue: - Izaberite osnovno sredstvo -
+            }
+            cascadingLov {
+                parentColumns: [
+                    KONTNA_KLASA_ID
+                    TRANSAKCIJA_ID
+                ]
+                itemsToSubmit: [
+                    KONTNA_KLASA_ID
+                    TRANSAKCIJA_ID
+                ]
+            }
+            layout {
+                sequence: 140
+            }
+            source {
+                databaseColumn: OSNOVNO_SREDSTVO_ID
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column OS_DATUM (
+            type: datePicker
+            heading {
+                heading: Datum transakcije
+            }
+            layout {
+                sequence: 160
+            }
+            source {
+                databaseColumn: OS_DATUM
+                dataType: date
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column PDV_INDIKATOR_ID (
+            type: selectList
+            heading {
+                heading: PDV indikator
+            }
+            lov {
+                type: functionBody
+                plsqlFunctionBody:
+                    ```plsql
+                    IF :P201_VRSTA_NALOGA_SIFRA IN ('if', 'ifs', 'av', 'avs', 'ko', 'kos', 'kz', 'kzs', 'in', 'ins') THEN
+                        RETURN 'SELECT sifra || '' - '' || naziv AS d, id AS r FROM sif.acc_pdv_indikatori WHERE ui IN (''I'', ''O'') ORDER BY sifra';
+                    ELSE
+                        RETURN 'SELECT sifra || '' - '' || naziv AS d, id AS r FROM sif.acc_pdv_indikatori WHERE ui IN (''U'', ''O'') ORDER BY sifra';
+                    END IF;
+                    ```
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 170
+            }
+            source {
+                databaseColumn: PDV_INDIKATOR_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    if
+                    av
+                    ifs
+                    avs
+                    in
+                    ins
+                    ko
+                    kos
+                    kz
+                    kzs
+                ]
+            }
+        )
+
+        column RADNIK_ID (
+            type: popupLov
+            heading {
+                heading: Radnik
+            }
+            settings {
+                fetchOnSearch: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+                nullDisplayValue: - Izaberite radnika -
+            }
+            layout {
+                sequence: 200
+            }
+            source {
+                databaseColumn: RADNIK_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column REDNI_BROJ (
+            type: hidden
+            layout {
+                sequence: 180
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column TIP_STAVKE (
+            type: radioGroup
+            heading {
+                heading: Duguje / potražuje
+            }
+            lov {
+                type: sharedComponent
+                lov: @duguje-potrazuje
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 80
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: TIP_STAVKE
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column TRANSAKCIJA_ID (
+            type: selectList
+            heading {
+                heading: Transakcija
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-transakcije-os
+                nullDisplayValue: - Izaberite transakciju -
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                databaseColumn: TRANSAKCIJA_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+    )
+
+    region stavke-konta-knjizeno (
+        name: Stavke konta - Knjizeno
+        title: Stavke konta
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P201_ID is not null AND :P201_NALOG_PROKNJIZEN = 'Y'
+        }
+    )
+
+    region stavke-konta-neknjizeno (
+        name: Stavke konta - Neknjizeno
+        title: Stavke konta
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P201_ID is not null AND :P201_NALOG_PROKNJIZEN = 'N'
+        }
+    )
+
+    region stavke-konta-preview-knjizeno (
+        name: Stavke konta Preview - Knjizeno
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    redni_broj,
+                    glavna_knjiga_id,
+                    kontna_klasa_id,
+                    iznos,
+                    tip_stavke,
+                    opis,
+                    klijent_id,
+                    grad_id,
+                    osnovno_sredstvo_id,
+                    transakcija_id,
+                    os_datum,
+                    pdv_indikator_sifra || ' - ' || pdv_indikator_naziv AS pdv_indikator_naziv,
+                    oj_id,
+                    radnik_id,
+                    dodjela
+                FROM
+                    vw_glavna_knjiga_stavke
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ORDER BY
+                    redni_broj ASC
+                ```
+            pageItemsToSubmit: P201_ID
+        }
+        layout {
+            sequence: 90
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                js-detail-region
+                fin-list
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P201_ID is not null AND :P201_NALOG_PROKNJIZEN = 'Y'
+        }
+        config {
+            buildOption: @commented-out
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column DODJELA (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Dodjela
+            }
+            layout {
+                sequence: 160
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column GLAVNA_KNJIGA_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column GRAD_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Grad
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        lpad(sifra, 3, '0') as d,
+                        id as r
+                    FROM
+                        sif.sif_gradovi
+                    WHERE
+                        (
+                            :KLIJENT_ID IS NOT NULL 
+                            AND drzava_id = (
+                                SELECT drzava_id
+                                FROM sec_klijenti k
+                                WHERE k.id = :KLIJENT_ID
+                            )
+                        ) OR (
+                            :KLIJENT_ID IS NULL 
+                            AND drzava_id = 28
+                        )
+                    ```
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KLIJENT_ID (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Klijent
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 140
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Osnovno sredstvo
+            }
+            lov {
+                type: sharedComponent
+                lov: @osnovna-sredstva-display
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column OS_DATUM (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Datum transakcije
+            }
+            layout {
+                sequence: 120
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column PDV_INDIKATOR_NAZIV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: PDV indikator
+            }
+            layout {
+                sequence: 130
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    if
+                    av
+                    ifs
+                    avs
+                    in
+                    ins
+                    ko
+                    kos
+                    kz
+                    kzs
+                ]
+            }
+        )
+
+        column RADNIK_ID (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Radnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 150
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BROJ (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column TIP_STAVKE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Duguje / potražuje
+            }
+            lov {
+                type: sharedComponent
+                lov: @duguje-potrazuje
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column TRANSAKCIJA_ID (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Transakcija
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-transakcije-os
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+    )
+
+    region stavke-konta-preview-knjizeno-2 (
+        name: Stavke konta Preview - Knjizeno
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    redni_broj,
+                    glavna_knjiga_id,
+                    kontna_klasa_id,
+                    iznos,
+                    tip_stavke,
+                    opis,
+                    klijent_id,
+                    grad_id,
+                    osnovno_sredstvo_id,
+                    transakcija_id,
+                    os_datum,
+                    pdv_indikator_sifra || ' - ' || pdv_indikator_naziv AS pdv_indikator_naziv,
+                    oj_id,
+                    radnik_id,
+                    dodjela
+                FROM
+                    vw_glavna_knjiga_stavke
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ORDER BY
+                    redni_broj ASC
+                ```
+            pageItemsToSubmit: P201_ID
+        }
+        layout {
+            sequence: 10
+            parentRegion: @stavke-konta-knjizeno
+            slot: subRegions
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                js-detail-region
+                fin-grid
+            ]
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            selectFirstRow: false
+            fixedRowHeight: false
+        }
+        toolbar {
+            show: false
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 233830796824544648
+        }
+
+        savedReport 2339304 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @REDNI_BROJ
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @GLAVNA_KNJIGA_ID
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @KONTNA_KLASA_ID
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @TIP_STAVKE
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @OPIS
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @KLIJENT_ID
+                layout {
+                    sequence: 9
+                }
+            )
+
+            displayColumn (
+                column: @GRAD_ID
+                layout {
+                    sequence: 10
+                }
+            )
+
+            displayColumn (
+                column: @OSNOVNO_SREDSTVO_ID
+                layout {
+                    sequence: 11
+                }
+            )
+
+            displayColumn (
+                column: @TRANSAKCIJA_ID
+                layout {
+                    sequence: 12
+                }
+            )
+
+            displayColumn (
+                column: @OS_DATUM
+                layout {
+                    sequence: 13
+                }
+            )
+
+            displayColumn (
+                column: @PDV_INDIKATOR_NAZIV
+                layout {
+                    sequence: 14
+                }
+            )
+
+            displayColumn (
+                column: @OJ_ID
+                layout {
+                    sequence: 15
+                }
+            )
+
+            displayColumn (
+                column: @RADNIK_ID
+                layout {
+                    sequence: 16
+                }
+            )
+
+            displayColumn (
+                column: @DODJELA
+                layout {
+                    sequence: 17
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 1
+                }
+            )
+
+            sort (
+                column: @REDNI_BROJ
+                sort {
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+            aggregate sum (
+                column: @IZNOS
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column DODJELA (
+            type: textarea
+            heading {
+                heading: Dodjela
+            }
+            layout {
+                sequence: 180
+            }
+            validation {
+                maxLength: 1020
+            }
+            source {
+                databaseColumn: DODJELA
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column GLAVNA_KNJIGA_ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: GLAVNA_KNJIGA_ID
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column GRAD_ID (
+            type: displayOnly
+            heading {
+                heading: Grad
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        lpad(sifra, 3, '0') as d,
+                        id as r
+                    FROM
+                        sif.sif_gradovi
+                    ```
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                databaseColumn: GRAD_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IZNOS (
+            type: displayOnly
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                hide: false
+            }
+        )
+
+        column KLIJENT_ID (
+            type: displayOnly
+            heading {
+                heading: Klijent
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klijenti
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                databaseColumn: KLIJENT_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            type: displayOnly
+            heading {
+                heading: Konto
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: KONTNA_KLASA_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OJ_ID (
+            type: displayOnly
+            heading {
+                heading: Organizaciona jedinica
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 160
+            }
+            source {
+                databaseColumn: OJ_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OPIS (
+            type: displayOnly
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: OPIS
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_ID (
+            type: displayOnly
+            heading {
+                heading: Osnovno sredstvo
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @osnovna-sredstva-display
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                databaseColumn: OSNOVNO_SREDSTVO_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column OS_DATUM (
+            type: displayOnly
+            heading {
+                heading: Datum transakcije
+            }
+            layout {
+                sequence: 140
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                databaseColumn: OS_DATUM
+                dataType: date
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+        column PDV_INDIKATOR_NAZIV (
+            type: displayOnly
+            heading {
+                heading: PDV indikator
+            }
+            layout {
+                sequence: 150
+            }
+            source {
+                databaseColumn: PDV_INDIKATOR_NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    if
+                    av
+                    ifs
+                    avs
+                    in
+                    ins
+                    ko
+                    kos
+                    kz
+                    kzs
+                ]
+            }
+        )
+
+        column RADNIK_ID (
+            type: displayOnly
+            heading {
+                heading: Radnik
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-radnici
+            }
+            layout {
+                sequence: 170
+            }
+            source {
+                databaseColumn: RADNIK_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column REDNI_BROJ (
+            type: displayOnly
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                controlBreakAggregate: false
+                hide: false
+            }
+        )
+
+        column TIP_STAVKE (
+            type: displayOnly
+            heading {
+                heading: Duguje / potražuje
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @duguje-potrazuje
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: TIP_STAVKE
+                dataType: varchar2
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+        )
+
+        column TRANSAKCIJA_ID (
+            type: displayOnly
+            heading {
+                heading: Transakcija
+            }
+            settings {
+                basedOn: lov
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-transakcije-os
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                databaseColumn: TRANSAKCIJA_ID
+                dataType: number
+            }
+            columnFilter {
+                enabled: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            enableUsersTo {
+                sort: false
+                hide: false
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P201_VRSTA_NALOGA_SIFRA
+                list: [
+                    uf
+                    os
+                    ps
+                ]
+            }
+        )
+
+    )
+
+    pageItem P201_CHECKED (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 70
+            region: @nalog
+            slot: regionBody
+        }
+    )
+
+    pageItem P201_DATUM_DOKUMENTA (
+        type: hidden
+        layout {
+            sequence: 120
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_DATUM_DOSPJECA (
+        type: hidden
+        layout {
+            sequence: 130
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_DOKUMENT (
+        type: hidden
+        layout {
+            sequence: 110
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_DOKUMENT_ID (
+        type: hidden
+        layout {
+            sequence: 100
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_MODUL (
+        type: hidden
+        layout {
+            sequence: 150
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_NALOG_ID (
+        type: selectOne
+        label {
+            label: Nalog
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+            valueHtmlExpression:
+                ```html
+                {if PROKNJIZENO/}
+                <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                    <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                </span>
+                {else/}
+                <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft">
+                    <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                </span>
+                {endif/}
+                
+                <span>&VRSTA_NALOGA_NAZIV. / Broj naloga: &BROJ_NALOGA.</span>
+                ```
+        }
+        lov {
+            type: sharedComponent
+            lov: @p201-nalog-id
+        }
+        cascadingLov {
+            parentItems: P201_VRSTA_NALOGA_SIFRA
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P201_NALOG_PROKNJIZEN (
+        type: hidden
+        layout {
+            sequence: 80
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_NALOG_STORNIRAN (
+        type: hidden
+        layout {
+            sequence: 90
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_OPIS_DOKUMENTA (
+        type: hidden
+        layout {
+            sequence: 140
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_OS_COUNT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 160
+            region: @nalog
+            slot: regionBody
+        }
+    )
+
+    pageItem P201_TOTAL (
+        type: displayOnly
+        label {
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 10
+            region: @stavke-konta-neknjizeno
+            slot: edit
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                u-nowrap
+                u-textEnd
+                margin-right-sm
+            ]
+        }
+        default {
+            type: sqlQuerySingleValue
+            sqlQuerySingleValue:
+                ```sql
+                SELECT
+                    'Suma: ' || to_char(sum(iznos), '999G999G999G999G990D00')
+                FROM
+                    glavna_knjiga_stavke
+                WHERE
+                    glavna_knjiga_id = :P201_ID
+                ```
+        }
+    )
+
+    pageItem P201_VRSTA_NALOGA_ID (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P201_VRSTA_NALOGA_SIFRA (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    button check-plate (
+        buttonName: CHECK_PLATE
+        label: Provjeri nalog za plate
+        layout {
+            sequence: 30
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--padRight
+            ]
+            icon: fa-nfc
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P201_NALOG_PROKNJIZEN = 'N' AND glavna_knjiga_pkg.get_glavna_knjiga_vrsta_naloga ( p_id => :P201_ID ) = 'pl'
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 202
+                items: {
+                    P202_VRSTA_NALOGA_ID: &P201_VRSTA_NALOGA_ID.
+                }
+                clearCache: 202
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button edit (
+        buttonName: EDIT
+        label: Ažuriraj
+        layout {
+            sequence: 60
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--padLeft
+            ]
+            icon: fa-pencil-square-o
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 202
+                items: {
+                    P202_ID: &P201_ID.
+                }
+                clearCache: 202
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P201_NALOG_PROKNJIZEN
+            value: N
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: Štampa
+        layout {
+            sequence: 40
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--padLeft
+                t-Button--padRight
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: item=value
+            item: P201_NALOG_PROKNJIZEN
+            value: Y
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    button proknjizi (
+        buttonName: PROKNJIZI
+        label: Proknjiži
+        layout {
+            sequence: 80
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--padLeft
+            ]
+            icon: fa-nfc
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite do kraja knjižiti nalog?
+        }
+        serverSideCondition {
+            type: item=value
+            item: P201_NALOG_PROKNJIZEN
+            value: N
+        }
+    )
+
+    button return-to-edit (
+        buttonName: RETURN_TO_EDIT
+        label: Vrati na ažuriranje
+        layout {
+            sequence: 70
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--padLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-backward
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite da vratite izvod na ažuriranje?
+            style: information
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :P201_NALOG_PROKNJIZEN = 'Y' AND glavna_knjiga_pkg.is_glavna_knjiga_editable(:P201_ID) = true THEN
+                    RETURN true;
+                END IF;
+                
+                RETURN false;
+                ```
+        }
+    )
+
+    button save-dodjela (
+        buttonName: SAVE_DODJELA
+        label: Sačuvaj stavke (dodjela)
+        layout {
+            sequence: 10
+            region: @stavke-konta-knjizeno
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P201_ID
+        }
+    )
+
+    button snimi-stavke (
+        buttonName: SNIMI_STAVKE
+        label: Sačuvaj stavke naloga
+        layout {
+            sequence: 20
+            region: @stavke-konta-neknjizeno
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--stretch
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P201_ID
+        }
+    )
+
+    button storniraj (
+        buttonName: STORNIRAJ
+        label: Storniraj
+        layout {
+            sequence: 50
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-undo-arrow
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 204
+                items: {
+                    P204_ID: &P201_ID.
+                    P204_VRSTA_NALOGA_SIFRA: &P201_VRSTA_NALOGA_SIFRA.
+                }
+                clearCache: 204
+            }
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite stornirati nalog?
+            style: information
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression:
+                ```plsql
+                :P201_NALOG_PROKNJIZEN = 'Y' 
+                AND :P201_VRSTA_NALOGA_SIFRA != 'os' 
+                AND :P201_NALOG_STORNIRAN ='N'
+                AND :P201_OS_COUNT = 0
+                ```
+        }
+    )
+
+    dynamicAction change-proknizeno (
+        name: Change proknizeno
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P201_PROKNJIZENO
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P201_PROKNJIZENO
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction check (
+        name: Check
+        execution {
+            sequence: 70
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @check-plate
+        }
+
+        action native-alert (
+            action: alert
+            settings {
+                title: Nije uredu
+                message: Suma ukupnog iznosa bruta + suma ukupnog iznosa prevoza je različita od sume iznosa dugovne strane.
+                style: danger
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+            clientSideCondition {
+                type: item=value
+                item: P201_CHECKED
+                value: N
+            }
+        )
+
+        action native-alert-2 (
+            action: alert
+            settings {
+                title: U redu
+                message: Suma ukupnog iznosa bruta + suma ukupnog iznosa prevoza je jednaka sumi dugovne strane.
+                style: success
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+            clientSideCondition {
+                type: item=value
+                item: P201_CHECKED
+                value: Y
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P201_CHECKED := glavna_knjiga_pkg.check_nalog_plate (
+                        p_nalog_id => :P201_ID
+                    );
+                    ```
+                itemsToSubmit: P201_CHECKED
+                itemsToReturn: P201_CHECKED
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed (
+        name: Dialog Closed
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @nalog
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: apex.message.showPageSuccess('Glavna Knjiga row(s) updated.');
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nalog
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 80
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @stavke-konta-grid-neknjizeno
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke-konta-grid-neknjizeno
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print (
+        name: Print
+        execution {
+            sequence: 120
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                        filename = 'nalog.pdf',
+                        report_path = '/reports/ACCOUNTING/glavna_knjiga/nalog_knjizenje', 
+                        report_parameters = {
+                            ID: $v("P201_ID")
+                        },
+                        new_tab = false
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+    dynamicAction submit-page (
+        name: Submit Page
+        execution {
+            sequence: 90
+        }
+        when {
+            selectionType: items
+            items: P201_NALOG_ID
+        }
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: CHANGE_NALOG
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction sum-total (
+        name: Sum total
+        execution {
+            sequence: 100
+        }
+        when {
+            selectionType: columns
+            interactiveGrid: @stavke-konta-grid-neknjizeno
+            columns: IZNOS
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let ig$ = apex.region("StavkeIG").widget();
+                    let model = ig$.interactiveGrid("getViews", "grid").model;
+                    let total = 0;
+                    let column_key = model.getFieldKey("IZNOS");
+                    
+                    /**
+                     * Parses a number from a formatted string produced by Oracle format masks
+                     * like 999G999G999G999G990D00 (handles both European and US NLS settings).
+                     * G = thousands separator (can be '.' or ',')
+                     * D = decimal separator  (can be ',' or '.')
+                     */
+                    function parseOracleFormattedNumber(val) {
+                        // Already a valid number (raw value from model)
+                        if (typeof val === "number") return val;
+                    
+                        // Null, undefined or empty string
+                        if (val === null || val === undefined || val === "") return NaN;
+                    
+                        let str = String(val).trim();
+                    
+                        // Remove any non-numeric characters except digits, dots, commas, minus sign
+                        str = str.replace(/[^\d.,-]/g, "");
+                    
+                        if (str === "" || str === "-") return NaN;
+                    
+                        const lastComma = str.lastIndexOf(",");
+                        const lastDot   = str.lastIndexOf(".");
+                    
+                        if (lastComma > lastDot) {
+                            // European NLS: dot = thousands (G), comma = decimal (D)
+                            // e.g., "1.234.567,89" -> "1234567.89"
+                            str = str.replace(/\./g, "").replace(",", ".");
+                        } else if (lastDot > lastComma) {
+                            // US/Standard NLS: comma = thousands (G), dot = decimal (D)
+                            // e.g., "1,234,567.89" -> "1234567.89"
+                            str = str.replace(/,/g, "");
+                        } else {
+                            // No separators, or only digits (e.g., "12345")
+                            str = str.replace(/,/g, "");
+                        }
+                    
+                        return parseFloat(str);
+                    }
+                    
+                    model.forEach(function(record) {
+                        const rawValue = record[column_key];
+                        const value    = parseOracleFormattedNumber(rawValue);
+                    
+                        console.log("Raw:", rawValue, "-> Parsed:", value);
+                    
+                        if (!isNaN(value)) {
+                            total += value;
+                            console.log("Running Total:", total);
+                        }
+                    });
+                    
+                    const formattedTotal = total.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    console.log("Final Total:", total);
+                    apex.item("P201_TOTAL").setValue("Suma: " + formattedTotal);
+                    
+                    ```
+            }
+            affectedElements {
+                selectionType: items
+                items: P201_TOTAL
+            }
+            execution {
+                sequence: 40
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P201_TOTAL
+            }
+            execution {
+                sequence: 50
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: plsqlExpression
+                plsqlExpression: :IZNOS
+                itemsToSubmit: IZNOS
+            }
+            affectedElements {
+                selectionType: items
+                items: P201_TOTAL
+            }
+            execution {
+                sequence: 30
+            }
+        )
+
+    )
+
+    dynamicAction toggle (
+        name: Toggle
+        execution {
+            sequence: 110
+        }
+        when {
+            selectionType: items
+            items: P201_TOTAL
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P201_TOTAL
+        }
+        config {
+            buildOption: @commented-out
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P201_TOTAL
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+            clientSideCondition {
+                type: itemIsNull
+                item: P201_TOTAL
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P201_TOTAL
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: itemIsNotNull
+                item: P201_TOTAL
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+    )
+
+    validation dp-not-null (
+        name: DP NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: columnIsNotNull
+            column: TIP_STAVKE
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos.
+            associatedColumn: TIP_STAVKE
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: columnIsNotNull
+            column: IZNOS
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos.
+            associatedColumn: IZNOS
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation iznos-sum (
+        name: Iznos SUM = 0
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                DECLARE
+                    l_iznos NUMBER;
+                BEGIN
+                    SELECT sum(iznos)
+                    INTO l_iznos
+                    FROM glavna_knjiga_stavke
+                    WHERE glavna_knjiga_id = :P201_ID;
+                
+                    IF l_iznos != 0 THEN
+                        RETURN 'Suma iznosa mora biti nula. Trenutna suma: ' || to_char(l_iznos, '999G999G999G999G990D00');
+                    END IF;
+                
+                    RETURN null;
+                END;
+                ```
+        }
+        serverSideCondition {
+            whenButtonPressed: @proknjizi
+        }
+    )
+
+    validation klijent-required (
+        name: Klijent REQUIRED
+        execution {
+            sequence: 120
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :KONTNA_KLASA_ID
+                    AND klijent = 'Y'
+                    AND :KLIJENT_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos za izabrani konto.
+            associatedColumn: KLIJENT_ID
+        }
+    )
+
+    validation konto-not-null (
+        name: Konto NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: columnIsNotNull
+            column: KONTNA_KLASA_ID
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos.
+            associatedColumn: KONTNA_KLASA_ID
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+    )
+
+    validation oj-required (
+        name: Oj REQUIRED
+        execution {
+            sequence: 150
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :KONTNA_KLASA_ID
+                    AND oj = 'Y'
+                    AND :OJ_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos za izabrani konto.
+            associatedColumn: OJ_ID
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: columnIsNotNull
+            column: OPIS
+        }
+        error {
+            errorMessage: Polje mora biti popunjeno
+            associatedColumn: OPIS
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    validation os-datum-required (
+        name: OS DATUM REQUIRED
+        execution {
+            sequence: 110
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            plsqlExpression:
+                ```plsql
+                (:OSNOVNO_SREDSTVO_ID IS NOT null AND :OS_DATUM IS NOT null)
+                OR
+                (:OSNOVNO_SREDSTVO_ID IS null AND :OS_DATUM IS null)
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos ako ste izabrali osnovno sredstvo.
+            associatedColumn: OS_DATUM
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+                ps
+            ]
+        }
+    )
+
+    validation os-requierd (
+        name: Os REQUIERD
+        execution {
+            sequence: 160
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :KONTNA_KLASA_ID
+                    AND os = 'Y'
+                    AND :OSNOVNO_SREDSTVO_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos za izabrani konto.
+            associatedColumn: OSNOVNO_SREDSTVO_ID
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+                ps
+            ]
+        }
+    )
+
+    validation pdv-indikator-not-null (
+        name: PDV indikator NOT NULL
+        execution {
+            sequence: 130
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: columnIsNotNull
+            column: PDV_INDIKATOR_ID
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos.
+            associatedColumn: PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    validation pdv-indikator-not-valid (
+        name: PDV indikator NOT VALID
+        execution {
+            sequence: 10
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                DECLARE
+                    l_kontna_klasa_code      VARCHAR2(32);
+                    l_kontna_klasa_indikator VARCHAR2(1);
+                    l_pdv_indikator_sifra    VARCHAR2(2); 
+                    l_pdv_indikator_prefix   VARCHAR2(32);
+                BEGIN
+                    sif.acc_pkg.get_pdv_indikator(
+                        p_id                  => :PDV_INDIKATOR_ID,
+                        p_sifra               => l_pdv_indikator_sifra,
+                        p_kontna_klasa_prefix => l_pdv_indikator_prefix
+                    );
+                    
+                    sif.acc_pkg.get_kontni_okvir_klasa (
+                        p_id            => :KONTNA_KLASA_ID,
+                        p_code          => l_kontna_klasa_code,
+                        p_pdv_indikator => l_kontna_klasa_indikator
+                    );
+                                
+                    IF l_kontna_klasa_indikator = 'Y' THEN
+                        IF (l_kontna_klasa_code NOT LIKE nvl(l_pdv_indikator_prefix, 0) || '%') THEN
+                            RETURN 'Na konto ' || l_kontna_klasa_code || ' indikator ' || l_pdv_indikator_sifra || ' nije odgovarajući. 1';
+                        END IF;
+                    END IF;
+                    
+                    IF l_pdv_indikator_prefix IS NOT null THEN
+                        IF (l_kontna_klasa_code NOT LIKE nvl(l_pdv_indikator_prefix, 0) || '%') THEN
+                            RETURN 'Na konto ' || l_kontna_klasa_code || ' indikator ' || l_pdv_indikator_sifra || ' nije odgovarajući. 2';
+                        END IF;
+                    END IF;
+                
+                
+                END;
+                ```
+        }
+        error {
+            associatedColumn: PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    validation pdv-indikator-required (
+        name: PDV indikator REQUIRED
+        execution {
+            sequence: 90
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :KONTNA_KLASA_ID
+                    AND pdv_indikator = 'Y'
+                    AND :PDV_INDIKATOR_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos za izabrani konto.
+            associatedColumn: PDV_INDIKATOR_ID
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                if
+                av
+                ifs
+                avs
+            ]
+        }
+    )
+
+    validation radnik-required (
+        name: Radnik REQUIRED
+        execution {
+            sequence: 140
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM 
+                    sif.acc_kontni_okvir_klase
+                WHERE
+                    id = :KONTNA_KLASA_ID
+                    AND radnik = 'Y'
+                    AND :RADNIK_ID IS null
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos za izabrani konto.
+            associatedColumn: RADNIK_ID
+        }
+    )
+
+    validation transakcija-required (
+        name: Transakcija REQUIRED
+        execution {
+            sequence: 100
+        }
+        validation {
+            editableRegion: @stavke-konta-grid-neknjizeno
+            plsqlExpression:
+                ```plsql
+                (:OSNOVNO_SREDSTVO_ID IS NOT null AND :TRANSAKCIJA_ID IS NOT null)
+                OR
+                (:OSNOVNO_SREDSTVO_ID IS null AND :TRANSAKCIJA_ID IS null)
+                ```
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# je obavezno polje za unos ako ste izabrali osnovno sredstvo.
+            associatedColumn: TRANSAKCIJA_ID
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: itemIsInColonDelimitedList
+            item: P201_VRSTA_NALOGA_SIFRA
+            list: [
+                uf
+                os
+                ps
+            ]
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare 
+                
+                v_pom number;
+                
+                begin
+                
+                
+                        glavna_knjiga_pkg.get_glavna_knjiga (
+                            p_id                 => :P201_ID,
+                            p_proknjizeno        => :P201_NALOG_PROKNJIZEN,
+                            p_stornirano         => :P201_NALOG_STORNIRAN,
+                            p_vrsta_naloga_id    => :P201_VRSTA_NALOGA_ID,
+                            p_vrsta_naloga_sifra => :P201_VRSTA_NALOGA_SIFRA
+                        );
+                
+                        :P201_NALOG_ID := :P201_ID;
+                
+                        SELECT
+                            count(*)
+                        INTO
+                            :P201_OS_COUNT
+                        FROM
+                            glavna_knjiga_stavke
+                        WHERE
+                            glavna_knjiga_id = :P201_ID
+                            AND osnovno_sredstvo_id IS NOT null;
+                
+                    
+                        select count(*)
+                        into v_pom 
+                        from (select ki.id from kif ki where ki.glavna_knjiga_id=:P201_ID
+                             union all
+                             select ku.id from kuf ku where ku.glavna_knjiga_id=:P201_ID);
+                
+                        if v_pom>0 then 
+                
+                            select modul, id, dokument,opis, datum_valute, datum_fakture
+                            into :P201_MODUL, :P201_DOKUMENT_ID, :P201_DOKUMENT, :P201_OPIS_DOKUMENTA, :P201_DATUM_DOSPJECA, :P201_DATUM_DOKUMENTA
+                            from (  select 4 as modul, ki.id, 'KIF/'||ki.faktura_broj||'/'||ki.godina||'-'||vf.sifra as dokument, ki.naziv_fakture as opis,ki.datum_valute, ki.datum_fakture 
+                                    from  accounting.kif ki
+                                    join sif.acc_vrste_faktura vf on vf.id=ki.vrsta_fakture_id
+                                    where ki.ooj_id=:APP_OOJ_ID
+                                    and  ki.glavna_knjiga_id=:P201_ID
+                                    union all
+                                    select 3 as modul, ku.id, 'KUF/'||ku.broj||'/'||extract(year from ku.datum_fakture) as dokument, ku.naziv_fakture as opis, ku.datum_valute,ku.datum_fakture 
+                                    from kuf ku 
+                                    where ku.ooj_id=:APP_OOJ_ID
+                                    and  ku.glavna_knjiga_id=:P201_ID);
+                
+                
+                
+                        else 
+                
+                            select 2, gk.id, 'Glavna knjiga-'||sn.sifra||'/'||gk.broj||gk.godina, gk.opis, gk.datum_knjizenja, gk.datum_knjizenja 
+                            into :P201_MODUL, :P201_DOKUMENT_ID,:P201_DOKUMENT, :P201_OPIS_DOKUMENTA, :P201_DATUM_DOSPJECA, :P201_DATUM_DOKUMENTA
+                            from accounting.glavna_knjiga gk
+                            join sif.sif_vrste_naloga sn on gk.vrsta_naloga_id=sn.id
+                            where gk.id=:P201_NALOG_ID;
+                
+                        end if;
+                
+                             
+                    
+                
+                
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 46175286923763408
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P201_ID
+        }
+    )
+
+    process proknjizi (
+        name: Proknjizi
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    glavna_knjiga_pkg.set_proknjizeno (
+                        p_id    => :P201_ID,
+                        p_value => 'Y'
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 45495106252322230
+        }
+        serverSideCondition {
+            whenButtonPressed: @proknjizi
+        }
+    )
+
+    process return-to-edit (
+        name: Return to Edit
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.set_proknjizeno (
+                    p_id    => :P201_ID,
+                    p_value => 'N'
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 95998284939183545
+        }
+        serverSideCondition {
+            whenButtonPressed: @return-to-edit
+        }
+    )
+
+    process save-stavke-ig (
+        name: Save stavke IG
+        type: executeCode
+        editableRegion: @stavke-konta-grid-neknjizeno
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                
+                v_ot_stavka varchar2(1);
+                v_otvorena varchar2(2);
+                v_otvoreni_iznos number;
+                v_id number;
+                v_id_dok number;
+                
+                begin
+                
+                
+                    IF :APEX$ROW_STATUS = 'D' THEN -- DELETE
+                
+                        glavna_knjiga_pkg.delete_glavna_knjiga_stavka (
+                            p_id => :ID
+                        );
+                
+                    ELSIF :APEX$ROW_STATUS = 'I' OR :APEX$ROW_STATUS = 'C' THEN -- CREATE
+                
+                        select ko.otvorene_stavke os
+                        into v_ot_stavka
+                        from sif.acc_kontni_okvir_klase ko 
+                        where ko.id=:KONTNA_KLASA_ID;
+                
+                        glavna_knjiga_pkg.insert_glavna_knjiga_stavka(
+                            p_glavna_knjiga_id    => :P201_ID,
+                            p_kontna_klasa_id     => :KONTNA_KLASA_ID,
+                            p_klijent_id          => :KLIJENT_ID,
+                            p_tip_stavke          => :TIP_STAVKE,
+                            p_opis                => :OPIS,
+                            p_iznos               => TO_NUMBER(:IZNOS,'999G999G999G999G990D00'),
+                            p_grad_id             => :GRAD_ID,
+                            p_osnovno_sredstvo_id => :OSNOVNO_SREDSTVO_ID,
+                            p_transakcija_id      => :TRANSAKCIJA_ID,
+                            p_os_datum            => coalesce(:OS_DATUM,:P201_DATUM_DOSPJECA),
+                            p_pdv_indikator_id    => :PDV_INDIKATOR_ID,
+                            p_oj_id               => :OJ_ID,
+                            p_radnik_id           => :RADNIK_ID,
+                            p_dodjela             => :DODJELA,
+                            p_datum_dokumenta     => :P201_DATUM_DOKUMENTA,
+                            p_otvorena            => case v_ot_stavka when 'N' then 'Z' else 'O' end,
+                            p_otvoreni_iznos      => case v_ot_stavka when 'N' then 0 else TO_NUMBER(:IZNOS,'999G999G999G999G990D00') end,
+                            p_id                  => v_id
+                        );
+                
+                        glavna_knjiga_pkg.insert_gk_stavka_dokument (
+                            p_ooj_id                  => :APP_OOJ_ID,
+                            p_modul_id                => :P201_MODUL,
+                            p_dokument_id             => :P201_DOKUMENT_ID,
+                            p_dokument                => :P201_DOKUMENT,
+                            p_opis                    => :P201_OPIS_DOKUMENTA,
+                            p_glavna_knjiga_stavka_id => v_id,
+                            p_id                      => v_id_dok
+                        );
+                
+                        RETURN;
+                    ELSIF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                
+                    
+                        select ko.otvorene_stavke os
+                        into v_ot_stavka
+                        from sif.acc_kontni_okvir_klase ko 
+                        where ko.id=:KONTNA_KLASA_ID;
+                
+                        glavna_knjiga_pkg.update_glavna_knjiga_stavka (  
+                            p_id                  => :ID,
+                            p_glavna_knjiga_id    => :P201_ID,
+                            p_kontna_klasa_id     => :KONTNA_KLASA_ID,
+                            p_klijent_id          => :KLIJENT_ID,
+                            p_redni_broj          => :REDNI_BROJ,
+                            p_tip_stavke          => :TIP_STAVKE,
+                            p_opis                => :OPIS,
+                            p_iznos               =>  TO_NUMBER(:IZNOS,'999G999G999G999G990D00'),
+                            p_grad_id             => :GRAD_ID,
+                            p_osnovno_sredstvo_id => :OSNOVNO_SREDSTVO_ID,
+                            p_transakcija_id      => :TRANSAKCIJA_ID,
+                            p_os_datum            => coalesce(:OS_DATUM,:P201_DATUM_DOSPJECA),
+                            p_interni_nalog       => :INTERNI_NALOG,
+                            p_pdv_indikator_id    => :PDV_INDIKATOR_ID,
+                            p_oj_id               => :OJ_ID,
+                            p_radnik_id           => :RADNIK_ID,
+                            p_dodjela             => :DODJELA,
+                            p_datum_dokumenta     => :P201_DATUM_DOKUMENTA,
+                            p_otvorena            => case v_ot_stavka when 'N' then 'Z' else 'O' end,
+                            p_otvoreni_iznos      => case v_ot_stavka when 'N' then 0 else TO_NUMBER(:IZNOS,'999G999G999G999G990D00') end
+                        );
+                
+                        RETURN;
+                    END IF;
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 47633511619790625
+        }
+        serverSideCondition {
+            whenButtonPressed: @snimi-stavke
+            executionScope: allSubmittedRows
+        }
+    )
+
+    process save-stavke-ig-dodjela (
+        name: Save stavke IG - Dodjela
+        type: executeCode
+        editableRegion: @stavke-konta-preview-knjizeno-2
+        source {
+            plsqlCode:
+                ```plsql
+                IF :APEX$ROW_STATUS = 'U' THEN -- UPDATE
+                    glavna_knjiga_pkg.update_glavna_knjiga_stavka_dodjela (  
+                        p_id      => :ID,
+                        p_dodjela => :DODJELA
+                    );
+                
+                    RETURN;
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 233925421555435020
+        }
+        serverSideCondition {
+            whenButtonPressed: @save-dodjela
+            executionScope: allSubmittedRows
+        }
+    )
+
+    branch (
+        name: Go To Page 201
+        execution {
+            sequence: 10
+            point: afterSubmit
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P201_NALOG_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: request=Value
+            value: CHANGE_NALOG
+        }
+    )
+
+)
+

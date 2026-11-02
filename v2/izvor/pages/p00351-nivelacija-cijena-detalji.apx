@@ -1,0 +1,476 @@
+page 351 (
+    name: Nivelacija cijena / Detalji
+    alias: NIVELACIJA-CIJENA-DETALJI
+    title: Nivelacija cijena / Detalji
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavka-report (
+        name: Stavka Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_sifra,
+                    stavka_naziv,
+                    stanje_kolicina,
+                    saldo,
+                    prosjecna_cijena
+                FROM
+                    vw_skladiste_stavke
+                WHERE
+                    stavka_id = :P351_STAVKA_ID
+                ```
+            pageItemsToSubmit: P351_STAVKA_ID
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column PROSJECNA_CIJENA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Prosječna cijena
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column SALDO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Saldo
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column STANJE_KOLICINA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column STAVKA_SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+    )
+
+    pageItem P351_BROJ (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P351_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P351_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P351_RAZLIKA (
+        type: numberField
+        label {
+            label: Razlika u cijeni
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P351_SKLADISTA (
+        type: radioGroup
+        label {
+            label: Ažuriraj na svim skladištima
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P351_STAVKA_ID (
+        type: selectOne
+        label {
+            label: Stavka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_sifra || ' - ' || stavka_naziv AS d,
+                    stavka_id AS r
+                FROM
+                    vw_skladiste_stavke
+                WHERE
+                    skladiste_id = :A_SKLADISTE_ID
+                    AND stanje_kolicina > 0
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P351_STAVKA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P351_STAVKA_ID
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @stavka-report
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavka-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @stavka-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 191110152685144345
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                skladista_pkg.insert_nivelacija_cijene (
+                    p_ooj_id       => :APP_OOJ_ID,
+                    p_godina       => :APP_GODINA,
+                    p_stavka_id    => :P351_STAVKA_ID,
+                    p_razlika      => to_number(:P351_RAZLIKA, '999G999G999G999G990D00'),
+                    p_skladista    => :P351_SKLADISTA,
+                    p_skladiste_id => :A_SKLADISTE_ID,
+                    p_opis         => :P351_OPIS
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 191110069328144344
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup-new (
+        name: Setup NEW
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.get_brojac (
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_godina             => :APP_GODINA,
+                    p_vrsta_naloga_sifra => 'niv',
+                    p_broj               => :P351_BROJ,
+                    p_naziv              => :P351_NAZIV
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 191473933355484203
+        }
+    )
+
+)
+

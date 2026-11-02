@@ -1,0 +1,267 @@
+page 20030 (
+    name: Promjena lozinke
+    alias: PROMJENA-LOZINKE
+    title: Promjena lozinke
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        width: 640
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        formAutoComplete: false
+    }
+
+    pageItem P20030_CURRENT_PW (
+        type: password
+        label {
+            label: Trenutna lozinka
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+            width: 30
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P20030_PASSWORD (
+        type: password
+        label {
+            label: Nova lozinka
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P20030_REPEAT_PASSWORD (
+        type: password
+        label {
+            label: Ponovi novu lozinku
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Podešavanja
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+                t-Button--iconLeft
+            ]
+            cssClasses: t-Button--inlineLink
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 20000
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button change (
+        buttonName: CHANGE
+        label: Promijeni lozinku
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation current-check (
+        name: Current CHECK
+        execution {
+            sequence: 10
+        }
+        validation {
+            plsqlExpression:
+                ```plsql
+                core.korisnik_pkg.authenticate(
+                    p_username => :APP_USER,
+                    p_password => :P20030_CURRENT_PW
+                ) = true
+                ```
+        }
+        error {
+            errorMessage: Pogrešna lozinka.
+            associatedItem: @P20030_CURRENT_PW
+        }
+        serverSideCondition {
+            whenButtonPressed: @change
+        }
+    )
+
+    validation current-not-null (
+        name: Current NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P20030_CURRENT_PW
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P20030_CURRENT_PW
+        }
+        serverSideCondition {
+            whenButtonPressed: @change
+        }
+    )
+
+    validation password-not-null (
+        name: Password NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P20030_PASSWORD
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P20030_PASSWORD
+        }
+        serverSideCondition {
+            whenButtonPressed: @change
+        }
+    )
+
+    validation repeat-same (
+        name: Repeat SAME
+        execution {
+            sequence: 20
+        }
+        validation {
+            plsqlExpression: :P20030_PASSWORD = :P20030_REPEAT_PASSWORD
+        }
+        error {
+            errorMessage: Nova lozinka i ponovljena lozinka moraju biti iste.
+            associatedItem: @P20030_REPEAT_PASSWORD
+        }
+        serverSideCondition {
+            whenButtonPressed: @change
+        }
+    )
+
+    process change-password (
+        name: Change password
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.change_password (
+                    p_id           => :APP_USER_ID,
+                    p_username     => :APP_USER,
+                    p_old_password => :P20030_CURRENT_PW,
+                    p_new_password => :P20030_PASSWORD
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Uspješno promijenjena lozinka.
+        }
+        advanced {
+            executionMappingIdentifier: 385568996729116913
+        }
+        serverSideCondition {
+            whenButtonPressed: @change
+        }
+    )
+
+    process close-dialog (
+        name: Close dialog
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Uspješno promjenjena lozinka.
+        }
+        advanced {
+            executionMappingIdentifier: 385569349253116913
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancel
+        }
+    )
+
+)
+

@@ -1,0 +1,533 @@
+page 10 (
+    name: Klijenti
+    alias: KLIJENTI
+    title: Klijenti
+    pageGroup: @klijenti
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-klijenti
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>Klijenti</em></b> dostupan je pregled svih klijenata evidentiranih u sistemu. 
+            Iznad liste nalaze se pretraga i filteri. </br>
+            Za dodavanje novog klijenta koristi se dugme <b><em>„Novi unos“</em></b>.</br>
+            </br>
+            U slučaju da se fakturisanje radi za novoga klijenta (kupca), potrebno je da se unesu osnovne 
+            informacije o kupcu kako bi se ispravno kreirala faktura. Jedno od navedenih polja je i šablon 
+            za knjiženje, koji je osnov za kreiranje naloga za knjiženje računa.</br>
+            Ukoliko se kreira klijent za ulaznu fakturu onda se klijent registruje kao dobavljač, 
+            ali može biti i tip kupac–dobavljač ukoliko je istovremeno u obe uloge. </br>
+            Pri unosu dobavljača obavezno je definisati i vrstu klijenta (povezano pravno lice, 
+            pravno lice, fizičko lice ili zaposleno lice).</br>
+            </br>
+            Na osnovu države i entiteta primjenjuje se odgovarajući šablon za klijenta, 
+            koji je prethodno definisan u konfiguraciji.</br>
+            </br>
+            Nakon potvrde, klijent se evidentira u sistemu i postaje dostupan za dalju upotrebu.
+            ```
+    }
+
+    region factes (
+        name: Factes
+        type: smartFilters
+        source {
+            filteredRegion: @klijenti
+        }
+        layout {
+            sequence: 29
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P10_DRZAVA_ID (
+            type: radioGroup
+            label {
+                label: Država
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-drzave
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: DRZAVA_ID
+                dataType: number
+            }
+        )
+
+        filter P10_SABLON_ID (
+            type: checkboxGroup
+            label {
+                label: Šablon
+            }
+            lov {
+                type: sharedComponent
+                lov: @sabloni
+            }
+            layout {
+                sequence: 50
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: SABLON_ID
+                dataType: number
+            }
+        )
+
+        filter P10_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P10_TIP_KLIJENTA_ID (
+            type: checkboxGroup
+            label {
+                label: Tip klijenta
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tip-klijenta
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: TIP_KLIJENTA_ID
+                dataType: number
+            }
+        )
+
+        filter P10_VRSTA_KLIJENTA (
+            type: checkboxGroup
+            label {
+                label: Vrsta klijenta
+            }
+            lov {
+                type: sharedComponent
+                lov: @vrsta-klijenta
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: VRSTA_KLIJENTA
+            }
+        )
+
+    )
+
+    region klijenti (
+        name: Klijenti
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    tip_klijenta_id,
+                    drzava_id,
+                    grad,
+                    adresa,
+                    email,
+                    vrsta_klijenta,
+                    sablon_id
+                from 
+                    vw_klijenti
+                where
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ADRESA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Adresa
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DRZAVA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Država
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-drzave
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column EMAIL (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Email
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column GRAD (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Grad
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Detalji
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 11
+                    items: {
+                        P11_ID: #ID#
+                    }
+                    clearCache: 10
+                    action: clearRegions
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SABLON_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Šablon
+            }
+            lov {
+                type: sharedComponent
+                lov: @sabloni
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_KLIJENTA_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Tip klijenta
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tip-klijenta
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_KLIJENTA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Vrsta klijenta
+            }
+            lov {
+                type: sharedComponent
+                lov: @vrsta-klijenta
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region klijenti-2 (
+        name: Klijenti
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_klijenti(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @klijenti-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action hide-message (
+            name: Hide message
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    setTimeout(function() {
+                        apex.message.hidePageSuccess();
+                    }, 2000);
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klijenti
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @klijenti
+        }
+
+        action hide-message (
+            name: Hide message
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    setTimeout(function() {
+                        apex.message.hidePageSuccess();
+                    }, 3000);
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @klijenti
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

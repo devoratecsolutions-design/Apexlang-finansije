@@ -1,0 +1,148 @@
+page 10045 (
+    name: Pregled uputstva
+    alias: PREGLED-UPUTSTVA
+    title: Pregled uputstva
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <p>Odabirom kompletnog uputstva iz padajućeg menija, prikazuje se PDF kontejner sa
+                prikazanom dokumentacijom.
+            </p>
+            ```
+    }
+
+    region pregled (
+        name: Pregled
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p align="center">
+                    <embed src="f?p=&APP_ID.:0:&SESSION.:APPLICATION_PROCESS=display_uputstvo:NO" width="99%" height="900"></embed>
+                </p>
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P10045_UPUTSTVO_ID
+        }
+    )
+
+    region pregled-uputstva (
+        name: Pregled uputstva
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region uputstvo (
+        name: Uputstvo
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    pageItem P10045_UPUTSTVO_ID (
+        type: selectOne
+        label {
+            label: Uputstvo
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-uputstva
+        }
+        layout {
+            sequence: 10
+            region: @uputstvo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    dynamicAction submit (
+        name: Submit
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P10045_UPUTSTVO_ID
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

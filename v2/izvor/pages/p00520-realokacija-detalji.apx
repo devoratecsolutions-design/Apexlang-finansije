@@ -1,0 +1,809 @@
+page 520 (
+    name: Realokacija / Detalji
+    alias: REALOKACIJA-DETALJI
+    title: Realokacija / Detalji
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region realokacija-detalji (
+        name: Realokacija / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavka (
+        name: Stavka 1
+        title: Detalji
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_id,
+                    projekat_naziv,
+                    period,
+                    iznos,
+                    iznos_realizacija
+                FROM
+                    vw_budzet_stavke
+                WHERE
+                    id = :P520_STAVKA_1_ID
+                ```
+            pageItemsToSubmit: P520_STAVKA_1_ID
+        }
+        layout {
+            sequence: 90
+            parentRegion: @realokacija-detalji
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column IZNOS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column IZNOS_REALIZACIJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Realizovani iznos
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+                alignment: end
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+        )
+
+        column PERIOD (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Period
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    WITH params AS (
+                        -- Parameters
+                        SELECT :P520_BROJ_MJESECI AS p_months,
+                               :P520_GODINA AS p_year
+                        FROM dual
+                    ),
+                    months AS (
+                        SELECT LEVEL AS month_num,
+                               ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                        FROM dual
+                        CROSS JOIN params p
+                        CONNECT BY LEVEL <= 12
+                    ),
+                    periods AS (
+                        SELECT m.month_num,
+                               m.first_day,
+                               CEIL(m.month_num / p.p_months) AS q_num,
+                               p.p_months
+                        FROM months m
+                        CROSS JOIN params p
+                    )
+                    SELECT 
+                        'P' || q_num || ' = ' ||
+                        TRIM(TO_CHAR(MIN(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                        CASE WHEN p_months > 1 
+                             THEN ' - ' || TRIM(TO_CHAR(MAX(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                             ELSE ''
+                        END AS display,
+                        TRUNC(MIN(first_day)) AS return_date
+                    FROM periods
+                    GROUP BY q_num, p_months
+                    ORDER BY q_num;
+                    
+                    ```
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column PROJEKAT_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Projekat
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+    )
+
+    region stavka-2 (
+        name: Stavka 2
+        title: Detalji
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_id,
+                    projekat_naziv,
+                    period,
+                    iznos,
+                    iznos_realizacija
+                FROM
+                    vw_budzet_stavke
+                WHERE
+                    id = :P520_STAVKA_2_ID
+                ```
+            pageItemsToSubmit: P520_STAVKA_2_ID
+        }
+        layout {
+            sequence: 100
+            parentRegion: @realokacija-detalji
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column IZNOS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column IZNOS_REALIZACIJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Realizovani iznos
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+                alignment: end
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+        )
+
+        column PERIOD (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Period
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    WITH params AS (
+                        -- Parameters
+                        SELECT :P520_BROJ_MJESECI AS p_months,
+                               :P520_GODINA AS p_year
+                        FROM dual
+                    ),
+                    months AS (
+                        SELECT LEVEL AS month_num,
+                               ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                        FROM dual
+                        CROSS JOIN params p
+                        CONNECT BY LEVEL <= 12
+                    ),
+                    periods AS (
+                        SELECT m.month_num,
+                               m.first_day,
+                               CEIL(m.month_num / p.p_months) AS q_num,
+                               p.p_months
+                        FROM months m
+                        CROSS JOIN params p
+                    )
+                    SELECT 
+                        'P' || q_num || ' = ' ||
+                        TRIM(TO_CHAR(MIN(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                        CASE WHEN p_months > 1 
+                             THEN ' - ' || TRIM(TO_CHAR(MAX(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                             ELSE ''
+                        END AS display,
+                        TRUNC(MIN(first_day)) AS return_date
+                    FROM periods
+                    GROUP BY q_num, p_months
+                    ORDER BY q_num;
+                    
+                    ```
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column PROJEKAT_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Projekat
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+    )
+
+    pageItem P520_BROJ_MJESECI (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P520_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P520_BUDZET_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P520_GODINA (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P520_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P520_IZNOS (
+        type: numberField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @realokacija-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P520_NAPOMENA (
+        type: textarea
+        label {
+            label: Napomena
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 120
+            region: @realokacija-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P520_OJ_ID (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @realokacija-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P520_STAVKA_1_ID (
+        type: selectOne
+        label {
+            label: Sa stavke
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    CASE
+                        WHEN projekat_id IS NOT null THEN
+                            stavka_naziv || ' ● ' || projekat_naziv || ' ● ' || to_char(period, 'DD.MM.YYYY') || ' ● ' || trim(to_char(iznos - coalesce(iznos_realizacija, 0), '999G999G999G999G990D00')) 
+                        ELSE
+                            stavka_naziv || ' ● ' || to_char(period, 'DD.MM.YYYY') || ' ● ' || trim(to_char(iznos - coalesce(iznos_realizacija, 0), '999G999G999G999G990D00')) 
+                    END AS d,
+                    id AS r
+                FROM
+                    vw_budzet_stavke
+                WHERE
+                    budzet_id = :P520_BUDZET_ID
+                    AND (oj_id = :P520_OJ_ID OR :P520_OJ_ID IS null)
+                    AND (iznos - coalesce(iznos_realizacija, 0)) > 0
+                ORDER BY
+                    oj_id,
+                    stavka_naziv,
+                    period
+                ```
+        }
+        layout {
+            sequence: 70
+            region: @realokacija-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P520_STAVKA_2_ID (
+        type: selectOne
+        label {
+            label: Na stavku
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    CASE
+                        WHEN projekat_id IS NOT null THEN
+                            stavka_naziv || ' ● ' || projekat_naziv || ' ● ' || to_char(period, 'DD.MM.YYYY') || ' ● ' || trim(to_char(iznos - coalesce(iznos_realizacija, 0), '999G999G999G999G990D00')) 
+                        ELSE
+                            stavka_naziv || ' ● ' || to_char(period, 'DD.MM.YYYY') || ' ● ' || trim(to_char(iznos - coalesce(iznos_realizacija, 0), '999G999G999G999G990D00')) 
+                    END AS d,
+                    id AS r
+                FROM
+                    vw_budzet_stavke
+                WHERE
+                    budzet_id = :P520_BUDZET_ID
+                    AND (oj_id = :P520_OJ_ID OR :P520_OJ_ID IS null)
+                    -- AND (iznos - coalesce(iznos_realizacija, 0)) > 0
+                ORDER BY
+                    oj_id,
+                    stavka_naziv,
+                    period
+                ```
+        }
+        layout {
+            sequence: 80
+            region: @realokacija-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Realokacija
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P520_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction stavka-1-refresh (
+        name: Stavka 1 - Refresh
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P520_STAVKA_1_ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavka
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction stavka-2-refresh (
+        name: Stavka 2 - Refresh
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P520_STAVKA_2_ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavka-2
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P520_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P520_IZNOS
+        }
+    )
+
+    validation stavka-1-not-null (
+        name: Stavka 1 NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P520_STAVKA_1_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P520_STAVKA_1_ID
+        }
+    )
+
+    validation stavka-2-not-null (
+        name: Stavka 2 NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P520_STAVKA_2_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P520_STAVKA_2_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 145880184758937883
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet (
+                    p_id           => :P520_BUDZET_ID,
+                    p_broj_mjeseci => :P520_BROJ_MJESECI,
+                    p_godina       => :P520_GODINA,
+                    p_status_sifra => :P520_BUDZET_STATUS_SIFRA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 145861540845893018
+        }
+    )
+
+    process realociraj (
+        name: Realociraj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.insert_budzet_realokacija (
+                    p_budzet_id   => :P520_BUDZET_ID,
+                    p_stavka_1_id => :P520_STAVKA_1_ID,
+                    p_stavka_2_id => :P520_STAVKA_2_ID,
+                    p_iznos       => to_number(:P520_IZNOS, '999G999G999G999G990D00'),
+                    p_napomena    => :P520_NAPOMENA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 145862607959893029
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+)
+

@@ -1,0 +1,726 @@
+page 1011 (
+    name: Izvod/ Detalji
+    alias: IZVOD-DETALJI
+    title: Izvod/ Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region izvodi-izvod-detalji (
+        name: " Izvodi/ Izvod/ Detalji"
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P1011_BROJ (
+        type: numberField
+        label {
+            label: Broj
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+            column: 1
+            columnSpan: 5
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText: Jedinstvena šifra računa, u svrhu lakšeg praćenja izvoda po žiro računu.
+        }
+    )
+
+    pageItem P1011_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P1011_GODINA (
+        type: hidden
+        layout {
+            sequence: 170
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1011_NALOG_GK_ID (
+        type: hidden
+        layout {
+            sequence: 160
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_NOVI_SALDO (
+        type: numberField
+        label {
+            label: Novo stanje
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Stanje računa prije obrađenih transakcija.
+        }
+    )
+
+    pageItem P1011_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+            height: 3
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Opis izvoda.
+        }
+    )
+
+    pageItem P1011_PRETHODNI_SALDO (
+        type: numberField
+        label {
+            label: Prethodno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Stanje računa prije obrađenih transakcija.
+        }
+    )
+
+    pageItem P1011_PROKNJIZEN (
+        type: hidden
+        layout {
+            sequence: 150
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_STORNO (
+        type: hidden
+        layout {
+            sequence: 130
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_ZAKLJUCAN (
+        type: hidden
+        layout {
+            sequence: 140
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P1011_ZIRO_RACUN_ID (
+        type: popupLov
+        label {
+            label: Račun
+            alignment: left
+        }
+        settings {
+            popupWidth: 800
+            popupHeight: 600
+        }
+        lov {
+            type: sharedComponent
+            lov: @ooj-ziro-racuni
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 30
+            region: @izvodi-izvod-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P1011_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1011_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P1011_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation broj-not-null (
+        name: Broj NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1011_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1011_BROJ
+        }
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1011_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1011_DATUM
+        }
+    )
+
+    validation kontrola-broja-i-datuma (
+        name: Kontrola broja i datuma
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare 
+                v_pom number;
+                begin
+                
+                    select count(1)
+                    into v_pom
+                    from accounting.izvodi iz
+                    where iz.datum=:P1011_DATUM
+                    and iz.ziro_racun_id=:P1011_ZIRO_RACUN_ID
+                    and iz.id!=nvl(:P1011_ID,0);
+                    
+                    if v_pom>0 then 
+                
+                        return 'Izvod za odabrani datum je već unesen. Molimo provjerite postojeći izvod ili odaberite drugi datum.';
+                
+                    end if;
+                
+                    select count(1)
+                    into v_pom
+                    from accounting.izvodi iz
+                    where iz.godina=extract(year from to_date(:P1011_DATUM,'dd.mm.yyyy'))
+                    and iz.ziro_racun_id=:P1011_ZIRO_RACUN_ID
+                    and iz.broj=:P1011_BROJ
+                    and iz.id!=nvl(:P1011_ID,0);
+                
+                     if v_pom>0 then 
+                
+                        return 'Izvod sa ovim brojem za odabranu godinu i žiro račun već postoji. Molimo provjerite unesene podatke.';
+                
+                    end if;
+                
+                
+                
+                end;
+                ```
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation novi-saldo-not-null (
+        name: NOVI SALDO NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1011_NOVI_SALDO
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1011_NOVI_SALDO
+        }
+    )
+
+    validation prethodni-saldo-not-null (
+        name: PRETHODNI SALDO  NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1011_PRETHODNI_SALDO
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1011_PRETHODNI_SALDO
+        }
+    )
+
+    validation racun-not-null (
+        name: Racun NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P1011_ZIRO_RACUN_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P1011_ZIRO_RACUN_ID
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                 accounting.finansije_pkg.delete_izvod( 
+                                                 p_id                => :P1011_ID                       
+                            );
+                
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 270161444315689554
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                 accounting.finansije_pkg.get_izvod(
+                                                 p_id                => :P1011_ID, 
+                                                 p_ooj_id            => :P1011_OOJ_ID,
+                                                 p_ziro_racun_id     => :P1011_ZIRO_RACUN_ID,
+                                                 p_broj              => :P1011_BROJ,
+                                                 p_datum             => :P1011_DATUM,
+                                                 p_opis              => :P1011_OPIS,
+                                                 p_prethodni_saldo   => :P1011_PRETHODNI_SALDO,
+                                                 p_novi_saldo        => :P1011_NOVI_SALDO,
+                                                 p_storno            => :P1011_STORNO,
+                                                 p_zakljucan         => :P1011_ZAKLJUCAN,
+                                                 p_proknjizen        => :P1011_PROKNJIZEN,
+                                                 p_nalog_gk_id       => :P1011_NALOG_GK_ID, 
+                                                 p_godina            => :P1011_GODINA
+                            );
+                
+                
+                
+                
+                                                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 270160226433689550
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare 
+                v_id number;
+                v_godina number;
+                begin 
+                  
+                 select extract(year from to_date(:P1011_DATUM, 'DD.MM.YYYY'))
+                 into :P1011_GODINA 
+                 from dual;
+                
+                 accounting.finansije_pkg.insert_izvod(                           
+                                                 p_ooj_id            => :APP_OOJ_ID,
+                                                 p_ziro_racun_id     => :P1011_ZIRO_RACUN_ID,
+                                                 p_broj              => :P1011_BROJ,
+                                                 p_datum             => :P1011_DATUM,
+                                                 p_opis              => :P1011_OPIS,
+                                                 p_prethodni_saldo   => to_number(:P1011_PRETHODNI_SALDO, '999G999G999G999G990D00'),
+                                                 p_novi_saldo        => to_number(:P1011_NOVI_SALDO, '999G999G999G999G990D00'),
+                                                 p_storno            => :P1011_STORNO,
+                                                 p_zakljucan         => :P1011_ZAKLJUCAN,
+                                                 p_proknjizen        => :P1011_PROKNJIZEN,
+                                                 p_nalog_gk_id       => :P1011_NALOG_GK_ID,
+                                                 p_godina            => :P1011_GODINA,
+                                                 p_id                => :P1011_ID
+                
+                            );
+                
+                end;
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 270160687845689551
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                 accounting.finansije_pkg.update_izvod( 
+                                                 p_id                => :P1011_ID,                          
+                                                 p_ooj_id            => :APP_OOJ_ID,
+                                                 p_ziro_racun_id     => :P1011_ZIRO_RACUN_ID,
+                                                 p_broj              => :P1011_BROJ,
+                                                 p_datum             => :P1011_DATUM,
+                                                 p_opis              => :P1011_OPIS,
+                                                 p_prethodni_saldo   => to_number(:P1011_PRETHODNI_SALDO, '999G999G999G999G990D00'),
+                                                 p_novi_saldo        => to_number(:P1011_NOVI_SALDO, '999G999G999G999G990D00'),
+                                                 p_storno            => :P1011_STORNO,
+                                                 p_zakljucan         => :P1011_ZAKLJUCAN,
+                                                 p_proknjizen        => :P1011_PROKNJIZEN,
+                                                 p_nalog_gk_id       => :P1011_NALOG_GK_ID,
+                                                 p_godina            => :P1011_GODINA
+                                                );
+                
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 270161095221689552
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Redirect to stavke
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 1012
+                items: {
+                    P1012_ID: &P1011_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        name: Redirect to stavke
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 1012
+                items: {
+                    P1012_ID: &P1011_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Redirect to pregled
+        execution {
+            sequence: 30
+        }
+        behavior {
+            target: {
+                page: 1010
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+)
+

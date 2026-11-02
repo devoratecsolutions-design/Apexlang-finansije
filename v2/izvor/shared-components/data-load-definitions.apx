@@ -1,0 +1,614 @@
+dataLoadDefinition cavic_load_kif (
+    name: CAVIC_LOAD_KIF
+    target {
+        type: collection
+        name: LOAD_KIF
+        loadingMethod: replace
+    }
+    dataProfile {
+        name: CAVIC_LOAD_KIF
+        format: csv
+    }
+    advanced {
+        encoding: utf-8
+        csvEnclosedBy: "
+        skipRows: 1
+        firstLineContainsHeaders: false
+    }
+
+    dataProfileColumn c (
+        columnName: C001
+        source {
+            sequence: 1
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 1
+        }
+    )
+
+    dataProfileColumn c-10 (
+        columnName: C010
+        source {
+            sequence: 10
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 10
+        }
+    )
+
+    dataProfileColumn c-11 (
+        columnName: C011
+        source {
+            sequence: 11
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 11
+        }
+    )
+
+    dataProfileColumn c-12 (
+        columnName: C012
+        source {
+            sequence: 12
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 12
+        }
+    )
+
+    dataProfileColumn c-13 (
+        columnName: C013
+        source {
+            sequence: 13
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 13
+        }
+    )
+
+    dataProfileColumn c-14 (
+        columnName: C014
+        source {
+            sequence: 14
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 14
+        }
+    )
+
+    dataProfileColumn c-15 (
+        columnName: C015
+        source {
+            sequence: 15
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 15
+        }
+    )
+
+    dataProfileColumn c-16 (
+        columnName: C016
+        source {
+            sequence: 16
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 16
+        }
+    )
+
+    dataProfileColumn c-17 (
+        columnName: C017
+        source {
+            sequence: 17
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 17
+        }
+    )
+
+    dataProfileColumn c-18 (
+        columnName: C018
+        source {
+            sequence: 18
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 18
+        }
+    )
+
+    dataProfileColumn c-19 (
+        columnName: C019
+        source {
+            sequence: 19
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 19
+        }
+    )
+
+    dataProfileColumn c-2 (
+        columnName: C002
+        source {
+            sequence: 2
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 2
+        }
+    )
+
+    dataProfileColumn c-20 (
+        columnName: C020
+        source {
+            sequence: 20
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 20
+        }
+    )
+
+    dataProfileColumn c-21 (
+        columnName: C021
+        source {
+            sequence: 21
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 21
+        }
+    )
+
+    dataProfileColumn c-3 (
+        columnName: C003
+        source {
+            sequence: 3
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 3
+        }
+    )
+
+    dataProfileColumn c-4 (
+        columnName: C004
+        source {
+            sequence: 4
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 4
+        }
+    )
+
+    dataProfileColumn c-5 (
+        columnName: C005
+        source {
+            sequence: 5
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 5
+        }
+    )
+
+    dataProfileColumn c-6 (
+        columnName: C006
+        source {
+            sequence: 6
+            dataType: varchar2
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 6
+        }
+    )
+
+    dataProfileColumn c-7 (
+        columnName: C007
+        source {
+            sequence: 7
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 7
+        }
+    )
+
+    dataProfileColumn c-8 (
+        columnName: C008
+        source {
+            sequence: 8
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 8
+        }
+    )
+
+    dataProfileColumn c-9 (
+        columnName: C009
+        source {
+            sequence: 9
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 9
+        }
+    )
+
+)
+
+dataLoadDefinition cavic_load_kuf (
+    name: CAVIC_LOAD_KUF
+    target {
+        type: collection
+        name: LOAD_KUF
+        loadingMethod: replace
+    }
+    dataProfile {
+        name: CAVIC_LOAD_KUF
+        format: csv
+    }
+    advanced {
+        encoding: utf-8
+        csvEnclosedBy: "
+        skipRows: 1
+        firstLineContainsHeaders: false
+    }
+
+    dataProfileColumn c (
+        columnName: C001
+        source {
+            sequence: 1
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 1
+        }
+    )
+
+    dataProfileColumn c-10 (
+        columnName: C010
+        source {
+            sequence: 10
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 10
+        }
+    )
+
+    dataProfileColumn c-11 (
+        columnName: C011
+        source {
+            sequence: 11
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 11
+        }
+    )
+
+    dataProfileColumn c-12 (
+        columnName: C012
+        source {
+            sequence: 12
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 12
+        }
+    )
+
+    dataProfileColumn c-13 (
+        columnName: C013
+        source {
+            sequence: 13
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 13
+        }
+    )
+
+    dataProfileColumn c-14 (
+        columnName: C014
+        source {
+            sequence: 14
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 14
+        }
+    )
+
+    dataProfileColumn c-15 (
+        columnName: C015
+        source {
+            sequence: 15
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 15
+        }
+    )
+
+    dataProfileColumn c-16 (
+        columnName: C016
+        source {
+            sequence: 16
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 16
+        }
+    )
+
+    dataProfileColumn c-17 (
+        columnName: C017
+        source {
+            sequence: 17
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 17
+        }
+    )
+
+    dataProfileColumn c-18 (
+        columnName: C018
+        source {
+            sequence: 18
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 18
+        }
+    )
+
+    dataProfileColumn c-19 (
+        columnName: C019
+        source {
+            sequence: 19
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 19
+        }
+    )
+
+    dataProfileColumn c-2 (
+        columnName: C003
+        source {
+            sequence: 2
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 2
+        }
+    )
+
+    dataProfileColumn c-20 (
+        columnName: C020
+        source {
+            sequence: 20
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 20
+        }
+    )
+
+    dataProfileColumn c-3 (
+        columnName: C002
+        source {
+            sequence: 3
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 3
+        }
+    )
+
+    dataProfileColumn c-4 (
+        columnName: C004
+        source {
+            sequence: 4
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 4
+        }
+    )
+
+    dataProfileColumn c-5 (
+        columnName: C005
+        source {
+            sequence: 5
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 5
+        }
+    )
+
+    dataProfileColumn c-6 (
+        columnName: C006
+        source {
+            sequence: 6
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 6
+        }
+    )
+
+    dataProfileColumn c-7 (
+        columnName: C007
+        source {
+            sequence: 7
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 7
+        }
+    )
+
+    dataProfileColumn c-8 (
+        columnName: C008
+        source {
+            sequence: 8
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 8
+        }
+    )
+
+    dataProfileColumn c-9 (
+        columnName: C009
+        source {
+            sequence: 9
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selectorType: sequence
+            columnNumber: 9
+        }
+    )
+
+)
+
+dataLoadDefinition sif_kontni_okvir_klase (
+    name: SIF_KONTNI_OKVIR_KLASE
+    target {
+        type: collection
+        name: KONTNI_OKVIR_KLASE
+        loadingMethod: replace
+    }
+    dataProfile {
+        name: SIF_KONTNI_OKVIR_KLASE
+        format: csv
+    }
+    advanced {
+        encoding: utf-8
+        csvEnclosedBy: "
+    }
+
+    dataProfileColumn c (
+        columnName: C001
+        source {
+            sequence: 1
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selector: KONTO
+        }
+    )
+
+    dataProfileColumn c-2 (
+        columnName: C002
+        source {
+            sequence: 2
+            dataType: varchar2
+            maxLength: 32767
+        }
+        parsing {
+            selector: OPIS
+        }
+    )
+
+)
+

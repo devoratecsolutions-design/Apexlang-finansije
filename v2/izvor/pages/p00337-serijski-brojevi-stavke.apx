@@ -1,0 +1,857 @@
+page 337 (
+    name: Serijski brojevi stavke
+    alias: SERIJSKI-BROJEVI-STAVKE
+    title: Serijski brojevi
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        width: 760
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmSb.init('P337', 'rm_sb_lista', 'rm_sb_raspolozivi');
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-dokumenti
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region sb-traka (
+        name: Artikal
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-docbar">
+                  <span class="fin-docbar__no">&P337_ARTIKAL.</span>
+                  <span id="finSbOznaka" class="fin-sb &P337_KLASA."><span id="finSbN">&P337_UNESENO.</span> / <span id="finSbK">&P337_KOLICINA.</span></span>
+                  <span class="fin-docbar__meta">&P337_DOKUMENT.</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region sb-detalji (
+        name: Unos
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P337_IZMJENJIVA = 'Y'
+        }
+    )
+
+    region sb-barkod (
+        name: Barkod čitač ili ručni unos
+        title: Barkod čitač ili ručni unos
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @sb-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        advanced {
+            htmlDomId: sb_barkod
+        }
+    )
+
+    region sb-izbor (
+        name: Izbor iz liste raspoloživih serijskih brojeva
+        title: Izbor iz liste raspoloživih serijskih brojeva
+        type: staticContent
+        layout {
+            sequence: 15
+            parentRegion: @sb-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        advanced {
+            htmlDomId: sb_izbor
+        }
+    )
+
+    region sb-qr (
+        name: QR kod (opseg serijskih brojeva)
+        title: QR kod (opseg serijskih brojeva)
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @sb-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        advanced {
+            htmlDomId: sb_qr
+        }
+    )
+
+    region sb-fajl (
+        name: Uvoz iz Excel / CSV fajla
+        title: Uvoz iz Excel / CSV fajla
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @sb-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        advanced {
+            htmlDomId: sb_fajl
+        }
+    )
+
+    region sb-raspolozivi (
+        name: Raspoloživi serijski brojevi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    x.serijski_broj,
+                    to_char(x.datum_ulaza, 'DD.MM.YYYY') AS datum_ulaza
+                FROM vw_rm_sb_stanje x
+                JOIN operacija_stavke os ON os.id = :P337_STAVKA_DOK_ID
+                JOIN operacije o ON o.id = os.operacija_id
+                WHERE x.ooj_id = :APP_OOJ_ID
+                  AND x.skladiste_id = o.skladiste_id
+                  AND x.stavka_id = os.stavka_id
+                  AND x.raspolozivo > 0
+                  AND x.serijski_broj NOT IN (SELECT sb.serijski_broj FROM operacija_stavke_sb sb WHERE sb.operacija_stavka_id = os.id)
+                ORDER BY x.serijski_broj
+                ```
+            pageItemsToSubmit: P337_STAVKA_DOK_ID
+        }
+        layout {
+            sequence: 20
+            parentRegion: @sb-izbor
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-sb-raspolozivi
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nema raspoloživih serijskih brojeva ovog artikla na skladištu.
+        }
+        advanced {
+            htmlDomId: rm_sb_raspolozivi
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P337_TIP = 'I'
+        }
+
+        column SERIJSKI_BROJ (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Serijski broj
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-sb-red"><span><span class="fin-sb-red__broj">#SERIJSKI_BROJ#</span>{if DATUM_ULAZA/}<span class="fin-sub">primljen #DATUM_ULAZA#</span>{endif/}</span><a class="fin-act fin-sb-dodaj" href="javascript:void(0)" data-sb="#SERIJSKI_BROJ#" title="Dodaj" aria-label="Dodaj"><span class="fa fa-plus" aria-hidden="true"></span></a></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_ULAZA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+    )
+
+    region sb-lista (
+        name: Uneseni serijski brojevi
+        title: Uneseni serijski brojevi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    serijski_broj,
+                    CASE WHEN :P337_IZMJENJIVA = 'Y' THEN 'Y' END AS brisanje
+                FROM vw_rm_sb
+                WHERE operacija_stavka_id = :P337_STAVKA_DOK_ID
+                  AND ooj_id = :APP_OOJ_ID
+                ORDER BY id DESC
+                ```
+            pageItemsToSubmit: [
+                P337_STAVKA_DOK_ID
+                P337_IZMJENJIVA
+            ]
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-form fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nema unesenih serijskih brojeva.
+        }
+        advanced {
+            htmlDomId: rm_sb_lista
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column SERIJSKI_BROJ (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Serijski broj
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-sb-red"><span class="fin-sb-red__broj">#SERIJSKI_BROJ#</span>{if BRISANJE/}<a class="fin-act fin-act--danger fin-sb-brisi" href="javascript:void(0)" data-id="#ID#" title="Obriši" aria-label="Obriši"><span class="fa fa-trash-o" aria-hidden="true"></span></a>{endif/}</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BRISANJE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+    )
+
+    pageItem P337_STAVKA_DOK_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @sb-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P337_IZMJENJIVA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 2
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_ARTIKAL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_KOLICINA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_UNESENO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_KLASA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_DOKUMENT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 7
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_PORUKA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 8
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_TIP (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 9
+            region: @sb-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P337_NACIN (
+        type: radioGroup
+        label {
+            label: Način unosa
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT d, r FROM (
+                    SELECT 'Barkod / ručno' AS d, 'B' AS r, 1 AS o FROM dual
+                    UNION ALL SELECT 'Iz liste raspoloživih', 'L', 2 FROM dual WHERE :P337_TIP = 'I'
+                    UNION ALL SELECT 'QR kod', 'Q', 3 FROM dual
+                    UNION ALL SELECT 'Excel / CSV', 'F', 4 FROM dual
+                )
+                ORDER BY o
+                ```
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: B
+        }
+        layout {
+            sequence: 5
+            region: @sb-detalji
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P337_TRAZI (
+        type: textField
+        label {
+            label: Pretraga
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @sb-izbor
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P337_SB (
+        type: textField
+        label {
+            label: Serijski broj
+            alignment: left
+        }
+        validation {
+            maxLength: 255
+        }
+        layout {
+            sequence: 10
+            region: @sb-barkod
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Skenirajte barkod ili upišite serijski broj i pritisnite Enter - broj se odmah snima.
+        }
+    )
+
+    pageItem P337_UNOS (
+        type: textarea
+        label {
+            label: Sadržaj QR koda
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @sb-qr
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            height: 3
+        }
+        help {
+            helpText: Skenirajte QR kod sa opsegom serijskih brojeva ili zalijepite listu. Razdjelnici: novi red, razmak, ; , : /
+        }
+    )
+
+    pageItem P337_FAJL (
+        type: fileUpload
+        label {
+            label: Fajl (xlsx, csv) - serijski brojevi u prvoj koloni
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+            fileTypes: text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain
+            maxFileSize: 10240
+        }
+        layout {
+            sequence: 10
+            region: @sb-fajl
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button dodaj (
+        buttonName: DODAJ
+        label: Dodaj iz QR koda
+        layout {
+            sequence: 20
+            region: @sb-qr
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-qrcode
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button uvezi (
+        buttonName: UVEZI
+        label: Uvezi iz fajla
+        layout {
+            sequence: 20
+            region: @sb-fajl
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-upload
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button zatvori (
+        buttonName: ZATVORI
+        label: Zatvori
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-times
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button obrisi-sve (
+        buttonName: OBRISI_SVE
+        label: Obriši sve
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Obrisati sve serijske brojeve ove stavke?
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P337_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process ucitaj (
+        name: Učitavanje stavke
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                for s in (select s.sifra, s.naziv, s.kolicina, s.sb_uneseno, s.sb_ok, d.naziv as dok, s.operacija_id, d.tip_kretanja as tip
+                            from vw_rm_dokument_stavke s
+                            join vw_rm_dokumenti d on d.id = s.operacija_id
+                           where s.id = :P337_STAVKA_DOK_ID and s.ooj_id = :APP_OOJ_ID) loop
+                    :P337_ARTIKAL  := s.sifra || ' - ' || s.naziv;
+                    :P337_KOLICINA := rtrim(to_char(s.kolicina, 'FM999G999G990D999'), '.,');
+                    :P337_UNESENO  := s.sb_uneseno;
+                    :P337_KLASA    := case when s.sb_ok = 'Y' then 'is-ok' else 'is-nok' end;
+                    :P337_DOKUMENT := s.dok;
+                    :P337_TIP      := s.tip;
+                    :P337_IZMJENJIVA := rm_dokument_pkg.izmjenjiv(s.operacija_id);
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process ajax-dodaj-sb (
+        name: DODAJ_SB
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(rm_dokument_pkg.dodaj_sb_json(p_stavka_dok_id => :P337_STAVKA_DOK_ID, p_sb => apex_application.g_x01));
+                ```
+        }
+        execution {
+            sequence: 10
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-obrisi-sb (
+        name: OBRISI_SB
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_dokument_pkg.obrisi_sb(p_id => to_number(apex_application.g_x01));
+                    sys.htp.p(rm_dokument_pkg.sb_stanje_json(:P337_STAVKA_DOK_ID));
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
+        }
+    )
+
+    process dodaj (
+        name: Dodaj serijske brojeve iz QR koda
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P337_PORUKA := rm_dokument_pkg.dodaj_sb(p_stavka_dok_id => :P337_STAVKA_DOK_ID, p_tekst => :P337_UNOS);
+                :P337_UNOS := null;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: &P337_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @dodaj
+        }
+    )
+
+    process uvezi (
+        name: Uvezi serijske brojeve iz fajla
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P337_PORUKA := rm_dokument_pkg.dodaj_sb_fajl(p_stavka_dok_id => :P337_STAVKA_DOK_ID, p_naziv_fajla => :P337_FAJL);
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: &P337_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @uvezi
+        }
+    )
+
+    process obrisi-sve (
+        name: Obriši sve serijske brojeve
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_dokument_pkg.obrisi_sve_sb(p_stavka_dok_id => :P337_STAVKA_DOK_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Serijski brojevi su obrisani.
+        }
+        serverSideCondition {
+            whenButtonPressed: @obrisi-sve
+        }
+    )
+
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: ZATVORI
+        }
+    )
+
+    branch (
+        name: Ostani na unosu
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 337
+                items: {
+                    P337_STAVKA_DOK_ID: &P337_STAVKA_DOK_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST <> 'ZATVORI'
+        }
+    )
+
+)

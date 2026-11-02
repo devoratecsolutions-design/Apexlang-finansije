@@ -1,0 +1,434 @@
+page 72 (
+    name: "Dokumentacija [&P72_UGOVOR_NAZIV.]"
+    alias: UGOVOR-DOKUMENTACIJA
+    title: "Dokumentacija [&P72_UGOVOR_NAZIV.]"
+    pageGroup: @ugovori
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region dokumentacija (
+        name: Dokumentacija
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    dbms_lob.getlength(dokument) AS dokument,
+                    dokument_mimetype,
+                    dokument_filename
+                FROM
+                    ugovor_dokumenta
+                WHERE
+                    ugovor_id = :P72_UGOVOR_ID
+                ```
+            pageItemsToSubmit: P72_UGOVOR_ID
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DERIVED$01 (
+            reportColumnQueryId: 5
+            derivedColumn: Y
+            type: link
+            heading {
+                heading: Obriši
+            }
+            layout {
+                sequence: 40
+            }
+            link {
+                target: {
+                    type: url
+                    url: javascript:void(null);
+                }
+                linkText: <span class="t-Icon fa fa-trash delete-document" aria-hidden="true"></span>
+                linkAttributes: data-id=#ID#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: downloadBlob
+            heading {
+                heading: Preuzmi
+            }
+            layout {
+                sequence: 50
+            }
+            blobAttributes {
+                tableName: UGOVOR_DOKUMENTA
+                blobColumn: DOKUMENT
+                primaryKeyColumn1: ID
+                mimeTypeColumn: DOKUMENT_MIMETYPE
+                filenameColumn: DOKUMENT_FILENAME
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENT_FILENAME (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            link {
+                target: {
+                    page: 73
+                    items: {
+                        P73_ID: #ID#
+                    }
+                    clearCache: 73
+                }
+                linkText: #DOKUMENT_FILENAME#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENT_MIMETYPE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+    )
+
+    region dokumentacija-p72-ugovor-naziv (
+        name: "Dokumentacija [&P72_UGOVOR_NAZIV.]"
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @dokumentacija
+        }
+        layout {
+            sequence: 39
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P72_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    pageItem P72_DOKUMENT_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    pageItem P72_UGOVOR_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P72_UGOVOR_NAZIV (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    button download-all (
+        buttonName: DOWNLOAD_ALL
+        label: Preuzmi dokumentaciju
+        layout {
+            sequence: 10
+            region: @dokumentacija-p72-ugovor-naziv
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-download
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                select 
+                    1
+                from 
+                    ugovor_dokumenta
+                where 
+                    ugovor_id = :P72_UGOVOR_ID
+                ```
+        }
+    )
+
+    dynamicAction delete-file (
+        name: Delete File
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .delete-document
+        }
+
+        action native-clear (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: P72_DOKUMENT_ID
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+        action native-confirm (
+            action: confirm
+            settings {
+                message: Da li ste sigurni da želite obrisati dokument? Nakon brisanja nije moguće vratiti obrisani dokument!
+                style: danger
+                cssClasses: u-color-9
+                confirmLabel: Obriši
+                cancelLabel: Odustani
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    ugovori_pkg.delete_ugovor_dokument (
+                        p_id => :P72_DOKUMENT_ID
+                    );
+                    ```
+                itemsToSubmit: P72_DOKUMENT_ID
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @dokumentacija-p72-ugovor-naziv
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).parent().data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P72_DOKUMENT_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                showProcessing: false
+            }
+            execution {
+                sequence: 60
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction download-all (
+        name: Download All
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @download-all
+        }
+
+        action native-download (
+            action: download
+            fileHandling {
+                multipleFiles: true
+                filename: ugovor-dokumentacija.zip
+            }
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        dokument,
+                        dokument_filename
+                    FROM
+                        ugovor_dokumenta
+                    WHERE
+                        ugovor_id = :P72_UGOVOR_ID
+                    ```
+                itemsToSubmit: P72_UGOVOR_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    computation p72-ugovor-naziv (
+        itemName: P72_UGOVOR_NAZIV
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv
+                FROM
+                    ugovori
+                WHERE
+                    id = :P72_UGOVOR_ID
+                ```
+        }
+    )
+
+)
+

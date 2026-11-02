@@ -1,0 +1,68 @@
+page 73 (
+    name: Ugovor dokumentacija / Pregled
+    alias: UGOVOR-DOKUMENTACIJA-PREGLED
+    title: Ugovor dokumentacija / Pregled
+    pageGroup: @ugovori
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    pageItem P73_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    dynamicAction preview-file (
+        name: Preview File
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P73_ID
+        }
+
+        action native-download (
+            action: download
+            fileHandling {
+                viewFileAs: inline
+            }
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        dokument,
+                        dokument_filename,
+                        dokument_mimetype
+                    FROM
+                        ugovor_dokumenta
+                    WHERE
+                        id = :P73_ID
+                    ```
+                itemsToSubmit: P73_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+)
+

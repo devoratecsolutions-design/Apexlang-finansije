@@ -1,0 +1,416 @@
+page 27 (
+    name: Lista cjenovnika
+    alias: LISTA-CJENOVNIKA
+    title: Lista cjenovnika
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region lista-cjenovnika (
+        name: Cjenovnici
+        title: Cjenovnici
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c.id,
+                    c.sifra,
+                    c.naziv,
+                    c.opis,
+                    c.tip,
+                    CASE c.tip WHEN 'M' THEN 'Maloprodajni' WHEN 'V' THEN 'Veleprodajni' END AS tip_naziv,
+                    (SELECT count(*) FROM cjenovnik_stavke cs
+                      WHERE cs.cjenovnik_id = c.id AND cs.valid = 'Y') AS broj_cijena,
+                    (SELECT count(*) FROM skladista s WHERE s.cjenovnik_id = c.id) AS broj_mjesta,
+                    c.valid,
+                    CASE WHEN c.valid = 'Y' THEN 'paid' ELSE 'na' END AS status_klasa,
+                    CASE WHEN c.valid = 'Y' THEN 'Aktivan' ELSE 'Neaktivan' END AS status_naziv
+                FROM
+                    cjenovnici c
+                WHERE
+                    c.ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    c.valid DESC, c.sifra
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: Nema cjenovnika za izabrane filtere.
+        }
+
+        column BROJ_CIJENA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BROJ_MJESTA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Prodajnih mjesta
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Cjenovnik
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 28
+                    items: {
+                        P28_ID: #ID#
+                    }
+                    clearCache: 28
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#SIFRA#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 210
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 200
+            }
+        )
+
+        column STATUS_KLASA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 240
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-badge fin-badge--#STATUS_KLASA#">#STATUS_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 220
+            }
+        )
+
+        column TIP_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Vrsta
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-chip">#TIP_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 230
+            }
+        )
+
+    )
+
+    region lista-cjenovnika-2 (
+        name: Lista cjenovnika
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @lista-cjenovnika
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P27_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 1
+            }
+            appearance {
+                valuePlaceholder: Pretraga po šifri, nazivu ili opisu...
+            }
+        )
+
+        filter P27_F_TIP (
+            type: radioGroup
+            label {
+                label: Vrsta
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Maloprodajni;M,Veleprodajni;V
+            }
+            layout {
+                sequence: 10
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: TIP
+            }
+        )
+
+        filter P27_F_STATUS (
+            type: radioGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Aktivan;Y,Neaktivan;N
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: VALID
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @lista-cjenovnika-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 28
+                clearCache: 28
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-cjenovnika
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @lista-cjenovnika
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-cjenovnika
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

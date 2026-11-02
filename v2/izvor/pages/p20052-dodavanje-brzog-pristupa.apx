@@ -1,0 +1,249 @@
+page 20052 (
+    name: Dodavanje brzog pristupa
+    alias: DODAVANJE-BRZOG-PRISTUPA
+    title: Dodavanje brzog pristupa
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region question (
+        name: Question
+        type: staticContent
+        source {
+            htmlCode: Da li ste sigurni da želite da dodate <b>&P20052_PAGE_TITLE.</b> u brzi pristup?
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20052_APPLICATION_ID (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    pageItem P20052_ICON (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P20052_PAGE_ENTRY (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P20052_PAGE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P20052_PAGE_TITLE (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process get-application (
+        name: Get application
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    SELECT id
+                    INTO :P20052_APPLICATION_ID
+                    FROM sif.sif_aplikacije
+                    WHERE
+                        application_id = :APP_ID;
+                
+                EXCEPTION
+                    WHEN no_data_found THEN
+                        :P20052_APPLICATION_ID := 0;
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 30
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 385777473047770733
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_navigation_id number;
+                    l_title varchar2(255);
+                begin
+                    -- Get page title
+                    select page_title
+                    into l_title
+                    from apex_application_pages
+                    where page_id = :P20052_PAGE_ID
+                        and application_id = :APP_ID;
+                
+                    -- Get page icon
+                    select 'fa ' || entry_image, entry_text
+                    into :P20052_ICON, :P20052_PAGE_TITLE
+                    from apex_application_list_entries
+                    where
+                        application_id = :APP_ID
+                        and entry_attribute_03 = :P20052_PAGE_ID
+                        and rownum = 1;
+                
+                    exception when no_data_found then
+                        :P20052_ICON := null;
+                        :P20052_PAGE_TITLE := l_title;
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 385602080371107337
+        }
+    )
+
+    process insert-brzi-pristup (
+        name: Insert brzi pristup
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.insert_brzi_pristup (
+                    p_korisnik_id        => :APP_USER_ID,
+                    p_page_id            => :P20052_PAGE_ID,
+                    p_title              => :P20052_PAGE_TITLE,
+                    p_icon               => :P20052_ICON,
+                    p_sif_application_id => :P20052_APPLICATION_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 385602414455107337
+        }
+        serverSideCondition {
+            whenButtonPressed: @add
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: &P20052_PAGE_ID.
+            }
+        }
+    )
+
+)
+

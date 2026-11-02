@@ -1,0 +1,522 @@
+page 121 (
+    name: Banke
+    alias: BANKE
+    title: Banke
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Sekcija <b><em>"Banke"</em></b> predstavlja ključni dio konfiguracije finansijskog modula, 
+            jer omogućava vezivanje poslovnih računa sa pripadajućim kontima iz kontnog plana. </br>
+            Na ovaj način obezbjeđuje se da se sve bankarske transakcije ispravno knjiže i da se 
+            vodi analitika po bankama.
+            
+            </br>
+            
+            Klikom na dugme <b><em>"Novi unos"</em></b> otvara se modalni dijalog u kojem je potrebno:
+            <ul>
+                <li>Odabrati banku iz padajućeg menija (lista registrovanih poslovnih banaka),</li>
+                <li>Definisati konto – najčešće je to konto 2410 „Poslovni računi“, a kroz analitiku se razlikuju pojedinačne banke,</li>
+                <li>Unijeti žiro račun banke,</li>
+                <li>Označiti status – da li je žiro račun predviđen za isplatu plata ili ne,</li>
+                <li>Potvrditi unos klikom na dugme Kreiraj.</li>
+            </ul>
+            ```
+    }
+
+    region banke (
+        name: Banke
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region banke-2 (
+        name: Banke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                
+                    banka_naziv,
+                    ziro_racun,
+                    kontna_klasa_code,
+                    kontna_klasa_naziv,
+                    za_plate,
+                
+                    apex_page.get_url(
+                        p_page   => 122,
+                        p_items  => 'P122_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-building-o' as icon_class
+                
+                FROM
+                    core.vw_ooj_banke
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ORDER BY
+                    id ASC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column BANKA_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Banka Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KONTNA_KLASA_CODE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Kontna Klasa Code
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KONTNA_KLASA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Kontna Klasa Naziv
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ZA_PLATE/}
+                    <span class="t-Button t-Button--icon u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                        <span class="t-Button-label">Račun za isplatu plata</span>
+                    </span>
+                    {endif/}
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #ZIRO_RACUN#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #KONTNA_KLASA_CODE# - #KONTNA_KLASA_NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #BANKA_NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZA_PLATE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Za Plate
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZIRO_RACUN (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Ziro Racun
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @banke-2
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P121_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button create-bank (
+        buttonName: CREATE_BANK
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @banke
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 122
+                items: {
+                    P122_ID: &P121_ID.
+                }
+                clearCache: 122
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 80
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: button
+            button: @create-bank
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @banke-2
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 70
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @banke-2
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @banke-2
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction map-clicked (
+        name: Map clicked
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: [
+                P121_LAT
+                P121_LNG
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: [
+                    P121_LAT
+                    P121_LNG
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction pdv (
+        name: PDV
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P121_PDV_SISTEM
+        }
+        clientSideCondition {
+            type: item=value
+            item: P121_PDV_SISTEM
+            value: N
+        }
+    )
+
+    dynamicAction rjesenje (
+        name: Rjesenje
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P121_RJESENJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P121_RJESENJE
+            value: Y
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: [
+                    P121_BROJ_RJESENJA
+                    P121_DATUM_RJESENJA
+                    P121_IZDAVAOC_RJESENJA
+                ]
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: [
+                    P121_BROJ_RJESENJA
+                    P121_DATUM_RJESENJA
+                    P121_IZDAVAOC_RJESENJA
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+)
+

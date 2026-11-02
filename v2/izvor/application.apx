@@ -1,0 +1,186 @@
+app FINANSIJE (
+    name: Finansije
+    group: @10-development
+    logo {
+        type: custom
+        customHtml: <img src="f?p=&APP_ID.:0:&SESSION.:APPLICATION_PROCESS=display_logo:NO" style="height: 32px;"></img>
+    }
+    navigation {
+        homeUrl: {
+            page: 1
+        }
+        loginUrl: {
+            type: otherApp
+            app: 210
+            page: LOGIN
+        }
+    }
+    navigationMenu {
+        listTemplate: @side-navigation-menu
+        templateOptions: [
+            #DEFAULT#
+            js-addActions
+            js-navCollapsed--default
+            t-TreeNav--styleA
+        ]
+        list: @navigation-menu
+    }
+    navigationBar {
+        list: @navigation-bar
+        listTemplate: @navigation-bar
+        templateOptions: [
+            #DEFAULT#
+            js-menu-callout
+        ]
+    }
+    userInterface {
+        currentTheme: @universal-theme
+        globalPage: 0
+        addBuiltWithApexToFooter: false
+    }
+    appFormatMasks {
+        date: DD.MM.YYYY
+        dateTime: DD.MM.YYYY HH24:MI:SS
+        timestamp: DS
+        timestampTimeZone: DS
+    }
+    javaScript {
+        fileUrls: [
+            #WORKSPACE_FILES#highlight_required#MIN#.js
+            #APP_FILES#js/success-autohide.js
+            #APP_FILES#js/finansije-ui#MIN#.js?v=08956c39
+        ]
+    }
+    css {
+        fileUrls: [
+            #WORKSPACE_FILES#highlight_required#MIN#.css
+            #APP_FILES#css/nav-icons#MIN#.css
+            #APP_FILES#css/finansije-ui#MIN#.css?v=f0fe3a5e
+        ]
+    }
+    authentication {
+        scheme: @erp-users
+        publicUser: APEX_PUBLIC_USER
+    }
+    security {
+        runtimeApiUsage: modifyThisApp
+    }
+    sessionStateProtection {
+        checksumSalt: 56F6031507983932F9F1B363944ED1A4EC730BD4C1C6385CAF856CFD2B2E49F9
+    }
+    sessionManagement {
+        rejoinSessions: allSessions
+    }
+    databaseSession {
+        initPlsqlCode:
+            ```plsql
+            BEGIN
+                apex_util.set_session_time_zone(p_time_zone => 'Europe/Belgrade');
+            END;
+            ```
+    }
+    globalization {
+        documentDirection: leftToRight
+    }
+    progressiveWebApp {
+        installable: true
+        enablePushNotifications: true
+        pushNotificationsCredentials: @APP_210_PUSH_NOTIFICATIONS
+    }
+    errorHandling {
+        errorHandlingFunctionName: core.error_manager.f_apex_error_handler
+    }
+    runtime {
+        allowFeedback: true
+        compatibilityMode: 24.2
+        accessibleReadOnlyItems: false
+    }
+    advanced {
+        modernizeApp: true
+    }
+
+    substitution APP_NAME (
+        value {
+            staticValue: Finansije
+        }
+    )
+
+    appSetting CREDENTIAL_NAME (
+        value {
+            staticValue: SIF_CREDENTIALS
+        }
+        validation {
+            required: true
+        }
+    )
+
+    appSetting ESSCOM_FIRMA_ID (
+        value {
+            staticValue: 28
+        }
+        validation {
+            required: true
+        }
+        subscription {
+            master: @/200/ESSCOM_FIRMA_ID
+        }
+    )
+
+    appSetting ESSCOM_OOJ_ID (
+        value {
+            staticValue: 132
+        }
+        validation {
+            required: true
+        }
+        subscription {
+            master: @/200/ESSCOM_OOJ_ID
+        }
+    )
+
+    appSetting ESSCOM_SOFTWARE_OJ_ID (
+        value {
+            staticValue: 5048
+        }
+        validation {
+            required: true
+        }
+        subscription {
+            master: @/200/ESSCOM_SOFTWARE_OJ_ID
+        }
+    )
+
+    appSetting FEEDBACK_ATTACHMENTS_YN (
+        value {
+            staticValue: Y
+            onUpgradeKeepValue: true
+        }
+        validation {
+            validValues: Y, N
+        }
+        config {
+            buildOption: @feature-feedback
+        }
+    )
+
+    appSetting NAMESPACE (
+        value {
+            staticValue: fr4rnaskk1np
+            onUpgradeKeepValue: true
+        }
+        validation {
+            required: true
+        }
+    )
+
+    appSetting REGION (
+        value {
+            staticValue: eu-frankfurt-1
+        }
+        validation {
+            required: true
+        }
+    )
+
+)
+

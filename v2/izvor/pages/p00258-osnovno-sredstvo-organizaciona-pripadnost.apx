@@ -1,0 +1,379 @@
+page 258 (
+    name: Osnovno sredstvo / Organizaciona pripadnost
+    alias: OSNOVNO-SREDSTVO-ORGANIZACIONA-PRIPADNOST
+    title: Osnovno sredstvo / Organizaciona pripadnost
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovno-sredstvo-opšti-podaci (
+        name: Osnovno sredstvo / Opšti podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P258_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 130
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P258_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P258_LOKACIJA_ID (
+        type: selectOne
+        label {
+            label: Lokacija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @lokacije
+        }
+        layout {
+            sequence: 110
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P258_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 100
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P258_PROSTORIJA_ID (
+        type: selectOne
+        label {
+            label: Prostorija
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv as d,
+                    id as r
+                FROM
+                    core.ooj_lokacija_prostorije
+                WHERE
+                    lokacija_id = :P258_LOKACIJA_ID
+                    AND valid = 'Y'
+                ```
+        }
+        cascadingLov {
+            parentItems: P258_LOKACIJA_ID
+        }
+        layout {
+            sequence: 120
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P258_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P258_HISTORY_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P258_HISTORY_KOMENTAR
+        }
+    )
+
+    validation oj-not-null (
+        name: OJ NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P258_OJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P258_OJ_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 55271173100090339
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P258_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P258_OJ_ID := l_os.oj_id;
+                    :P258_LOKACIJA_ID := l_os.lokacija_id;
+                    :P258_PROSTORIJA_ID := l_os.prostorija_id;
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 55270397931090340
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P258_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P258_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    l_os.oj_id := :P258_OJ_ID;
+                    l_os.lokacija_id := :P258_LOKACIJA_ID;
+                    l_os.prostorija_id := :P258_PROSTORIJA_ID;
+                
+                    l_os.history_komentar := :P258_HISTORY_KOMENTAR;
+                    os_pkg.update_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55270703791090340
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

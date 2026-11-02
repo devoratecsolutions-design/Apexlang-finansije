@@ -1,0 +1,509 @@
+page 59 (
+    name: Izlazne fakture / Knjiženje
+    alias: IZLAZNE-FAKTURE-KNJIŽENJE
+    title: Izlazne fakture / Knjiženje
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region fakture-koje-će-biti-proknjižene (
+        name: Fakture koje će biti proknjižene
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 as id,
+                    c002 as vrsta_fakture_naziv,
+                    c003 as naziv_fakture,
+                    c004 as datum_fakture
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'KIF_LIST'
+                ORDER BY
+                    to_date(c004, 'DD.MM.YYYY') DESC, 
+                    c005 DESC
+                ```
+            pageItemsToSubmit: P59_PP
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 30
+            }
+            link {
+                target: {
+                    page: 60
+                    items: {
+                        P60_ID: #ID#
+                        P60_VIEW_ONLY: Y
+                    }
+                    clearCache: 60
+                }
+                linkText: #NAZIV_FAKTURE#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_FAKTURE_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Vrsta fakture
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P59_COUNT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P59_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko je odabrana opcije <b><em>"NE"</em></b> u tom slučaju će biti omogućena naknadna korekcija
+                 u pregledu <b><em>"Naloga za knjiženje".</em></b>
+                
+                ```
+        }
+    )
+
+    pageItem P59_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P59_PP (
+        type: selectOne
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @poreski-period-yymm
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button knjizi (
+        buttonName: KNJIZI
+        label: Knjiži
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-book
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction count-togglee-report-button (
+        name: Count - Togglee- Report/Button
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P59_COUNT
+        }
+        clientSideCondition {
+            type: item>value
+            item: P59_COUNT
+            value: 0
+        }
+
+        action hide-button (
+            name: Hide - Button
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @knjizi
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action hide-region (
+            name: Hide - Region
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @fakture-koje-će-biti-proknjižene
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @fakture-koje-će-biti-proknjižene
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action show-button (
+            name: Show - Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @knjizi
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action show-region (
+            name: Show - Region
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @fakture-koje-će-biti-proknjižene
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-report-button (
+        name: Toggle - Report/Button
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P59_PP
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    IF apex_collection.collection_exists ('KIF_LIST') THEN
+                        apex_collection.delete_collection (
+                            p_collection_name => 'KIF_LIST'
+                        );
+                    END IF;
+                    
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'KIF_LIST',
+                        p_query => '
+                            SELECT
+                                id,
+                                vrsta_fakture_naziv,
+                                naziv_fakture,
+                                datum_fakture,
+                                faktura_broj
+                            FROM
+                                vw_kif
+                            WHERE
+                                ooj_id = ' || :APP_OOJ_ID || '
+                                AND trunc(datum_fakture, ''MM'') = trunc(to_date(' || :P59_PP || ', ''YYMM''), ''MM'')
+                                AND glavna_knjiga_id IS null
+                                AND valid = ''Y''
+                                AND godina = ' || :APP_GODINA || '
+                                AND lower(vrsta_naloga_sifra) IN (
+                                    ''if'', ''ifs'', ''kz'', ''kzs'', ''ko'', ''kos'', ''av'', ''avs''
+                                )
+                        '
+                    );
+                    
+                    SELECT
+                        count(*)
+                    INTO
+                        :P59_COUNT
+                    FROM
+                        apex_collections
+                    WHERE
+                        collection_name = 'KIF_LIST';
+                    ```
+                itemsToSubmit: [
+                    P59_PP
+                    P59_COUNT
+                ]
+                itemsToReturn: P59_COUNT
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P59_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P59_KNJIZI_YN
+        }
+    )
+
+    process knjizenje (
+        name: Knjizenje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P59_NALOG_ID := glavna_knjiga_pkg.knjizi_kif (
+                    p_ooj_id      => :APP_OOJ_ID,
+                    p_godina      => :APP_GODINA,
+                    p_pp          => to_date(:P59_PP, 'YYMM'),
+                    p_proknjizeno => :P59_KNJIZI_YN
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 157345434162879653
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P59_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+    )
+
+)
+

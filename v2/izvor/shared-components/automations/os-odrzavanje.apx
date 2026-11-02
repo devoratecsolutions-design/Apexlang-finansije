@@ -1,0 +1,27 @@
+automation os-odrzavanje (
+    name: OS_ODRZAVANJE
+    execution {
+        scheduleExpression: FREQ=DAILY;INTERVAL=1;BYHOUR=6;BYMINUTE=0
+        actionsInitiatedOn: always
+    }
+
+    action check-os-odrzavanje (
+        name: check_os_odrzavanje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    check_os_odrzavanje (
+                        p_app_id => :APP_ID
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+)
+

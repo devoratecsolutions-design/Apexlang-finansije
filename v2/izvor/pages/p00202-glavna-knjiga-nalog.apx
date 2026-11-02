@@ -1,0 +1,1012 @@
+page 202 (
+    name: Glavna knjiga / Nalog
+    alias: GLAVNA-KNJIGA-NALOG
+    title: Glavna knjiga / Nalog
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region glavna-knjiga (
+        name: Glavna Knjiga
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P202_BROJ (
+        type: textField
+        label {
+            label: Broj naloga
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P202_COPY_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P202_DATUM_DOKUMENTA (
+        type: datePicker
+        label {
+            label: Datum dokumenta
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 90
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P202_DATUM_KNJIZENJA (
+        type: datePicker
+        label {
+            label: Datum knjiženja
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+            useDefaults: false
+            appearanceBehavior: [
+                monthPicker
+                yearPicker
+                showTodayButton
+            ]
+            daysOutsideMonth: hidden
+        }
+        layout {
+            sequence: 100
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        default {
+            type: expression
+            plsqlExpression: LAST_DAY(:P202_DATUM_DOKUMENTA)
+        }
+    )
+
+    pageItem P202_GODINA (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+    )
+
+    pageItem P202_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P202_KIF_ID (
+        type: selectOne
+        label {
+            label: Povezana faktura (KIF)
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @kif-neknjizeno
+        }
+        layout {
+            sequence: 70
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P202_ID
+        }
+    )
+
+    pageItem P202_KUF_ID (
+        type: selectOne
+        label {
+            label: Povezana faktura (KUF)
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @kuf-neknjizeno
+        }
+        layout {
+            sequence: 80
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P202_ID
+        }
+    )
+
+    pageItem P202_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        default {
+            type: item
+            item: APP_OOJ_ID
+        }
+    )
+
+    pageItem P202_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P202_PROKNJIZENO (
+        type: hidden
+        layout {
+            sequence: 120
+            region: @glavna-knjiga
+            slot: regionBody
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P202_ID
+        }
+    )
+
+    pageItem P202_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 130
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P202_ID
+        }
+    )
+
+    pageItem P202_VRSTA_NALOGA_ID (
+        type: selectOne
+        label {
+            label: Vrsta naloga
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-naloga
+        }
+        layout {
+            sequence: 40
+            region: @glavna-knjiga
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P202_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P202_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P202_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P202_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-broj (
+        name: Get broj
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P202_VRSTA_NALOGA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P202_BROJ := glavna_knjiga_pkg.get_broj_naloga (
+                        p_ooj_id          => :APP_OOJ_ID,
+                        p_vrsta_naloga_id => :P202_VRSTA_NALOGA_ID,
+                        p_godina          => :APP_GODINA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P202_VRSTA_NALOGA_ID
+                    P202_BROJ
+                ]
+                itemsToReturn: P202_BROJ
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction set-datum-knjizenja (
+        name: Set - Datum knjizenja
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P202_DATUM_DOKUMENTA
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P202_DATUM_KNJIZENJA := :P202_DATUM_DOKUMENTA;
+                itemsToSubmit: [
+                    P202_DATUM_DOKUMENTA
+                    P202_DATUM_KNJIZENJA
+                ]
+                itemsToReturn: P202_DATUM_KNJIZENJA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-kif-datum-opis (
+        name: Set KIF - Datum & Opis
+        execution {
+            sequence: 100
+        }
+        when {
+            selectionType: items
+            items: P202_KIF_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    finansije_pkg.get_kif (
+                        p_id            => :P202_KIF_ID,
+                        p_naziv_fakture => :P202_OPIS,
+                        p_datum_fakture => :P202_DATUM_DOKUMENTA
+                    );
+                    
+                    :P202_DATUM_KNJIZENJA := last_day(:P202_DATUM_DOKUMENTA);
+                    ```
+                itemsToSubmit: [
+                    P202_DATUM_DOKUMENTA
+                    P202_DATUM_KNJIZENJA
+                    P202_OPIS
+                    P202_KIF_ID
+                ]
+                itemsToReturn: [
+                    P202_DATUM_DOKUMENTA
+                    P202_DATUM_KNJIZENJA
+                    P202_OPIS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-kuf-datum-opis (
+        name: Set KUF - Datum & Opis
+        execution {
+            sequence: 110
+        }
+        when {
+            selectionType: items
+            items: P202_KUF_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    finansije_pkg.get_kuf (
+                        p_id            => :P202_KUF_ID,
+                        p_datum_fakture => :P202_DATUM_DOKUMENTA,
+                        p_naziv_fakture => :P202_OPIS
+                    );
+                    
+                    :P202_DATUM_KNJIZENJA := last_day(:P202_DATUM_KNJIZENJA);
+                    ```
+                itemsToSubmit: [
+                    P202_DATUM_DOKUMENTA
+                    P202_DATUM_KNJIZENJA
+                    P202_OPIS
+                    P202_KUF_ID
+                ]
+                itemsToReturn: [
+                    P202_DATUM_DOKUMENTA
+                    P202_DATUM_KNJIZENJA
+                    P202_OPIS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle-if-in-av-ko-kos (
+        name: Toggle - IF/IN/AV/KO/KOS
+        execution {
+            sequence: 29
+        }
+        when {
+            selectionType: items
+            items: P202_VRSTA_NALOGA_ID
+        }
+        clientSideCondition {
+            type: itemIsInList
+            item: P202_VRSTA_NALOGA_ID
+            list: [
+                3
+                65
+                205
+                206
+                105
+                106
+                85
+                107
+                108
+                109
+            ]
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P202_KIF_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P202_KIF_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction toggle-uf (
+        name: Toggle - UF
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P202_VRSTA_NALOGA_ID
+        }
+        clientSideCondition {
+            type: item=value
+            item: P202_VRSTA_NALOGA_ID
+            value: 2
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P202_KUF_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P202_KUF_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation broj-not-null (
+        name: Broj not NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P202_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P202_BROJ
+        }
+    )
+
+    validation datum-dokumenta-not-null (
+        name: Datum dokumenta NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P202_DATUM_DOKUMENTA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P202_DATUM_DOKUMENTA
+        }
+    )
+
+    validation datum-knjizenja-not-null (
+        name: Datum knjizenja NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P202_DATUM_KNJIZENJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P202_DATUM_KNJIZENJA
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P202_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P202_OPIS
+        }
+    )
+
+    validation vrsta-naloga-not-null (
+        name: Vrsta naloga NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P202_VRSTA_NALOGA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P202_VRSTA_NALOGA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 44951578893391324
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.delete_glavna_knjiga (
+                    p_id => :P202_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 44787585789024639
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_id NUMBER;
+                BEGIN
+                    IF :P202_ID IS NOT null THEN
+                        l_id := :P202_ID;
+                    ELSE
+                        l_id := :P202_COPY_ID;
+                    END IF;
+                
+                    glavna_knjiga_pkg.get_glavna_knjiga (
+                        p_id              => l_id,
+                        p_ooj_id          => :P202_OOJ_ID,
+                        p_vrsta_naloga_id => :P202_VRSTA_NALOGA_ID,
+                        p_godina          => :P202_GODINA,
+                        p_broj            => :P202_BROJ,
+                        p_datum_dokumenta => :P202_DATUM_DOKUMENTA,
+                        p_datum_knjizenja => :P202_DATUM_KNJIZENJA,
+                        p_proknjizeno     => :P202_PROKNJIZENO,
+                        p_opis            => :P202_OPIS,
+                        p_valid           => :P202_VALID
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 44787229894024636
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P202_ID IS NOT null OR :P202_COPY_ID IS NOT null
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P202_ID := glavna_knjiga_pkg.insert_glavna_knjiga (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_vrsta_naloga_id => :P202_VRSTA_NALOGA_ID,
+                    p_godina          => :APP_GODINA,
+                    p_broj            => :P202_BROJ,
+                    p_datum_dokumenta => :P202_DATUM_DOKUMENTA,
+                    p_datum_knjizenja => :P202_DATUM_KNJIZENJA,
+                    p_opis            => :P202_OPIS
+                );
+                
+                
+                IF :P202_VRSTA_NALOGA_ID IN (3,65,205,206,105,106,85,107,108,109) THEN 
+                    UPDATE kif SET
+                        glavna_knjiga_id = :P202_ID
+                    WHERE
+                        id = :P202_KIF_ID;
+                
+                ELSIF :P202_VRSTA_NALOGA_ID = 2 THEN        
+                    UPDATE kuf SET
+                        glavna_knjiga_id = :P202_ID
+                    WHERE
+                        id = :P202_KUF_ID;
+                
+                END IF;
+                
+                IF :P202_COPY_ID IS NOT null THEN
+                    glavna_knjiga_pkg.copy_glavna_knjiga_stavke (
+                        p_copy_id  => :P202_COPY_ID,
+                        p_nalog_id => :P202_ID
+                    );
+                
+                END IF;
+                
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 44787314019024637
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.update_glavna_knjiga (
+                    p_id              => :P202_ID,
+                    p_ooj_id          => :P202_OOJ_ID,
+                    p_vrsta_naloga_id => :P202_VRSTA_NALOGA_ID,
+                    p_godina          => :APP_GODINA,
+                    p_broj            => :P202_BROJ,
+                    p_datum_dokumenta => :P202_DATUM_DOKUMENTA,
+                    p_datum_knjizenja => :P202_DATUM_KNJIZENJA,
+                    p_proknjizeno     => :P202_PROKNJIZENO,
+                    p_opis            => :P202_OPIS,
+                    p_valid           => :P202_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 44787490217024638
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Redirect to new
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P202_ID.
+                }
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    branch (
+        name: Redirect to all
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 200
+                action: resetPagination
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+)
+

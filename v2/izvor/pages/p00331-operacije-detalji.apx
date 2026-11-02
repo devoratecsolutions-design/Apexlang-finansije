@@ -1,0 +1,1541 @@
+page 331 (
+    name: Dokument skladišta
+    alias: OPERACIJE-DETALJI
+    title: Dokument skladišta
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmStavke.init('rm_stavke', 'P331');
+            ```
+    }
+    css {
+        inline:
+            ```css
+            .ui-dialog-titlebar-close {
+                display: none !important;
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-dokumenti
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region dokument-traka (
+        name: Traka dokumenta
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-docbar">
+                  <span class="fin-docbar__no">&P331_NAZIV.</span>
+                  <span class="fin-status fin-status--&P331_STATUS_KLASA."><span class="fa &P331_STATUS_IKONA." aria-hidden="true"></span>&P331_STATUS_NAZIV.</span>
+                  <span class="fin-docbar__meta">&P331_VRSTA_NAZIV.</span>
+                  <span class="fin-docbar__meta">&P331_SKLADISTE.</span>
+                  <span class="fin-docbar__meta">&P331_KALKULACIJA.</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region zakljucan (
+        name: Dokument se ne može mijenjati
+        type: staticContent
+        source {
+            htmlCode: &P331_RAZLOG.
+        }
+        layout {
+            sequence: 7
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'N'
+        }
+    )
+
+    region dokument-detalji (
+        name: Dokument / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P331_IZMJENJIVA = 'N'
+        }
+    )
+
+    region dokument (
+        name: Dokument
+        title: Dokument
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @dokument-detalji
+            slot: subRegions
+            columnSpan: 5
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region dobavljac (
+        name: Dobavljač i ugovor
+        title: Dobavljač i ugovor
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @dokument-detalji
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 7
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region stavke-sekcija (
+        name: Stavke
+        title: Stavke
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @dokument-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region stavke (
+        name: Stavke - tabela
+        title: Stavke
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.id,
+                    s.redni_broj,
+                    s.stavka_id,
+                    s.jm_naziv,
+                    rtrim(to_char(CASE WHEN :P331_TIP_KRETANJA = 'I'
+                         THEN rm_dokument_pkg.raspolozivo(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id)
+                         ELSE rm_dokument_pkg.stanje(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id) END,
+                         'FM999G999G999G990D999999'), '.,') AS raspolozivo,
+                    rtrim(to_char(s.kolicina, 'FM999999999990D999999'), '.,') AS kolicina,
+                    CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
+                         ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D999999'), '0') END AS cijena,
+                    s.iznos,
+                    CASE WHEN s.prati_sb = 'Y' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb
+                FROM vw_rm_dokument_stavke s
+                WHERE s.operacija_id = :P331_ID
+                ORDER BY s.redni_broj, s.id
+                ```
+            pageItemsToSubmit: [
+                P331_ID
+                P331_TIP_KRETANJA
+                P331_SKLADISTE_ID
+            ]
+        }
+        layout {
+            sequence: 20
+            parentRegion: @stavke-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Dodajte artikle koji se primaju.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj artikal"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: rm_stavke
+            savedReportMappingIdentifier: 3310000000000001
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P331_IZMJENJIVA = 'N'
+        }
+
+        savedReport 3310000000000002 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 2
+                    width: 380
+                }
+            )
+
+            displayColumn (
+                column: @JM_NAZIV
+                layout {
+                    sequence: 3
+                    width: 55
+                }
+            )
+
+            displayColumn (
+                column: @RASPOLOZIVO
+                layout {
+                    sequence: 4
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @KOLICINA
+                layout {
+                    sequence: 5
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @CIJENA
+                layout {
+                    sequence: 6
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 7
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @SB
+                layout {
+                    sequence: 8
+                    width: 80
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column REDNI_BROJ (
+            type: hidden
+            layout {
+                sequence: 35
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+        column STAVKA_ID (
+            type: popupLov
+            heading {
+                heading: Artikal
+            }
+            settings {
+                popupWidth: 640
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT sifra || ' - ' || naziv || CASE WHEN prati_sb = 'Y' THEN ' (SB)' END AS d,
+                           id AS r
+                    FROM vw_rm_artikli
+                    WHERE ooj_id = :APP_OOJ_ID
+                      AND valid = 'Y'
+                      AND nvl(tip_stavke_id, 0) <> 3
+                    ORDER BY sifra
+                    ```
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite artikal -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column JM_NAZIV (
+            type: textField
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: JM_NAZIV
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: textField
+            heading {
+                heading: Na skladištu
+                alignment: end
+            }
+            layout {
+                sequence: 55
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RASPOLOZIVO
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column KOLICINA (
+            type: textField
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: KOLICINA
+                dataType: varchar2
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column CIJENA (
+            type: textField
+            heading {
+                heading: Jed. cijena
+                alignment: end
+            }
+            layout {
+                sequence: 62
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: CIJENA
+                dataType: varchar2
+            }
+        )
+
+        column IZNOS (
+            type: numberField
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 64
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+        column SB (
+            type: textField
+            heading {
+                heading: Serijski br.
+                alignment: center
+            }
+            layout {
+                sequence: 70
+                columnAlignment: center
+            }
+            source {
+                databaseColumn: SB
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+    )
+
+    region zbir (
+        name: Zbir
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @stavke-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-totals
+        }
+    )
+
+    region serijski-brojevi (
+        name: Serijski brojevi
+        title: Serijski brojevi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.id,
+                    s.sifra,
+                    s.naziv,
+                    to_char(s.kolicina, 'FM999G999G990') AS kolicina,
+                    s.sb_uneseno,
+                    CASE WHEN s.sb_ok = 'Y' THEN 'is-ok' ELSE 'is-nok' END AS sb_klasa,
+                    apex_page.get_url(p_page => 337, p_items => 'P337_STAVKA_DOK_ID', p_values => s.id, p_clear_cache => 337) AS url
+                FROM vw_rm_dokument_stavke s
+                WHERE s.operacija_id = :P331_ID
+                  AND s.prati_sb = 'Y'
+                ORDER BY s.redni_broj, s.id
+                ```
+            pageItemsToSubmit: P331_ID
+        }
+        layout {
+            sequence: 40
+            parentRegion: @dokument-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nema artikala koji se prate po serijskom broju.
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                for s in (select 1 from vw_rm_dokument_stavke where operacija_id = :P331_ID and prati_sb = 'Y' fetch first 1 row only) loop
+                    return true;
+                end loop;
+                return false;
+                ```
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Serijski brojevi
+                alignment: center
+            }
+            layout {
+                sequence: 30
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-act" title="Unos serijskih brojeva" aria-label="Unos serijskih brojeva"><span class="fa fa-barcode" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-doc"><span class="fin-doc__no">#SIFRA#</span><span class="fin-sub">#NAZIV#</span></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column SB_UNESENO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Uneseno / količina
+                alignment: center
+            }
+            layout {
+                sequence: 20
+                columnAlignment: center
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-sb #SB_KLASA#">#SB_UNESENO# / #KOLICINA#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SB_KLASA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+    )
+
+    pageItem P331_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @dokument-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P331_VRSTA_DOKUMENTA_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @dokument-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P331_VRSTA_SIFRA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_VRSTA_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_STATUS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_STATUS_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 7
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_STATUS_KLASA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 8
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_STATUS_IKONA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 9
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_IZMJENJIVA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_RAZLOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 11
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_SKLADISTE_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_SKLADISTE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 13
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_KALKULACIJA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 14
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_TIP_KRETANJA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 15
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_DATUM (
+        type: datePicker
+        label {
+            label: Datum prijema
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @dokument
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Datum kada je roba primljena u skladište. Ne može biti u budućnosti niti u zaključanom periodu.
+        }
+    )
+
+    pageItem P331_OPIS (
+        type: textarea
+        label {
+            label: Opis / komentar
+            alignment: left
+        }
+        validation {
+            maxLength: 1000
+        }
+        layout {
+            sequence: 20
+            region: @dokument
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            height: 3
+        }
+        help {
+            helpText: Slobodan opis dokumenta (npr. razlog prijema, napomena za kalkulaciju).
+        }
+    )
+
+    pageItem P331_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Dobavljač
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti-dobavljaci
+        }
+        layout {
+            sequence: 10
+            region: @dobavljac
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P331_OTPREMNICA_BROJ (
+        type: textField
+        label {
+            label: Broj otpremnice dobavljača
+            alignment: left
+        }
+        validation {
+            maxLength: 100
+        }
+        layout {
+            sequence: 20
+            region: @dobavljac
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P331_OTPREMNICA_DATUM (
+        type: datePicker
+        label {
+            label: Datum otpremnice
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @dobavljac
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P331_UGOVOR_ID (
+        type: popupLov
+        label {
+            label: Ugovor
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT prikaz AS d, id AS r
+                FROM vw_kuf_ugovori
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND klijent_id = :P331_KLIJENT_ID
+                  AND (aktivan = 'Y' OR id = :P331_UGOVOR_ID)
+                ORDER BY broj DESC
+                ```
+        }
+        cascadingLov {
+            parentItems: P331_KLIJENT_ID
+            itemsToSubmit: P331_UGOVOR_ID
+        }
+        layout {
+            sequence: 40
+            region: @dobavljac
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Ugovor sa dobavljačem po kome se roba prima (nije obavezan).
+        }
+    )
+
+    pageItem P331_ZBIR (
+        type: displayOnly
+        label {
+            label: Ukupno (KM)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 10
+            region: @zbir
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button cancel (
+        buttonName: ZATVORI
+        label: Zatvori
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-times
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Obrisati dokument sa svim stavkama?
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Snimi
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-save
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    validation datum-obavezno (
+        name: P331_DATUM obavezno
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_DATUM
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    validation klijent-obavezno (
+        name: P331_KLIJENT_ID obavezno
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_KLIJENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_KLIJENT_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    validation zaglavlje (
+        name: Provjera zaglavlja (RM_DOKUMENT_PKG)
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                return rm_dokument_pkg.provjeri_zaglavlje(
+                    p_id                 => :P331_ID,
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_godina             => :APP_GODINA,
+                    p_vrsta_dokumenta_id => :P331_VRSTA_DOKUMENTA_ID,
+                    p_skladiste_id       => :P331_SKLADISTE_ID,
+                    p_datum              => :P331_DATUM,
+                    p_klijent_id         => :P331_KLIJENT_ID,
+                    p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
+                    p_ugovor_id          => :P331_UGOVOR_ID
+                );
+                ```
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    dynamicAction sb-odustao (
+        name: Unos serijskih brojeva zatvoren (X) - osvježi
+        execution {
+            sequence: 25
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @serijski-brojevi
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @serijski-brojevi
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction sb-zatvoren (
+        name: Unos serijskih brojeva zatvoren - osvježi
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @serijski-brojevi
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @serijski-brojevi
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process ucitaj (
+        name: Učitavanje dokumenta
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                for d in (select * from vw_rm_dokumenti where id = :P331_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P331_VRSTA_DOKUMENTA_ID := d.vrsta_dokumenta_id;
+                    :P331_VRSTA_SIFRA        := d.vrsta_sifra;
+                    :P331_VRSTA_NAZIV        := d.vrsta_naziv;
+                    :P331_TIP_KRETANJA       := d.tip_kretanja;
+                    :P331_ZBIR               := to_char(d.iznos, 'FM999G999G999G990D00');
+                    :P331_NAZIV              := d.naziv;
+                    :P331_STATUS             := d.status;
+                    :P331_SKLADISTE_ID       := d.skladiste_id;
+                    :P331_SKLADISTE          := d.skladiste_sifra || ' - ' || d.skladiste_naziv;
+                    :P331_DATUM              := d.datum;
+                    :P331_OPIS               := d.opis;
+                    :P331_KLIJENT_ID         := d.klijent_id;
+                    :P331_OTPREMNICA_BROJ    := d.otpremnica_broj;
+                    :P331_OTPREMNICA_DATUM   := d.otpremnica_datum;
+                    :P331_UGOVOR_ID          := d.ugovor_id;
+                    :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv end;
+                    :P331_STATUS_KLASA       := case when d.stornirano = 'Y' then 'storno'
+                                                     when d.glavna_knjiga_id is not null then 'proknjizena'
+                                                     when d.status = 'Z' then 'zakljucena' else 'priprema' end;
+                    :P331_STATUS_NAZIV       := case when d.stornirano = 'Y' then 'Storniran'
+                                                     when d.glavna_knjiga_id is not null then 'Proknjižen'
+                                                     when d.status = 'Z' then 'Zaključen'
+                                                     when d.u_kalkulaciji_id is not null then 'U kalkulaciji'
+                                                     else 'U pripremi' end;
+                    :P331_STATUS_IKONA       := case when d.stornirano = 'Y' then 'fa-ban'
+                                                     when d.glavna_knjiga_id is not null then 'fa-book'
+                                                     when d.status = 'Z' then 'fa-lock'
+                                                     when d.u_kalkulaciji_id is not null then 'fa-calculator'
+                                                     else 'fa-pencil' end;
+                end loop;
+                :P331_RAZLOG := rm_dokument_pkg.razlog_zabrane(:P331_ID);
+                :P331_IZMJENJIVA := rm_dokument_pkg.izmjenjiv(:P331_ID);
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P331_ID
+        }
+    )
+
+    process nova (
+        name: Novi dokument - početne vrijednosti
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P331_IZMJENJIVA    := 'Y';
+                :P331_STATUS        := 'P';
+                :P331_STATUS_KLASA  := 'priprema';
+                :P331_STATUS_NAZIV  := 'U pripremi';
+                :P331_STATUS_IKONA  := 'fa-pencil';
+                :P331_SKLADISTE_ID  := :A_SKLADISTE_ID;
+                :P331_DATUM         := nvl(:P331_DATUM, trunc(sysdate));
+                for s in (select sifra || ' - ' || naziv as n from skladista where id = :A_SKLADISTE_ID) loop
+                    :P331_SKLADISTE := s.n;
+                end loop;
+                -- iz menija: vrsta zadata šifrom (npr. PRI) -> vrsta iste firme u modulu MAT
+                if :P331_VRSTA_DOKUMENTA_ID is null and :P331_VRSTA_SIFRA is not null then
+                    select max(vd.id) into :P331_VRSTA_DOKUMENTA_ID
+                      from sif.vrste_dokumenata vd
+                      join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
+                     where vd.ooj_id = :APP_OOJ_ID and upper(vd.sifra) = upper(:P331_VRSTA_SIFRA) and vd.valid = 'Y';
+                end if;
+                for v in (select vd.sifra, vd.naziv from sif.vrste_dokumenata vd where vd.id = :P331_VRSTA_DOKUMENTA_ID) loop
+                    :P331_VRSTA_SIFRA := upper(v.sifra);
+                    :P331_TIP_KRETANJA := rm_dokument_pkg.tip_kretanja(v.sifra);
+                    :P331_ZBIR := '0,00';
+                    :P331_VRSTA_NAZIV := v.naziv;
+                    :P331_NAZIV       := 'Nova ' || lower(v.naziv);
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P331_ID
+        }
+    )
+
+    process snimi (
+        name: Snimi zaglavlje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P331_ID := rm_dokument_pkg.snimi(
+                    p_id                 => :P331_ID,
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_godina             => :APP_GODINA,
+                    p_vrsta_dokumenta_id => :P331_VRSTA_DOKUMENTA_ID,
+                    p_skladiste_id       => :P331_SKLADISTE_ID,
+                    p_datum              => :P331_DATUM,
+                    p_klijent_id         => :P331_KLIJENT_ID,
+                    p_otpremnica_broj    => :P331_OTPREMNICA_BROJ,
+                    p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
+                    p_opis               => :P331_OPIS,
+                    p_ugovor_id          => :P331_UGOVOR_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process stavke-snimi (
+        name: Stavke - snimi redove
+        type: executeCode
+        editableRegion: @stavke
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        -- vrijednosti iz tabele su tekst; novi red ima privremeni ID (t1000) -> kuf_pkg.broj vraća null
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_dokument_pkg.obrisi_stavku(p_id => l_id);
+                        else
+                            rm_dokument_pkg.snimi_stavku(
+                                p_id          => l_id,
+                                p_dokument_id => :P331_ID,
+                                p_stavka_id   => kuf_pkg.broj(:STAVKA_ID),
+                                p_kolicina    => kuf_pkg.broj(:KOLICINA),
+                                p_cijena      => kuf_pkg.broj(:CIJENA)
+                            );
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Dokument je snimljen.
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process ajax-artikl-info (
+        name: ARTIKL_INFO
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(rm_dokument_pkg.artikl_info(
+                    p_stavka_id    => apex_application.g_x01,
+                    p_dokument_id  => :P331_ID,
+                    p_skladiste_id => :P331_SKLADISTE_ID,
+                    p_datum        => :P331_DATUM
+                ));
+                ```
+        }
+        execution {
+            sequence: 30
+            point: ajaxCallback
+        }
+    )
+
+    process obrisi (
+        name: Obriši
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_dokument_pkg.obrisi(p_id => :P331_ID);
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Dokument je obrisan.
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE,ZATVORI
+        }
+    )
+
+    branch (
+        name: Ostani na dokumentu
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 331
+                items: {
+                    P331_ID: &P331_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE
+        }
+    )
+
+)

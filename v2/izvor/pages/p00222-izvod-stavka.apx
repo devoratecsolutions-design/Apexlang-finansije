@@ -1,0 +1,1322 @@
+page 222 (
+    name: Izvod / Stavka
+    alias: IZVOD-STAVKA
+    title: Izvod / Stavka
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region izvod-stavka (
+        name: Izvod / Stavka
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P222_GLAVNA_KNJIGA_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @izvod-stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P222_GRAD_ID (
+        type: selectOne
+        label {
+            label: Šifra grada
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv || ' ( ' || lpad(sifra, 3, '0') || ' )' as d,
+                    id as r
+                FROM
+                    sif.sif_gradovi g
+                WHERE
+                    (
+                        :P222_KLIJENT_ID IS NOT NULL 
+                        AND g.drzava_id = (
+                            SELECT k.drzava_id
+                            FROM sec_klijenti k
+                            WHERE k.id = :P222_KLIJENT_ID
+                        )
+                    ) OR (
+                        :P222_KLIJENT_ID IS NULL 
+                        AND drzava_id = 28
+                    )
+                ```
+        }
+        cascadingLov {
+            parentItems: P222_KLIJENT_ID
+        }
+        layout {
+            sequence: 100
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P222_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @izvod-stavka
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P222_IZNOS (
+        type: numberField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P222_KIF_ID (
+        type: selectOne
+        label {
+            label: Izlazna faktura
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv_fakture AS d,
+                    id AS r
+                FROM
+                    vw_kif
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND uplaceno = 'N'
+                    AND lower(vrsta_naloga_sifra) != 'pr'
+                    AND klijent_id = :P222_KLIJENT_ID
+                ORDER BY
+                    faktura_broj
+                ```
+        }
+        cascadingLov {
+            parentItems: P222_KLIJENT_ID
+        }
+        layout {
+            sequence: 220
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P222_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti
+        }
+        layout {
+            sequence: 90
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P222_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Konto
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @kontni-okvir-klase-ooj
+        }
+        layout {
+            sequence: 40
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+            ]
+        }
+    )
+
+    pageItem P222_KUF_ID (
+        type: selectOne
+        label {
+            label: Ulazna faktura
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv_fakture AS d,
+                    id AS r
+                FROM
+                    kuf
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND uplaceno = 'N'
+                    AND klijent_id = :P222_KLIJENT_ID
+                ```
+        }
+        cascadingLov {
+            parentItems: P222_KLIJENT_ID
+        }
+        layout {
+            sequence: 230
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P222_KURS (
+        type: numberField
+        label {
+            label: Kurs
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 64
+        }
+    )
+
+    pageItem P222_NACIN_PLACANJA_IZVODA (
+        type: selectOne
+        label {
+            label: Način plaćanja izvoda
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @nacin-placanja-izvoda
+        }
+        layout {
+            sequence: 180
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 1
+        }
+    )
+
+    pageItem P222_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 240
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P222_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 80
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P222_PRIHOD_RASHOD (
+        type: selectOne
+        label {
+            label: Prihod / Rashod
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @prihod-rashod
+        }
+        layout {
+            sequence: 110
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 1
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp
+            ]
+        }
+    )
+
+    pageItem P222_PRIZNAT_RASHOD (
+        type: radioGroup
+        label {
+            label: Priznat rashod
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 170
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp
+            ]
+        }
+    )
+
+    pageItem P222_REDNI_BROJ (
+        type: displayOnly
+        label {
+            label: Redni Broj
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P222_SIFRA_PRIHODA (
+        type: textField
+        label {
+            label: Šifra prihoda
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 160
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 64
+        }
+    )
+
+    pageItem P222_TIP_STAVKE_IZVODA (
+        type: radioGroup
+        label {
+            label: Priliv / Odliv
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @priliv-odliv
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 60
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+            ]
+        }
+    )
+
+    pageItem P222_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 190
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 64
+        }
+    )
+
+    pageItem P222_VALUTA_IZNOS (
+        type: numberField
+        label {
+            label: Iznos u valuti
+            alignment: left
+        }
+        layout {
+            sequence: 210
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P222_VRSTA_PRIHODA_ID (
+        type: selectOne
+        label {
+            label: Vrsta prihoda
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-prihoda
+        }
+        layout {
+            sequence: 130
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp
+            ]
+        }
+    )
+
+    pageItem P222_VRSTA_RASHODA_ID (
+        type: selectOne
+        label {
+            label: Vrsta rashoda
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-vrste-rashoda
+        }
+        layout {
+            sequence: 140
+            region: @izvod-stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp
+            ]
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P222_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P222_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-calculate-iznos (
+        name: Change - Calculate iznos
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: [
+                P222_KURS
+                P222_VALUTA_IZNOS
+            ]
+        }
+        clientSideCondition {
+            type: item!=value
+            item: P222_VALUTA_ID
+            value: 1
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_datum DATE;
+                    BEGIN
+                        glavna_knjiga_pkg.get_glavna_knjiga (
+                            p_id              => :P222_GLAVNA_KNJIGA_ID,
+                            p_datum_dokumenta => l_datum
+                        );
+                    
+                        :P222_IZNOS := sif.acc_pkg.convert_to_bam (
+                            p_valuta_id  => :P222_VALUTA_ID,
+                            p_vrijednost => TO_NUMBER(:P222_VALUTA_IZNOS,'999G999G999G999G990D00'),
+                            p_datum      => l_datum,
+                            p_kurs       => :P222_KURS
+                        );
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P222_VALUTA_IZNOS
+                    P222_IZNOS
+                    P222_VALUTA_ID
+                    P222_KURS
+                ]
+                itemsToReturn: P222_IZNOS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P222_VALUTA_IZNOS := null;
+                itemsToSubmit: P222_VALUTA_IZNOS
+                itemsToReturn: P222_VALUTA_IZNOS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-get-kurs (
+        name: Change - Get kurs
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P222_VALUTA_ID
+        }
+        clientSideCondition {
+            type: item!=value
+            item: P222_VALUTA_ID
+            value: 1
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_datum DATE;
+                    BEGIN
+                        glavna_knjiga_pkg.get_glavna_knjiga (
+                            p_id              => :P222_GLAVNA_KNJIGA_ID,
+                            p_datum_dokumenta => l_datum
+                        );
+                    
+                        sif.acc_pkg.get_valuta_history (
+                            p_valuta_id => :P222_VALUTA_ID,
+                            p_datum     => l_datum,
+                            p_kurs      => :P222_KURS
+                        );
+                    
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P222_VALUTA_ID
+                    P222_KURS
+                ]
+                itemsToReturn: P222_KURS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P222_KURS := null;
+                itemsToSubmit: P222_KURS
+                itemsToReturn: P222_KURS
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-prihod (
+        name: Change - Prihod
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P222_PRIHOD_RASHOD
+        }
+        clientSideCondition {
+            type: item=value
+            item: P222_PRIHOD_RASHOD
+            value: P
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P222_VRSTA_PRIHODA_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P222_VRSTA_PRIHODA_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction change-rashod (
+        name: Change  - Rashod
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P222_PRIHOD_RASHOD
+        }
+        clientSideCondition {
+            type: item=value
+            item: P222_PRIHOD_RASHOD
+            value: R
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P222_VRSTA_RASHODA_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P222_VRSTA_RASHODA_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction setup-priznat-rashod (
+        name: Setup priznat rashod
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P222_PRIHOD_RASHOD
+        }
+        clientSideCondition {
+            type: item=value
+            item: P222_PRIHOD_RASHOD
+            value: R
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P222_PRIZNAT_RASHOD := 'Y';
+                itemsToSubmit: [
+                    P222_PRIHOD_RASHOD
+                    P222_PRIZNAT_RASHOD
+                ]
+                itemsToReturn: P222_PRIZNAT_RASHOD
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P222_PRIZNAT_RASHOD := 'Y';
+                itemsToSubmit: [
+                    P222_PRIHOD_RASHOD
+                    P222_PRIZNAT_RASHOD
+                ]
+                itemsToReturn: P222_PRIZNAT_RASHOD
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_IZNOS
+        }
+    )
+
+    validation konto-not-null (
+        name: Konto NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_KONTNA_KLASA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_KONTNA_KLASA_ID
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+            ]
+        }
+    )
+
+    validation opis-not-null (
+        name: Opis NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_OPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_OPIS
+        }
+    )
+
+    validation prihod-rashod-not-null (
+        name: Prihod rashod NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_PRIHOD_RASHOD
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_PRIHOD_RASHOD
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                msp
+                vsp
+            ]
+        }
+    )
+
+    validation tip-stavke-izvoda-not-null (
+        name: Tip stavke izvoda NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_TIP_STAVKE_IZVODA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_TIP_STAVKE_IZVODA
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: APP_TIP_PREDUZETNIKA_SIFRA
+            list: [
+                doo
+                ad
+            ]
+        }
+    )
+
+    validation valuta-not-null (
+        name: Valuta NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_VALUTA_ID
+        }
+    )
+
+    validation vrsta-prihoda-not-null (
+        name: Vrsta prihoda NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_VRSTA_PRIHODA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_VRSTA_PRIHODA_ID
+        }
+        serverSideCondition {
+            type: item=value
+            item: P222_PRIHOD_RASHOD
+            value: P
+        }
+    )
+
+    validation vrsta-rashoda-not-null (
+        name: Vrsta rashoda NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P222_VRSTA_RASHODA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P222_VRSTA_RASHODA_ID
+        }
+        serverSideCondition {
+            type: item=value
+            item: P222_PRIHOD_RASHOD
+            value: R
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 96149205954820186
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.delete_glavna_knjiga_stavka (
+                    p_id => :P222_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 95998510565183548
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.get_glavna_knjiga_stavka (
+                    p_id                    => :P222_ID,
+                    p_glavna_knjiga_id      => :P222_GLAVNA_KNJIGA_ID,
+                    p_kontna_klasa_id       => :P222_KONTNA_KLASA_ID,
+                    p_klijent_id            => :P222_KLIJENT_ID,
+                    p_redni_broj            => :P222_REDNI_BROJ,
+                    p_tip_stavke_izvoda     => :P222_TIP_STAVKE_IZVODA,
+                    p_opis                  => :P222_OPIS,
+                    p_iznos                 => :P222_IZNOS,
+                    p_grad_id               => :P222_GRAD_ID,
+                    p_prihod_rashod         => :P222_PRIHOD_RASHOD,
+                    p_vrsta_prihoda_id      => :P222_VRSTA_PRIHODA_ID,
+                    p_vrsta_rashoda_id      => :P222_VRSTA_RASHODA_ID,
+                    p_nacin_placanja_izvoda => :P222_NACIN_PLACANJA_IZVODA,
+                    p_sifra_prihoda         => :P222_SIFRA_PRIHODA,
+                    p_valuta_id             => :P222_VALUTA_ID,
+                    p_valuta_iznos          => :P222_VALUTA_IZNOS,
+                    p_kurs                  => :P222_KURS,
+                    p_kif_id                => :P222_KIF_ID,
+                    p_kuf_id                => :P222_KUF_ID,
+                    p_priznat_rashod        => :P222_PRIZNAT_RASHOD
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 95998372128183546
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P222_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                glavna_knjiga_pkg.update_glavna_knjiga_stavka (
+                    p_id                    => :P222_ID,
+                    p_glavna_knjiga_id      => :P222_GLAVNA_KNJIGA_ID,
+                    p_kontna_klasa_id       => :P222_KONTNA_KLASA_ID,
+                    p_klijent_id            => :P222_KLIJENT_ID,
+                    p_redni_broj            => :P222_REDNI_BROJ,
+                    p_tip_stavke_izvoda     => :P222_TIP_STAVKE_IZVODA,
+                    p_opis                  => :P222_OPIS,
+                    p_iznos                 => to_number(:P222_IZNOS, '999G999G999G999G990D00'),
+                    p_grad_id               => :P222_GRAD_ID,
+                    p_prihod_rashod         => :P222_PRIHOD_RASHOD,
+                    p_vrsta_prihoda_id      => :P222_VRSTA_PRIHODA_ID,
+                    p_vrsta_rashoda_id      => :P222_VRSTA_RASHODA_ID,
+                    p_nacin_placanja_izvoda => :P222_NACIN_PLACANJA_IZVODA,
+                    p_sifra_prihoda         => :P222_SIFRA_PRIHODA,
+                    p_valuta_id             => :P222_VALUTA_ID,
+                    p_valuta_iznos          => :P222_VALUTA_IZNOS,
+                    p_kurs                  => :P222_KURS,
+                    p_kif_id                => :P222_KIF_ID,
+                    p_kuf_id                => :P222_KUF_ID,
+                    p_priznat_rashod        => :P222_PRIZNAT_RASHOD,
+                    p_oj_id                 => :P222_OJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 95998463009183547
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

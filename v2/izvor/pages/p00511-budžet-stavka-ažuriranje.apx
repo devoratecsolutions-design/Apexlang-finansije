@@ -1,0 +1,492 @@
+page 511 (
+    name: Budžet stavka / Ažuriranje
+    alias: BUDŽET-STAVKA-AŽURIRANJE
+    title: Budžet stavka / Ažuriranje
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet-stavka-ažuriranje (
+        name: Budžet stavka / Ažuriranje
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P511_BROJ_MJESECI (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+    )
+
+    pageItem P511_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+    )
+
+    pageItem P511_GODINA (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+    )
+
+    pageItem P511_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P511_IZNOS (
+        type: numberField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P511_NAPOMENA (
+        type: textarea
+        label {
+            label: Napomena
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 110
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 4
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P511_OJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+    )
+
+    pageItem P511_PERIOD (
+        type: selectOne
+        label {
+            label: Period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH params AS (
+                    -- Parameters
+                    SELECT :P511_BROJ_MJESECI AS p_months,
+                           :P511_GODINA AS p_year
+                    FROM dual
+                ),
+                months AS (
+                    SELECT LEVEL AS month_num,
+                           ADD_MONTHS(TRUNC(TO_DATE(p.p_year, 'YYYY'), 'YYYY'), LEVEL - 1) AS first_day
+                    FROM dual
+                    CROSS JOIN params p
+                    CONNECT BY LEVEL <= 12
+                ),
+                periods AS (
+                    SELECT m.month_num,
+                           m.first_day,
+                           CEIL(m.month_num / p.p_months) AS q_num,
+                           p.p_months
+                    FROM months m
+                    CROSS JOIN params p
+                )
+                SELECT 
+                    'P' || q_num || ' = ' ||
+                    TRIM(TO_CHAR(MIN(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN''')) ||
+                    CASE WHEN p_months > 1 
+                         THEN ' - ' || TRIM(TO_CHAR(MAX(first_day), 'Month', 'NLS_DATE_LANGUAGE=''LATIN SERBIAN'''))
+                         ELSE ''
+                    END AS display,
+                    TRUNC(MIN(first_day)) AS return_date
+                FROM periods
+                GROUP BY q_num, p_months
+                ORDER BY q_num;
+                
+                ```
+        }
+        layout {
+            sequence: 90
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P511_PROJEKAT_ID (
+        type: selectOne
+        label {
+            label: Projekat
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @p-projekti
+        }
+        layout {
+            sequence: 80
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P511_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+        }
+    )
+
+    pageItem P511_STAVKA_ID (
+        type: selectOne
+        label {
+            label: Stavka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    lpad(naziv, length(naziv) + (level - 1 ) * 4, '.') AS d,
+                    id AS r
+                FROM
+                    vw_budzetske_stavke
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND (oj_id = :P511_OJ_ID OR oj_id IS null)
+                CONNECT BY
+                    PRIOR id = stavka_id
+                START WITH
+                    stavka_id IS null
+                ORDER SIBLINGS BY
+                    id
+                ```
+        }
+        layout {
+            sequence: 70
+            region: @budžet-stavka-ažuriranje
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P511_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P511_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P511_IZNOS
+        }
+    )
+
+    validation period-not-null (
+        name: Period NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P511_PERIOD
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P511_PERIOD
+        }
+    )
+
+    validation stavka-not-null (
+        name: Stavka NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P511_STAVKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P511_STAVKA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 144855349154158357
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet_stavka (
+                    p_id          => :P511_ID,
+                    p_budzet_id   => :P511_BUDZET_ID,
+                    p_stavka_id   => :P511_STAVKA_ID,
+                    p_projekat_id => :P511_PROJEKAT_ID,
+                    p_period      => :P511_PERIOD,
+                    p_iznos       => :P511_IZNOS,
+                    p_napomena    => :P511_NAPOMENA
+                );
+                
+                budzet_pkg.get_budzet (
+                    p_id           => :P511_BUDZET_ID,
+                    p_broj_mjeseci => :P511_BROJ_MJESECI,
+                    p_godina       => :P511_GODINA,
+                    p_status_sifra => :P511_STATUS_SIFRA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 144821636558024522
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P511_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.update_budzet_stavka (
+                    p_id          => :P511_ID,
+                    p_budzet_id   => :P511_BUDZET_ID,
+                    p_oj_id       => :P511_OJ_ID,
+                    p_stavka_id   => :P511_STAVKA_ID,
+                    p_projekat_id => :P511_PROJEKAT_ID,
+                    p_period      => :P511_PERIOD,
+                    p_iznos       => to_number(:P511_IZNOS, '999G999G999G999G990D00'),
+                    p_napomena    => :P511_NAPOMENA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 144822369420024529
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

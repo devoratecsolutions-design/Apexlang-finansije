@@ -1,0 +1,303 @@
+appProcess add-dialog-guide-button (
+    name: add_dialog_guide_button
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            DECLARE
+                l_code VARCHAR2(1000) := '
+                    $(".ui-dialog-titlebar", window.parent.document).append("<button class=\"t-Button t-Button--noLabel  t-Button--icon t-Button--small margin-left-sm dialogGuideButton\" type=\"button\" title=\"Vodič\" aria-label=\"Vodič\" data-otel-label=\"GUIDE_DIALOG\"><span class=\"t-Icon fa fa-glasses\" aria-hidden=\"true\"></span></button>");
+            
+                    $(".dialogGuideButton", window.parent.document).click(function() {
+                        apex.event.trigger(document, "dialog-guide-clicked");
+                    });
+                ';
+            
+                l_count        NUMBER;
+                l_count_dialog NUMBER;
+            
+            BEGIN
+                SELECT 
+                    count(*)
+                INTO
+                    l_count
+                FROM 
+                    sif.sif_guide 
+                WHERE 
+                    application_id = :APP_ID
+                    AND page_id = :APP_PAGE_ID;
+               
+                SELECT 
+                    count(*)
+                INTO
+                    l_count_dialog
+                FROM 
+                    apex_application_pages 
+                WHERE 
+                    application_id = :APP_ID
+                    AND page_id = :APP_PAGE_ID
+                    AND page_mode = 'Modal Dialog';
+            
+                IF l_count > 0 AND l_count_dialog > 0 THEN
+                    apex_javascript.add_onload_code (
+                        p_code => l_code
+                    );
+                END IF;
+            END;
+            ```
+    }
+    execution {
+        sequence: 1
+        point: afterRegions
+    }
+    subscription {
+        master: @/200/add-dialog-guide-button
+    }
+)
+
+appProcess disable-inspect-element (
+    name: disable_inspect_element
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            DECLARE
+                l_code VARCHAR2(4000) := '
+                    $(document).keydown(function(event) {
+                        if (event.keyCode == 123) { // Prevent F12
+                            return false;
+                        } else if (event.ctrlKey && event.shiftKey && event.keyCode == 73) { // Prevent Ctrl+Shift+I
+                            return false;
+                        } else if (event.ctrlKey && event.shiftKey && event.keyCode == 74) { // Prevent Ctrl+Shift+J
+                            return false;
+                        } else if (event.ctrlKey && event.shiftKey && event.keyCode == 67) { // Prevent Ctrl+Shift+C
+                            return false;
+                        } else if (event.ctrlKey && event.keyCode == 85) { // Prevent Ctrl+U
+                            return false;
+                        }
+                    });
+                    //Disable right click
+                    $(document).on("contextmenu", function(e) {
+                        e.preventDefault();
+                    });    
+                ';
+            BEGIN
+                apex_javascript.add_onload_code (
+                    p_code => l_code
+                );
+            
+            END;
+            ```
+    }
+    execution {
+        sequence: 1
+    }
+    config {
+        buildOption: @feature-inspect-element
+    }
+    subscription {
+        master: @/200/disable-inspect-element
+    }
+)
+
+appProcess display-logo (
+    name: display_logo
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            DECLARE
+                l_blob blob;
+                l_mimetype varchar2(50);
+            BEGIN
+                SELECT logo, logo_mimetype 
+                INTO l_blob, l_mimetype
+                FROM core.vw_firme
+                WHERE id = :APP_FIRMA_ID;
+            
+                owa_util.mime_header(l_mimetype, false);
+                htp.p('Content-Length: ' || dbms_lob.getlength(l_blob)); 
+                owa_util.http_header_close;  
+                wpg_docload.download_file(l_blob);
+                
+                exception when no_data_found then
+                    null;
+            END;
+            ```
+    }
+    execution {
+        sequence: 1
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+    subscription {
+        master: @/200/display-logo
+    }
+)
+
+appProcess display-uputstvo (
+    name: display_uputstvo
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            DECLARE
+                l_blob blob;
+                l_mimetype varchar2(50);
+            BEGIN
+                SELECT uputstvo, uputstvo_mimetype 
+                INTO l_blob, l_mimetype
+                FROM sif.sif_uputstva
+                WHERE id = v('P10045_UPUTSTVO_ID');
+            
+                owa_util.mime_header(l_mimetype, false);
+                htp.p('Content-Length: ' || dbms_lob.getlength(l_blob)); 
+                owa_util.http_header_close;  
+                wpg_docload.download_file(l_blob);
+                
+                exception when no_data_found then
+                    null;
+            END;
+            ```
+    }
+    execution {
+        sequence: 1
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+    subscription {
+        master: @/200/display-uputstvo
+    }
+)
+
+appProcess get-application-data (
+    name: get_application_data
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            core.korisnik_pkg.get_application_data (
+                p_app_id      => :APP_ID,
+                p_page_id     => :APP_PAGE_ID,
+                p_firma_id    => :APP_FIRMA_ID,
+                p_ooj_id      => :APP_OOJ_ID,
+                p_guide       => :APP_GUIDE,
+                p_firma_naziv => :APP_FIRMA_NAME,
+                p_ooj_naziv   => :APP_OOJ_NAME
+            );
+            ```
+    }
+    execution {
+        sequence: 1
+    }
+    subscription {
+        master: @/200/get-application-data
+    }
+)
+
+appProcess get-application-data-accounting (
+    name: get_application_data_accounting
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            core.korisnik_pkg.get_application_data (
+                p_ooj_id              => :APP_OOJ_ID,
+                p_konto_duzina        => :APP_KONTO_DUZINA,
+                p_pib                 => :APP_PDV_BROJ,
+                p_period_zakljucan_do => :APP_PERIOD_ZAKLJUCAN_DO
+            );
+            ```
+    }
+    execution {
+        sequence: 1
+    }
+)
+
+appProcess get-pdv-sistem (
+    name: get_pdv_sistem
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            declare
+            
+            l_pdv_sistem varchar2;
+            
+            begin
+            
+                select pdv_sistem 
+                into :APP_PDV_SISTEM
+                from  core.ooj 
+                where id=:APP_OOJ_ID;
+            
+            end;
+            ```
+    }
+    execution {
+        sequence: 10
+    }
+)
+
+appProcess quick-navigation (
+    name: quick_navigation
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            DECLARE
+                l_code VARCHAR2(1000) := '
+                    document.addEventListener("keydown", function(e) {
+                      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
+                        e.preventDefault();
+                        console.log("hello world 1423");
+                        apex.item("P0_QUICK_NAVIGATION").setValue("");
+                        apex.theme.openRegion("quick_navigation_popup");
+                      }
+                    });
+                ';
+            
+            BEGIN
+                apex_javascript.add_onload_code (
+                    p_code => l_code
+                );
+            END;
+            ```
+    }
+    execution {
+        sequence: 1
+        point: afterRegions
+    }
+    config {
+        buildOption: @feature-quick-navigation
+    }
+    subscription {
+        master: @/200/quick-navigation
+    }
+)
+
+appProcess kuf-dokument (
+    name: KUF_DOKUMENT
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            kuf_pkg.posalji_dokument(
+                p_id     => v('P42_DOK_ID'),
+                p_ooj_id => v('APP_OOJ_ID'),
+                p_nacin  => v('P42_NACIN')
+            );
+            ```
+    }
+    execution {
+        sequence: 10
+        point: ajaxCallback
+    }
+    security {
+        authorizationScheme: mustNotBePublicUser
+    }
+)

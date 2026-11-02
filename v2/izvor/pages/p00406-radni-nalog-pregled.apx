@@ -1,0 +1,766 @@
+page 406 (
+    name: Radni nalog / Pregled
+    alias: RADNI-NALOG-PREGLED
+    title: Radni nalog / Pregled
+    pageGroup: @proizvodnja
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        height: 400
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region osnovne-informacije (
+        name: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    :P402_NAZIV AS naziv,
+                    :P402_NORMATIV AS normativ,
+                    :P402_SKLADISTE_ID AS skladiste_id,
+                    :P402_OJ_ID AS oj_id,
+                    :P402_NORMATIV_ID AS normativ_id,
+                    :P402_STAVKA_ID AS stavka_id,
+                    :P402_KOLICINA AS kolicina,
+                    :P402_DATUM AS datum,
+                    :P402_OPIS AS opis
+                FROM
+                    dual
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @radni-nalog-pregled
+            slot: subRegions
+            columnSpan: 3
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DATUM (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Radni nalog
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column NORMATIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Iz normativa
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column NORMATIV_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Normativ
+            }
+            lov {
+                type: sharedComponent
+                lov: @normativi
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column SKLADISTE_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Skladište
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-skladista
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+    )
+
+    region radna-snaga (
+        name: Radna snaga
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 AS obrazovanje_id,
+                    to_number(c002) AS broj_sati
+                
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'RN_RADNA_SNAGA'
+                ```
+        }
+        layout {
+            sequence: 40
+            parentRegion: @radni-nalog-pregled
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column BROJ_SATI (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Broj sati
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OBRAZOVANJE_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Obrazovanje
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-obrazovanje
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region radni-nalog-pregled (
+        name: Radni nalog / Pregled
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 20
+            parentRegion: @radni-nalog-pregled
+            slot: subRegions
+            startNewRow: false
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region stavke (
+        name: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 AS stavka_id,
+                    c002 AS jm_id,
+                    to_number(c003) AS kolicina
+                
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'RN_STAVKE'
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @radni-nalog-pregled
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column JM_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Jedinice mjere
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-jm
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-stavke
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region troškovi (
+        name: Troškovi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 AS opis,
+                    to_number(c002) AS iznos
+                
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'RN_TROSKOVI'
+                ```
+        }
+        layout {
+            sequence: 50
+            parentRegion: @radni-nalog-pregled
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column IZNOS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-radni-nalog
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+            templateOptions: [
+                #DEFAULT#
+                js-wizardProgressLinks
+                t-WizardSteps--displayLabels
+            ]
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button finish (
+        buttonName: FINISH
+        label: Završi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 151272036912362084
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_stavke IS (
+                        SELECT
+                            c001 AS stavka_id,
+                            c002 AS jm_id,
+                            to_number(c003) AS kolicina
+                
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'RN_STAVKE'
+                    );
+                
+                    CURSOR c_radna_snaga IS (
+                        SELECT
+                            c001 AS obrazovanje_id,
+                            to_number(c002) AS broj_sati
+                
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'RN_RADNA_SNAGA'
+                    );
+                
+                    CURSOR c_troskovi IS (
+                        SELECT
+                            c001 AS opis,
+                            to_number(c002) AS iznos
+                
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'RN_TROSKOVI'
+                    );
+                
+                    l_radni_nalog_id NUMBER;
+                BEGIN
+                    l_radni_nalog_id := proizvodnja_pkg.insert_radni_nalog (
+                        p_ooj_id           => :APP_OOJ_ID,
+                        p_radnik_id        => :APP_RADNIK_ID,
+                        p_skladiste_id     => :P402_SKLADISTE_ID,
+                        p_oj_id            => :P402_OJ_ID,
+                        p_normativ_id      => :P402_NORMATIV_ID,
+                        p_stavka_id        => :P402_STAVKA_ID,
+                        p_naziv            => :P402_NAZIV,
+                        p_broj             => :P402_BROJ,
+                        p_kolicina         => :P402_KOLICINA,
+                        p_godina           => :APP_GODINA,
+                        p_datum            => :P402_DATUM,
+                        p_opis             => :P402_OPIS
+                    );
+                
+                    FOR c1 IN c_stavke LOOP
+                        proizvodnja_pkg.insert_radni_nalog_stavka (
+                            p_radni_nalog_id => l_radni_nalog_id,
+                            p_stavka_id      => c1.stavka_id,
+                            p_jm_id          => c1.jm_id,
+                            p_kolicina       => c1.kolicina,
+                            p_iznos          => null
+                        );
+                    END LOOP;
+                
+                    FOR c1 IN c_radna_snaga LOOP
+                        proizvodnja_pkg.insert_radni_nalog_radna_snaga (
+                            p_radni_nalog_id => l_radni_nalog_id,
+                            p_obrazovanje_id => c1.obrazovanje_id,
+                            p_broj_sati      => c1.broj_sati,
+                            p_iznos          => null
+                        );
+                    END LOOP;
+                
+                    FOR c1 IN c_troskovi LOOP
+                        proizvodnja_pkg.insert_radni_nalog_trosak (
+                            p_radni_nalog_id => l_radni_nalog_id,
+                            p_opis           => c1.opis,
+                            p_iznos          => c1.iznos
+                        );
+                    END LOOP;
+                
+                
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 151942289631806230
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 405
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+)
+

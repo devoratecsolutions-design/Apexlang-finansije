@@ -1,0 +1,3123 @@
+page 41 (
+    name: Ulazna faktura / Detalji
+    alias: ULAZNA-FAKTURA-DETALJI
+    title: Ulazna faktura
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finKufPdv.init('pdv_spec', 'P41', '&APP_PDV_SISTEM.');
+            finKufAvansi.init('avansi_ig', 'P41');
+            finKurs.provjeri('P41');
+            ```
+    }
+    css {
+        inline:
+            ```css
+            .ui-dialog-titlebar-close {
+                display: none !important;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region dokument-traka (
+        name: Traka dokumenta
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-docbar">
+                  <span class="fin-docbar__no">&P41_NAZIV.</span>
+                  <span class="fin-badge fin-badge--&P41_STATUS_BOJA.">&P41_STATUS_NAZIV.</span>
+                  <span class="fin-docbar__meta">&P41_VRSTA_NAZIV.</span>
+                  <span class="fin-docbar__meta">&P41_NALOG.</span>
+                  <span class="fin-docbar__veze">&P41_VEZE_HTML!RAW.</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_ID
+        }
+    )
+
+    region zakljucana (
+        name: Faktura se ne može mijenjati
+        type: staticContent
+        source {
+            htmlCode: Faktura je &P41_STATUS_NAZIV_MALO. i ne može se mijenjati. Za izmjenu je otključajte (ako nije proknjižena ni unesena u UIO KUF) ili je stornirajte.
+        }
+        layout {
+            sequence: 7
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null and :P41_IZMJENJIVA = 'N'
+        }
+    )
+
+    region ulazna-faktura-detalji (
+        name: Ulazna faktura / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P41_IZMJENJIVA = 'N'
+        }
+    )
+
+    region dokument (
+        name: Dokument i dobavljač
+        title: Dokument i dobavljač
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @ulazna-faktura-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region datumi (
+        name: Datumi
+        title: Datumi
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @ulazna-faktura-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region iznosi (
+        name: Iznosi i PDV
+        title: Iznosi i PDV
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @ulazna-faktura-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region avans (
+        name: Uračunati avansi
+        title: Uračunati avansi
+        type: staticContent
+        layout {
+            sequence: 35
+            parentRegion: @ulazna-faktura-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region uracunati-avansi (
+        name: Uračunati avansi
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    a.id,
+                    a.avans_id,
+                    a.valuta_sifra,
+                    kuf_pkg.avans_raspolozivo(a.avans_id, :P41_ID) AS raspolozivo,
+                    a.iznos,
+                    a.iznos_km,
+                    a.zatvaranje_naziv
+                FROM vw_kuf_uracunati_avansi a
+                WHERE a.kuf_id = :P41_ID
+                ORDER BY a.id
+                ```
+            pageItemsToSubmit: P41_ID
+        }
+        layout {
+            sequence: 20
+            parentRegion: @avans
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Dodajte avans koji je uračunat u fakturu. Nude se zaključeni avansi istog dobavljača sa raspoloživim iznosom.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj avans"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: avansi_ig
+            savedReportMappingIdentifier: 410000000000000201
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P41_IZMJENJIVA = 'N'
+        }
+
+        savedReport 410000000000000202 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @AVANS_ID
+                layout {
+                    sequence: 2
+                    width: 250
+                }
+            )
+
+            displayColumn (
+                column: @VALUTA_SIFRA
+                layout {
+                    sequence: 3
+                    width: 60
+                }
+            )
+
+            displayColumn (
+                column: @RASPOLOZIVO
+                layout {
+                    sequence: 4
+                    width: 105
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS
+                layout {
+                    sequence: 5
+                    width: 115
+                }
+            )
+
+            displayColumn (
+                column: @IZNOS_KM
+                layout {
+                    sequence: 6
+                    width: 95
+                }
+            )
+
+            displayColumn (
+                column: @ZATVARANJE_NAZIV
+                layout {
+                    sequence: 7
+                    width: 115
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column AVANS_ID (
+            type: popupLov
+            heading {
+                heading: Avans
+            }
+            settings {
+                popupWidth: 640
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT prikaz || ' - ' || valuta_sifra || ' - raspoloživo ' || to_char(raspolozivo, 'FM999G999G990D00') AS d,
+                           id AS r
+                    FROM vw_kuf_avansi
+                    WHERE ooj_id = :APP_OOJ_ID
+                      AND klijent_id = :P41_KLIJENT_ID
+                      AND kuf_pkg.valute_dozvoljene(:P41_VALUTA_ID, valuta_id) = 'Y'
+                      AND (raspolozivo > 0
+                           OR id IN (SELECT u.avans_id FROM vw_kuf_uracunati_avansi u WHERE u.kuf_id = :P41_ID))
+                    ORDER BY datum_fakture
+                    ```
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite avans -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: AVANS_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column VALUTA_SIFRA (
+            type: textField
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: VALUTA_SIFRA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: numberField
+            heading {
+                heading: Raspoloživo
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: RASPOLOZIVO
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+        column IZNOS (
+            type: numberField
+            heading {
+                heading: Zatvara se (bez PDV-a)
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column IZNOS_KM (
+            type: numberField
+            heading {
+                heading: U KM
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: IZNOS_KM
+                dataType: number
+                queryOnly: true
+            }
+            readOnly {
+                type: always
+            }
+        )
+
+        column ZATVARANJE_NAZIV (
+            type: textField
+            heading {
+                heading: Dokument zatvaranja
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: ZATVARANJE_NAZIV
+                dataType: varchar2
+                queryOnly: true
+            }
+            readOnly {
+                type: always
+            }
+        )
+
+    )
+
+    region dokumenti-okvir (
+        name: Dokumenti - okvir
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form fin-docs-okvir
+        }
+    )
+
+    region dokumenti (
+        name: Dokumenti
+        title: Dokumenti
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @dokumenti-okvir
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region preuzete-stavke (
+        name: Preuzete stavke
+        type: staticContent
+        source {
+            htmlCode: <span class="fa fa-info-circle" aria-hidden="true"></span><span>Stavke su preuzete sa izabrane fakture. Iznos možete samo smanjiti, najviše do raspoloživog.</span>
+        }
+        layout {
+            sequence: 45
+            parentRegion: @iznosi
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-hint
+        }
+    )
+
+    region zbir (
+        name: Zbir
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @iznosi
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-totals
+        }
+    )
+
+    region pdv-specifikacija (
+        name: PDV specifikacija
+        title: PDV specifikacija
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.red_id                                                    AS id,
+                    s.redni_broj,
+                    s.izvor_red_id,
+                    s.pdv_indikator_id,
+                    s.valuta_osnovica * kuf_pkg.predznak(:P41_VRSTA_DOKUMENTA_ID) AS valuta_osnovica,
+                    s.valuta_pdv * kuf_pkg.predznak(:P41_VRSTA_DOKUMENTA_ID)      AS valuta_pdv,
+                    CASE WHEN s.izvor_red_id IS NOT NULL
+                         THEN kuf_pkg.raspolozivo_reda(s.izvor_red_id, s.red_id) END AS raspolozivo
+                FROM vw_kuf_pdv_spec s
+                WHERE s.kuf_id = :P41_ID
+                  AND s.izvor = 'R'
+                ORDER BY s.redni_broj
+                ```
+            pageItemsToSubmit: [
+                P41_ID
+                P41_VRSTA_DOKUMENTA_ID
+            ]
+        }
+        layout {
+            sequence: 40
+            parentRegion: @iznosi
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Dodajte red sa iznosom fakture.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj red"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false };
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: pdv_spec
+            savedReportMappingIdentifier: 410000000000000101
+        }
+
+        savedReport 410000000000000102 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @PDV_INDIKATOR_ID
+                layout {
+                    sequence: 2
+                    width: 360
+                }
+            )
+
+            displayColumn (
+                column: @VALUTA_OSNOVICA
+                layout {
+                    sequence: 3
+                    width: 150
+                }
+            )
+
+            displayColumn (
+                column: @VALUTA_PDV
+                layout {
+                    sequence: 4
+                    width: 130
+                }
+            )
+
+            displayColumn (
+                column: @RASPOLOZIVO
+                layout {
+                    sequence: 5
+                    width: 130
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column REDNI_BROJ (
+            type: hidden
+            layout {
+                sequence: 35
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+            }
+            settings {
+                valueProtected: false
+            }
+        )
+
+        column IZVOR_RED_ID (
+            type: hidden
+            layout {
+                sequence: 37
+            }
+            source {
+                databaseColumn: IZVOR_RED_ID
+                dataType: number
+            }
+            settings {
+                valueProtected: false
+            }
+        )
+
+        column PDV_INDIKATOR_ID (
+            type: selectList
+            heading {
+                heading: PDV indikator
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT prikaz AS d, id AS r
+                    FROM vw_kuf_pdv_indikatori
+                    ORDER BY sifra
+                    ```
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: PDV_INDIKATOR_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+            serverSideCondition {
+                type: item=value
+                item: APP_PDV_SISTEM
+                value: Y
+            }
+        )
+
+        column VALUTA_OSNOVICA (
+            type: numberField
+            heading {
+                heading: Osnovica (bez PDV-a)
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: VALUTA_OSNOVICA
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column VALUTA_PDV (
+            type: numberField
+            heading {
+                heading: PDV (računa se)
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: VALUTA_PDV
+                dataType: number
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: numberField
+            heading {
+                heading: Raspoloživo
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: RASPOLOZIVO
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+    )
+
+    region dokumenti-lista (
+        name: Priloženi dokumenti
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    d.id,
+                    d.naziv,
+                    d.opis,
+                    d.velicina_kb,
+                    to_char(d.created, 'DD.MM.YYYY HH24:MI') AS dodato,
+                    CASE
+                        WHEN d.mime_tip = 'application/pdf' THEN 'fa-file-pdf-o'
+                        WHEN d.mime_tip LIKE 'image/%' THEN 'fa-file-image-o'
+                        ELSE 'fa-file-o'
+                    END AS ikona,
+                    apex_page.get_url(p_page => 42, p_items => 'P42_ID,P42_DOK_ID', p_values => d.kuf_id || ',' || d.id,
+                                      p_request => 'PRIKAZ', p_plain_url => true) AS url_prikaz,
+                    CASE WHEN :P41_IZMJENJIVA = 'Y' THEN 'Y' END AS brisanje
+                FROM vw_kuf_dokumenti d
+                WHERE d.kuf_id = :P41_ID
+                  AND d.ooj_id = :APP_OOJ_ID
+                ORDER BY d.id DESC
+                ```
+            pageItemsToSubmit: [
+                P41_ID
+                P41_IZMJENJIVA
+            ]
+        }
+        layout {
+            sequence: 30
+            parentRegion: @dokumenti
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-doclist
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nema priloženih dokumenata.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_ID
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column VELICINA_KB (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 40
+            }
+        )
+
+        column DODATO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column IKONA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column URL_PRIKAZ (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 70
+            }
+        )
+
+        column BRISANJE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 80
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <div class="fin-prilog fin-prilog--red"><span class="fa #IKONA# fin-prilog__ikona" aria-hidden="true"></span><a class="fin-prilog__naziv" href="#URL_PRIKAZ#" target="_blank" rel="noopener" title="#NAZIV#">#NAZIV#</a><input type="text" class="fin-prilog__unos" data-id="#ID#" value="#OPIS#" maxlength="500" placeholder="Komentar…" aria-label="Komentar uz dokument"><span class="fin-prilog__meta">#DODATO# · #VELICINA_KB# KB</span><a class="fin-act" href="#URL_PRIKAZ#" target="_blank" rel="noopener" title="Otvori" aria-label="Otvori"><span class="fa fa-external-link" aria-hidden="true"></span></a>{if BRISANJE/}<a class="fin-act fin-act--danger fin-doc-brisi" href="javascript:void(0)" data-id="#ID#" title="Obriši" aria-label="Obriši"><span class="fa fa-trash-o" aria-hidden="true"></span></a>{endif/}</div>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P41_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P41_ORIG (
+        type: hidden
+        default {
+            type: static
+            staticValue: 0
+        }
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 2
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STATUS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_VRSTA_SIFRA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_IZMJENJIVA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_GLAVNA_KNJIGA_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STORNIRANO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 7
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STORNIRAN_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 8
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_UIO_BROJ (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 9
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STATUS_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 11
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STATUS_NAZIV_MALO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STATUS_BOJA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 13
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_NALOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 14
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_VRSTA_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 15
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STOPE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 16
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_STORNO_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 17
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_VEZE_HTML (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 18
+            region: @ulazna-faktura-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P41_VRSTA_DOKUMENTA_ID (
+        type: selectOne
+        label {
+            label: Vrsta dokumenta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT naziv AS d, id AS r
+                FROM vw_kuf_vrste_dokumenata
+                WHERE ooj_id = :APP_OOJ_ID
+                ORDER BY redoslijed
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @dokument
+            slot: regionBody
+            columnSpan: 3
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P41_ID
+        }
+    )
+
+    pageItem P41_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Dobavljač
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti-dobavljaci
+        }
+        layout {
+            sequence: 20
+            region: @dokument
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 7
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_NAZIV_FAKTURE (
+        type: textField
+        label {
+            label: Broj i opis fakture dobavljača
+            alignment: left
+        }
+        validation {
+            maxLength: 255
+        }
+        layout {
+            sequence: 40
+            region: @dokument
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Broj sa fakture dobavljača i kratak opis (npr. 1234/26 - zakup prostora). Isti dobavljač i isti broj ne mogu se unijeti dva puta u istoj godini.
+        }
+    )
+
+    pageItem P41_UGOVOR_ID (
+        type: popupLov
+        label {
+            label: Ugovor
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT prikaz AS d, id AS r
+                FROM vw_kuf_ugovori
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND klijent_id = :P41_KLIJENT_ID
+                  AND (aktivan = 'Y' OR id = :P41_UGOVOR_ID)
+                ORDER BY broj DESC
+                ```
+        }
+        cascadingLov {
+            parentItems: P41_KLIJENT_ID
+            itemsToSubmit: P41_UGOVOR_ID
+        }
+        layout {
+            sequence: 90
+            region: @dokument
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_VEZA_KUF_ID (
+        type: popupLov
+        label {
+            label: Odnosi se na fakturu
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT prikaz
+                       || CASE WHEN :P41_VRSTA_SIFRA IN ('UKO', 'UAVZ')
+                               THEN ' – raspoloživo ' || to_char(raspolozivo, 'FM999G999G990D00') END AS d,
+                       id AS r
+                FROM vw_kuf_veze
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND klijent_id = :P41_KLIJENT_ID
+                  AND id <> nvl(:P41_ID, -1)
+                  AND (   (:P41_VRSTA_SIFRA = 'UAVZ' AND vrsta_sifra = 'UAV' AND status = 'Z'
+                           AND (raspolozivo > 0 OR id = :P41_VEZA_KUF_ID))
+                       OR (:P41_VRSTA_SIFRA = 'UKZ' AND vrsta_sifra = 'UF' AND status = 'Z')
+                       OR (:P41_VRSTA_SIFRA = 'UKO' AND vrsta_sifra = 'UF' AND status = 'Z' AND ima_zatvaranje_avansa = 'N'
+                           AND (raspolozivo > 0 OR id = :P41_VEZA_KUF_ID)))
+                ORDER BY datum_fakture DESC
+                ```
+        }
+        cascadingLov {
+            parentItems: [
+                P41_KLIJENT_ID
+                P41_VRSTA_SIFRA
+            ]
+            itemsToSubmit: [
+                P41_ID
+                P41_VEZA_KUF_ID
+            ]
+        }
+        layout {
+            sequence: 100
+            region: @dokument
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Za knjižno odobrenje i zaduženje: zaključena ulazna faktura (ne avansna). Za zatvaranje avansa: zaključena avansna faktura.
+        }
+    )
+
+    pageItem P41_TIP_PLACANJA_ID (
+        type: selectOne
+        label {
+            label: Način plaćanja
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-tip-placanja
+        }
+        layout {
+            sequence: 70
+            region: @dokument
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_FISKALNI_RACUN_BROJ (
+        type: textField
+        label {
+            label: Broj fiskalnog računa
+            alignment: left
+        }
+        validation {
+            maxLength: 100
+        }
+        layout {
+            sequence: 80
+            region: @dokument
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_DATUM_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum fakture
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @datumi
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_DATUM_PRIJEMA (
+        type: datePicker
+        label {
+            label: Datum prijema
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @datumi
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Datum kada je faktura primljena; određuje poreski period za odbitak ulaznog PDV-a.
+        }
+    )
+
+    pageItem P41_DATUM_VALUTE (
+        type: datePicker
+        label {
+            label: Datum valute (dospijeće)
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @datumi
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 10
+            region: @iznosi
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_KURS (
+        type: displayOnly
+        label {
+            label: Kurs na datum fakture
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 20
+            region: @iznosi
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_UIO_TIP (
+        type: displayOnly
+        label {
+            label: Tip dokumenta (UIO)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 30
+            region: @iznosi
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Određuje se automatski iz PDV indikatora.
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    pageItem P41_UKUPNO_OSNOVICA (
+        type: displayOnly
+        label {
+            label: Ukupno bez PDV-a
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 50
+            region: @zbir
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_UKUPNO_PDV (
+        type: displayOnly
+        label {
+            label: PDV
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 60
+            region: @zbir
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P41_IZNOS_FAKTURE (
+        type: displayOnly
+        label {
+            label: Iznos fakture (sa PDV-om)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 70
+            region: @zbir
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Kod obrnute naplate i uvoza PDV nije na fakturi dobavljača: obračunava se samo za UIO i ne ulazi u iznos fakture.
+        }
+    )
+
+    pageItem P41_IZNOS_KM (
+        type: displayOnly
+        label {
+            label: Iznos fakture u KM
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 80
+            region: @zbir
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_ID
+        }
+    )
+
+    pageItem P41_AVANS_URACUNAT (
+        type: switch
+        label {
+            label: Faktura je konačna i u nju su uračunati avansi
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @avans
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P41_DOCUMENT (
+        type: fileUpload
+        label {
+            label: Dodaj dokumente
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+            allowMultipleFiles: true
+            maxFileSize: 10240
+        }
+        layout {
+            sequence: 10
+            region: @dokumenti
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: PDF ili slike (faktura, otpremnica, ugovor…), do 10 MB po fajlu; više fajlova odjednom. Komentar se upisuje uz svaki dokument u listi.
+        }
+    )
+
+    pageItem P41_DOK_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 19
+            region: @dokumenti
+            slot: regionBody
+        }
+    )
+
+    button nova-osoba (
+        buttonName: NEW_CLIENT
+        label: Novi
+        layout {
+            sequence: 30
+            region: @dokument
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--stretch
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            cssClasses: fin-btn-field
+            icon: fa-user-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button dodaj-dokumente (
+        buttonName: DOKUMENT
+        label: Dodaj dokumente
+        layout {
+            sequence: 40
+            region: @dokumenti
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-upload
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null and kuf_pkg.razlog_zabrane_brisanja(:P41_ID) is null
+        }
+    )
+
+    button nalog (
+        buttonName: NALOG
+        label: Nalog glavne knjige
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-book
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 1851
+                items: {
+                    P1851_NALOG_ID: &P41_GLAVNA_KNJIGA_ID.
+                }
+                clearCache: 1851
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_GLAVNA_KNJIGA_ID is not null
+        }
+    )
+
+    button uio (
+        buttonName: UIO
+        label: UIO KUF
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-archive
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 84
+                items: {
+                    P84_FAKTURA_ID: &P41_ID.
+                }
+                clearCache: 84
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null and :P41_STATUS = 'Z' and :APP_PDV_SISTEM = 'Y' and nvl(:P41_STORNIRANO, 'N') = 'N'
+        }
+    )
+
+    button storniraj (
+        buttonName: STORNIRAJ
+        label: Storniraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-undo-arrow
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Dokument će biti storniran storno dokumentom sa današnjim datumom. Ako je uz fakturu automatski napravljeno zatvaranje avansa, i ono se stornira. Nastaviti?
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null and :P41_STATUS = 'Z' and nvl(:P41_STORNIRANO, 'N') = 'N' and :P41_STORNIRAN_ID is null
+        }
+    )
+
+    button otkljucaj (
+        buttonName: OTKLJUCAJ
+        label: Otključaj
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-unlock-alt
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_STATUS = 'Z' and :P41_GLAVNA_KNJIGA_ID is null and nvl(:P41_UIO_BROJ, 0) = 0 and nvl(:P41_STORNIRANO, 'N') = 'N' and :P41_STORNIRAN_ID is null
+        }
+    )
+
+    button zakljucaj (
+        buttonName: ZAKLJUCAJ
+        label: Zaključaj
+        layout {
+            sequence: 60
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is not null and :P41_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Snimi
+        layout {
+            sequence: 80
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-save
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ID is null or :P41_IZMJENJIVA = 'Y'
+        }
+    )
+
+    dynamicAction close-dialog (
+        name: Zatvaranje dijaloga (X)
+        execution {
+            sequence: 90
+            eventScope: dynamic
+        }
+        when {
+            event: ready
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    function zameniX() {
+                        var topWin = window.top;
+                        var $ = topWin.apex.jQuery;
+                        var btn = $('.ui-dialog-titlebar-close', topWin.document);
+                        if (btn.length) {
+                            btn.off('click').on('click', function(e) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                                apex.page.cancelWarnOnUnsavedChanges();
+                                topWin.apex.navigation.dialog.close(true);
+                            });
+                        }
+                    }
+                    var observer = new MutationObserver(zameniX);
+                    observer.observe(window.top.document.documentElement, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                    zameniX();
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction novi-dobavljac (
+        name: Novi dobavljač - osvježi listu
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @nova-osoba
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P41_KLIJENT_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction vrsta-dokumenta (
+        name: Vrsta dokumenta - šifra
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P41_VRSTA_DOKUMENTA_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT sifra
+                    FROM vw_kuf_vrste_dokumenata
+                    WHERE id = :P41_VRSTA_DOKUMENTA_ID
+                    ```
+                itemsToSubmit: P41_VRSTA_DOKUMENTA_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P41_VRSTA_SIFRA
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction veza-prikaz (
+        name: Veza na fakturu - prikaz
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P41_VRSTA_SIFRA
+        }
+        clientSideCondition {
+            type: itemIsInList
+            item: P41_VRSTA_SIFRA
+            list: [
+                UKO
+                UKZ
+                UAVZ
+            ]
+        }
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P41_VEZA_KUF_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: true
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P41_VEZA_KUF_ID
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: true
+            }
+        )
+
+    )
+
+    dynamicAction avans-sekcija (
+        name: Uračunat avans - samo za ulaznu fakturu
+        execution {
+            sequence: 52
+        }
+        when {
+            selectionType: items
+            items: P41_VRSTA_SIFRA
+        }
+        clientSideCondition {
+            type: item=value
+            item: P41_VRSTA_SIFRA
+            value: UF
+        }
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @avans
+            }
+            execution {
+                sequence: 10
+                fireOnInit: true
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @avans
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: true
+            }
+        )
+
+    )
+
+    dynamicAction preuzete-prikaz (
+        name: Obavještenje o preuzetim stavkama
+        execution {
+            sequence: 53
+        }
+        when {
+            selectionType: items
+            items: P41_VRSTA_SIFRA
+        }
+        clientSideCondition {
+            type: itemIsInList
+            item: P41_VRSTA_SIFRA
+            list: [
+                UKO
+                UAVZ
+            ]
+        }
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @preuzete-stavke
+            }
+            execution {
+                sequence: 10
+                fireOnInit: true
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @preuzete-stavke
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: true
+            }
+        )
+
+    )
+
+    dynamicAction avans-polja (
+        name: Uračunati avansi - prikaz
+        execution {
+            sequence: 54
+        }
+        when {
+            selectionType: items
+            items: P41_AVANS_URACUNAT
+        }
+        clientSideCondition {
+            type: item=value
+            item: P41_AVANS_URACUNAT
+            value: Y
+        }
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @uracunati-avansi
+            }
+            execution {
+                sequence: 10
+                fireOnInit: true
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @uracunati-avansi
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: true
+            }
+        )
+
+    )
+
+    dynamicAction avansi-sesija (
+        name: Uračunati avansi - dobavljač i valuta za izbor avansa
+        execution {
+            sequence: 55
+        }
+        when {
+            selectionType: items
+            items: [
+                P41_KLIJENT_ID
+                P41_VALUTA_ID
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: [
+                    P41_KLIJENT_ID
+                    P41_VALUTA_ID
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dokument-brisi (
+        name: Obriši dokument
+        execution {
+            sequence: 70
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .fin-doc-brisi
+        }
+
+        action native-confirm (
+            action: confirm
+            settings {
+                message: Obrisati dokument? Brisanje se ne može poništiti.
+                style: danger
+                confirmLabel: Obriši
+                cancelLabel: Odustani
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).data('id')
+            }
+            affectedElements {
+                selectionType: items
+                items: P41_DOK_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: kuf_pkg.obrisi_dokument(p_id => :P41_DOK_ID);
+                itemsToSubmit: P41_DOK_ID
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @dokumenti-lista
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction kurs (
+        name: Kurs na datum fakture
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: [
+                P41_VALUTA_ID
+                P41_DATUM_FAKTURE
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P41_KURS := kuf_pkg.kurs_prikaz(
+                        p_valuta_id => :P41_VALUTA_ID,
+                        p_ooj_id    => :APP_OOJ_ID,
+                        p_datum     => :P41_DATUM_FAKTURE
+                    );
+                    ```
+                itemsToSubmit: [
+                    P41_VALUTA_ID
+                    P41_DATUM_FAKTURE
+                ]
+                itemsToReturn: P41_KURS
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: finKurs.provjeri('P41');
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation vrsta-dokumenta-id-obavezno (
+        name: P41_VRSTA_DOKUMENTA_ID obavezno
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_VRSTA_DOKUMENTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_VRSTA_DOKUMENTA_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation klijent-id-obavezno (
+        name: P41_KLIJENT_ID obavezno
+        execution {
+            sequence: 15
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_KLIJENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_KLIJENT_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation naziv-fakture-obavezno (
+        name: P41_NAZIV_FAKTURE obavezno
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_NAZIV_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_NAZIV_FAKTURE
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation tip-placanja-id-obavezno (
+        name: P41_TIP_PLACANJA_ID obavezno
+        execution {
+            sequence: 25
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_TIP_PLACANJA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_TIP_PLACANJA_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation datum-fakture-obavezno (
+        name: P41_DATUM_FAKTURE obavezno
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_DATUM_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_DATUM_FAKTURE
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation datum-prijema-obavezno (
+        name: P41_DATUM_PRIJEMA obavezno
+        execution {
+            sequence: 35
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_DATUM_PRIJEMA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_DATUM_PRIJEMA
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation datum-valute-obavezno (
+        name: P41_DATUM_VALUTE obavezno
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_DATUM_VALUTE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_DATUM_VALUTE
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation valuta-id-obavezno (
+        name: P41_VALUTA_ID obavezno
+        execution {
+            sequence: 45
+        }
+        validation {
+            type: itemIsNotNull
+            item: P41_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P41_VALUTA_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    validation zaglavlje (
+        name: Provjera zaglavlja (KUF_PKG)
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                return kuf_pkg.provjeri_zaglavlje(
+                    p_id                 => :P41_ID,
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_godina             => :APP_GODINA,
+                    p_vrsta_dokumenta_id => :P41_VRSTA_DOKUMENTA_ID,
+                    p_klijent_id         => :P41_KLIJENT_ID,
+                    p_broj_fakture       => :P41_NAZIV_FAKTURE,
+                    p_datum_fakture      => :P41_DATUM_FAKTURE,
+                    p_datum_prijema      => :P41_DATUM_PRIJEMA,
+                    p_datum_valute       => :P41_DATUM_VALUTE,
+                    p_ugovor_id          => :P41_UGOVOR_ID,
+                    p_veza_kuf_id        => :P41_VEZA_KUF_ID,
+                    p_valuta_id          => :P41_VALUTA_ID
+                );
+                ```
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    process ucitaj (
+        name: Učitavanje fakture
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.pripremi_specifikaciju(:P41_ID);
+                for f in (select * from vw_kuf_forma where id = :P41_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P41_VRSTA_DOKUMENTA_ID   := f.vrsta_dokumenta_id;
+                    :P41_VRSTA_SIFRA          := f.vrsta_sifra;
+                    :P41_VRSTA_NAZIV          := f.vrsta_naziv;
+                    :P41_KLIJENT_ID           := f.klijent_id;
+                    :P41_NAZIV_FAKTURE        := f.naziv_fakture;
+                    :P41_UGOVOR_ID            := f.ugovor_id;
+                    :P41_VEZA_KUF_ID          := f.veza_kuf_id;
+                    :P41_TIP_PLACANJA_ID      := f.tip_placanja_id;
+                    :P41_FISKALNI_RACUN_BROJ  := f.fiskalni_racun_broj;
+                    :P41_DATUM_FAKTURE        := f.datum_fakture;
+                    :P41_DATUM_PRIJEMA        := f.datum_prijema;
+                    :P41_DATUM_VALUTE         := f.datum_valute;
+                    :P41_VALUTA_ID            := f.valuta_id;
+                    :P41_UIO_TIP              := f.uio_tip_prikaz;
+                    :P41_NAZIV                := f.naziv;
+                    :P41_STATUS               := f.status;
+                    :P41_STATUS_NAZIV         := f.status_naziv;
+                    :P41_STATUS_NAZIV_MALO    := lower(f.status_naziv);
+                    :P41_STATUS_BOJA          := f.status_boja;
+                    :P41_STORNIRANO           := f.stornirano;
+                    :P41_STORNIRAN_ID         := f.storniran_id;
+                    :P41_GLAVNA_KNJIGA_ID     := f.glavna_knjiga_id;
+                    :P41_NALOG                := case when f.nalog is not null then 'Nalog ' || f.nalog end;
+                    :P41_UIO_BROJ             := f.uio_broj;
+                    :P41_IZNOS_KM             := to_char(f.iznos_sa_pdv, 'FM999G999G999G999G990D00');
+                    :P41_AVANS_URACUNAT       := f.ima_avans;
+                    :P41_VEZE_HTML            := kuf_pkg.veze_html(f.id, :P41_ORIG);
+                end loop;
+                :P41_IZMJENJIVA := case when kuf_pkg.je_izmjenjiva(:P41_ID) then 'Y' else 'N' end;
+                :P41_KURS := kuf_pkg.kurs_prikaz(:P41_VALUTA_ID, :APP_OOJ_ID, :P41_DATUM_FAKTURE);
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_ID
+        }
+    )
+
+    process nova (
+        name: Nova faktura - početne vrijednosti
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P41_IZMJENJIVA := 'Y';
+                :P41_STATUS := 'P';
+                :P41_NAZIV := 'Nova ulazna faktura';
+                if :P41_VRSTA_DOKUMENTA_ID is null then
+                    for v in (select id, sifra from vw_kuf_vrste_dokumenata
+                               where ooj_id = :APP_OOJ_ID and sifra = 'UF') loop
+                        :P41_VRSTA_DOKUMENTA_ID := v.id;
+                        :P41_VRSTA_SIFRA := v.sifra;
+                    end loop;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P41_ID
+        }
+    )
+
+    process stope (
+        name: Stope PDV indikatora (za račun u pregledaču)
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P41_STOPE := kuf_pkg.stope_json;
+                ```
+        }
+        execution {
+            sequence: 30
+            point: beforeHeader
+        }
+    )
+
+    process snimi (
+        name: Snimi zaglavlje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P41_ID := kuf_pkg.snimi(
+                    p_id                  => :P41_ID,
+                    p_ooj_id              => :APP_OOJ_ID,
+                    p_godina              => :APP_GODINA,
+                    p_vrsta_dokumenta_id  => :P41_VRSTA_DOKUMENTA_ID,
+                    p_klijent_id          => :P41_KLIJENT_ID,
+                    p_broj_fakture        => :P41_NAZIV_FAKTURE,
+                    p_datum_fakture       => :P41_DATUM_FAKTURE,
+                    p_datum_prijema       => :P41_DATUM_PRIJEMA,
+                    p_datum_valute        => :P41_DATUM_VALUTE,
+                    p_valuta_id           => :P41_VALUTA_ID,
+                    p_tip_placanja_id     => :P41_TIP_PLACANJA_ID,
+                    p_fiskalni_racun_broj => :P41_FISKALNI_RACUN_BROJ,
+                    p_ugovor_id           => :P41_UGOVOR_ID,
+                    p_veza_kuf_id         => :P41_VEZA_KUF_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    process pdv-specifikacija-snimi (
+        name: PDV specifikacija - snimi redove
+        type: executeCode
+        editableRegion: @pdv-specifikacija
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    -- vrijednosti iz tabele su tekst; novi red ima privremeni ID (t1000) -> kuf_pkg.broj vraća null
+                    l_id number := kuf_pkg.broj(:ID);
+                begin
+                    if :APEX$ROW_STATUS = 'D' then
+                        kuf_pkg.obrisi_pdv_red(p_id => l_id);
+                    else
+                        kuf_pkg.snimi_pdv_red(
+                            p_id               => l_id,
+                            p_kuf_id           => :P41_ID,
+                            p_redni_broj       => kuf_pkg.broj(:REDNI_BROJ),
+                            p_pdv_indikator_id => kuf_pkg.broj(:PDV_INDIKATOR_ID),
+                            p_valuta_osnovica  => kuf_pkg.broj(:VALUTA_OSNOVICA),
+                            -- u PDV sistemu PDV se ne unosi: računa ga paket iz osnovice i stope indikatora
+                            p_valuta_pdv       => case when :APP_PDV_SISTEM = 'Y' then null
+                                                       else kuf_pkg.broj(:VALUTA_PDV) end,
+                            p_izvor_red_id     => kuf_pkg.broj(:IZVOR_RED_ID)
+                        );
+                        :ID := l_id;
+                    end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    process preracunaj (
+        name: Preračunaj iznose i dodaj dokument
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.preracunaj(:P41_ID);
+                kuf_pkg.dodaj_dokument(p_kuf_id => :P41_ID, p_naziv_fajla => :P41_DOCUMENT);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Faktura je snimljena.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    process provjeri-stavke (
+        name: Dokument mora imati PDV specifikaciju
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.provjeri_stavke(:P41_ID);
+                ```
+        }
+        execution {
+            sequence: 31
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y')
+        }
+    )
+
+    process avansi-snimi (
+        name: Uračunati avansi - snimi redove
+        type: executeCode
+        editableRegion: @uracunati-avansi
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    -- vrijednosti iz tabele su tekst; novi red ima privremeni ID (t1000) -> kuf_pkg.broj vraća null
+                    l_id number := kuf_pkg.broj(:ID);
+                begin
+                    if :APEX$ROW_STATUS = 'D' then
+                        kuf_pkg.obrisi_avans_red(p_id => l_id);
+                    elsif :P41_AVANS_URACUNAT = 'Y' then
+                        kuf_pkg.snimi_avans_red(
+                            p_id       => l_id,
+                            p_kuf_id   => :P41_ID,
+                            p_avans_id => kuf_pkg.broj(:AVANS_ID),
+                            p_iznos    => kuf_pkg.broj(:IZNOS)
+                        );
+                        :ID := l_id;
+                    end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 33
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :P41_VRSTA_SIFRA = 'UF' and (:REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y'))
+        }
+    )
+
+    process avansi-uskladi (
+        name: Uračunati avansi - usklađivanje sa fakturom
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.uskladi_avanse(p_kuf_id => :P41_ID, p_uracunat => :P41_AVANS_URACUNAT);
+                ```
+        }
+        execution {
+            sequence: 35
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_VRSTA_SIFRA = 'UF' and (:REQUEST in ('SAVE', 'SAVE_UIO') or (:REQUEST = 'ZAKLJUCAJ' and :P41_IZMJENJIVA = 'Y'))
+        }
+    )
+
+    process ajax-preuzmi-stavke (
+        name: PREUZMI_STAVKE
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(kuf_pkg.stavke_za_preuzimanje(
+                    p_veza_id     => apex_application.g_x01,
+                    p_vrsta_sifra => apex_application.g_x02,
+                    p_kuf_id      => :P41_ID
+                ));
+                ```
+        }
+        execution {
+            sequence: 10
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-dokument-opis (
+        name: DOKUMENT_OPIS
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.opis_dokumenta(
+                    p_id     => apex_application.g_x01,
+                    p_ooj_id => :APP_OOJ_ID,
+                    p_opis   => apex_application.g_x02
+                );
+                sys.htp.p('{"ok":true}');
+                ```
+        }
+        execution {
+            sequence: 30
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-veza-valuta (
+        name: VEZA_VALUTA
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p('{"v":"' || kuf_pkg.veza_valuta(apex_application.g_x01) || '"}');
+                ```
+        }
+        execution {
+            sequence: 40
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-avans-info (
+        name: AVANS_INFO
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(kuf_pkg.avans_info(
+                    p_avans_id => apex_application.g_x01,
+                    p_kuf_id   => :P41_ID
+                ));
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
+        }
+    )
+
+    process dodaj-dokumente (
+        name: Dodaj dokumente
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.dodaj_dokument(p_kuf_id => :P41_ID, p_naziv_fajla => :P41_DOCUMENT);
+                ```
+        }
+        execution {
+            sequence: 38
+        }
+        successMessage {
+            successMessage: Dokumenti su dodati.
+        }
+        serverSideCondition {
+            whenButtonPressed: @dodaj-dokumente
+        }
+    )
+
+    process zakljucaj (
+        name: Zaključaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.zakljucaj(:P41_ID);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Faktura je zaključana.
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj
+        }
+    )
+
+    process otkljucaj (
+        name: Otključaj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.otkljucaj(:P41_ID);
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        successMessage {
+            successMessage: Faktura je otključana za izmjene.
+        }
+        serverSideCondition {
+            whenButtonPressed: @otkljucaj
+        }
+    )
+
+    process storniraj (
+        name: Storniraj
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P41_STORNO_ID := kuf_pkg.storniraj(:P41_ID, trunc(sysdate));
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Faktura je stornirana.
+        }
+        serverSideCondition {
+            whenButtonPressed: @storniraj
+        }
+    )
+
+    process obrisi (
+        name: Obriši
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                kuf_pkg.obrisi(p_id => :P41_ID, p_ooj_id => :APP_OOJ_ID);
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE,ZAKLJUCAJ,STORNIRAJ
+        }
+    )
+
+    branch (
+        name: Nazad na UIO KUF
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 84
+                items: {
+                    P84_FAKTURA_ID: &P41_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P41_ORIG = 84 and :REQUEST not in ('DELETE', 'STORNIRAJ')
+        }
+    )
+
+    branch (
+        name: Ostani na fakturi
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 41
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,OTKLJUCAJ,DOKUMENT
+        }
+    )
+
+)

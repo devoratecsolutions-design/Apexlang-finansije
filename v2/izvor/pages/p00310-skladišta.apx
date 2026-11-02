@@ -1,0 +1,527 @@
+page 310 (
+    name: Skladišta
+    alias: SKLADIŠTA
+    title: Skladišta
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @robno-materijalno-konfiguracija-skladišta
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region skladista-naslov (
+        name: Skladišta
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-page
+        }
+    )
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @skladista-report
+        }
+        layout {
+            sequence: 9
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P310_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P310_AKTIVNO (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Aktivno;Aktivno,Neaktivno;Neaktivno
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: AKTIVNO
+            }
+        )
+
+    )
+
+    region skladista-report (
+        name: Skladišta
+        title: Skladišta
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    sifra,
+                    naziv,
+                    tip_naziv,
+                    CASE WHEN robno = 'Y' THEN 'Y' END AS robno,
+                    cjenovnik_sifra || ' - ' || cjenovnik_naziv AS cjenovnik,
+                    cjenovnik_tip,
+                    oj_naziv,
+                    radnik_naziv,
+                    CASE WHEN :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno') THEN kontna_klasa END AS konto,
+                    CASE WHEN nadredjeno_id IS NOT NULL THEN nadredjeno END AS nadredjeno,
+                    adresa,
+                    korisnika,
+                    dokumenata,
+                    nvl(artikala, 0) AS artikala,
+                    to_char(nvl(vrijednost, 0), 'FM999G999G999G990D00') AS vrijednost,
+                    CASE WHEN valid = 'Y' THEN 'Y' END AS valid,
+                    CASE WHEN robno = 'Y' THEN 'Robno' ELSE 'Materijalno' END AS vrsta,
+                    CASE WHEN valid = 'Y' THEN 'Aktivno' ELSE 'Neaktivno' END AS aktivno,
+                    apex_page.get_url(p_page => 311, p_items => 'P311_ID', p_values => id, p_clear_cache => 311) AS url,
+                    apex_page.get_url(p_page => 313, p_items => 'P313_SKLADISTE_ID', p_values => id, p_clear_cache => 313) AS url_stanje
+                FROM vw_rm_skladista
+                WHERE ooj_id = :APP_OOJ_ID
+                  AND CASE WHEN robno = 'Y' THEN 'ROB' ELSE 'MAT' END = nvl(:A_RM_MODUL, 'ROB')
+                ORDER BY valid DESC, sifra
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema skladišta za izabrane filtere.
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Skladište
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#SIFRA#</span><span class="fin-sub">#NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column TIP_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Tip
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-chip {if ROBNO/}fin-chip--info{endif/}">#TIP_NAZIV#</span>{if CJENOVNIK_TIP/}<span class="fin-sub">#CJENOVNIK_TIP#: #CJENOVNIK#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ROBNO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 350
+            }
+        )
+
+        column CJENOVNIK (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+        column CJENOVNIK_TIP (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Organizacija
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #OJ_NAZIV#{if RADNIK_NAZIV/}<span class="fin-sub"><span class="fa fa-user" aria-hidden="true"></span> #RADNIK_NAZIV#</span>{endif/}{if KONTO/}<span class="fin-sub">konto #KONTO#</span>{endif/}{if NADREDJENO/}<span class="fin-sub">u sastavu: #NADREDJENO#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 390
+            }
+        )
+
+        column KONTO (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 400
+            }
+        )
+
+        column NADREDJENO (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 410
+            }
+        )
+
+        column ADRESA (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 420
+            }
+        )
+
+        column KORISNIKA (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Korisnika
+                alignment: center
+            }
+            layout {
+                sequence: 50
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENATA (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 440
+            }
+        )
+
+        column ARTIKALA (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Na stanju
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+                htmlExpression:
+                    ```html
+                    #ARTIKALA# art.<span class="fin-num-sub">#VRIJEDNOST# KM</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 460
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 470
+            }
+        )
+
+        column VRSTA (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 480
+            }
+        )
+
+        column AKTIVNO (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VALID/}<span class="fin-status fin-status--zakljucena"><span class="fa fa-check" aria-hidden="true"></span>Aktivno</span>{else/}<span class="fin-status fin-status--storno"><span class="fa fa-ban" aria-hidden="true"></span>Neaktivno</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 500
+            }
+        )
+
+        column URL_STANJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Stanje
+                alignment: center
+            }
+            layout {
+                sequence: 70
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL_STANJE#
+                }
+                linkText: <span class="fin-act" title="Stanje skladišta" aria-label="Stanje skladišta"><span class="fa fa-cubes" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novo skladište
+        layout {
+            sequence: 10
+            region: @skladista-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 311
+                clearCache: 311
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed (
+        name: Zatvoren dijalog - osvježi
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: jQuerySelector
+            jquerySelector: body
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @skladista-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @faceted-search
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

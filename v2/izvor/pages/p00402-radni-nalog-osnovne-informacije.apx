@@ -1,0 +1,609 @@
+page 402 (
+    name: Radni nalog / Osnovne informacije
+    alias: RADNI-NALOG-OSNOVNE-INFORMACIJE
+    title: Radni nalog / Osnovne informacije
+    pageGroup: @proizvodnja
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        height: 400
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region radni-nalog-osnovne-informacije (
+        name: Radni nalog / Osnovne informacije
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-radni-nalog
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    pageItem P402_BROJ (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+        }
+    )
+
+    pageItem P402_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P402_GODINA (
+        type: hidden
+        layout {
+            sequence: 120
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+        }
+    )
+
+    pageItem P402_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P402_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P402_NAZIV (
+        type: displayOnly
+        label {
+            label: Radni nalog
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P402_NORMATIV (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P402_NORMATIV_ID (
+        type: selectOne
+        label {
+            label: Normativ
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @normativi
+        }
+        layout {
+            sequence: 80
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P402_NORMATIV
+            value: Y
+        }
+    )
+
+    pageItem P402_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 70
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P402_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+        }
+    )
+
+    pageItem P402_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P402_SKLADISTE_ID (
+        type: selectOne
+        label {
+            label: Skladište
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-skladista
+        }
+        layout {
+            sequence: 60
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P402_STAVKA_ID (
+        type: selectOne
+        label {
+            label: Stavka
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-stavke
+        }
+        layout {
+            sequence: 90
+            region: @radni-nalog-osnovne-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button next (
+        buttonName: NEXT
+        label: Dalje
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-oj (
+        name: Get OJ
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P402_SKLADISTE_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P402_SKLADISTE_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    skladista_pkg.get_skladiste (
+                        p_id    => :P402_SKLADISTE_ID,
+                        p_oj_id => :P402_OJ_ID
+                    );
+                    ```
+                itemsToSubmit: [
+                    P402_OJ_ID
+                    P402_SKLADISTE_ID
+                ]
+                itemsToReturn: P402_OJ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P402_OJ_ID := null;
+                itemsToSubmit: [
+                    P402_OJ_ID
+                    P402_SKLADISTE_ID
+                ]
+                itemsToReturn: P402_OJ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-from-normativ (
+        name: Setup from Normativ
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: [
+                P402_NORMATIV_ID
+                P402_KOLICINA
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P402_NORMATIV_ID') !== "" && 
+                $v('P402_KOLICINA') !== ""
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    proizvodnja_pkg.setup_radni_nalog_from_normativ (
+                        p_normativ_id => :P402_NORMATIV_ID,
+                        p_kolicina    => :P402_KOLICINA,
+                        p_stavke      => 'RN_STAVKE',
+                        p_radna_snaga => 'RN_RADNA_SNAGA',
+                        p_troskovi    => 'RN_TROSKOVI',
+                        p_stavka_id   => :P402_STAVKA_ID,
+                        p_opis        => :P402_OPIS
+                    );
+                    ```
+                itemsToSubmit: [
+                    P402_NORMATIV_ID
+                    P402_KOLICINA
+                    P402_STAVKA_ID
+                    P402_OPIS
+                ]
+                itemsToReturn: [
+                    P402_STAVKA_ID
+                    P402_OPIS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation normativ-not-null (
+        name: NORMATIV NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P402_NORMATIV_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P402_NORMATIV_ID
+        }
+    )
+
+    validation oj-not-null (
+        name: OJ NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P402_OJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P402_OJ_ID
+        }
+    )
+
+    validation skladiste-not-null (
+        name: SKLADISTE NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P402_SKLADISTE_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P402_SKLADISTE_ID
+        }
+    )
+
+    validation stavka-not-null (
+        name: STAVKA NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P402_STAVKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P402_STAVKA_ID
+        }
+    )
+
+    process setup (
+        name: Setup
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.protokoli_pkg.get_brojac (
+                    p_ooj_id             => :APP_OOJ_ID,
+                    p_vrsta_naloga_sifra => 'rn',
+                    p_godina             => :APP_GODINA,
+                    p_broj               => :P402_BROJ,
+                    p_naziv              => :P402_NAZIV
+                );
+                
+                :P402_KOLICINA := 1;
+                :P402_DATUM := sysdate;
+                
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'RN_STAVKE'
+                );
+                
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'RN_RADNA_SNAGA'
+                );
+                
+                apex_collection.create_or_truncate_collection (
+                    p_collection_name => 'RN_TROSKOVI'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 151395502178459107
+        }
+        serverSideCondition {
+            type: request=Value
+            value: setup
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 403
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @next
+        }
+    )
+
+)
+

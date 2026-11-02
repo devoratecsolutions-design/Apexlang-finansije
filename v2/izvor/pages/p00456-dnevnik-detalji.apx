@@ -1,0 +1,481 @@
+page 456 (
+    name: Dnevnik / Detalji
+    alias: DNEVNIK-DETALJI
+    title: Dnevnik / Detalji
+    pageGroup: @blagajna
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region dnevnik-detalji (
+        name: Dnevnik / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P456_BLAGAJNA_ID (
+        type: displayOnly
+        label {
+            label: Blagajna
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @blagajne
+        }
+        layout {
+            sequence: 30
+            region: @dnevnik-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P456_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @dnevnik-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P456_GODINA (
+        type: hidden
+        layout {
+            sequence: 70
+            region: @dnevnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P456_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @dnevnik-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P456_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @dnevnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P456_POCETNO_STANJE (
+        type: numberField
+        label {
+            label: Početno stanje
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @dnevnik-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P456_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P456_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P456_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P456_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P456_DATUM
+        }
+    )
+
+    validation pocetno-stanje-not-null (
+        name: Pocetno stanje NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P456_POCETNO_STANJE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P456_POCETNO_STANJE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.delete_blagajna_dnevnik (
+                    p_id => :P456_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 134889570297764927
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.get_blagajna_dnevnik (
+                    p_id             => :P456_ID,
+                    p_ooj_id         => :P456_OOJ_ID,
+                    p_blagajna_id    => :P456_BLAGAJNA_ID,
+                    p_datum          => :P456_DATUM,
+                    p_pocetno_stanje => :P456_POCETNO_STANJE,
+                    p_godina         => :P456_GODINA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 134889291201764924
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P456_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P456_ID := blagajna_pkg.insert_blagajna_dnevnik (
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_blagajna_id    => :P456_BLAGAJNA_ID,
+                    p_datum          => :P456_DATUM,
+                    p_pocetno_stanje => :P456_POCETNO_STANJE,
+                    p_godina         => :APP_GODINA
+                );
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 134889361408764925
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process setup (
+        name: Setup
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P456_POCETNO_STANJE := blagajna_pkg.get_pocetno_stanje_blagajne (
+                    p_ooj_id      => :APP_OOJ_ID,
+                    p_blagajna_id => :P456_BLAGAJNA_ID,
+                    p_godina      => :APP_GODINA
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 136297908259639728
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P456_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                blagajna_pkg.update_blagajna_dnevnik (
+                    p_id             => :P456_ID,
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_blagajna_id    => :P456_BLAGAJNA_ID,
+                    p_datum          => :P456_DATUM,
+                    p_pocetno_stanje => to_number(:P456_POCETNO_STANJE, '999G999G999G999G990D00'),
+                    p_godina         => :APP_GODINA
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        advanced {
+            executionMappingIdentifier: 134889487004764926
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 455
+                clearCache: 455
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 455
+                items: {
+                    P455_BLAGAJNA_ID: &P456_BLAGAJNA_ID.
+                    P455_DNEVNIK_ID: &P456_ID.
+                }
+                clearCache: 455
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+)
+

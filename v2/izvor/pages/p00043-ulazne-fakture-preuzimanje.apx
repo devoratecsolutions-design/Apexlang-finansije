@@ -1,0 +1,336 @@
+page 43 (
+    name: Ulazne fakture / Preuzimanje
+    alias: ULAZNE-FAKTURE-PREUZIMANJE
+    title: Ulazne fakture / Preuzimanje
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region ulazne-fakture-report (
+        name: Ulazne fakture Report
+        title: "Ulazne fakture "
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    naziv_fakture,
+                    klijent_naziv,
+                    
+                    CASE
+                        WHEN dokumenata = 0 THEN
+                            null
+                        ELSE
+                            'Y'
+                    END AS view_document
+                    
+                FROM
+                    vw_kuf_lista
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                    AND to_char(datum_fakture, 'YYMM') = :P43_PP
+                ORDER BY
+                    datum_fakture DESC
+                ```
+            pageItemsToSubmit: P43_PP
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column KLIJENT_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Klijent
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Interni naziv
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv/broj fakture
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VIEW_DOCUMENT (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if VIEW_DOCUMENT/}
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                        <span class="t-Icon t-Icon--left fa fa-file-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P43_PP (
+        type: selectOne
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @poreski-period-yymm
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button download (
+        buttonName: DOWNLOAD
+        label: Preuzmi
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-download
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction download (
+        name: Download
+        execution {
+            sequence: 40
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @download
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-download (
+            action: download
+            fileHandling {
+                multipleFiles: true
+                filename: kuf-&P43_PP..zip
+            }
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        dokument,
+                        naziv
+                    FROM
+                        vw_kuf_dokumenti
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND datum_fakture >= to_date(:P43_PP, 'YYMM')
+                        AND datum_fakture < add_months(to_date(:P43_PP, 'YYMM'), 1)
+                    ```
+                itemsToSubmit: P43_PP
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refersh (
+        name: Refersh
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P43_PP
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ulazne-fakture-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

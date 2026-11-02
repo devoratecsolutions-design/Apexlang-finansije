@@ -1,0 +1,485 @@
+page 335 (
+    name: Dokument  / Knjiženje
+    alias: DOKUMENT-KNJIŽENJE
+    title: Dokument  / Knjiženje
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region informacije-o-dokumentu (
+        name: Informacije o dokumentu
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    datum,
+                    tip_kretanja_naziv
+                FROM
+                    vw_operacije
+                WHERE
+                    id = :P335_ID
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+                margin-top-none
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column DATUM (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: DD.MM.YYYY HH24:MI
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column TIP_KRETANJA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Tip kretanja
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    region stavke-naloga (
+        name: Stavke naloga
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c001 AS kontna_klasa_id,
+                    c002 AS tip_stavke,
+                    to_number(c003) AS iznos
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'OPERACIJA_KONTA'
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        breakFormatting {
+            reportSumLabel: -
+        }
+
+        column IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Iznos
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KONTNA_KLASA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_STAVKE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Tip stavke
+            }
+            lov {
+                type: sharedComponent
+                lov: @duguje-potrazuje
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    pageItem P335_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P335_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: item=value
+            item: P335_VIEW_ONLY
+            value: N
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+                
+                ```
+        }
+    )
+
+    pageItem P335_NALOG_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P335_ORIG (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P335_VIEW_ONLY (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button knjizi (
+        buttonName: KNJIZI
+        label: Knjiži operaciju
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-book
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P335_VIEW_ONLY
+            value: N
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P335_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P335_KNJIZI_YN
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P335_NALOG_ID
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 192306900057144000
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+            type: item=value
+            item: P335_ORIG
+            value: 332
+        }
+    )
+
+    process knjizi (
+        name: Knjizi
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P335_NALOG_ID := glavna_knjiga_pkg.knjizi_operacija_single (
+                    p_id              => :P335_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_godina          => :APP_GODINA,
+                    p_proknjizeno     => :P335_KNJIZI_YN,
+                    p_collection_only => 'N'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 192306582321144000
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+        }
+    )
+
+    process knjizi-collection-only (
+        name: Knjizi - Collection only
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_nalog_id NUMBER;
+                BEGIN
+                    l_nalog_id := glavna_knjiga_pkg.knjizi_operacija_single (
+                        p_id              => :P335_ID,
+                        p_ooj_id          => :APP_OOJ_ID,
+                        p_godina          => :APP_GODINA,
+                        p_proknjizeno     => 'N',
+                        p_collection_only => 'Y'
+                    );
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 192306197707144000
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P335_ID
+        }
+    )
+
+    branch (
+        name: Go To Page 201
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P335_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+        serverSideCondition {
+            type: item=value
+            item: P335_ORIG
+            value: 330
+        }
+    )
+
+)
+

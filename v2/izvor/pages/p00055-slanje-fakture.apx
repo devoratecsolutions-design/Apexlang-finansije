@@ -1,0 +1,513 @@
+page 55 (
+    name: Slanje fakture
+    alias: SLANJE-FAKTURE
+    title: Slanje fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--md
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region to-wrapper (
+        name: To Wrapper
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    pageItem P55_BCC (
+        type: textField
+        label {
+            label: Bcc
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P55_CC (
+        type: textField
+        label {
+            label: Cc
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P55_DOKUMENT (
+        type: fileUpload
+        label {
+            label: Faktura
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P55_FAKTURA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P55_SUBJECT (
+        type: textField
+        label {
+            label: Naslov
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P55_TEXT (
+        type: richTextEditor
+        label {
+            label: Poruka
+            alignment: left
+        }
+        settings {
+            format: html
+            minHeight: 240
+            allowCustomHtml: true
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P55_TO (
+        type: textField
+        label {
+            label: Email
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @to-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button email-history (
+        buttonName: EMAIL_HISTORY
+        label: Slanje / Istorija
+        layout {
+            sequence: 20
+            region: @to-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-send
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 64
+                items: {
+                    P64_FAKTURA_ID: &P55_FAKTURA_ID.
+                }
+                clearCache: 64
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM kif_email_history
+                WHERE
+                    kif_id = :P55_FAKTURA_ID
+                ```
+        }
+    )
+
+    button send (
+        buttonName: SEND
+        label: Pošalji
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-send-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation dokument-not-null (
+        name: Dokument NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P55_DOKUMENT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P55_DOKUMENT
+        }
+    )
+
+    validation email-bcc-regex (
+        name: Email  BCC REGEX
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemMatchesRegexp
+            item: P55_BCC
+            regexp: "^[A-Za-z]+[A-Za-z0-9.]+@[A-Za-z0-9 -.]+\\.[A-Za-z]{2,4}$"
+        }
+        error {
+            errorMessage: #LABEL# je neispravan. Email mora biti u ispravnom Email formatu.
+            associatedItem: @P55_BCC
+        }
+        serverSideCondition {
+            whenButtonPressed: @send
+        }
+    )
+
+    validation email-cc-regex (
+        name: "Email CC REGEX "
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemMatchesRegexp
+            item: P55_CC
+            regexp: "^[A-Za-z]+[A-Za-z0-9.]+@[A-Za-z0-9 -.]+\\.[A-Za-z]{2,4}$"
+        }
+        error {
+            errorMessage: #LABEL# je neispravan. Email mora biti u ispravnom Email formatu.
+            associatedItem: @P55_CC
+        }
+        serverSideCondition {
+            whenButtonPressed: @send
+        }
+    )
+
+    validation email-to-regex (
+        name: Email TO REGEX
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemMatchesRegexp
+            item: P55_TO
+            regexp: "^[A-Za-z]+[A-Za-z0-9.]+@[A-Za-z0-9 -.]+\\.[A-Za-z]{2,4}$"
+        }
+        error {
+            errorMessage: #LABEL# je neispravan. Email mora biti u ispravnom Email formatu.
+            associatedItem: @P55_TO
+        }
+        serverSideCondition {
+            whenButtonPressed: @send
+        }
+    )
+
+    validation subject-not-null (
+        name: Subject NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P55_SUBJECT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P55_SUBJECT
+        }
+    )
+
+    validation text-not-null (
+        name: Text NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P55_TEXT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P55_TEXT
+        }
+    )
+
+    validation to-not-null (
+        name: To NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P55_TO
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P55_TO
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 157287490762786939
+        }
+        serverSideCondition {
+            whenButtonPressed: @send
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_klijent_id NUMBER;
+                BEGIN
+                    finansije_pkg.get_kif (
+                        p_id         => :P55_FAKTURA_ID,
+                        p_klijent_id => l_klijent_id
+                    );
+                
+                    sec_pkg.get_klijent (
+                        p_id    => l_klijent_id,
+                        p_email => :P55_TO
+                    );
+                    
+                    core.korisnik_pkg.get_email_potpis (
+                        p_korisnik_id  => :APP_USER_ID,
+                        p_email_potpis => :P55_TEXT
+                    );
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157286672232786938
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P55_FAKTURA_ID
+        }
+    )
+
+    process send (
+        name: Send
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_email_from VARCHAR2(255);
+                BEGIN
+                    mail_pkg.posalji_faktura (
+                        p_ooj_id   => :APP_OOJ_ID,
+                        p_to       => :P55_TO,
+                        p_subject  => :P55_SUBJECT,
+                        p_cc       => :P55_CC,
+                        p_bcc      => :P55_BCC,
+                        p_poruka   => :P55_TEXT,
+                        p_dokument => :P55_DOKUMENT
+                    );
+                                
+                    core.ooj_pkg.get_ooj_email (
+                        p_id    => :APP_OOJ_ID,
+                        p_email => l_email_from
+                    );
+                
+                    finansije_pkg.insert_kif_email_history (
+                        p_kif_id      => :P55_FAKTURA_ID,
+                        p_korisnik_id => :APP_USER_ID,
+                        p_email_from  => l_email_from,
+                        p_email_to    => :P55_TO,
+                        p_cc          => :P55_CC,
+                        p_bcc         => :P55_BCC,
+                        p_subject     => :P55_SUBJECT,
+                        p_message     => :P55_TEXT,
+                        p_attachment  => :P55_DOKUMENT
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 157287049175786939
+        }
+        serverSideCondition {
+            whenButtonPressed: @send
+        }
+    )
+
+)
+

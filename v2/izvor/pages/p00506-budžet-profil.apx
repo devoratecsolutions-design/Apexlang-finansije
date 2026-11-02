@@ -1,0 +1,2298 @@
+page 506 (
+    name: Profil
+    alias: BUDŽET-PROFIL
+    title: Profil
+    pageGroup: @budžet
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžet-stavke (
+        name: Budžet stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_id,
+                    oj_id,
+                    projekat_id,
+                    jan, 
+                    feb, 
+                    mar, 
+                    apr, 
+                    may, 
+                    jun,
+                    jul, 
+                    aug, 
+                    sep, 
+                    oct, 
+                    nov, 
+                    dec,
+                    coalesce(jan, 0) + coalesce(feb, 0) + coalesce(mar, 0) + coalesce(apr, 0) + coalesce(may, 0) + coalesce(jun, 0) +
+                    coalesce(jul, 0) + coalesce(aug, 0) + coalesce(sep, 0) + coalesce(oct, 0) + coalesce(nov, 0) + coalesce(dec, 0) AS ukupno
+                FROM (
+                    SELECT 
+                        stavka_id, 
+                        oj_id,
+                        projekat_id,
+                        TO_CHAR(period,'MON', 'NLS_DATE_LANGUAGE=ENGLISH') AS mon,
+                        iznos
+                    FROM 
+                        budzet_stavke bs
+                    WHERE
+                        budzet_id = :P506_BUDZET_ID
+                        AND oj_id = :P506_OJ_ID
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                vw_budzet_oj oj
+                            WHERE
+                                bs.budzet_id = oj.budzet_id
+                                AND bs.oj_id = oj.oj_id
+                                AND oj.status_sifra != 10
+                        )
+                )
+                PIVOT (
+                    MAX(iznos) 
+                    FOR mon IN ('JAN' AS JAN, 'FEB' AS FEB, 'MAR' AS MAR, 'APR' AS APR,
+                                'MAY' AS MAY, 'JUN' AS JUN, 'JUL' AS JUL, 'AUG' AS AUG,
+                                'SEP' AS SEP, 'OCT' AS OCT, 'NOV' AS NOV, 'DEC' AS DEC)
+                )
+                ORDER BY
+                    oj_id,
+                    stavka_id,
+                    projekat_id
+                ```
+        }
+        layout {
+            sequence: 120
+            slot: body
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P506_OJ_ID IS NOT null AND :P506_STATUS_SIFRA != 10
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+        heading {
+            type: plsqlFunctionBody
+            plsqlFunctionBody: RETURN budzet_pkg.get_column_headings(:P506_BROJ_MJESECI);
+        }
+
+        column APR (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Apr
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 04
+                    }
+                    clearCache: 510
+                }
+                linkText: #APR#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                ]
+            }
+        )
+
+        column AUG (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Aug
+            }
+            layout {
+                sequence: 110
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STATUS_SIFRA: #STAVKA_ID#
+                        P510_PERIOD: 08
+                    }
+                    clearCache: 510
+                }
+                linkText: #AUG#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column DEC (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dec
+            }
+            layout {
+                sequence: 150
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 12
+                    }
+                    clearCache: 510
+                }
+                linkText: #DEC#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column FEB (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Feb
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 02
+                    }
+                    clearCache: 510
+                }
+                linkText: #FEB#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column JAN (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jan
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 01
+                    }
+                    clearCache: 510
+                }
+                linkText: #JAN#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                    6
+                    12
+                ]
+            }
+        )
+
+        column JUL (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jul
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 07
+                    }
+                    clearCache: 510
+                }
+                linkText: #JUL#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                    6
+                ]
+            }
+        )
+
+        column JUN (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jun
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 06
+                    }
+                    clearCache: 510
+                }
+                linkText: #JUN#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column MAR (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Mar
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 03
+                    }
+                    clearCache: 510
+                }
+                linkText: #MAR#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column MAY (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: link
+            heading {
+                heading: May
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 05
+                    }
+                    clearCache: 510
+                }
+                linkText: #MAY#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column NOV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Nov
+            }
+            layout {
+                sequence: 140
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 11
+                    }
+                    clearCache: 510
+                }
+                linkText: #NOV#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column OCT (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Oct
+            }
+            layout {
+                sequence: 130
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 10
+                    }
+                    clearCache: 510
+                }
+                linkText: #OCT#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                ]
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROJEKAT_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Projekat
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-projekti
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SEP (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Sep
+            }
+            layout {
+                sequence: 120
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 09
+                    }
+                    clearCache: 510
+                }
+                linkText: #SEP#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UKUPNO (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Ukupno
+            }
+            layout {
+                sequence: 160
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    region budžet-stavke-ukupno (
+        name: Budžet stavke / Ukupno
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    stavka_id,
+                    oj_id,
+                    projekat_id,
+                    jan, 
+                    feb, 
+                    mar, 
+                    apr, 
+                    may, 
+                    jun,
+                    jul, 
+                    aug, 
+                    sep, 
+                    oct, 
+                    nov, 
+                    dec,
+                    coalesce(jan, 0) + coalesce(feb, 0) + coalesce(mar, 0) + coalesce(apr, 0) + coalesce(may, 0) + coalesce(jun, 0) +
+                    coalesce(jul, 0) + coalesce(aug, 0) + coalesce(sep, 0) + coalesce(oct, 0) + coalesce(nov, 0) + coalesce(dec, 0) AS ukupno
+                FROM (
+                    SELECT 
+                        stavka_id, 
+                        oj_id,
+                        projekat_id,
+                        TO_CHAR(period,'MON', 'NLS_DATE_LANGUAGE=ENGLISH') AS mon,
+                        iznos
+                    FROM 
+                        budzet_stavke bs
+                    WHERE
+                        budzet_id = :P506_BUDZET_ID
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                vw_budzet_oj oj
+                            WHERE
+                                bs.budzet_id = oj.budzet_id
+                                AND bs.oj_id = oj.oj_id
+                                AND oj.status_sifra != 10
+                        )
+                )
+                PIVOT (
+                    MAX(iznos) 
+                    FOR mon IN ('JAN' AS JAN, 'FEB' AS FEB, 'MAR' AS MAR, 'APR' AS APR,
+                                'MAY' AS MAY, 'JUN' AS JUN, 'JUL' AS JUL, 'AUG' AS AUG,
+                                'SEP' AS SEP, 'OCT' AS OCT, 'NOV' AS NOV, 'DEC' AS DEC)
+                )
+                ORDER BY
+                    oj_id,
+                    stavka_id,
+                    projekat_id
+                ```
+        }
+        layout {
+            sequence: 110
+            slot: body
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P506_OJ_ID
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+        heading {
+            type: plsqlFunctionBody
+            plsqlFunctionBody: RETURN budzet_pkg.get_column_headings(:P506_BROJ_MJESECI);
+        }
+
+        column APR (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Apr
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 04
+                    }
+                    clearCache: 510
+                }
+                linkText: #APR#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                ]
+            }
+        )
+
+        column AUG (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Aug
+            }
+            layout {
+                sequence: 120
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STATUS_SIFRA: #STAVKA_ID#
+                        P510_PERIOD: 08
+                    }
+                    clearCache: 510
+                }
+                linkText: #AUG#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column DEC (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dec
+            }
+            layout {
+                sequence: 160
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 12
+                    }
+                    clearCache: 510
+                }
+                linkText: #DEC#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column FEB (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Feb
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 02
+                    }
+                    clearCache: 510
+                }
+                linkText: #FEB#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column JAN (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jan
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 01
+                    }
+                    clearCache: 510
+                }
+                linkText: #JAN#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                    6
+                    12
+                ]
+            }
+        )
+
+        column JUL (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jul
+            }
+            layout {
+                sequence: 110
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 07
+                    }
+                    clearCache: 510
+                }
+                linkText: #JUL#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                    6
+                ]
+            }
+        )
+
+        column JUN (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Jun
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 06
+                    }
+                    clearCache: 510
+                }
+                linkText: #JUN#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column MAR (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Mar
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 03
+                    }
+                    clearCache: 510
+                }
+                linkText: #MAR#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column MAY (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: link
+            heading {
+                heading: May
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 05
+                    }
+                    clearCache: 510
+                }
+                linkText: #MAY#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column NOV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Nov
+            }
+            layout {
+                sequence: 150
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 11
+                    }
+                    clearCache: 510
+                }
+                linkText: #NOV#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column OCT (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Oct
+            }
+            layout {
+                sequence: 140
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 10
+                    }
+                    clearCache: 510
+                }
+                linkText: #OCT#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: [
+                    1
+                    3
+                ]
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROJEKAT_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Projekat
+            }
+            lov {
+                type: sharedComponent
+                lov: @hr-projekti
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SEP (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Sep
+            }
+            layout {
+                sequence: 130
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            link {
+                target: {
+                    page: 510
+                    items: {
+                        P510_BUDZET_ID: &P506_BUDZET_ID.
+                        P510_STATUS_SIFRA: &P506_STATUS_SIFRA.
+                        P510_STAVKA_ID: #STAVKA_ID#
+                        P510_PERIOD: 09
+                    }
+                    clearCache: 510
+                }
+                linkText: #SEP#
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+            serverSideCondition {
+                type: itemIsInColonDelimitedList
+                item: P506_BROJ_MJESECI
+                list: 1
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Stavka
+            }
+            lov {
+                type: sharedComponent
+                lov: @budzetske-stavke
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UKUPNO (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Ukupno
+            }
+            layout {
+                sequence: 170
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    region još-uvijek-nije-poslat-nacrt-budžeta (
+        name: Još uvijek nije poslat nacrt budžeta
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P506_OJ_ID IS NOT null AND :P506_STATUS_SIFRA = 10
+        }
+    )
+
+    region left-side-wrapper (
+        name: Left Side - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+            columnSpan: 3
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: filter-region
+        }
+    )
+
+    region organizaciona-jedinica (
+        name: Organizaciona jedinica
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    oj_naziv,
+                    max_iznos,
+                    stavke_sum,
+                    status_naziv,
+                    status_color_code
+                FROM
+                    vw_budzet_oj
+                WHERE
+                    budzet_id = :P506_BUDZET_ID
+                    AND oj_id = :P506_OJ_ID
+                ```
+            pageItemsToSubmit: [
+                P506_OJ_ID
+                P506_BUDZET_ID
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @left-side-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P506_OJ_ID
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column MAX_IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Maksimalan iznos budžeta
+            }
+            layout {
+                sequence: 30
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+        )
+
+        column STAVKE_SUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Iznos budžeta
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+    )
+
+    region organizaciona-jedinica-statusi (
+        name: Organizaciona jedinica - Statusi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    status_naziv,
+                    status_color_code,
+                    radnik_naziv,
+                    datum,
+                    komentar
+                
+                FROM
+                    vw_budzet_oj_hist
+                WHERE
+                    budzet_id = :P506_BUDZET_ID
+                    AND oj_id = :P506_OJ_ID
+                ORDER BY
+                    id DESC
+                ```
+            pageItemsToSubmit: [
+                P506_OJ_ID
+                P506_BUDZET_ID
+            ]
+        }
+        layout {
+            sequence: 10
+            parentRegion: @left-side-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-collapsed
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P506_OJ_ID
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOMENTAR (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Komentar
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RADNIK_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region osnovne-informacije-report (
+        name: Osnovne informacije Report
+        title: Osnovne informacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    godina,
+                    status_naziv,
+                    status_color_code,
+                    interval_naziv,
+                    valuta_naziv,
+                    napomena
+                FROM
+                    vw_budzeti
+                WHERE
+                    id = :P506_BUDZET_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @left-side-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                margin-bottom-none
+            ]
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo--hideNulls
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+            ]
+        }
+
+        column GODINA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+        )
+
+        column INTERVAL_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Interval
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column NAPOMENA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Napomena
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 60
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+        )
+
+        column VALUTA_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+    )
+
+    region premašen-budžet (
+        name: Premašen budžet!
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                Maksimalan budžet organizacione jedinice iznosi: <b>&P506_MAX_IZNOS.</b>
+                <br>
+                Trenutni budžet iznosi: <b>&P506_SUMA.</b>
+                ```
+        }
+        layout {
+            sequence: 100
+            slot: body
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--defaultIcons
+                t-Alert--danger
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: to_number(:P506_SUMA, '999G999G999G999G990D00') > to_number(:P506_MAX_IZNOS, '999G999G999G999G990D00')
+        }
+    )
+
+    region profil (
+        name: Profil
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @left-side-wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+                margin-top-sm
+                margin-bottom-sm
+            ]
+        }
+    )
+
+    pageItem P506_BROJ_MJESECI (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: body
+        }
+    )
+
+    pageItem P506_BUDZET_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    pageItem P506_BUDZET_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    pageItem P506_GODINA (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: body
+        }
+    )
+
+    pageItem P506_MAX_IZNOS (
+        type: hidden
+        layout {
+            sequence: 70
+            slot: body
+        }
+    )
+
+    pageItem P506_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    oj_naziv || ' ( ' || status_naziv || ' ) ' AS d,
+                    oj_id AS r
+                FROM
+                    vw_budzet_oj
+                WHERE
+                    budzet_id = :P506_BUDZET_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P506_STATUS_SIFRA (
+        type: hidden
+        layout {
+            sequence: 60
+            slot: body
+        }
+    )
+
+    pageItem P506_SUMA (
+        type: hidden
+        layout {
+            sequence: 80
+            slot: body
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 508
+                items: {
+                    P508_BUDZET_ID: &P506_BUDZET_ID.
+                }
+                clearCache: 508
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P506_BUDZET_STATUS_SIFRA
+            value: 10
+        }
+    )
+
+    button check (
+        buttonName: CHECK
+        label: Provjeri unos
+        layout {
+            sequence: 50
+            region: @profil
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 513
+                items: {
+                    P513_BUDZET_ID: &P506_BUDZET_ID.
+                    P513_OJ_ID: &P506_OJ_ID.
+                }
+                clearCache: 513
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression:
+                ```plsql
+                (:P506_OJ_ID IS null AND :P506_BUDZET_STATUS_SIFRA NOT IN (60, 70))
+                OR
+                (:P506_OJ_ID IS NOT null AND :P506_STATUS_SIFRA NOT IN (10, 70))
+                ```
+        }
+    )
+
+    button edit-oj (
+        buttonName: EDIT_OJ
+        label: Ažuriranje
+        layout {
+            sequence: 10
+            region: @organizaciona-jedinica
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 508
+                items: {
+                    P508_BUDZET_ID: &P506_BUDZET_ID.
+                    P508_OJ_ID: &P506_OJ_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsInColonDelimitedList
+            item: P506_STATUS_SIFRA
+            list: [
+                10
+                20
+            ]
+        }
+    )
+
+    button odobravanje (
+        buttonName: ODOBRAVANJE
+        label: Odobravanje nacrta
+        layout {
+            sequence: 30
+            region: @profil
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 515
+                items: {
+                    P515_BUDZET_ID: &P506_BUDZET_ID.
+                }
+                clearCache: 515
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P506_OJ_ID IS null AND :P506_BUDZET_STATUS_SIFRA = 20
+        }
+    )
+
+    button odobravanje-oj (
+        buttonName: ODOBRAVANJE_OJ
+        label: Odobravanje nacrta org. jedinice
+        layout {
+            sequence: 40
+            region: @profil
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 516
+                items: {
+                    P516_BUDZET_ID: &P506_BUDZET_ID.
+                    P516_OJ_ID: &P506_OJ_ID.
+                }
+                clearCache: 516
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P506_OJ_ID IS NOT null AND :P506_STATUS_SIFRA = 20
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriranje
+        layout {
+            sequence: 10
+            region: @osnovne-informacije-report
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 507
+                items: {
+                    P507_ID: &P506_BUDZET_ID.
+                }
+                clearCache: 507
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P506_BUDZET_STATUS_SIFRA
+            value: 10
+        }
+    )
+
+    button zakljucavanje (
+        buttonName: ZAKLJUCAVANJE
+        label: Zaključavanje nacrta
+        layout {
+            sequence: 10
+            region: @profil
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 517
+                items: {
+                    P517_BUDZET_ID: &P506_BUDZET_ID.
+                }
+                clearCache: 517
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P506_OJ_ID IS null AND :P506_BUDZET_STATUS_SIFRA = 40
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @osnovne-informacije-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @osnovne-informacije-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P506_OJ_ID
+        }
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                budzet_pkg.get_budzet (
+                    p_id           => :P506_BUDZET_ID,
+                    p_broj_mjeseci => :P506_BROJ_MJESECI,
+                    p_godina       => :P506_GODINA,
+                    p_status_sifra => :P506_BUDZET_STATUS_SIFRA
+                );
+                
+                
+                IF :P506_OJ_ID IS NOT null THEN
+                    budzet_pkg.get_budzet_oj (
+                        p_budzet_id    => :P506_BUDZET_ID,
+                        p_oj_id        => :P506_OJ_ID,
+                        p_status_sifra => :P506_STATUS_SIFRA
+                    );
+                
+                    budzet_pkg.get_budzet_oj (
+                        p_budzet_id => :P506_BUDZET_ID,
+                        p_oj_id     => :P506_OJ_ID,
+                        p_max_iznos => :P506_MAX_IZNOS,
+                        p_suma      => :P506_SUMA
+                    );
+                ELSE
+                    budzet_pkg.get_budzet (
+                        p_id        => :P506_BUDZET_ID,
+                        p_max_iznos => :P506_MAX_IZNOS,
+                        p_suma      => :P506_SUMA
+                    );
+                END IF;
+                
+                :P506_MAX_IZNOS := to_char(:P506_MAX_IZNOS, '999G999G999G999G990D00');
+                :P506_SUMA := to_char(:P506_SUMA, '999G999G999G999G990D00');
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 145465627674621312
+        }
+    )
+
+)
+

@@ -1,0 +1,30 @@
+file "css/style.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "css/style.min.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "js/driver.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "js/driver.min.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "js/script.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "js/script.min.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+

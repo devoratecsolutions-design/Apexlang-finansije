@@ -1,0 +1,542 @@
+page 75 (
+    name: Ugovor / Stavka
+    alias: UGOVOR-STAVKA
+    title: Ugovor / Stavka
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavka (
+        name: Stavka
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P75_CIJENA (
+        type: numberField
+        label {
+            label: Cijena
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    pageItem P75_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @stavka
+            slot: regionBody
+        }
+    )
+
+    pageItem P75_IZNOS (
+        type: displayOnly
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 100
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P75_ID
+        }
+    )
+
+    pageItem P75_JM_ID (
+        type: selectList
+        label {
+            label: Jedinica mjere
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-jm
+            displayExtraValues: false
+        }
+        layout {
+            sequence: 60
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+    )
+
+    pageItem P75_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    pageItem P75_OPIS (
+        type: textarea
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+    )
+
+    pageItem P75_RABAT (
+        type: numberField
+        label {
+            label: Rabat (%)
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P75_REDNI_BROJ (
+        type: displayOnly
+        label {
+            label: Redni Broj
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P75_ID
+        }
+    )
+
+    pageItem P75_STAVKA_ID (
+        type: selectOne
+        label {
+            label: Stavka
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-stavke
+        }
+        layout {
+            sequence: 40
+            region: @stavka
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    pageItem P75_UGOVOR_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @stavka
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P75_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Obrisati stavku?
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P75_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P75_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-stavka (
+        name: Change - Stavka
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P75_STAVKA_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT jm_id FROM accounting.sec_stavke WHERE id = :P75_STAVKA_ID
+                    
+                    ```
+                itemsToSubmit: P75_STAVKA_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P75_JM_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    process close-dialog (
+        name: Close dialog
+        type: closeDialog
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 80194726657749108
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.delete_ugovor_stavka (
+                    p_id => :P75_ID
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 80194636293749107
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.get_ugovor_stavka (
+                    p_id         => :P75_ID,
+                    p_ugovor_id  => :P75_UGOVOR_ID,
+                    p_redni_broj => :P75_REDNI_BROJ,
+                    p_stavka_id  => :P75_STAVKA_ID,
+                    p_opis       => :P75_OPIS,
+                    p_jm_id      => :P75_JM_ID,
+                    p_kolicina   => :P75_KOLICINA,
+                    p_cijena     => :P75_CIJENA,
+                    p_rabat      => :P75_RABAT,
+                    p_iznos      => :P75_IZNOS
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 80194315262749104
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P75_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P75_ID := ugovori_pkg.insert_ugovor_stavka (
+                    p_ugovor_id => :P75_UGOVOR_ID,
+                    p_stavka_id => :P75_STAVKA_ID,
+                    p_opis      => :P75_OPIS,
+                    p_jm_id     => :P75_JM_ID,
+                    p_kolicina  => :P75_KOLICINA,
+                    p_cijena    => :P75_CIJENA,
+                    p_rabat     => :P75_RABAT
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 80194412916749105
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.update_ugovor_stavka (
+                    p_id        => :P75_ID,
+                    p_stavka_id => :P75_STAVKA_ID,
+                    p_opis      => :P75_OPIS,
+                    p_jm_id     => :P75_JM_ID,
+                    p_kolicina  => :P75_KOLICINA,
+                    p_cijena    => :P75_CIJENA,
+                    p_rabat     => :P75_RABAT
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 80194596988749106
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

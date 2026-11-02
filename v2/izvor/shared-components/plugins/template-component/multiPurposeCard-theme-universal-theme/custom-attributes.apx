@@ -1,0 +1,114 @@
+customAttribute BG_COLOR (
+    apexlangName: bgColor
+    attribute: 1
+    name: Bg Color
+    type: sessionStateValue
+    appearance {
+        sequence: 10
+    }
+)
+
+customAttribute BORDER_COLOR (
+    apexlangName: borderColor
+    attribute: 2
+    name: Border Color
+    type: sessionStateValue
+    appearance {
+        sequence: 20
+    }
+)
+
+customAttribute IMG (
+    apexlangName: img
+    attribute: 3
+    name: Img
+    type: media
+    security {
+        escapeMode: htmlAttribute
+    }
+    appearance {
+        sequence: 30
+    }
+)
+
+customAttribute IMG_HEIGHT (
+    apexlangName: imgHeight
+    attribute: 8
+    name: Img Height
+    type: sessionStateValue
+    validation {
+        required: true
+    }
+    appearance {
+        sequence: 80
+    }
+    supports {
+        dataTypes: number
+    }
+)
+
+customAttribute IMG_WIDTH (
+    apexlangName: imgWidth
+    attribute: 9
+    name: Img Width
+    type: sessionStateValue
+    validation {
+        required: true
+    }
+    appearance {
+        sequence: 90
+    }
+    supports {
+        dataTypes: number
+    }
+)
+
+customAttribute LINK (
+    apexlangName: link
+    attribute: 7
+    name: Link
+    type: linkToTargetPageUrl
+    security {
+        escapeMode: htmlAttribute
+    }
+    appearance {
+        sequence: 70
+    }
+)
+
+customAttribute RADIUS (
+    apexlangName: radius
+    attribute: 4
+    name: Radius
+    validation {
+        required: true
+        maxLength: 2
+    }
+    appearance {
+        sequence: 40
+    }
+    default {
+        value: 10
+    }
+)
+
+customAttribute SUB_TITLE (
+    apexlangName: subTitle
+    attribute: 5
+    name: Sub Title
+    type: sessionStateValue
+    appearance {
+        sequence: 50
+    }
+)
+
+customAttribute TITLE (
+    apexlangName: title
+    attribute: 6
+    name: Title
+    type: sessionStateValue
+    appearance {
+        sequence: 60
+    }
+)
+

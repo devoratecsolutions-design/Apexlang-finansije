@@ -1,0 +1,1170 @@
+page 267 (
+    name: Osnovno sredstvo / Aktiviranje
+    alias: OSNOVNO-SREDSTVO-AKTIVIRANJE
+    title: Osnovno sredstvo / Aktiviranje
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region item-wrapper (
+        name: Item Wrapper
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: contentBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region vrijednosti-ig (
+        name: Vrijednosti IG
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c.seq_id,
+                    os.id,
+                    os.naziv,
+                    os.inventurni_naziv,
+                    os.inventurni_broj,
+                    c.c002 as nabavna_vrijednost
+                FROM
+                    sec_osnovna_sredstva os
+                    LEFT JOIN apex_collections c ON os.id = c.c001
+                WHERE
+                    c.collection_name = 'OS_LIST'
+                ```
+        }
+        layout {
+            sequence: 90
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: #DEFAULT#
+            icon: fa-edit
+        }
+        edit {
+            enabled: true
+            allowedOperations: update
+        }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        toolbar {
+            controls: actionsMenu
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    options.defaultGridViewOptions = {
+                        reorderColumns: false,
+                        skipReadonlyCells: true
+                    }
+                    return options;
+                }
+                
+                
+                ```
+        }
+        advanced {
+            savedReportMappingIdentifier: 96345742891309545
+        }
+
+        savedReport 964212 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @NAZIV
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @NABAVNA_VRIJEDNOST
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @INVENTURNI_NAZIV
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @INVENTURNI_BROJ
+                layout {
+                    show: false
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @SEQ_ID
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @VRIJEDNOST
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @PROCENAT
+                layout {
+                    sequence: 8
+                }
+            )
+
+            sort (
+                column: @INVENTURNI_BROJ
+                sort {
+                    nulls: last
+                    sequence: 1
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INVENTURNI_BROJ (
+            type: hidden
+            settings {
+                valueProtected: false
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: INVENTURNI_BROJ
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            type: displayOnly
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                databaseColumn: INVENTURNI_NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            type: displayOnly
+            heading {
+                heading: Nabavna vrijednost
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                databaseColumn: NABAVNA_VRIJEDNOST
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+        )
+
+        column NAZIV (
+            type: displayOnly
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: NAZIV
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+                lovType: none
+            }
+            enableUsersTo {
+                sort: false
+            }
+        )
+
+        column PROCENAT (
+            type: numberField
+            heading {
+                heading: Procentualna vrijednost
+            }
+            layout {
+                sequence: 110
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                type: none
+            }
+            enableUsersTo {
+                hide: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P267_TIP_VRIJEDNOSTI
+                value: P
+            }
+        )
+
+        column SEQ_ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: SEQ_ID
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column VRIJEDNOST (
+            type: numberField
+            heading {
+                heading: Unos tačne vrijednosti
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                type: none
+            }
+            enableUsersTo {
+                hide: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P267_TIP_VRIJEDNOSTI
+                value: T
+            }
+        )
+
+    )
+
+    pageItem P267_DATUM (
+        type: datePicker
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 120
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P267_SUM_VRIJEDNOSTI
+        }
+    )
+
+    pageItem P267_GLAVNA_KNJIGA_ID (
+        type: selectOne
+        label {
+            label: Nalog glavne knjige
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    vrsta_naloga_naziv || ' / ' || broj || ' ( ' || to_char(datum_knjizenja, 'DD.MM.YYYY') || ' )' AS d,
+                    id AS r
+                FROM (
+                    SELECT
+                        lpad(broj, 6, '0') as broj,
+                        vrsta_naloga_naziv,
+                        datum_knjizenja,
+                        id
+                    FROM
+                        vw_glavna_knjiga gk
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND vrsta_naloga_sifra = 'UF'
+                        AND proknjizeno = 'Y'
+                        AND id NOT IN (
+                            SELECT DISTINCT
+                                glavna_knjiga_id
+                            FROM
+                                sec_osnovno_sredstvo_aktiviranja
+                            WHERE
+                                glavna_knjiga_id IS NOT null
+                                AND priprema_id = :P267_ID
+                        )
+                        AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                glavna_knjiga_stavke gks
+                            WHERE
+                                gks.glavna_knjiga_id = gk.id
+                                AND osnovno_sredstvo_id = :P267_ID
+                        )
+                )
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P267_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P267_INVENTURNI_NAZIV (
+        type: displayOnly
+        label {
+            label: Inventurni naziv
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P267_NABAVNA_VRIJEDNOST (
+        type: textField
+        label {
+            label: Nabavna vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            width: 30
+        }
+    )
+
+    pageItem P267_NALOG_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P267_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P267_OS_LIST (
+        type: selectMany
+        label {
+            label: Lista osnovnih sredstava
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                    id as r
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    valid = 'Y'
+                    AND ooj_id = :APP_OOJ_ID
+                    AND priprema = 'N'
+                    AND priprema_id = :P267_ID
+                    AND history_id IS null
+                ORDER BY
+                    inventurni_broj ASC
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P267_SUM_VRIJEDNOSTI (
+        type: displayOnly
+        label {
+            label: Suma vrijednosti
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P267_TIP_VRIJEDNOSTI (
+        type: radioGroup
+        label {
+            label: Tip unosa vrijednosti
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+            pageActionOnSelection: submitPage
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Tačan unos vrijednosti;T,Unos procentualne vrijednosti;P
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    button activate (
+        buttonName: ACTIVATE
+        label: Aktiviraj
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-5
+            icon: fa-check-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P267_SUM_VRIJEDNOSTI
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj u kolekciju
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj vrijednosti
+        layout {
+            sequence: 100
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction create-collection (
+        name: Create collection
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @add
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_exist BOOLEAN;
+                        l_query VARCHAR2(1000);
+                    BEGIN
+                        l_exist := apex_collection.collection_exists (
+                            p_collection_name => 'OS_LIST'
+                        );
+                    
+                        IF l_exist = True THEN
+                            apex_collection.delete_collection (
+                                p_collection_name => 'OS_LIST'
+                            );
+                        END IF;
+                    
+                        l_query := '
+                            select 
+                                column_value
+                            from
+                                apex_string.split(''' || :P267_OS_LIST || ''', '':'')
+                        ';
+                        apex_debug.message('DBG: ' || l_query);
+                        apex_collection.create_collection_from_query (
+                            p_collection_name => 'OS_LIST',
+                            p_query => l_query
+                        );
+                    
+                    END;
+                    ```
+                itemsToSubmit: P267_OS_LIST
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @vrijednosti-ig
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction sum (
+        name: Sum
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P267_GLAVNA_KNJIGA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    SELECT
+                        sum(iznos)
+                    INTO
+                        :P267_NABAVNA_VRIJEDNOST
+                    FROM
+                        glavna_knjiga_stavke
+                    WHERE
+                        glavna_knjiga_id = :P267_GLAVNA_KNJIGA_ID
+                        AND osnovno_sredstvo_id = :P267_ID;
+                    ```
+                itemsToSubmit: [
+                    P267_GLAVNA_KNJIGA_ID
+                    P267_NABAVNA_VRIJEDNOST
+                ]
+                itemsToReturn: P267_NABAVNA_VRIJEDNOST
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P267_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P267_DATUM
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P267_SUM_VRIJEDNOSTI
+        }
+    )
+
+    validation procenat-not (
+        name: Procenat NOT > 100
+        execution {
+            sequence: 20
+        }
+        validation {
+            editableRegion: @vrijednosti-ig
+            plsqlExpression: :PROCENAT <= 100
+        }
+        error {
+            errorMessage: #COLUMN_HEADER# mora biti manja od 100
+            associatedColumn: PROCENAT
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    validation sum (
+        name: Sum
+        execution {
+            sequence: 10
+        }
+        validation {
+            plsqlExpression: :P267_SUM_VRIJEDNOSTI <= :P267_NABAVNA_VRIJEDNOST
+        }
+        error {
+            errorMessage: Suma vrijednosti ne može biti veća od nabavne sume.
+        }
+        serverSideCondition {
+            whenButtonPressed: @activate
+        }
+    )
+
+    process activate-chain (
+        name: Activate - Chain
+        type: executionChain
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 96439306202554230
+        }
+        serverSideCondition {
+            whenButtonPressed: @activate
+        }
+    )
+
+    process aktiviraj (
+        name: Aktiviraj
+        type: executeCode
+        executionChain: @activate-chain
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR os_list IS (
+                        SELECT
+                            c001,
+                            c002
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'OS_LIST'
+                    );
+                     
+                BEGIN
+                    FOR os IN os_list LOOP
+                        :P267_NALOG_ID := os_pkg.aktiviraj_osnovno_sredstvo (
+                            p_id               => os.c001,
+                            p_vrijednost       => os.c002,
+                            p_godina           => :APP_GODINA,
+                            p_datum            => :P267_DATUM,
+                            p_glavna_knjiga_id => :P267_GLAVNA_KNJIGA_ID
+                        );
+                
+                    END LOOP;
+                END;
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 96439954956554236
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        executionChain: @activate-chain
+        settings {
+            itemsToReturn: P267_NALOG_ID
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 96440367526554240
+        }
+    )
+
+    process delete-collection (
+        name: Delete collection
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_exist BOOLEAN;
+                BEGIN
+                    l_exist := apex_collection.collection_exists (
+                        p_collection_name => 'OS_LIST'
+                    );
+                
+                    IF l_exist = True THEN
+                        apex_collection.delete_collection (
+                            p_collection_name => 'OS_LIST'
+                        );
+                    END IF;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 96436765337554204
+        }
+        serverSideCondition {
+            type: request=Value
+            value: start
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P267_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P267_INVENTURNI_NAZIV := l_os.inventurni_naziv;
+                    :P267_NAZIV := l_os.naziv;
+                END;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 96437109801554208
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P267_ID
+        }
+    )
+
+    process sum (
+        name: Sum
+        type: executeCode
+        executionChain: @update-collection-chain
+        source {
+            plsqlCode:
+                ```plsql
+                SELECT 
+                    sum(c002)
+                INTO 
+                    :P267_SUM_VRIJEDNOSTI
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'OS_LIST';
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 96439742338554234
+        }
+    )
+
+    process update-collection-chain (
+        name: Update collection - Chain
+        type: executionChain
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 96439667359554233
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process update-collection-procentualna-vrijednost (
+        name: Update collection - Procentualna vrijednost
+        type: executeCode
+        executionChain: @update-collection-chain
+        editableRegion: @vrijednosti-ig
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_vrijednost NUMBER;
+                BEGIN
+                    l_vrijednost := to_number(:PROCENAT, '999G999G999G999G990D00') * :P267_NABAVNA_VRIJEDNOST / 100;
+                
+                    apex_collection.update_member_attribute (
+                        p_collection_name => 'OS_LIST',
+                        p_seq             => :SEQ_ID,
+                        p_attr_number     => 2,
+                        p_attr_value      => round(l_vrijednost, 2)
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 97429990875182231
+        }
+        serverSideCondition {
+            type: item=value
+            item: P267_TIP_VRIJEDNOSTI
+            value: P
+        }
+    )
+
+    process update-collection-tacna-vrijednost (
+        name: Update collection - Tacna vrijednost
+        type: executeCode
+        executionChain: @update-collection-chain
+        editableRegion: @vrijednosti-ig
+        source {
+            plsqlCode:
+                ```plsql
+                APEX_COLLECTION.UPDATE_MEMBER_ATTRIBUTE (
+                    p_collection_name => 'OS_LIST',
+                    p_seq             => :SEQ_ID,
+                    p_attr_number     => 2,
+                    p_attr_value      => to_number(:VRIJEDNOST, '999G999G999G999G990D00')
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 96437625508554213
+        }
+        serverSideCondition {
+            type: item=value
+            item: P267_TIP_VRIJEDNOSTI
+            value: T
+        }
+    )
+
+)
+

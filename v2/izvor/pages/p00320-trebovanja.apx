@@ -1,0 +1,666 @@
+page 320 (
+    name: Trebovanja
+    alias: TREBOVANJA
+    title: Trebovanja
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @robno-materijalno-trebovanja
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @trebovanja-report
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P320_OJ_ID (
+            type: checkboxGroup
+            label {
+                label: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: OJ_ID
+            }
+        )
+
+        filter P320_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P320_SKLADISTE_ID (
+            type: checkboxGroup
+            label {
+                label: Skladište
+            }
+            lov {
+                type: sharedComponent
+                lov: @skladista-korisnik
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: SKLADISTE_ID
+            }
+        )
+
+        filter P320_STATUS_ID (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: sharedComponent
+                lov: @acc-statusi-naziv
+            }
+            layout {
+                sequence: 50
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STATUS_ID
+            }
+        )
+
+        filter P320_TIP_KRETANJA_ID (
+            type: checkboxGroup
+            label {
+                label: Tip kretanja
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tipovi-kretanja-robe
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: TIP_KRETANJA_ID
+            }
+        )
+
+    )
+
+    region potrebna-konfiguracija (
+        name: Potrebna konfiguracija
+        type: staticContent
+        source {
+            htmlCode: Neophodno je da konfigurišete formu numeracije dokumenata.
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN NOT core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'tr', :APP_GODINA);
+        }
+    )
+
+    region trebovanja (
+        name: Trebovanja
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region trebovanja-report (
+        name: Trebovanja Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    naziv,
+                    skladiste_id,
+                    tip_kretanja_id,
+                    oj_id,
+                    datum,
+                    status_naziv,
+                    status_color_code,
+                    status_id,
+                
+                    CASE
+                        WHEN zakljucano = 'N' THEN
+                            apex_page.get_url (
+                                p_page   => 321,
+                                p_items  => 'P321_ID',
+                                p_values => id,
+                                p_clear_cache => 321
+                            )
+                        ELSE
+                            null
+                    END AS edit_link,
+                
+                    CASE
+                        WHEN status_sifra = 'NEW' THEN
+                            apex_page.get_url (
+                                p_page   => 322,
+                                p_items  => 'P322_ID,P322_ODOBRAVANJE',
+                                p_values => id || ',Y'
+                            )
+                        ELSE
+                            null
+                    END AS odobravanje_link,
+                
+                    CASE
+                        WHEN status_sifra = 'ACCEPTED' AND EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                skladiste_korisnici sk
+                            WHERE
+                                sk.skladiste_id = t.skladiste_id
+                                AND sk.korisnik_id = :APP_USER_ID
+                        )THEN
+                            apex_page.get_url (
+                                p_page   => 322,
+                                p_items  => 'P322_ID,P322_REALIZACIJA',
+                                p_values => id || ',Y'
+                            )
+                        ELSE
+                            null
+                    END AS realizacija_link
+                FROM
+                    vw_trebovanja t
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND godina = :APP_GODINA
+                ORDER BY
+                    broj DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'tr', :APP_GODINA);
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--staticRowColors
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column DATUM (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD.MM.YYYY HH24:MI:SS
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column EDIT_LINK (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Ažuriranje
+            }
+            layout {
+                sequence: 110
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if EDIT_LINK/}
+                    <a href="#EDIT_LINK#">
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-edit"></span>
+                    </span>
+                    </a>
+                    {else/}
+                    <!-- <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-book"></span>
+                    </span> -->
+                    -
+                    {endif/}
+                    
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 0
+            }
+            link {
+                target: {
+                    page: 322
+                    items: {
+                        P322_ID: #ID#
+                    }
+                    clearCache: 322
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ODOBRAVANJE_LINK (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Odobravanje
+            }
+            layout {
+                sequence: 120
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?ODOBRAVANJE_LINK/}
+                        <a href="#ODOBRAVANJE_LINK#">
+                            <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft t-Button--small">
+                                <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                            </span>
+                        </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REALIZACIJA_LINK (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Realizacija
+            }
+            layout {
+                sequence: 130
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?REALIZACIJA_LINK/}
+                        <a href="#REALIZACIJA_LINK#">
+                            <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft t-Button--small">
+                                <span class="t-Icon t-Icon--left fa fa-hand-grab-o"></span>
+                            </span>
+                        </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SKLADISTE_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Skladište
+            }
+            lov {
+                type: sharedComponent
+                lov: @skladista
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 90
+            }
+        )
+
+        column STATUS_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 100
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if STATUS_ID/}
+                    <span class="t-Button #STATUS_COLOR_CODE# t-Button--small">
+                        <span class="t-Button-label">#STATUS_NAZIV#</span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_KRETANJA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Tip kretanja
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tipovi-kretanja-robe
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    button configuration (
+        buttonName: CONFIGURATION
+        label: Numeracija dokumenata
+        layout {
+            sequence: 10
+            region: @potrebna-konfiguracija
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-file-wrench
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 103
+                clearCache: 103
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @trebovanja
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 321
+                clearCache: 321
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody: RETURN core.protokoli_pkg.check_brojac(:APP_OOJ_ID, 'tr', :APP_GODINA);
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @trebovanja-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @faceted-search
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @trebovanja-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @trebovanja-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @faceted-search
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

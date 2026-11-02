@@ -1,0 +1,1136 @@
+page 26 (
+    name: Cjenovnik / Detalji
+    alias: CJENOVNIK-DETALJI
+    title: Cjenovnik / Detalji
+    pageGroup: @stavke
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region cjenovnik-detalji (
+        name: Cjenovnik / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region stavka-cjenovnik (
+        name: Stavka i cjenovnik
+        title: Stavka i cjenovnik
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @cjenovnik-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region cijene (
+        name: Cijene
+        title: Cijene
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @cjenovnik-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region status (
+        name: Status
+        title: Status
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @cjenovnik-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    pageItem P26_LBL_VPC (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 150
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P26_PDV_SISTEM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 150
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P26_CJENOVNIK_ID (
+        type: selectOne
+        label {
+            label: Cjenovnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @cjenovnici
+        }
+        layout {
+            sequence: 10
+            region: @stavka-cjenovnik
+            slot: regionBody
+            columnSpan: 8
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P26_ID
+        }
+    )
+
+    pageItem P26_DATUM (
+        type: displayOnly
+        label {
+            label: Datum unosa
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @stavka-cjenovnik
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P26_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P26_MARZA (
+        type: numberField
+        label {
+            label: Marža (%)
+            alignment: left
+        }
+        settings {
+            numberAlignment: end
+        }
+        layout {
+            sequence: 20
+            region: @cijene
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            formatMask: FM999G990D00
+        }
+        help {
+            helpText: Pomoć za račun, ne čuva se. Za postojeću cijenu računa se iz nabavne i VPC, inače je prijedlog sa stavke. VPC = nabavna cijena + marža; za usluge je dovoljno unijeti VPC.
+        }
+    )
+
+    pageItem P26_MPC (
+        type: numberField
+        label {
+            label: Maloprodajna cijena
+            alignment: left
+        }
+        settings {
+            numberAlignment: end
+        }
+        layout {
+            sequence: 40
+            region: @cijene
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            formatMask: FM999G999G999G999G990D00
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Cijena po kojoj se roba/usluga prodaje krajnjem kupcu u prodavnici. U cijenu je uračunat PDV.
+        }
+        serverSideCondition {
+            type: item=value
+            item: P26_PDV_SISTEM
+            value: Y
+        }
+    )
+
+    pageItem P26_NABAVNA_CIJENA (
+        type: textField
+        label {
+            label: Nabavna cijena (iz kalkulacije)
+            alignment: left
+        }
+        settings {
+            disabled: true
+        }
+        layout {
+            sequence: 10
+            region: @cijene
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            formatMask: FM999G999G999G999G990D00
+        }
+        help {
+            helpText: Nabavnu cijenu određuje kalkulacija (modul Robno-materijalno); u cjenovniku se samo prikazuje.
+        }
+    )
+
+    pageItem P26_PDV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 110
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P26_PDV_PROCENAT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 120
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P26_STAVKA_ID (
+        type: popupLov
+        label {
+            label: Stavka (šifra)
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 600
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-stavke-popup
+        }
+        layout {
+            sequence: 30
+            region: @stavka-cjenovnik
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P26_ID
+        }
+    )
+
+    pageItem P26_STAVKA_NAZIV (
+        type: displayOnly
+        label {
+            label: Naziv stavke
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 40
+            region: @stavka-cjenovnik
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P26_TIP_USLUGE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 60
+            region: @cjenovnik-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P26_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @status
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P26_ID
+        }
+    )
+
+    pageItem P26_VPC (
+        type: numberField
+        label {
+            label: &P26_LBL_VPC.
+            alignment: left
+        }
+        settings {
+            numberAlignment: end
+        }
+        layout {
+            sequence: 30
+            region: @cijene
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+            formatMask: FM999G999G999G999G990D00
+        }
+        validation {
+            maxLength: 255
+        }
+        help {
+            helpText: Cijena po kojoj se roba prodaje pravnim licima i preduzetnicima, najčešće radi dalje prodaje ili upotrebe u poslovanju. Iskazuje se bez PDV-a.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P26_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P26_ID
+        }
+    )
+
+    dynamicAction racun-iz-nabavne-promjena (
+        name: Račun iz nabavne (promjena)
+        execution {
+            sequence: 34
+        }
+        when {
+            selectionType: items
+            items: P26_MARZA
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    finCijena.izNabavne('P26');
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction racun-iz-vpc-promjena (
+        name: Račun MPC iz VPC (promjena)
+        execution {
+            sequence: 33
+        }
+        when {
+            selectionType: items
+            items: P26_VPC
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    finCijena.izVpc('P26');
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction racun-iz-mpc (
+        name: Račun VPC iz MPC
+        execution {
+            sequence: 32
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: P26_MPC
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    finCijena.izMpc('P26');
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction racun-iz-vpc (
+        name: Račun MPC iz VPC
+        execution {
+            sequence: 31
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: P26_VPC
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    finCijena.izVpc('P26');
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction racun-iz-nabavne (
+        name: Račun iz nabavne i marže
+        execution {
+            sequence: 30
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: P26_MARZA
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    finCijena.izNabavne('P26');
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-data-for-stavke (
+        name: Popuni podatke za stavku
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P26_STAVKA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P26_STAVKA_ID
+        }
+
+        action native-javascript-code-pocetak (
+            action: executeJsCode
+            settings {
+                jsCode: window.finCijenaUcitava = true;
+            }
+            execution {
+                sequence: 1
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    BEGIN
+                        SELECT st.naziv, st.tip_stavke_id, to_char(round(st.marza, 2), 'FM999G990D00'),
+                               stavke_pkg.pdv_stopa(st.id, :APP_OOJ_ID)
+                          INTO :P26_STAVKA_NAZIV, :P26_TIP_USLUGE, :P26_MARZA, :P26_PDV
+                          FROM sec_stavke st
+                          LEFT JOIN sif.acc_pdv_indikatori p ON p.id = st.pdv_indikator_id
+                         WHERE st.id = :P26_STAVKA_ID;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P26_STAVKA_ID
+                    P26_PDV_SISTEM
+                ]
+                itemsToReturn: [
+                    P26_STAVKA_NAZIV
+                    P26_TIP_USLUGE
+                    P26_MARZA
+                    P26_PDV
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-javascript-code-kraj (
+            action: executeJsCode
+            settings {
+                jsCode: window.finCijenaUcitava = false; finCijena.upozori('P26');
+            }
+            execution {
+                sequence: 90
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction popuni-podatke-iz-cjenovnika (
+        name: Popuni podatke iz cjenovnika
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: [
+                P26_CJENOVNIK_ID
+                P26_STAVKA_ID
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P26_CJENOVNIK_ID') !== "" && 
+                $v('P26_STAVKA_ID') !== ""
+                
+                ```
+        }
+
+        action native-javascript-code-pocetak (
+            action: executeJsCode
+            settings {
+                jsCode: window.finCijenaUcitava = true;
+            }
+            execution {
+                sequence: 1
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: finCijena.upozori('P26');
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        c_maska CONSTANT VARCHAR2(30) := 'FM999G999G999G999G990D00';
+                    BEGIN
+                        :P26_NABAVNA_CIJENA := NULL;
+                        :P26_VPC := NULL;
+                        :P26_MPC := NULL;
+                        :P26_MARZA := NULL;
+                        FOR c IN (SELECT cs.nabavna_cijena, cs.vpc, cs.mpc,
+                                         CASE WHEN cs.nabavna_cijena > 0 THEN (cs.vpc / cs.nabavna_cijena - 1) * 100 END AS marza
+                                    FROM cjenovnik_stavke cs
+                                   WHERE cs.cjenovnik_id = :P26_CJENOVNIK_ID AND cs.stavka_id = :P26_STAVKA_ID
+                                     AND cs.valid = 'Y'
+                                   ORDER BY cs.datum DESC NULLS LAST, cs.id DESC
+                                   FETCH FIRST 1 ROWS ONLY) LOOP
+                            :P26_NABAVNA_CIJENA := to_char(round(c.nabavna_cijena, 2), c_maska);
+                            :P26_VPC := to_char(round(c.vpc, 2), c_maska);
+                            :P26_MPC := to_char(round(c.mpc, 2), c_maska);
+                            :P26_MARZA := to_char(round(c.marza, 2), 'FM999G990D00');
+                        END LOOP;
+                        IF :P26_MARZA IS NULL THEN
+                            SELECT max(to_char(round(marza, 2), 'FM999G990D00')) INTO :P26_MARZA
+                              FROM sec_stavke WHERE id = :P26_STAVKA_ID;
+                        END IF;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P26_STAVKA_ID
+                    P26_CJENOVNIK_ID
+                ]
+                itemsToReturn: [
+                    P26_NABAVNA_CIJENA
+                    P26_VPC
+                    P26_MPC
+                    P26_MARZA
+                ]
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code-kraj (
+            action: executeJsCode
+            settings {
+                jsCode: window.finCijenaUcitava = false; finCijena.upozori('P26');
+            }
+            execution {
+                sequence: 90
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation marza-nenegativna (
+        name: P26_MARZA >= 0
+        execution {
+            sequence: 72
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                RETURN :P26_MARZA IS NULL
+                    OR nvl(to_number(:P26_MARZA DEFAULT -1 ON CONVERSION ERROR, 'FM999G990D00'), -1) >= 0;
+                ```
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj veći ili jednak nuli, sa najviše dvije decimale.
+            associatedItem: @P26_MARZA
+        }
+    )
+
+    validation mpc-nenegativna (
+        name: P26_MPC >= 0
+        execution {
+            sequence: 71
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                RETURN :P26_MPC IS NULL
+                    OR nvl(to_number(:P26_MPC DEFAULT -1 ON CONVERSION ERROR, 'FM999G999G999G999G990D00'), -1) >= 0;
+                ```
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj veći ili jednak nuli, sa najviše dvije decimale.
+            associatedItem: @P26_MPC
+        }
+    )
+
+    validation vpc-nenegativna (
+        name: P26_VPC >= 0
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                RETURN :P26_VPC IS NULL
+                    OR nvl(to_number(:P26_VPC DEFAULT -1 ON CONVERSION ERROR, 'FM999G999G999G999G990D00'), -1) >= 0;
+                ```
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj veći ili jednak nuli, sa najviše dvije decimale.
+            associatedItem: @P26_VPC
+        }
+    )
+
+    validation vpc-not-null (
+        name: VPC NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P26_VPC
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P26_VPC
+        }
+    )
+
+    validation cjenovnik-not-null (
+        name: Cjenovnik NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P26_CJENOVNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P26_CJENOVNIK_ID
+        }
+    )
+
+    validation datum-not-null (
+        name: DATUM NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P26_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P26_DATUM
+        }
+    )
+
+    validation stavka-not-null (
+        name: STAVKA NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P26_STAVKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P26_STAVKA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 189286794262549752
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                stavke_pkg.insert_cjenovnik_stavka (
+                    p_cjenovnik_id   => :P26_CJENOVNIK_ID,
+                    p_stavka_id      => :P26_STAVKA_ID,
+                    p_datum          => sysdate,
+                    p_nabavna_cijena => stavke_pkg.get_nabavna_cijena(:P26_CJENOVNIK_ID, :P26_STAVKA_ID),
+                    p_vpc            => to_number(:P26_VPC, 'FM999G999G999G999G990D00'),
+                    p_mpc            => CASE WHEN :P26_PDV_SISTEM = 'Y'
+                                             THEN to_number(:P26_MPC, 'FM999G999G999G999G990D00')
+                                             ELSE to_number(:P26_VPC, 'FM999G999G999G999G990D00') END);
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Uspješno kreirana cijena za izabranu stavku.
+        }
+        advanced {
+            executionMappingIdentifier: 189245086134409634
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process new (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_datum DATE;
+                BEGIN
+                    :P26_PDV_SISTEM := nvl(core.ooj_pkg.get_ooj_pdv_sistem(:APP_OOJ_ID), 'N');
+                    :P26_LBL_VPC := CASE WHEN :P26_PDV_SISTEM = 'Y' THEN 'Veleprodajna cijena (bez PDV)' ELSE 'Prodajna cijena' END;
+
+                    IF :P26_ID IS NULL THEN
+                        :P26_DATUM := to_char(sysdate, 'DD.MM.YYYY HH24:MI');
+                    ELSE
+                        stavke_pkg.get_cjenovnik_stavka(
+                            p_id             => :P26_ID,
+                            p_cjenovnik_id   => :P26_CJENOVNIK_ID,
+                            p_stavka_id      => :P26_STAVKA_ID,
+                            p_datum          => l_datum,
+                            p_nabavna_cijena => :P26_NABAVNA_CIJENA,
+                            p_mpc            => :P26_MPC,
+                            p_vpc            => :P26_VPC,
+                            p_valid          => :P26_VALID);
+                        :P26_DATUM := to_char(l_datum, 'DD.MM.YYYY HH24:MI');
+                        FOR c IN (SELECT s.naziv, s.tip_stavke_id,
+                                         coalesce(CASE WHEN cs.nabavna_cijena > 0 THEN (cs.vpc / cs.nabavna_cijena - 1) * 100 END,
+                                                  s.marza) AS marza,
+                                         stavke_pkg.pdv_stopa(s.id, :APP_OOJ_ID) AS pdv
+                                    FROM cjenovnik_stavke cs
+                                    LEFT JOIN sec_stavke s ON s.id = cs.stavka_id
+                                    LEFT JOIN sif.acc_pdv_indikatori p ON p.id = s.pdv_indikator_id
+                                   WHERE cs.id = :P26_ID) LOOP
+                            :P26_STAVKA_NAZIV := c.naziv;
+                            :P26_TIP_USLUGE := c.tip_stavke_id;
+                            :P26_MARZA := to_char(round(c.marza, 2), 'FM999G990D00');
+                            :P26_PDV := c.pdv;
+                        END LOOP;
+                        :P26_NABAVNA_CIJENA := to_char(round(to_number(:P26_NABAVNA_CIJENA), 2), 'FM999G999G999G999G990D00');
+                        :P26_VPC := to_char(round(to_number(:P26_VPC), 2), 'FM999G999G999G999G990D00');
+                        :P26_MPC := to_char(round(to_number(:P26_MPC), 2), 'FM999G999G999G999G990D00');
+                    END IF;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 42786217664541211
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                IF :P26_VALID = 'Y' THEN
+                    stavke_pkg.insert_cjenovnik_stavka (
+                        p_cjenovnik_id   => :P26_CJENOVNIK_ID,
+                        p_stavka_id      => :P26_STAVKA_ID,
+                        p_datum          => sysdate,
+                        p_nabavna_cijena => stavke_pkg.get_nabavna_cijena(:P26_CJENOVNIK_ID, :P26_STAVKA_ID),
+                        p_vpc            => to_number(:P26_VPC, 'FM999G999G999G999G990D00'),
+                        p_mpc            => CASE WHEN :P26_PDV_SISTEM = 'Y'
+                                                 THEN to_number(:P26_MPC, 'FM999G999G999G999G990D00')
+                                                 ELSE to_number(:P26_VPC, 'FM999G999G999G999G990D00') END);
+                ELSE
+                    stavke_pkg.deaktiviraj_cjenovnik_stavka (
+                        p_id => :P26_ID
+                    );
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Uspješno ažurirana cijena za izabranu stavku.
+        }
+        advanced {
+            executionMappingIdentifier: 42788039489541229
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

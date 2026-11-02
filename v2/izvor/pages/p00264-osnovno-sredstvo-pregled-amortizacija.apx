@@ -1,0 +1,589 @@
+page 264 (
+    name: Osnovno sredstvo / Pregled amortizacije
+    alias: OSNOVNO-SREDSTVO-PREGLED-AMORTIZACIJA
+    title: Osnovno sredstvo / Pregled amortizacije
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            t-Dialog--noPadding
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region amortizacija-report (
+        name: Amortizacija Report
+        title: Dosadašnje amortizacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    glavna_knjiga_datum_knjizenja,
+                    iznos,
+                    sum(iznos) over (order by glavna_knjiga_datum_knjizenja) as ispravka_vrijednosti,
+                    'Y' as is_past
+                FROM
+                    vw_glavna_knjiga_stavke
+                WHERE
+                    osnovno_sredstvo_id  = :P264_ID
+                    AND lower(transakcija_sifra) = 'am_p'
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-collapsed
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlightOff
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        breakFormatting {
+            reportSumLabel: -
+        }
+
+        column GLAVNA_KNJIGA_DATUM_KNJIZENJA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: MM.YYYY
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button u-color-5 t-Button--small">
+                        <span class="t-Button-label">#GLAVNA_KNJIGA_DATUM_KNJIZENJA#</span>
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column ISPRAVKA_VRIJEDNOSTI (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Ispravak vrijednosti
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IS_PAST (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Amortizovan
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+    )
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region plan-report (
+        name: Plan Report
+        title: Plan amortizacije
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH nabavke AS (
+                    SELECT
+                        g.osnovno_sredstvo_id,
+                        g.os_datum,
+                        g.iznos,
+                        os.naziv,
+                        os.vijek_trajanja,
+                        os.rezidualna_vrijednost,
+                
+                        ADD_MONTHS(TRUNC(g.os_datum, 'MM'), 1) AS start_date,
+                        os.vijek_trajanja * 12 AS total_months,
+                
+                        (g.iznos / (os.vijek_trajanja * 12)) AS mjesecna_amort
+                    FROM
+                        glavna_knjiga_stavke g
+                    JOIN
+                        sec_osnovna_sredstva os
+                            ON os.id = g.osnovno_sredstvo_id
+                    WHERE
+                        g.transakcija_id = 2
+                        AND g.osnovno_sredstvo_id = :P264_ID
+                ),
+                
+                -- generišemo mjesece (timeline)
+                mjeseci AS (
+                    SELECT
+                        ADD_MONTHS(p.min_start_date, LEVEL - 1) AS mjesec
+                    FROM (
+                        SELECT
+                            MIN(start_date) AS min_start_date,
+                            MAX(ADD_MONTHS(start_date, total_months)) AS max_end_date
+                        FROM nabavke
+                    ) p
+                    CONNECT BY LEVEL <= MONTHS_BETWEEN(p.max_end_date, p.min_start_date)
+                ),
+                
+                -- obračun po nabavci i mjesecu
+                obracun AS (
+                    SELECT
+                        m.mjesec,
+                        n.osnovno_sredstvo_id,
+                        n.naziv,
+                        n.iznos,
+                        n.rezidualna_vrijednost,
+                        n.start_date,
+                        n.total_months,
+                        n.mjesecna_amort,
+                
+                        FLOOR(MONTHS_BETWEEN(m.mjesec, n.start_date)) AS mjesec_index
+                
+                    FROM mjeseci m
+                    CROSS JOIN nabavke n
+                    WHERE
+                        m.mjesec >= n.start_date
+                        AND FLOOR(MONTHS_BETWEEN(m.mjesec, n.start_date)) < n.total_months
+                ),
+                
+                -- amortizacija po mjesecu (sa rezidualnom kontrolom)
+                calc AS (
+                    SELECT
+                        o.*,
+                
+                        -- kumulativna amortizacija do prethodnog mjeseca
+                        (o.mjesecna_amort * o.mjesec_index) AS amort_do_sada,
+                
+                        -- amortizacija za ovaj mjesec
+                        LEAST(
+                            o.mjesecna_amort,
+                            GREATEST(
+                                0,
+                                o.iznos
+                                - (o.mjesecna_amort * o.mjesec_index)
+                                - o.rezidualna_vrijednost
+                            )
+                        ) AS amort_ovaj_mjesec
+                
+                    FROM obracun o
+                ),
+                
+                -- sumiranje po mjesecu (više nabavki)
+                final AS (
+                    SELECT
+                        mjesec,
+                        osnovno_sredstvo_id,
+                        naziv,
+                        SUM(amort_ovaj_mjesec) AS amortizacija
+                    FROM calc
+                    GROUP BY
+                        mjesec,
+                        osnovno_sredstvo_id,
+                        naziv
+                )
+                
+                SELECT
+                    mjesec,
+                    naziv,
+                
+                    CASE
+                        WHEN mjesec > sysdate THEN
+                            'u-color-9'
+                        ELSE
+                            'u-color-5'
+                    END AS css_color,
+                    (
+                        SELECT
+                            count(*)
+                        FROM
+                            vw_glavna_knjiga_stavke gks
+                        WHERE
+                            osnovno_sredstvo_id  = :P264_ID
+                            AND trunc(mjesec, 'MM') = trunc(gks.glavna_knjiga_datum_knjizenja, 'MM')
+                            AND lower(transakcija_sifra) = 'am_p'
+                    ) AS amortizacija_count,
+                
+                    -- početna vrijednost
+                    SUM(amortizacija) OVER (
+                        ORDER BY mjesec
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                    ) AS kumulativna_prije,
+                
+                    amortizacija,
+                
+                    -- ukupno amortizovano
+                    SUM(amortizacija) OVER (
+                        ORDER BY mjesec
+                    ) AS kumulativno,
+                
+                    -- trenutna knjigovodstvena vrijednost
+                    (
+                        (SELECT SUM(iznos) FROM nabavke)
+                        - SUM(amortizacija) OVER (ORDER BY mjesec)
+                    ) AS knjigovodstvena_vrijednost,
+                    
+                    CASE
+                        WHEN mjesec > sysdate THEN
+                            null
+                        ELSE
+                            apex_page.get_url (
+                                p_page   => 265,
+                                p_items  => 'P265_PP',
+                                p_values => to_char(mjesec, 'MMYY')
+                            )
+                    END AS is_past
+                
+                FROM final
+                ORDER BY mjesec
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlightOff
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+
+        column AMORTIZACIJA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Iznos amortizacije
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column AMORTIZACIJA_COUNT (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Amortizovan
+            }
+            layout {
+                sequence: 80
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if AMORTIZACIJA_COUNT/}
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
+                        </span>
+                    {else/}
+                        {if IS_PAST/}
+                            <a href="#IS_PAST#">
+                        {endif/}
+                        
+                        <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
+                            <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
+                        </span>
+                    
+                        {if IS_PAST/}
+                            </a>
+                        {endif/}
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CSS_COLOR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column IS_PAST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 120
+            }
+        )
+
+        column KNJIGOVODSTVENA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstvena vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KUMULATIVNA_PRIJE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Kumulativna prije
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KUMULATIVNO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Kumulativno
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MJESEC (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Mjesec
+            }
+            layout {
+                sequence: 50
+            }
+            appearance {
+                formatMask: MM.YYYY
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 40
+            }
+        )
+
+    )
+
+    pageItem P264_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

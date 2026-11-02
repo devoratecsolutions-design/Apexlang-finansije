@@ -1,0 +1,1139 @@
+page 1803 (
+    name: Stavke Izvoda-otvorene_stavke
+    alias: STAVKE-IZVODA-OTVORENE-STAVKE
+    title: Uvezivanje otvorenih stavki
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        width: 1600
+        height: 800
+        maxWidth: 1600
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region otvorene-stavke (
+        name: Otvorene stavke
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                DECLARE
+                    l_sql VARCHAR2(4000);
+                BEGIN
+                    l_sql := 'SELECT APEX_ITEM.CHECKBOX(1, gks.id) as označi, gks.id, gsd.dokument, gsd.opis, gks.iznos,gks.otvoreni_iznos+nvl(kol.uparen_iznos,0) otvoreni_iznos, 
+                                     CASE WHEN gks.tip_stavke = ''P'' THEN ''Potražuje'' ELSE ''Duguje'' END AS strana_knjizena,
+                                     RPAD(ak.code, :APP_KONTO_DUZINA, ''0'') || ''-'' || ak.naziv AS konto,
+                                     LPAD(gg.sifra, 3, ''0'') || ''-'' || gg.naziv AS opstina,
+                                     kl.naziv AS partner,
+                                     gks.radnik_id,gks.datum_dokumenta
+                                from accounting.glavna_knjiga gk 
+                                join accounting.glavna_knjiga_stavke gks on gk.id=gks.glavna_knjiga_id
+                                LEFT JOIN accounting.gk_stavke_dokument gsd ON gsd.glavna_knjiga_stavka_id = gks.id
+                                LEFT JOIN accounting.sec_klijenti kl ON kl.id = gks.klijent_id
+                                LEFT JOIN sif.acc_kontni_okvir_klase ak ON ak.id = gks.kontna_klasa_id
+                                LEFT JOIN sif.sif_gradovi gg ON gg.id = gks.grad_id
+                                LEFT JOIN (
+                                            SELECT to_number(c011) AS id_os, SUM(n002) AS uparen_iznos
+                                            FROM apex_collections
+                                            WHERE collection_name = ''SADRZAJ_GK_IZVODI''
+                                            GROUP BY c011
+                                          ) kol ON kol.id_os = gks.id
+                               WHERE gk.ooj_id=:APP_OOJ_ID
+                               and gks.otvorena in (''O'',''DZ'') 
+                               and (gks.otvoreni_iznos + NVL(kol.uparen_iznos, 0)) != 0 ';
+                
+                    IF :P1803_KONTO_ID IS NOT NULL AND :P1803_PARTNER_ID is  NOT NULL THEN
+                        l_sql := l_sql || ' AND gks.kontna_klasa_id = :P1803_KONTO_ID AND gks.klijent_id = :P1803_PARTNER_ID ';
+                    ELSIF :P1803_KONTO_ID IS NOT NULL THEN
+                        l_sql := l_sql || ' AND gks.kontna_klasa_id = :P1803_KONTO_ID ';
+                    ELSIF :P1803_PARTNER_ID IS NOT NULL THEN
+                        l_sql := l_sql || ' AND gks.klijent_id = :P1803_PARTNER_ID ';
+                    ELSE 
+                        l_sql := l_sql || ' AND 1 = 0 ';
+                    END IF;
+                
+                    IF :P1803_PREDZNAK = 1 THEN --isključivanje stvaki koje se ne mogu zatvoriti
+                        l_sql := l_sql || ' AND gks.otvoreni_iznos < 0 ';
+                    ELSIF :P1803_PREDZNAK = -1 THEN
+                        l_sql := l_sql || ' AND gks.otvoreni_iznos > 0 ';
+                    END IF;
+                
+                
+                
+                    l_sql := l_sql || ' ORDER BY gks.datum_dokumenta desc';
+                
+                    RETURN l_sql;
+                END;
+                ```
+            pageItemsToSubmit: [
+                P1803_PARTNER_ID
+                P1803_KONTO_ID
+                P1803_PREDZNAK
+            ]
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 544910641065182439
+        }
+
+        column DATUM_DOKUMENTA (
+            type: plainText
+            heading {
+                heading: Datum Dokumenta
+            }
+            layout {
+                sequence: 260
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: X
+            }
+        )
+
+        column DOKUMENT (
+            type: plainText
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 200
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: R
+            }
+        )
+
+        column ID (
+            type: hidden
+            heading {
+                heading: Id
+            }
+            layout {
+                sequence: 190
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column IZNOS (
+            type: plainText
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column KONTO (
+            type: plainText
+            heading {
+                heading: Konto
+            }
+            layout {
+                sequence: 150
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: M
+            }
+        )
+
+        column OPIS (
+            type: plainText
+            heading {
+                heading: Opis dokumeta
+            }
+            layout {
+                sequence: 210
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: S
+            }
+        )
+
+        column OPSTINA (
+            type: plainText
+            heading {
+                heading: Opština
+            }
+            layout {
+                sequence: 160
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: N
+            }
+        )
+
+        column OTVORENI_IZNOS (
+            type: plainText
+            heading {
+                heading: Otvoreni Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 270
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Z
+            }
+        )
+
+        column OZNAČI (
+            type: percentGraph
+            heading {
+                heading: Označi
+                alignment: center
+            }
+            layout {
+                sequence: 240
+                columnAlignment: center
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: V
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 140
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column RADNIK_ID (
+            type: plainText
+            heading {
+                heading: Radnik
+                alignment: end
+            }
+            layout {
+                sequence: 230
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: U
+            }
+        )
+
+        column STRANA_KNJIZENA (
+            type: plainText
+            heading {
+                heading: Duguje/Potražuje
+            }
+            layout {
+                sequence: 220
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: T
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2722768 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn DATUM_DOKUMENTA (
+                sequence: 4
+            )
+
+            displayColumn DOKUMENT (
+                sequence: 5
+            )
+
+            displayColumn IZNOS (
+                sequence: 9
+            )
+
+            displayColumn KONTO (
+                sequence: 7
+            )
+
+            displayColumn OPIS (
+                sequence: 6
+            )
+
+            displayColumn OPSTINA (
+                sequence: 2
+            )
+
+            displayColumn OTVORENI_IZNOS (
+                sequence: 10
+            )
+
+            displayColumn OZNAČI (
+                sequence: 11
+            )
+
+            displayColumn PARTNER (
+                sequence: 1
+            )
+
+            displayColumn RADNIK_ID (
+                sequence: 3
+            )
+
+            displayColumn STRANA_KNJIZENA (
+                sequence: 8
+            )
+
+        )
+
+    )
+
+    region stavka-izvoda (
+        name: Stavka izvoda
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c003  AS opis_transkacije,
+                    kl.naziv  AS partner,
+                    lpad(gg.sifra, 3, '0')||'-'||gg.naziv AS opstina,
+                    c006  AS radnik,
+                    mt.sifra||'-'||mt.naziv  AS mjesto_tr,
+                    rpad(ak.code, :APP_KONTO_DUZINA, '0')||'-'||ak.naziv AS konto,
+                    case c009 when 'D' then 'Duguje' else 'Potražuje' end  AS strana_knjizenja,
+                    n002  AS iznos,
+                    n004  AS izvod_stavka_id
+                FROM apex_collections k
+                left join accounting.sec_klijenti kl on kl.id=k.c004
+                left join sif.acc_kontni_okvir_klase ak on ak.id=k.c015
+                left join sif.acc_mjesta_troska mt on mt.id=k.c008
+                left join sif.sif_gradovi gg on gg.id=k.c005
+                WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                and seq_id=:P1803_SEQ_ID
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 272705997493771601
+        }
+
+        column IZNOS (
+            type: plainText
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column IZVOD_STAVKA_ID (
+            type: hidden
+            heading {
+                heading: Izvod Stavka Id
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column KONTO (
+            type: plainText
+            heading {
+                heading: Konto
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column MJESTO_TR (
+            type: plainText
+            heading {
+                heading: Mjesto troška
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column OPIS_TRANSKACIJE (
+            type: plainText
+            heading {
+                heading: Opis Transkacije
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column OPSTINA (
+            type: plainText
+            heading {
+                heading: Opština
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column RADNIK (
+            type: plainText
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column SEQ_ID (
+            type: hidden
+            heading {
+                heading: Seq Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column STRANA_KNJIZENJA (
+            type: plainText
+            heading {
+                heading: Duguje/Potražuje
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2727184 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn IZNOS (
+                sequence: 8
+            )
+
+            displayColumn KONTO (
+                sequence: 6
+            )
+
+            displayColumn MJESTO_TR (
+                sequence: 5
+            )
+
+            displayColumn OPIS_TRANSKACIJE (
+                sequence: 1
+            )
+
+            displayColumn OPSTINA (
+                sequence: 3
+            )
+
+            displayColumn PARTNER (
+                sequence: 2
+            )
+
+            displayColumn RADNIK (
+                sequence: 4
+            )
+
+            displayColumn STRANA_KNJIZENJA (
+                sequence: 7
+            )
+
+        )
+
+    )
+
+    pageItem P1803_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @otvorene-stavke
+            slot: regionBody
+        }
+    )
+
+    pageItem P1803_KONTO_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @stavka-izvoda
+            slot: regionBody
+        }
+    )
+
+    pageItem P1803_PARTNER_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @stavka-izvoda
+            slot: regionBody
+        }
+    )
+
+    pageItem P1803_PREDZNAK (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @stavka-izvoda
+            slot: regionBody
+        }
+    )
+
+    pageItem P1803_SEQ_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @stavka-izvoda
+            slot: regionBody
+        }
+    )
+
+    pageItem P1803_STRANA_KNJIZENJA (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @stavka-izvoda
+            slot: regionBody
+        }
+    )
+
+    button uvezi-os (
+        buttonName: UVEZI_OS
+        label: Uveži označene stavke
+        layout {
+            sequence: 10
+            region: @otvorene-stavke
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--primary
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction odabir-transakcije (
+        name: Odabir transakcije
+        execution {
+            sequence: 10
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .add-st
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    --dodajemo transakciju izvoda u templejt za knjiženje
+                    for r in (select 'A' as tip,izs.id as izvod_stavka_id, iz.id as izvod_id,iz.datum as datum_dokumenta, iz.opis opis_izvoda,  
+                                                       izs.svrha_doznake as opis_transkacije,
+                                                       izs.klijent_id as partner, izs.opstina as opstina, null as radnik,
+                                                       izs.smjer as smjer_placanja,
+                                                       izs.konto_id as konto,nvl(ko.otvorene_stavke,'N') as pracenje_os,  null as mjesto_tr, 
+                                                       case when izs.smjer='P' then 'P' else 'D' end as strana_knjizenja,
+                                                       case when izs.smjer='P' then -izs.iznos else izs.iznos  end as iznos, izs.rbr,
+                                                       izs.valuta_id 
+                                from accounting.izvodi iz 
+                                join accounting.izvod_stavke izs on iz.id=izs.izvod_id
+                                left join sif.acc_kontni_okvir_klase ko on ko.id=izs.konto_id
+                                where izs.id=:P1803_ID)
+                    loop
+                        APEX_COLLECTION.ADD_MEMBER(
+                                  p_collection_name => 'SADRZAJ_GK_IZVODI',
+                                  p_c001 => r.tip,
+                                  p_c002 => r.opis_izvoda,
+                                  p_c003 => r.opis_transkacije,
+                                  p_c004 => r.partner,
+                                  p_c005 => r.opstina,
+                                  p_c006 => r.radnik,
+                                  p_c007 => r.smjer_placanja,
+                                  p_c008 => r.mjesto_tr,
+                                  p_c009 => r.strana_knjizenja,
+                                  p_c010 => r.pracenje_os,
+                                  p_c011 => null, --id otvorene stavke
+                                  p_c012 => null, -- vezni dokument otvorene stavke 
+                                  p_c013 => null, --opis veznog dokumenta
+                                  p_c014 => 'N', -- red zakljucan za brisanje
+                                  p_c015 => r.konto,
+                                  p_c016 => r.valuta_id,
+                                  p_n001 => abs(r.iznos),
+                                  p_n002 => r.iznos,
+                                  p_n003 => r.rbr,
+                                  p_n004 => r.izvod_stavka_id,
+                                  p_n005 => r.izvod_id,
+                                  p_d001 => r.datum_dokumenta
+                                ); 
+                    end loop;       
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: console.log("test");
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation uvezivanje-stavki (
+        name: Uvezivanje stavki
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                DECLARE 
+                
+                v_d_p varchar2(1);
+                v_predznak number;
+                
+                BEGIN 
+                
+                    ---da li je označena ijedna stavka --
+                    IF APEX_APPLICATION.G_F01.COUNT = 0 THEN
+                
+                        return 'Neophodno je označiti barem jednu stavku!';
+                
+                    END IF;
+                
+                END ;
+                ```
+        }
+        serverSideCondition {
+            whenButtonPressed: @uvezi-os
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                SELECT SIGN(n002) AS predznak_iznosa,c015 AS konto_id,c004  AS partner_id
+                INTO       :P1803_PREDZNAK,:P1803_KONTO_ID,:P1803_PARTNER_ID
+                FROM apex_collections
+                WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                AND seq_id = :P1803_SEQ_ID;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 272707767719771619
+        }
+    )
+
+    process uvezivanje-stavki (
+        name: Uvezivanje stavki
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                
+                v_iznos_stavke_zatvaranja number;
+                v_iznos_otvorene_stavke number;
+                v_iznos_zatvaranja number;
+                v_preostali_iznos_zatvaranja number:=1;
+                v_partner_id number;
+                v_konto_id number;
+                v_radnik_id number;
+                v_oj_id number;
+                v_dokument varchar2(500);
+                v_opis varchar2(1500);
+                v_mt_naziv varchar2(500);
+                v_konto_naziv varchar2(500);
+                
+                begin 
+                
+                SELECT n002
+                INTO   v_iznos_stavke_zatvaranja
+                FROM apex_collections
+                WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                AND seq_id = :P1803_SEQ_ID;
+                
+                FOR i IN 1 .. APEX_APPLICATION.G_F01.COUNT LOOP
+                
+                    select gs.otvoreni_iznos+nvl(kol.uparen_iznos,0), gs.klijent_id, gs.radnik_id, gs.kontna_klasa_id, gs.mjesto_troska_id,gsd.dokument, gsd.opis, mt.naziv, ko.naziv
+                    into v_iznos_otvorene_stavke, v_partner_id, v_radnik_id, v_konto_id, v_oj_id,v_dokument,v_opis, v_mt_naziv, v_konto_naziv
+                    from accounting.glavna_knjiga_stavke gs
+                    left join sif.acc_mjesta_troska mt on mt.id=gs.mjesto_troska_id 
+                    left join sif.acc_kontni_okvir_klase ko on ko.id = ko.kontna_klasa_id
+                    LEFT JOIN accounting.gk_stavke_dokument gsd ON gsd.glavna_knjiga_stavka_id = gs.id
+                    LEFT JOIN (
+                                SELECT to_number(c011) AS id_os, SUM(n002) AS uparen_iznos
+                                FROM apex_collections
+                                WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                                GROUP BY c011
+                              ) kol ON kol.id_os = gs.id
+                    where gs.id=APEX_APPLICATION.G_F01(i);
+                
+                    if v_preostali_iznos_zatvaranja!=0 then 
+                
+                        if i=1 then
+                
+                            if sign(v_iznos_stavke_zatvaranja)!=sign(v_iznos_stavke_zatvaranja+v_iznos_otvorene_stavke) then 
+                
+                                v_iznos_zatvaranja:=v_iznos_stavke_zatvaranja;
+                                v_preostali_iznos_zatvaranja:=0;
+                
+                            else 
+                
+                                v_iznos_zatvaranja:=v_iznos_otvorene_stavke*-1;
+                                v_preostali_iznos_zatvaranja:=v_iznos_stavke_zatvaranja+v_iznos_otvorene_stavke;
+                
+                            end if;
+                
+                                for r in (SELECT c001  AS tip,
+                                        c002  AS opis_izvoda,
+                                        c003  AS opis_transkacije,
+                                        c004  AS partner,
+                                        c005  AS opstina,
+                                        c006  AS radnik,
+                                        c007  AS smjer_placanja,
+                                        c008  AS mjesto_tr,
+                                        c009  AS strana_knjizenja,
+                                        c010  AS pracenje_os,
+                                        c011  AS id_os,
+                                        c012  AS broj_vd,
+                                        c013  AS opis_vd,
+                                        c014  AS zakljucan,
+                                        c015  AS konto,
+                                        n001  AS iznos_original,
+                                        n002  AS iznos,
+                                        n003  AS rbr,
+                                        n004  AS izvod_stavka_id,
+                                        n005  AS izvod_id,
+                                        d001  AS datum_dokumenta
+                                    FROM apex_collections
+                                    WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                                    AND SEQ_ID=:P1803_SEQ_ID
+                                    and n004!=0)
+                
+                                loop
+                
+                
+                                   APEX_COLLECTION.UPDATE_MEMBER(
+                                          p_collection_name => 'SADRZAJ_GK_IZVODI',
+                                          p_seq  => :P1803_SEQ_ID,
+                                          p_c001 => r.tip,
+                                          p_c002 => r.opis_izvoda,
+                                          p_c003 => r.opis_transkacije,
+                                          p_c004 => v_partner_id,
+                                          p_c005 => r.opstina,
+                                          p_c006 => v_radnik_id,
+                                          p_c007 => r.smjer_placanja,
+                                          p_c008 => v_oj_id,
+                                          p_c009 => r.strana_knjizenja,
+                                          p_c010 => 'Y',
+                                          p_c011 => APEX_APPLICATION.G_F01(i), --id otvorene stavke
+                                          p_c012 => v_dokument, -- vezni dokument otvorene stavke 
+                                          p_c013 => v_opis, --opis veznog dokumenta
+                                          p_c014 => r.zakljucan, -- red zakljucan za brisanje
+                                          p_c015 => v_konto_id, -- red zakljucan za brisanje
+                                          p_c017 => v_mt_naziv,
+                                          p_c018 => v_konto_naziv,
+                                          p_n001 => r.iznos_original,
+                                          p_n002 => v_iznos_zatvaranja,
+                                          p_n003 => r.rbr,
+                                          p_n004 => r.izvod_stavka_id,
+                                          p_n005 => r.izvod_id,
+                                          p_d001 => r.datum_dokumenta
+                                        ); 
+                
+                                    end loop;        
+                
+                        else 
+                
+                            if sign(v_preostali_iznos_zatvaranja)!=sign(v_preostali_iznos_zatvaranja+v_iznos_otvorene_stavke) then 
+                                v_iznos_zatvaranja:=v_preostali_iznos_zatvaranja;
+                                v_preostali_iznos_zatvaranja:=0;
+                            else 
+                
+                                v_iznos_zatvaranja:=v_iznos_otvorene_stavke*:P1803_PREDZNAK;
+                                v_preostali_iznos_zatvaranja:=v_preostali_iznos_zatvaranja+v_iznos_otvorene_stavke;
+                
+                            end if;
+                
+                            for r in (SELECT c001  AS tip,
+                                        c002  AS opis_izvoda,
+                                        c003  AS opis_transkacije,
+                                        c004  AS partner,
+                                        c005  AS opstina,
+                                        c006  AS radnik,
+                                        c007  AS smjer_placanja,
+                                        c008  AS mjesto_tr,
+                                        c009  AS strana_knjizenja,
+                                        c010  AS pracenje_os,
+                                        c011  AS id_os,
+                                        c012  AS broj_vd,
+                                        c013  AS opis_vd,
+                                        c014  AS zakljucan,
+                                        c015  AS konto,
+                                        n001  AS iznos_original,
+                                        n002  AS iznos,
+                                        n003  AS rbr,
+                                        n004  AS izvod_stavka_id,
+                                        n005  AS izvod_id,
+                                        d001  AS datum_dokumenta
+                                    FROM apex_collections
+                                    WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                                    AND SEQ_ID=:P1803_SEQ_ID
+                                    and n004!=0)
+                
+                                loop
+                
+                
+                                   APEX_COLLECTION.ADD_MEMBER(
+                                          p_collection_name => 'SADRZAJ_GK_IZVODI',
+                                          p_c001 => r.tip,
+                                          p_c002 => r.opis_izvoda,
+                                          p_c003 => r.opis_transkacije,
+                                          p_c004 => v_partner_id,
+                                          p_c005 => r.opstina,
+                                          p_c006 => v_radnik_id,
+                                          p_c007 => r.smjer_placanja,
+                                          p_c008 => v_oj_id,
+                                          p_c009 => r.strana_knjizenja,
+                                          p_c010 => 'Y',
+                                          p_c011 => APEX_APPLICATION.G_F01(i), --id otvorene stavke
+                                          p_c012 => v_dokument, -- vezni dokument otvorene stavke 
+                                          p_c013 => v_opis, --opis veznog dokumenta
+                                          p_c014 => 'N', -- red zakljucan za brisanje
+                                          p_c015 => v_konto_id, -- red zakljucan za brisanje
+                                          p_n001 => r.iznos_original,
+                                          p_n002 => v_iznos_zatvaranja,
+                                          p_n003 => r.rbr,
+                                          p_n004 => r.izvod_stavka_id,
+                                          p_n005 => r.izvod_id,
+                                          p_d001 => r.datum_dokumenta
+                                        ); 
+                
+                                    end loop;        
+                
+                
+                
+                
+                
+                
+                        end if;
+                
+                        
+                
+                    end if; 
+                        
+                END LOOP;
+                
+                if v_preostali_iznos_zatvaranja!=0 then
+                
+                    for r in (SELECT c001  AS tip,
+                                        c002  AS opis_izvoda,
+                                        c003  AS opis_transkacije,
+                                        c004  AS partner,
+                                        c005  AS opstina,
+                                        c006  AS radnik,
+                                        c007  AS smjer_placanja,
+                                        c008  AS mjesto_tr,
+                                        c009  AS strana_knjizenja,
+                                        c010  AS pracenje_os,
+                                        c011  AS id_os,
+                                        c012  AS broj_vd,
+                                        c013  AS opis_vd,
+                                        c014  AS zakljucan,
+                                        c015  AS konto,
+                                        n001  AS iznos_original,
+                                        n002  AS iznos,
+                                        n003  AS rbr,
+                                        n004  AS izvod_stavka_id,
+                                        n005  AS izvod_id,
+                                        d001  AS datum_dokumenta
+                                    FROM apex_collections
+                                    WHERE collection_name = 'SADRZAJ_GK_IZVODI'
+                                    AND SEQ_ID=:P1803_SEQ_ID
+                                    and n004!=0)
+                
+                                loop
+                
+                
+                                   APEX_COLLECTION.ADD_MEMBER(
+                                          p_collection_name => 'SADRZAJ_GK_IZVODI',
+                                          p_c001 => r.tip,
+                                          p_c002 => r.opis_izvoda,
+                                          p_c003 => r.opis_transkacije,
+                                          p_c004 => r.partner,
+                                          p_c005 => r.opstina,
+                                          p_c006 => r.radnik,
+                                          p_c007 => r.smjer_placanja,
+                                          p_c008 => r.mjesto_tr,
+                                          p_c009 => r.strana_knjizenja,
+                                          p_c010 => r.pracenje_os,
+                                          p_c011 => null, --id otvorene stavke
+                                          p_c012 => null, -- vezni dokument otvorene stavke 
+                                          p_c013 => null, --opis veznog dokumenta
+                                          p_c014 => 'N', -- red zakljucan za brisanje
+                                          p_c015 => r.konto, -- red zakljucan za brisanje
+                                          p_n001 => r.iznos_original,
+                                          p_n002 => v_preostali_iznos_zatvaranja,
+                                          p_n003 => r.rbr,
+                                          p_n004 => r.izvod_stavka_id,
+                                          p_n005 => r.izvod_id,
+                                          p_d001 => r.datum_dokumenta
+                                        ); 
+                
+                                    end loop;        
+                
+                end if;
+                
+                end;
+                
+                
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 272708509154771627
+        }
+        serverSideCondition {
+            whenButtonPressed: @uvezi-os
+        }
+    )
+
+    branch (
+        name: "Go to 1801 "
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 1801
+            }
+        }
+    )
+
+)
+

@@ -1,0 +1,18 @@
+{
+  "app" : {
+    "id" : 1290,
+    "databaseSession" : {
+      "parsingSchema" : "ACCOUNTING"
+    },
+    "runtime" : {
+      "debugging" : true
+    }
+  },
+  "subscription" : {
+    "masterApps" : {
+      "200" : 200,
+      "220" : 220,
+      "240" : 240
+    }
+  }
+}

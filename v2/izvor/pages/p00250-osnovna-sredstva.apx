@@ -1,0 +1,1557 @@
+page 250 (
+    name: Osnovna sredstva
+    alias: OSNOVNA-SREDSTVA
+    title: Osnovna sredstva
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-osnovna
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <b><em>"Sredstva preduzeća"</em></b> predstavljaju ekonomske vrijednosti materijalnog i novčanog 
+            oblika pomoću kojih se ostvaruju ciljevi poslovanja i obavljaju zadaci. </br>
+            Ona se dijele na sredstva za rad i predmete rada. </br>
+            Osnovna sredstva ili stalna sredstva koriste se duži vremenski period i zamjenjuju se novim tek 
+            kada više ne mogu biti u upotrebi.
+            ```
+    }
+
+    region grupni-izvještaj (
+        name: Grupni izvještaj
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    region item-wrapper (
+        name: Item Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @stepen-amortizovanosti
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--wrap
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region izvještaj (
+        name: Izvještaj
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region obračun-amortizacije-za-period (
+        name: Obračun amortizacije za period
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH osnovna_sredstva AS (
+                    SELECT
+                        id,
+                        naziv,
+                        oj_naziv,
+                        konto_nabavke_id,
+                        klasa_sifra,
+                        nabavna_vrijednost
+                    FROM
+                        vw_osnovna_sredstva
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND priprema = 'N'
+                        AND history_id IS null
+                        AND aktivirano = 'Y'
+                        AND (oj_id = :P250_OJ_ID OR :P250_OJ_ID IS null)
+                        AND (konto_nabavke_id = :P250_KONTNA_KLASA_ID OR :P250_KONTNA_KLASA_ID IS null)
+                ), vrijednosti AS (
+                    SELECT
+                        gks.osnovno_sredstvo_id,
+                        SUM(
+                            CASE
+                                WHEN gks.transakcija_sifra = 'am_p' AND gks.glavna_knjiga_datum_knjizenja <= to_date(:P250_DATUM_OD, 'DD.MM.YYYY') THEN
+                                    iznos
+                                ELSE
+                                    0
+                            END
+                        ) AS ispravak_do,
+                        SUM(
+                            CASE
+                                WHEN gks.transakcija_sifra = 'am_p' AND gks.glavna_knjiga_datum_knjizenja >= to_date(:P250_DATUM_OD, 'DD.MM.YYYY') AND gks.glavna_knjiga_datum_knjizenja <= to_date(:P250_DATUM_DO, 'DD.MM.YYYY') THEN
+                                    iznos
+                                ELSE
+                                    0
+                            END
+                        ) AS ispravak_period
+                    FROM
+                        vw_glavna_knjiga_stavke gks
+                        LEFT JOIN osnovna_sredstva os ON gks.osnovno_sredstvo_id = os.id
+                    WHERE
+                        gks.glavna_knjiga_datum_knjizenja <= to_date(:P250_DATUM_DO, 'DD.MM.YYYY')
+                        AND gks.osnovno_sredstvo_id IS NOT null
+                    GROUP BY
+                        gks.osnovno_sredstvo_id
+                )
+                SELECT
+                    naziv,
+                    oj_naziv,
+                    konto_nabavke_id,
+                    klasa_sifra,
+                    
+                    ispravak_do,
+                    ispravak_period,
+                    
+                    nabavna_vrijednost,
+                    (ispravak_do + ispravak_period) as ispravak_ukupno,
+                    nabavna_vrijednost - (ispravak_do + ispravak_period) as trenutna_vrijednost
+                FROM
+                    osnovna_sredstva os
+                    LEFT JOIN vrijednosti v ON v.osnovno_sredstvo_id = os.id
+                ORDER BY
+                    naziv
+                ```
+            pageItemsToSubmit: [
+                P250_DATUM_OD
+                P250_DATUM_DO
+                P250_OJ_ID
+                P250_KONTNA_KLASA_ID
+            ]
+        }
+        layout {
+            sequence: 70
+            parentRegion: @izvještaj
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column ISPRAVAK_DO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Ispravak do perioda
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column ISPRAVAK_PERIOD (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Ispravak u periodu
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column ISPRAVAK_UKUPNO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Ispravak vrijednosti
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KLASA_SIFRA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Klasa
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KONTO_NABAVKE_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto nabavke
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Nabavna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TRENUTNA_VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Trenutna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+    )
+
+    region osnovna-sredstva (
+        name: Osnovna sredstva
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pojedinačni-izvještaj (
+        name: Pojedinačni izvještaj
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    region spisak-osnovnih-sredstava (
+        name: Spisak osnovnih sredstava
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv,
+                    oj_naziv,
+                    konto_nabavke_id,
+                    klasa_sifra,
+                    kolicina,
+                    to_char(amortizaciona_stopa, '999G999G999G999G990D000') as amortizaciona_stopa,
+                    nabavna_vrijednost,
+                    amortizacija_vrijednost,
+                    knjigovodstvena_vrijednost
+                FROM
+                    vw_osnovna_sredstva os
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND priprema = 'N'
+                    AND history_id IS null
+                    AND aktivirano = 'Y'
+                    AND (
+                        SELECT count(*)
+                        FROM vw_glavna_knjiga_stavke gks
+                        WHERE
+                            os.ooj_id = :APP_OOJ_ID
+                            AND gks.osnovno_sredstvo_id = os.id
+                            AND gks.glavna_knjiga_datum_knjizenja >= to_date(:P250_DATUM_OD, 'DD.MM.YYYY') 
+                            AND gks.glavna_knjiga_datum_knjizenja <= to_date(:P250_DATUM_DO, 'DD.MM.YYYY')
+                    ) > 0
+                    AND (oj_id = :P250_OJ_ID OR :P250_OJ_ID IS null)
+                    AND (konto_nabavke_id = :P250_KONTNA_KLASA_ID OR :P250_KONTNA_KLASA_ID IS null)
+                ORDER BY
+                    naziv
+                    
+                ```
+            pageItemsToSubmit: [
+                P250_DATUM_OD
+                P250_DATUM_DO
+                P250_OJ_ID
+                P250_KONTNA_KLASA_ID
+            ]
+        }
+        layout {
+            sequence: 60
+            parentRegion: @izvještaj
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--horizontalBorders
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+
+        column AMORTIZACIJA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Amortizovana vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column AMORTIZACIONA_STOPA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Amortizaciona stopa
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #AMORTIZACIONA_STOPA# %
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KLASA_SIFRA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Klasa
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KNJIGOVODSTVENA_VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstvena vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KONTO_NABAVKE_ID (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Konto nabavke
+            }
+            lov {
+                type: sharedComponent
+                lov: @kontni-okvir-klase-ooj
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Nabavna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region stepen-amortizovanosti (
+        name: Stepen amortizovanosti
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    region stepen-amortizovanosti-report (
+        name: Stepen amortizovanosti Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    inventurni_naziv,
+                    naziv,
+                    kolicina,
+                
+                    oj_naziv,
+                    lokacija_naziv,
+                    prostorija_naziv,
+                
+                    nabavna_vrijednost,
+                    knjigovodstvena_vrijednost,
+                    amortizacija_vrijednost,
+                    datum,
+                    stepen_amortizovanosti
+                FROM
+                    vw_osnovna_sredstva
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND history_id IS null
+                    AND aktivirano = 'Y'
+                    AND stepen_amortizovanosti >= :P250_STEPEN_OD
+                    AND stepen_amortizovanosti <= :P250_STEPEN_DO
+                ORDER BY
+                    inventurni_broj DESC
+                ```
+            pageItemsToSubmit: [
+                P250_STEPEN_OD
+                P250_STEPEN_DO
+            ]
+        }
+        layout {
+            sequence: 50
+            parentRegion: @stepen-amortizovanosti
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlightOff
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+        breakFormatting {
+            reportSumLabel: Ukupno
+        }
+        download {
+            csvExportEnabled: true
+        }
+        printing {
+            enabled: true
+        }
+        output {
+            linkText: Print
+            format: pdf
+        }
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        column AMORTIZACIJA_VRIJEDNOST (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Amortizovana vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #AMORTIZACIJA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 40
+            }
+            link {
+                target: {
+                    page: 256
+                    items: {
+                        P256_ID: #ID#
+                    }
+                    clearCache: 256
+                }
+                linkText: <img src="#APEX_FILES#app_ui/img/icons/apex-edit-view.png" class="apex-edit-view" alt="">
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column INVENTURNI_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KNJIGOVODSTVENA_VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstvena vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #KNJIGOVODSTVENA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column LOKACIJA_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Lokacija
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NABAVNA_VRIJEDNOST (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Nabavna vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #NABAVNA_VRIJEDNOST# KM
+            }
+            sorting {
+                sortable: false
+            }
+            advanced {
+                computeSum: true
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OJ_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Organizaciona jedinica
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PROSTORIJA_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Prostorija
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STEPEN_AMORTIZOVANOSTI (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Stepen amortizovanosti
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #STEPEN_AMORTIZOVANOSTI# %
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_osnovna_sredstva(:APP_OOJ_ID);
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P250_DATUM_DO (
+        type: datePicker
+        label {
+            label: Datum do
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @izvještaj
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_DATUM_OD (
+        type: datePicker
+        label {
+            label: Datum od
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @izvještaj
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_KLASA_OS_ID (
+        type: selectOne
+        label {
+            label: Klasa osnovnog sredstva
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-klase-os
+        }
+        layout {
+            sequence: 10
+            region: @grupni-izvještaj
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_KONTNA_KLASA_ID (
+        type: selectOne
+        label {
+            label: Konto nabavke
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @kontni-okvir-klase-ooj
+        }
+        layout {
+            sequence: 50
+            region: @izvještaj
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 30
+            region: @izvještaj
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_OS_ID (
+        type: selectOne
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva-aktivirana
+        }
+        layout {
+            sequence: 10
+            region: @pojedinačni-izvještaj
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_STEPEN_DO (
+        type: numberField
+        label {
+            label: Stepen amortizovanosti do ( % )
+            alignment: left
+        }
+        settings {
+            minValue: 0
+            maxValue: 100
+        }
+        layout {
+            sequence: 10
+            region: @item-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P250_STEPEN_OD (
+        type: numberField
+        label {
+            label: Stepen amortizovanosti od ( % )
+            alignment: left
+        }
+        settings {
+            minValue: 0
+            maxValue: 100
+        }
+        layout {
+            sequence: 10
+            region: @stepen-amortizovanosti
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button button (
+        buttonName: 0_20
+        label: 0-20 %
+        layout {
+            sequence: 20
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button button-2 (
+        buttonName: 21_50
+        label: 21-50%
+        layout {
+            sequence: 30
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button button-3 (
+        buttonName: 51_100
+        label: 51-100%
+        layout {
+            sequence: 40
+            region: @item-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction refresh (
+        name: Refresh
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: [
+                P250_STEPEN_OD
+                P250_STEPEN_DO
+            ]
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stepen-amortizovanosti-report
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh-datum (
+        name: "Refresh - Datum "
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: [
+                P250_DATUM_OD
+                P250_DATUM_DO
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P250_DATUM_OD') !== "" 
+                && $v('P250_DATUM_DO') !== ""
+                
+                ```
+        }
+
+        action refresh-obračun-amortizacije-za-period (
+            name: Refresh - Obračun amortizacije za period
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @obračun-amortizacije-za-period
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action refresh-spisak-osnovnih-sredstava (
+            name: Refresh - Spisak osnovnih sredstava
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @spisak-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh-kontna-klasa (
+        name: Refresh - Kontna klasa
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: P250_KONTNA_KLASA_ID
+        }
+
+        action refresh-obračun-amortizacije-za-period (
+            name: Refresh - Obračun amortizacije za period
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @obračun-amortizacije-za-period
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-spisak-osnovnih-sredstava (
+            name: Refresh - Spisak osnovnih sredstava
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @spisak-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction refresh-oj (
+        name: Refresh - OJ
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P250_OJ_ID
+        }
+
+        action refresh-obračun-amortizacije-za-period (
+            name: Refresh - Obračun amortizacije za period
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @obračun-amortizacije-za-period
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-spisak-osnovnih-sredstava (
+            name: Refresh - Spisak osnovnih sredstava
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @spisak-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set (
+        name: Set 0-20
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @button
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P250_STEPEN_OD := 0;
+                    :P250_STEPEN_DO := 20;
+                    ```
+                itemsToSubmit: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                itemsToReturn: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-2 (
+        name: Set 21-50
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @button-2
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P250_STEPEN_OD := 21;
+                    :P250_STEPEN_DO := 50;
+                    ```
+                itemsToSubmit: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                itemsToReturn: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-3 (
+        name: Set 51-100
+        execution {
+            sequence: 40
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @button-3
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P250_STEPEN_OD := 51;
+                    :P250_STEPEN_DO := 100;
+                    ```
+                itemsToSubmit: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                itemsToReturn: [
+                    P250_STEPEN_OD
+                    P250_STEPEN_DO
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

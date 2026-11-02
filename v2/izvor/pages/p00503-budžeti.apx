@@ -1,0 +1,482 @@
+page 503 (
+    name: Budžeti
+    alias: BUDŽETI
+    title: Budžeti
+    pageGroup: @budžet
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region budžeti (
+        name: Budžeti
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region budžeti-report (
+        name: Budžeti Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    id,
+                    status_naziv,
+                    status_color_code,
+                    valuta_id,
+                    CASE
+                        WHEN budzet_id IS null THEN
+                            godina_naziv
+                        ELSE
+                            lpad(godina_naziv, length(godina_naziv) + (level - 1) * 4, '.') 
+                    END AS godina_naziv,
+                    napomena,
+                
+                    CASE
+                        WHEN status_sifra = 10 THEN
+                            apex_page.get_url (
+                                p_page        => 509,
+                                p_items       => 'P509_BUDZET_ID',
+                                p_values      => id,
+                                p_request     => 'setup',
+                                p_clear_cache => 509
+                            ) 
+                        ELSE
+                            null
+                    END AS nacrt_link,
+                    CASE
+                        WHEN status_sifra = 60 THEN
+                            apex_page.get_url (
+                                p_page        => 518,
+                                p_items       => 'P518_BUDZET_ID',
+                                p_values      => id,
+                                p_clear_cache => 518
+                            ) 
+                        ELSE
+                            null
+                    END AS rebalans_link,
+                    CASE
+                        WHEN status_sifra = 60 THEN
+                            apex_page.get_url (
+                                p_page        => 519,
+                                p_items       => 'P519_BUDZET_ID',
+                                p_values      => id,
+                                p_request     => 'setup',
+                                p_clear_cache => 519
+                            ) 
+                        ELSE
+                            null
+                    END AS realokacija_link,
+                    CASE
+                        WHEN status_sifra = 60 THEN
+                            apex_page.get_url (
+                                p_page        => 521,
+                                p_items       => 'P521_BUDZET_ID',
+                                p_values      => id,
+                                p_request     => 'setup',
+                                p_clear_cache => 521
+                            ) 
+                        ELSE
+                            null
+                    END AS realizacija_link
+                FROM
+                    vw_budzeti
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                CONNECT BY
+                    PRIOR id = budzet_id
+                START WITH
+                    budzet_id IS null
+                ORDER SIBLINGS BY
+                    id
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--staticRowColors
+                t-Report--rowHighlight
+                t-Report--inline
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column GODINA_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Godina
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            layout {
+                sequence: 0
+            }
+            link {
+                target: {
+                    page: 506
+                    items: {
+                        P506_BUDZET_ID: #ID#
+                    }
+                    clearCache: 506
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NACRT_LINK (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Unos stavki
+            }
+            layout {
+                sequence: 60
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if NACRT_LINK/}
+                    <a href="#NACRT_LINK#">
+                        <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-calendar-edit"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAPOMENA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Napomena
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REALIZACIJA_LINK (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Realizacija
+            }
+            layout {
+                sequence: 90
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if REALIZACIJA_LINK/}
+                    <a href="#REALIZACIJA_LINK#">
+                        <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-book"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REALOKACIJA_LINK (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Realokacija
+            }
+            layout {
+                sequence: 80
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if REALOKACIJA_LINK/}
+                    <a href="#REALOKACIJA_LINK#">
+                        <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-arrows-v"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REBALANS_LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Rebalans
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if REBALANS_LINK/}
+                    <a href="#REBALANS_LINK#">
+                        <span class="t-Button t-Button--noLabel #STATUS_COLOR_CODE# t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-undo-arrow"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_COLOR_CODE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #STATUS_COLOR_CODE#">
+                        #STATUS_NAZIV#
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALUTA_ID (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Valuta
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-valute
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @budžeti-report
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P503_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @budžeti
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 504
+                clearCache: [
+                    504
+                    505
+                ]
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @budžeti-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: "Dialog Closed - Refresh "
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @budžeti-report
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @budžeti-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

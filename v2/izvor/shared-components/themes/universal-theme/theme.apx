@@ -1,0 +1,172 @@
+theme universal-theme (
+    name: Universal Theme
+    themeNumber: 220
+    version: 24.2
+    style {
+        currentThemeStyle: @bizcorelight
+    }
+    javaScript {
+        fileUrls: [
+            #APEX_FILES#libraries/apex/#MIN_DIRECTORY#widget.stickyWidget#MIN#.js?v=#APEX_VERSION#
+            #THEME_FILES#js/theme42#MIN#.js?v=#APEX_VERSION#
+        ]
+    }
+    css {
+        fileUrls: #THEME_FILES#css/Core#MIN#.css?v=#APEX_VERSION#
+    }
+    componentDefaults {
+        page: @standard
+        navigationBarList: @navigation-bar
+        navigationMenuListPosition: side
+        navigationMenuListTop: @top-navigation-menu
+        navigationMenuListSide: @side-navigation-menu
+        loginPage: @login
+        errorPage: @login
+        printerFriendlyPage: @standard
+        breadcrumb: @breadcrumb
+        button: @text
+        defaultLabel: @optional-floating
+        optionalLabel: @optional-floating
+        requiredLabel: @required-floating
+        list: @links-list
+        region: @standard
+        classicReport: @standard
+    }
+    regionDefaults {
+        breadcrumbs: @title-bar
+        charts: @standard
+        forms: @standard
+        lists: @standard
+        reports: @standard
+        wizards: @standard
+        interactiveReports: @interactive-report
+    }
+    dialogDefaults {
+        dialogContentRegion: @blank-with-attributes
+        dialogButtonRegion: @buttons-container
+        dialogPage: @modal-dialog
+    }
+    icons {
+        library: fontApex
+    }
+    advanced {
+        filePrefix: #APEX_FILES#themes/theme_42/24.2/
+        identifier: UNIVERSAL_THEME
+    }
+    subscription {
+        master: @/220/universal-theme
+    }
+
+    style bizcorelight (
+        name: bizCoreLight
+        themeRollerAttributes {
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita.less
+            outputCssFileUrl: #THEME_DB_FILES#168182044754904126.css
+            jsonConfig: "{\"classes\":[],\"vars\":{\"@g_Accent-BG\":\"#112340\",\"@g_Container-BorderRadius\":\"8px\",\"@g_Body-BG\":\"#ffffff\",\"@g_Body-Text\":\"#000000\",\"@g_Form-BorderRadius\":\"8px\",\"@g_Button-BorderRadius\":\"8px\",\"@g_Nav-BG\":\"#fbfbfb\",\"@g_Nav-FG\":\"#000000\",\"@g_Nav-Active-BG\":\"#00a982\",\"@g_Nav-Active-FG\":\"#ffffff\",\"@g_Accent-OG\":\"#fbfbfb\",\"@g_NavBarMenu-BG\":\"#fbfbfb\",\"@g_NavBarMenu-FG\":\"#000000\",\"@g_Nav_Style\":\"light\",\"@g_Color-Palette-4\":\"#376fb2\",\"@g_Color-Palette-4-FG\":\"#f0faf6\",\"@g_Color-Palette-7\":\"#f4d35e\",\"@g_Color-Palette-7-FG\":\"#383838\",\"@Nav-Exp\":\"300px\",\"@Side-Exp\":\"300px\",\"@g_Success-BG\":\"#81bb5f\",\"@g_Success-FG\":\"#ffffff\",\"@g_Form-Item-BG\":\"#f5f5f5\",\"@g_Form-Item-FG\":\"#202020\",\"@l_Button-Simple-BG\":\"#2271b1\",\"@l_Button-Simple-Text\":\"#ffffff\",\"@l_Button-Primary-BG\":\"#2271b1\",\"@l_Button-Primary-Text\":\"#ffffff\",\"@Actions-Exp\":\"300px\",\"@g_Actions-Col-BG\":\"#fafafa\",\"@g_Actions-Col-Text\":\"#000000\",\"@l_Left-Col-BG\":\"#fbfbfb\",\"@l_Left-Col-Text\":\"#000000\",\"@l_Button-Hot-BG\":\"#112340\",\"@l_Button-Hot-Text\":\"#ffffff\",\"@g_Color-Palette-5\":\"#00b98f\",\"@g_Color-Palette-5-FG\":\"#ffffff\",\"@g_Nav-Accent-BG\":\"#00a982\",\"@g_Nav-Accent-FG\":\"#ffffff\",\"@g_NavBarMenu-Active-BG\":\"#00a982\",\"@g_NavBarMenu-Active-FG\":\"#ffffff\",\"@g_Color-Palette-1\":\"#1a355c\",\"@g_Color-Palette-1-FG\":\"#ffffff\",\"@g_Color-Palette-2\":\"#234878\",\"@g_Color-Palette-2-FG\":\"#e4f9fd\",\"@g_Color-Palette-3\":\"#2d5c95\",\"@g_Color-Palette-3-FG\":\"#f0fcfb\",\"@g_Color-Palette-6\":\"#29d3a5\",\"@g_Color-Palette-6-FG\":\"#2a2a08\",\"@g_Color-Palette-8\":\"#f18a3c\",\"@g_Color-Palette-8-FG\":\"#ffffff\",\"@g_Color-Palette-9\":\"#e15555\",\"@g_Color-Palette-9-FG\":\"#ffffff\",\"@g_Color-Palette-10\":\"#e66a8c\",\"@g_Color-Palette-10-FG\":\"#ffffff\",\"@g_Color-Palette-11\":\"#b05ab5\",\"@g_Color-Palette-11-FG\":\"#ffffff\",\"@g_Color-Palette-12\":\"#7a4fa4\",\"@g_Color-Palette-12-FG\":\"#f6f0f8\",\"@g_Color-Palette-13\":\"#4b5fa5\",\"@g_Color-Palette-13-FG\":\"#ffffff\",\"@g_Color-Palette-14\":\"#c4cdd6\",\"@g_Color-Palette-14-FG\":\"#313a44\",\"@g_Color-Palette-15\":\"#7c8fa1\",\"@g_Color-Palette-15-FG\":\"#ffffff\"},\"customCSS\":\"#t_TreeNav_1_subtree, #t_TreeNav_2_subtree, #t_TreeNav_3_subtree, #t_TreeNav_4_subtree, #t_TreeNav_5_subtree, #t_TreeNav_6_subtree, #t_TreeNav_7_subtree, #t_TreeNav_8_subtree, #t_TreeNav_9_subtree, #t_TreeNav_10_subtree, #t_TreeNav_11_subtree, #t_TreeNav_12_subtree, #t_TreeNav_13_subtree, #t_TreeNav_14_subtree, #t_TreeNav_15_subtree {\\n    padding-left: 8px;\\n}\\n\\n.t-MediaList-badge {\\n    background-color: rgba(0, 0, 0, 0);\\n}\\n.float {\\n\\tz-index: 100;\\n\\tposition: fixed;\\n\\tbottom: 50px;\\n\\tright: 50px;\\n\\tleft: 50px;\\n\\theight: 40px;\\n\\tborder-radius: 6px;\\n\\ttext-align: center;\\n\\tbox-shadow: 2px 2px 3px #999;\\n}\\n\\n.float-btn{\\n  \\tmargin-top: 22px;\\n}\\n\\n@media only screen and (max-width: 560px) {\\n\\t.t-Body-nav {\\n\\t    width: 100vw;\\n\\t}\\n\\n\\t.t-Body-main {\\n\\t    overflow: hidden;\\n\\t}\\n}\\n\\nli.t-NavTabs-item.is-active {\\n    color: white;\\n}\\nli.t-NavTabs-item:hover {\\n    color: white;\\n}\",\"useCustomLess\":\"N\"}"
+        }
+        advanced {
+            endUserCanPick: true
+            accessibilityTested: true
+        }
+        subscription {
+            master: @bizcorelight
+        }
+    )
+
+    style bizcorelight-copy (
+        name: bizCoreLight (copy_1)
+        themeRollerAttributes {
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita.less
+            outputCssFileUrl: #THEME_DB_FILES#272975309002411483.css
+            jsonConfig: "{\"classes\":[],\"vars\":{\"@g_Accent-BG\":\"#112340\",\"@g_Container-BorderRadius\":\"8px\",\"@g_Body-BG\":\"#ffffff\",\"@g_Body-Text\":\"#000000\",\"@g_Form-BorderRadius\":\"8px\",\"@g_Button-BorderRadius\":\"8px\",\"@g_Nav-BG\":\"#fbfbfb\",\"@g_Nav-FG\":\"#000000\",\"@g_Nav-Active-BG\":\"#dae1e7\",\"@g_Nav-Active-FG\":\"#000000\",\"@g_Accent-OG\":\"#fbfbfb\",\"@g_NavBarMenu-BG\":\"#fbfbfb\",\"@g_NavBarMenu-FG\":\"#000000\",\"@g_Nav_Style\":\"light\",\"@g_Color-Palette-4\":\"#376fb2\",\"@g_Color-Palette-4-FG\":\"#f0faf6\",\"@g_Color-Palette-7\":\"#f4d35e\",\"@g_Color-Palette-7-FG\":\"#383838\",\"@Nav-Exp\":\"300px\",\"@Side-Exp\":\"300px\",\"@g_Success-BG\":\"#1e7e34\",\"@g_Success-FG\":\"#ffffff\",\"@g_Form-Item-BG\":\"#f5f5f5\",\"@g_Form-Item-FG\":\"#202020\",\"@l_Button-Simple-BG\":\"#2271b1\",\"@l_Button-Simple-Text\":\"#ffffff\",\"@l_Button-Primary-BG\":\"#2271b1\",\"@l_Button-Primary-Text\":\"#ffffff\",\"@Actions-Exp\":\"300px\",\"@g_Actions-Col-BG\":\"#fafafa\",\"@g_Actions-Col-Text\":\"#000000\",\"@l_Left-Col-BG\":\"#fbfbfb\",\"@l_Left-Col-Text\":\"#000000\",\"@l_Button-Hot-BG\":\"#112340\",\"@l_Button-Hot-Text\":\"#ffffff\",\"@g_Color-Palette-5\":\"#00b98f\",\"@g_Color-Palette-5-FG\":\"#ffffff\",\"@g_Nav-Accent-BG\":\"#dae1e7\",\"@g_Nav-Accent-FG\":\"#000000\",\"@g_NavBarMenu-Active-BG\":\"#dae1e7\",\"@g_NavBarMenu-Active-FG\":\"#000000\",\"@g_Color-Palette-1\":\"#1a355c\",\"@g_Color-Palette-1-FG\":\"#ffffff\",\"@g_Color-Palette-2\":\"#234878\",\"@g_Color-Palette-2-FG\":\"#e4f9fd\",\"@g_Color-Palette-3\":\"#2d5c95\",\"@g_Color-Palette-3-FG\":\"#f0fcfb\",\"@g_Color-Palette-6\":\"#29d3a5\",\"@g_Color-Palette-6-FG\":\"#2a2a08\",\"@g_Color-Palette-8\":\"#f18a3c\",\"@g_Color-Palette-8-FG\":\"#ffffff\",\"@g_Color-Palette-9\":\"#e15555\",\"@g_Color-Palette-9-FG\":\"#ffffff\",\"@g_Color-Palette-10\":\"#e66a8c\",\"@g_Color-Palette-10-FG\":\"#ffffff\",\"@g_Color-Palette-11\":\"#b05ab5\",\"@g_Color-Palette-11-FG\":\"#ffffff\",\"@g_Color-Palette-12\":\"#7a4fa4\",\"@g_Color-Palette-12-FG\":\"#f6f0f8\",\"@g_Color-Palette-13\":\"#4b5fa5\",\"@g_Color-Palette-13-FG\":\"#ffffff\",\"@g_Color-Palette-14\":\"#c4cdd6\",\"@g_Color-Palette-14-FG\":\"#313a44\",\"@g_Color-Palette-15\":\"#7c8fa1\",\"@g_Color-Palette-15-FG\":\"#ffffff\",\"@g_Warning-BG\":\"#c62828\",\"@g_Warning-FG\":\"#ffffff\"},\"customCSS\":\"#t_TreeNav_1_subtree, #t_TreeNav_2_subtree, #t_TreeNav_3_subtree, #t_TreeNav_4_subtree, #t_TreeNav_5_subtree, #t_TreeNav_6_subtree, #t_TreeNav_7_subtree, #t_TreeNav_8_subtree, #t_TreeNav_9_subtree, #t_TreeNav_10_subtree, #t_TreeNav_11_subtree, #t_TreeNav_12_subtree, #t_TreeNav_13_subtree, #t_TreeNav_14_subtree, #t_TreeNav_15_subtree {\\n    padding-left: 8px;\\n}\\n\\n.t-MediaList-badge {\\n    background-color: rgba(0, 0, 0, 0);\\n}\\n.float {\\n\\tz-index: 100;\\n\\tposition: fixed;\\n\\tbottom: 50px;\\n\\tright: 50px;\\n\\tleft: 50px;\\n\\theight: 40px;\\n\\tborder-radius: 6px;\\n\\ttext-align: center;\\n\\tbox-shadow: 2px 2px 3px #999;\\n}\\n\\n.float-btn{\\n  \\tmargin-top: 22px;\\n}\\n\\n@media only screen and (max-width: 560px) {\\n\\t.t-Body-nav {\\n\\t    width: 100vw;\\n\\t}\\n\\n\\t.t-Body-main {\\n\\t    overflow: hidden;\\n\\t}\\n}\\n\\nli.t-NavTabs-item.is-active {\\n    color: white;\\n}\\nli.t-NavTabs-item:hover {\\n    color: white;\\n}\\n\\n.t-NavTabs-link{\\n    color: black !important;\\n}\\n\\n.a-TreeView .a-TreeView-content .fa,\\n.a-TreeView .a-TreeView-content .a-Icon {\\n    font-size: 22px !important;\\n    width: 22px !important;\\n    height: 22px !important;\\n}\",\"useCustomLess\":\"N\"}"
+        }
+        advanced {
+            endUserCanPick: true
+            accessibilityTested: true
+        }
+    )
+
+    style svijetla-tema (
+        name: Svijetla tema
+        themeRollerAttributes {
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita.less
+            outputCssFileUrl: #THEME_DB_FILES#503551955080719869.css
+            jsonConfig: "{\"classes\":[],\"vars\":{\"@g_Accent-BG\":\"#112340\",\"@g_Container-BorderRadius\":\"6px\",\"@g_Body-BG\":\"#ffffff\",\"@g_Body-Text\":\"#000000\",\"@g_Form-BorderRadius\":\"4px\",\"@g_Button-BorderRadius\":\"6px\",\"@g_Nav-BG\":\"#fbfbfb\",\"@g_Nav-FG\":\"#000000\",\"@g_Nav-Active-BG\":\"#00a982\",\"@g_Nav-Active-FG\":\"#ffffff\",\"@g_Accent-OG\":\"#fbfbfb\",\"@g_NavBarMenu-BG\":\"#fbfbfb\",\"@g_NavBarMenu-FG\":\"#000000\",\"@g_Nav_Style\":\"light\",\"@g_Color-Palette-4\":\"#112340\",\"@g_Color-Palette-4-FG\":\"#f0faf6\",\"@g_Color-Palette-7\":\"#f8f8f8\",\"@g_Color-Palette-7-FG\":\"#383838\",\"@Nav-Exp\":\"320px\",\"@Side-Exp\":\"300px\",\"@g_Success-BG\":\"#81bb5f\",\"@g_Success-FG\":\"#ffffff\",\"@g_Form-Item-BG\":\"#f5f5f5\",\"@g_Form-Item-FG\":\"#202020\",\"@l_Button-Simple-BG\":\"#2271b1\",\"@l_Button-Simple-Text\":\"#ffffff\",\"@l_Button-Primary-BG\":\"#2271b1\",\"@l_Button-Primary-Text\":\"#ffffff\",\"@Actions-Exp\":\"330px\",\"@g_Actions-Col-BG\":\"#fafafa\",\"@g_Actions-Col-Text\":\"#000000\",\"@l_Left-Col-BG\":\"#fbfbfb\",\"@l_Left-Col-Text\":\"#000000\",\"@l_Button-Hot-BG\":\"#112340\",\"@l_Button-Hot-Text\":\"#ffffff\",\"@g_Color-Palette-5\":\"#00a982\",\"@g_Color-Palette-5-FG\":\"#ffffff\",\"@g_Nav-Accent-BG\":\"#00a982\",\"@g_Nav-Accent-FG\":\"#ffffff\",\"@g_NavBarMenu-Active-BG\":\"#00a982\",\"@g_NavBarMenu-Active-FG\":\"#ffffff\"},\"customCSS\":\"#t_TreeNav_1_subtree, #t_TreeNav_2_subtree, #t_TreeNav_3_subtree, #t_TreeNav_4_subtree, #t_TreeNav_5_subtree, #t_TreeNav_6_subtree, #t_TreeNav_7_subtree, #t_TreeNav_8_subtree, #t_TreeNav_9_subtree, #t_TreeNav_10_subtree, #t_TreeNav_11_subtree, #t_TreeNav_12_subtree, #t_TreeNav_13_subtree, #t_TreeNav_14_subtree, #t_TreeNav_15_subtree {\\n    padding-left: 8px;\\n}\\n\\n.t-MediaList-badge {\\n    background-color: rgba(0, 0, 0, 0);\\n}\\n.float {\\n\\tz-index: 100;\\n\\tposition: fixed;\\n\\tbottom: 50px;\\n\\tright: 50px;\\n\\tleft: 50px;\\n\\theight: 40px;\\n\\tborder-radius: 6px;\\n\\ttext-align: center;\\n\\tbox-shadow: 2px 2px 3px #999;\\n}\\n\\n.float-btn{\\n  \\tmargin-top: 22px;\\n}\\n\\n@media only screen and (max-width: 560px) {\\n\\t.t-Body-nav {\\n\\t    width: 100vw;\\n\\t}\\n\\n\\t.t-Body-main {\\n\\t    overflow: hidden;\\n\\t}\\n}\\n\\nli.t-NavTabs-item.is-active {\\n    color: white;\\n}\\nli.t-NavTabs-item:hover {\\n    color: white;\\n}\",\"useCustomLess\":\"N\"}"
+        }
+        advanced {
+            endUserCanPick: true
+            accessibilityTested: true
+        }
+        subscription {
+            master: @svijetla-tema
+        }
+    )
+
+    style tamna-tema (
+        name: Tamna tema
+        themeRollerAttributes {
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita-Dark.less
+            outputCssFileUrl: #THEME_DB_FILES#503550762408717875.css
+            jsonConfig: "{\"classes\":[],\"vars\":{\"@g_Accent-BG\":\"#2271b1\",\"@g_Container-BorderRadius\":\"6px\",\"@g_NavBarMenu-BG\":\"#363636\",\"@g_NavBarMenu-FG\":\"#f8f8f8\",\"@g_Nav-Active-BG\":\"#2271b1\",\"@g_Nav-Active-FG\":\"#ffffff\",\"@g_Button-BorderRadius\":\"6px\",\"@g_Color-Palette-7\":\"#4b4b4b\",\"@g_Color-Palette-7-FG\":\"#ffffff\",\"@g_Color-Palette-4\":\"#2271b1\",\"@g_Color-Palette-4-FG\":\"#f0faf6\",\"@Nav-Exp\":\"300px\",\"@Side-Exp\":\"300px\",\"@g_Success-BG\":\"#81bb5f\",\"@g_Success-FG\":\"#ffffff\",\"@l_Button-Simple-BG\":\"#ffffff\",\"@l_Button-Simple-Text\":\"#4b4b4b\",\"@g_Link-Base\":\"#2271b1\",\"@l_Button-Primary-BG\":\"#afd3f0\",\"@l_Button-Primary-Text\":\"#05111b\",\"@g_Body-Content-Max-Width\":\"100%\",\"@Actions-Exp\":\"330px\",\"@l_Left-Col-BG\":\"#2e2e2e\",\"@l_Left-Col-Text\":\"#ffffff\"},\"customCSS\":\"#t_TreeNav_1_subtree, #t_TreeNav_2_subtree, #t_TreeNav_3_subtree, #t_TreeNav_4_subtree, #t_TreeNav_5_subtree, #t_TreeNav_6_subtree, #t_TreeNav_7_subtree, #t_TreeNav_8_subtree, #t_TreeNav_9_subtree, #t_TreeNav_10_subtree, #t_TreeNav_11_subtree, #t_TreeNav_12_subtree, #t_TreeNav_13_subtree, #t_TreeNav_14_subtree, #t_TreeNav_15_subtree {\\n    padding-left: 8px;\\n}\\n\\n.t-MediaList-badge {\\n    background-color: rgba(0, 0, 0, 0);\\n}\\n.float {\\n\\tz-index: 100;\\n\\tposition: fixed;\\n\\tbottom: 50px;\\n\\tright: 50px;\\n\\tleft: 50px;\\n\\theight: 40px;\\n\\tborder-radius: 6px;\\n\\ttext-align: center;\\n\\tbox-shadow: 2px 2px 3px #999;\\n}\\n\\n.float-btn{\\n  \\tmargin-top: 22px;\\n}\\n\\nli.t-NavTabs-item.is-active {\\n    color: white;\\n}\\nli.t-NavTabs-item:hover {\\n    color: white;\\n}\",\"useCustomLess\":\"N\"}"
+        }
+        advanced {
+            endUserCanPick: true
+        }
+        subscription {
+            master: @tamna-tema
+        }
+    )
+
+    style vita (
+        name: Vita
+        themeRollerAttributes {
+            readOnly: true
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita.less
+            outputCssFileUrl: #THEME_FILES#css/Vita#MIN#.css?v=#APEX_VERSION#
+        }
+        advanced {
+            accessibilityTested: true
+        }
+        subscription {
+            master: @vita
+        }
+    )
+
+    style vita-dark (
+        name: Vita - Dark
+        themeRollerAttributes {
+            readOnly: true
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita-Dark.less
+            outputCssFileUrl: #THEME_FILES#css/Vita-Dark#MIN#.css?v=#APEX_VERSION#
+        }
+        subscription {
+            master: @vita-dark
+        }
+    )
+
+    style vita-red (
+        name: Vita - Red
+        themeRollerAttributes {
+            readOnly: true
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita-Red.less
+            outputCssFileUrl: #THEME_FILES#css/Vita-Red#MIN#.css?v=#APEX_VERSION#
+        }
+        subscription {
+            master: @vita-red
+        }
+    )
+
+    style vita-slate (
+        name: Vita - Slate
+        themeRollerAttributes {
+            readOnly: true
+            inputParameterFileUrls: #THEME_FILES#less/theme/Vita-Slate.less
+            outputCssFileUrl: #THEME_FILES#css/Vita-Slate#MIN#.css?v=#APEX_VERSION#
+        }
+        subscription {
+            master: @vita-slate
+        }
+    )
+
+)
+

@@ -1,0 +1,606 @@
+page 20051 (
+    name: Brzi pristup
+    alias: BRZI-PRISTUP1
+    title: Brzi pristup
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region audit-information (
+        name: Audit Information
+        type: staticContent
+        layout {
+            sequence: 90
+            parentRegion: @brzi-pristup
+            slot: regionBody
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                is-expanded
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P20051_ID
+        }
+    )
+
+    region brzi-pristup (
+        name: Brzi pristup
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P20051_CREATED (
+        type: displayOnly
+        label {
+            label: Created
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20051_CREATED_BY (
+        type: displayOnly
+        label {
+            label: Created By
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20051_ICON (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @brzi-pristup
+            slot: regionBody
+        }
+    )
+
+    pageItem P20051_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @brzi-pristup
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P20051_KORISNIK_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @brzi-pristup
+            slot: regionBody
+        }
+    )
+
+    pageItem P20051_PAGE_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @brzi-pristup
+            slot: regionBody
+        }
+    )
+
+    pageItem P20051_ROW_VERSION (
+        type: displayOnly
+        label {
+            label: Row Version
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20051_SEQUENCE (
+        type: numberField
+        label {
+            label: Sekvenca
+            alignment: left
+        }
+        settings {
+            minValue: 0
+        }
+        layout {
+            sequence: 70
+            region: @brzi-pristup
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P20051_TITLE (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @brzi-pristup
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P20051_UPDATED (
+        type: displayOnly
+        label {
+            label: Updated
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20051_UPDATED_BY (
+        type: displayOnly
+        label {
+            label: Updated By
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @audit-information
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20051_VALID (
+        type: hidden
+        layout {
+            sequence: 80
+            region: @brzi-pristup
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Brzi pristup
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+                t-Button--iconLeft
+            ]
+            cssClasses: t-Button--inlineLink
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 20050
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel-2 (
+        buttonName: CANCEL_2
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-remove
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P20051_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P20051_ID
+        }
+    )
+
+    button set-invalid (
+        buttonName: SET_INVALID
+        label: Proglasi nevažećim
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-stop
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P20051_VALID
+            value: Y
+        }
+    )
+
+    button set-valid (
+        buttonName: SET_VALID
+        label: Proglasi važećim
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-5
+            icon: fa-check-square-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                RETURN core.korisnik_pkg.can_update_brzi_pristup (
+                    p_korisnik_id => :P20051_KORISNIK_ID,
+                    p_valid       => :P20051_VALID
+                );
+                ```
+        }
+    )
+
+    dynamicAction close (
+        name: Close
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @cancel-2
+        }
+
+        action native-dialog-close (
+            action: closeDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.delete_brzi_pristup (
+                    p_id    => :P20051_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 385592109144110514
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.get_brzi_pristup (
+                    p_id          => :P20051_ID,
+                    p_korisnik_id => :P20051_KORISNIK_ID,
+                    p_page_id     => :P20051_PAGE_ID,
+                    p_title       => :P20051_TITLE,
+                    p_icon        => :P20051_ICON,
+                    p_sequence    => :P20051_SEQUENCE,
+                    p_valid       => :P20051_VALID,
+                    p_created     => :P20051_CREATED,
+                    p_created_by  => :P20051_CREATED_BY,
+                    p_updated     => :P20051_UPDATED,
+                    p_updated_by  => :P20051_UPDATED_BY,
+                    p_row_version => :P20051_ROW_VERSION
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 385590595264110515
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P20051_ID
+        }
+    )
+
+    process set-invalid (
+        name: Set invalid
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.update_valid (
+                    p_id    => :P20051_ID,
+                    p_valid => 'N'
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 385591341530110515
+        }
+        serverSideCondition {
+            whenButtonPressed: @set-invalid
+        }
+    )
+
+    process set-valid (
+        name: Set valid
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.update_valid (
+                    p_id    => :P20051_ID,
+                    p_valid => 'Y'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 385590985542110515
+        }
+        serverSideCondition {
+            whenButtonPressed: @set-valid
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.update_brzi_pristup (
+                    p_id       => :P20051_ID,
+                    p_title    => :P20051_TITLE,
+                    p_sequence => :P20051_SEQUENCE
+                );
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 385591786606110515
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 14
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 20050
+                clearCache: 20050
+            }
+        }
+    )
+
+)
+

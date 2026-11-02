@@ -1,0 +1,793 @@
+page 57 (
+    name: Ažuriranje detalja fakture
+    alias: AŽURIRANJE-DETALJA-FAKTURE
+    title: Ažuriranje detalja fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region ažuriranje-detalja-fakture (
+        name: Ažuriranje detalja fakture
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    pageItem P57_DATUM_FAKTURE (
+        type: datePicker
+        label {
+            label: Datum fakture
+            alignment: left
+        }
+        settings {
+            minDate: static
+            minStatic: &APP_PERIOD_ZAKLJUCAN_DO.
+        }
+        layout {
+            sequence: 110
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P57_DATUM_VALUTE (
+        type: datePicker
+        label {
+            label: Datum valute
+            alignment: left
+        }
+        settings {
+            minDate: item
+            minItem: P57_DATUM_FAKTURE
+        }
+        layout {
+            sequence: 120
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P57_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P57_IZNOS_FAKTURE (
+        type: displayOnly
+        label {
+            label: Iznos sa PDV
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P57_IZNOS_FAKTURE_NOPDV (
+        type: displayOnly
+        label {
+            label: Iznos bez PDV
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P57_IZNOS_SLOVIMA (
+        type: textField
+        label {
+            label: Slovima
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 160
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P57_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti-kupci
+        }
+        layout {
+            sequence: 70
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_NAZIV_FAKTURE (
+        type: displayOnly
+        label {
+            label: Naziv fakture
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P57_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 60
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_POSEBNE_NAPOMENE (
+        type: textarea
+        label {
+            label: Posebne napomene
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 190
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 4
+        }
+        validation {
+            maxLength: 4000
+        }
+    )
+
+    pageItem P57_PRINT_PN (
+        type: radioGroup
+        label {
+            label: Štampa posebnih napomena
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 180
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P57_TIP_DOKUMENTA_ID (
+        type: selectOne
+        label {
+            label: Tip dokumenta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @uio-i-tip-dokumenta
+        }
+        layout {
+            sequence: 100
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_TIP_PLACANJA_ID (
+        type: selectOne
+        label {
+            label: Tip plaćanja
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-tip-placanja
+        }
+        layout {
+            sequence: 90
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_UGOVOR_ID (
+        type: selectOne
+        label {
+            label: Ugovor
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @ugovori-narucioc
+        }
+        layout {
+            sequence: 50
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 80
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P57_VALUTA_IZNOS (
+        type: displayOnly
+        label {
+            label: Iznos u valuti
+            alignment: left
+        }
+        layout {
+            sequence: 150
+            region: @ažuriranje-detalja-fakture
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P57_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction set-oj-id (
+        name: Set - OJ ID
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P57_UGOVOR_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    ugovori_pkg.get_ugovor (
+                        p_id         => :P57_UGOVOR_ID,
+                        p_oj_id      => :P57_OJ_ID,
+                        p_klijent_id => :P57_KLIJENT_ID
+                    );
+                    ```
+                itemsToSubmit: [
+                    P57_UGOVOR_ID
+                    P57_OJ_ID
+                    P57_KLIJENT_ID
+                ]
+                itemsToReturn: [
+                    P57_OJ_ID
+                    P57_KLIJENT_ID
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction show-valuta-field (
+        name: Show valuta field
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P57_VALUTA_ID
+        }
+        clientSideCondition {
+            type: item=value
+            item: P57_VALUTA_ID
+            value: 1
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P57_VALUTA_IZNOS
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P57_VALUTA_IZNOS
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+    )
+
+    validation datum-fakture-not-null (
+        name: Datum fakture NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_DATUM_FAKTURE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_DATUM_FAKTURE
+        }
+    )
+
+    validation datum-valute-not-null (
+        name: Datum valute NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_DATUM_VALUTE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_DATUM_VALUTE
+        }
+    )
+
+    validation klijent-not-null (
+        name: Klijent NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_KLIJENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_KLIJENT_ID
+        }
+    )
+
+    validation slovima-not-null (
+        name: Slovima NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_IZNOS_SLOVIMA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_IZNOS_SLOVIMA
+        }
+    )
+
+    validation tip-dokumenta-not-null (
+        name: Tip dokumenta NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_TIP_DOKUMENTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_TIP_DOKUMENTA_ID
+        }
+    )
+
+    validation tip-placanja-not-null (
+        name: Tip placanja NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_TIP_PLACANJA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_TIP_PLACANJA_ID
+        }
+    )
+
+    validation valuta-not-null (
+        name: Valuta NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P57_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P57_VALUTA_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 157304985545793341
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.get_kif (
+                    p_id                   => :P57_ID,
+                    p_naziv_fakture        => :P57_NAZIV_FAKTURE,
+                    p_klijent_id           => :P57_KLIJENT_ID,
+                    p_valuta_id            => :P57_VALUTA_ID,
+                    p_tip_placanja_id      => :P57_TIP_PLACANJA_ID,
+                    p_datum_fakture        => :P57_DATUM_FAKTURE,
+                    p_datum_valute         => :P57_DATUM_VALUTE,
+                    p_iznos_fakture_nopdv  => :P57_IZNOS_FAKTURE_NOPDV,
+                    p_iznos_fakture        => :P57_IZNOS_FAKTURE,
+                    p_valuta_iznos         => :P57_VALUTA_IZNOS,
+                    p_iznos_slovima        => :P57_IZNOS_SLOVIMA,
+                    p_print_pn             => :P57_PRINT_PN,
+                    p_posebne_napomene     => :P57_POSEBNE_NAPOMENE,
+                    p_uio_tip_dokumenta_id => :P57_TIP_DOKUMENTA_ID,
+                    p_ugovor_id            => :P57_UGOVOR_ID,
+                    p_oj_id                => :P57_OJ_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157305336850793341
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P57_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                finansije_pkg.update_kif (
+                    p_id                   => :P57_ID,
+                    p_klijent_id           => :P57_KLIJENT_ID,
+                    p_valuta_id            => :P57_VALUTA_ID,
+                    p_tip_placanja_id      => :P57_TIP_PLACANJA_ID,
+                    p_datum_fakture        => :P57_DATUM_FAKTURE,
+                    p_datum_valute         => :P57_DATUM_VALUTE,
+                    p_iznos_slovima        => :P57_IZNOS_SLOVIMA,
+                    p_print_pn             => :P57_PRINT_PN,
+                    p_posebne_napomene     => :P57_POSEBNE_NAPOMENE,
+                    p_uio_tip_dokumenta_id => :P57_TIP_DOKUMENTA_ID,
+                    p_ugovor_id            => :P57_UGOVOR_ID,
+                    p_oj_id                => :P57_OJ_ID
+                );
+                
+                finansije_pkg.calculate_kif (
+                    p_id => :P57_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 157305771495793341
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

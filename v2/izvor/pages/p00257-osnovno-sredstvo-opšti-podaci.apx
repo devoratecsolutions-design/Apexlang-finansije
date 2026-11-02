@@ -1,0 +1,820 @@
+page 257 (
+    name: Osnovno sredstvo / Opšti podaci
+    alias: OSNOVNO-SREDSTVO-OPŠTI-PODACI
+    title: Osnovno sredstvo / Opšti podaci
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovno-sredstvo-opšti-podaci (
+        name: Osnovno sredstvo / Opšti podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P257_AKTIVIRANO (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 150
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+            cssClasses: apex_disabled
+        }
+    )
+
+    pageItem P257_AUTOMATSKA_AMORTIZACIJA (
+        type: radioGroup
+        label {
+            label: Automatska amortizacija
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 120
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        help {
+            helpText:
+                ```html
+                Ukoliko uključite automatsku amortizaciju, svakog 1. u mjesecu sistem će sam da amortizuje osnovno sredstvo.
+                
+                ```
+        }
+    )
+
+    pageItem P257_DATUM (
+        type: datePicker
+        label {
+            label: Datum kapitalizacije
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P257_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 130
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P257_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P257_INDIKATOR_ID (
+        type: selectOne
+        label {
+            label: Indikator
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @os-indikatori
+        }
+        layout {
+            sequence: 100
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P257_INVENTURNI_BROJ (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+        }
+    )
+
+    pageItem P257_INVENTURNI_NAZIV (
+        type: textField
+        label {
+            label: Inventurni naziv
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        readOnly {
+            type: expression
+            plsqlExpression:
+                ```plsql
+                os_pkg.is_osnovno_sredstvo_editable (
+                    p_id => :P257_ID
+                ) = false
+                ```
+        }
+    )
+
+    pageItem P257_JM_ID (
+        type: selectOne
+        label {
+            label: Jedinica mjere
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-jm
+        }
+        layout {
+            sequence: 80
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P257_KLASA_ID (
+        type: selectOne
+        label {
+            label: Klasa
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-klase-os-last-childs
+        }
+        layout {
+            sequence: 20
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: expression
+            plsqlExpression:
+                ```plsql
+                os_pkg.is_osnovno_sredstvo_editable (
+                    p_id => :P257_ID
+                ) = false or :P257_PRIPREMA = 'Y'
+                ```
+        }
+    )
+
+    pageItem P257_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        readOnly {
+            type: expression
+            plsqlExpression:
+                ```plsql
+                os_pkg.is_osnovno_sredstvo_editable (
+                    p_id => :P257_ID
+                ) = false
+                ```
+        }
+    )
+
+    pageItem P257_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P257_PRIPREMA (
+        type: radioGroup
+        label {
+            label: Sredstvo u pripremi
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 140
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+            cssClasses: apex_disabled
+        }
+    )
+
+    pageItem P257_STARI_INVENTURNI_BROJ (
+        type: numberField
+        label {
+            label: Stari inventurni broj
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P257_STATUS_ID (
+        type: radioGroup
+        label {
+            label: Status
+            alignment: left
+        }
+        settings {
+            noOfCols: 3
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-statusi-os
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 110
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P257_VALID (
+        type: radioGroup
+        label {
+            label: Validno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 160
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+            cssClasses: apex_disabled
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P257_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation auto-am-not-null (
+        name: Auto. am. NOT NULL
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_AUTOMATSKA_AMORTIZACIJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_AUTOMATSKA_AMORTIZACIJA
+        }
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_DATUM
+        }
+    )
+
+    validation inventurni-broj-not-null (
+        name: Inventurni broj NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_INVENTURNI_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_INVENTURNI_NAZIV
+        }
+    )
+
+    validation jm-not-null (
+        name: JM NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_JM_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_JM_ID
+        }
+    )
+
+    validation klasa-not-null (
+        name: Klasa NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_KLASA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_KLASA_ID
+        }
+    )
+
+    validation kolicina-not-null (
+        name: Kolicina NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_KOLICINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_KOLICINA
+        }
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_HISTORY_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_HISTORY_KOMENTAR
+        }
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_NAZIV
+        }
+    )
+
+    validation status-not-null (
+        name: Status NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P257_STATUS_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P257_STATUS_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 55241413768235966
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P257_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P257_KLASA_ID := l_os.klasa_id;
+                    :P257_INVENTURNI_BROJ := l_os.inventurni_broj;
+                    :P257_INVENTURNI_NAZIV := l_os.inventurni_naziv;
+                    :P257_STARI_INVENTURNI_BROJ := l_os.stari_inventurni_broj;
+                    :P257_NAZIV := l_os.naziv;
+                    :P257_KOLICINA := l_os.kolicina;
+                    :P257_JM_ID := l_os.jm_id;
+                    :P257_DATUM := l_os.datum;
+                    :P257_STATUS_ID := l_os.status_id;
+                    :P257_AUTOMATSKA_AMORTIZACIJA := l_os.automatska_amortizacija;
+                    :P257_INDIKATOR_ID := l_os.indikator_id;
+                    
+                    :P257_PRIPREMA := l_os.priprema;
+                    :P257_AKTIVIRANO := l_os.aktivirano;
+                    :P257_VALID := l_os.valid;
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 55164748028702815
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P257_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P257_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    l_os.klasa_id := :P257_KLASA_ID;
+                    l_os.inventurni_broj := :P257_INVENTURNI_BROJ;
+                    l_os.inventurni_naziv := :P257_INVENTURNI_NAZIV;
+                    l_os.stari_inventurni_broj := :P257_STARI_INVENTURNI_BROJ;
+                    l_os.naziv := :P257_NAZIV;
+                    l_os.kolicina := :P257_KOLICINA;
+                    l_os.jm_id := :P257_JM_ID;
+                    l_os.datum := :P257_DATUM;
+                    l_os.automatska_amortizacija := :P257_AUTOMATSKA_AMORTIZACIJA;
+                    l_os.priprema := :P257_PRIPREMA;
+                    l_os.aktivirano := :P257_AKTIVIRANO;
+                    l_os.status_id := :P257_STATUS_ID;
+                    l_os.indikator_id := :P257_INDIKATOR_ID;
+                    l_os.valid := :P257_VALID;
+                
+                    l_os.history_komentar := :P257_HISTORY_KOMENTAR;
+                    os_pkg.update_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55164897907702816
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

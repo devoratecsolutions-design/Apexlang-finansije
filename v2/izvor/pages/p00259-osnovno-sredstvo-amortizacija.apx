@@ -1,0 +1,559 @@
+page 259 (
+    name: Osnovno sredstvo / Amortizacija
+    alias: OSNOVNO-SREDSTVO-AMORTIZACIJA
+    title: Osnovno sredstvo / Amortizacija
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region osnovno-sredstvo-opšti-podaci (
+        name: Osnovno sredstvo / Opšti podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P259_AMORTIZACIONA_STOPA (
+        type: numberField
+        label {
+            label: Amortizaciona stopa
+            alignment: left
+        }
+        layout {
+            sequence: 150
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P259_DONACIJA (
+        type: radioGroup
+        label {
+            label: Donacija
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 190
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P259_GRAD_ID (
+        type: selectOne
+        label {
+            label: Grad
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-gradovi-bih
+        }
+        layout {
+            sequence: 180
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P259_HISTORY_KOMENTAR (
+        type: textarea
+        label {
+            label: Komentar ažuriranja
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 210
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 1000
+        }
+    )
+
+    pageItem P259_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P259_PORESKA_AMORTIZACIONA_STOPA (
+        type: numberField
+        label {
+            label: Poreska amortizaciona stopa
+            alignment: left
+        }
+        layout {
+            sequence: 170
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P259_PROCIJENJENI_VIJEK_TRAJANJA (
+        type: numberField
+        label {
+            label: Procijenjeni vijek trajanja
+            alignment: left
+        }
+        layout {
+            sequence: 160
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P259_REZIDUALNA_VRIJEDNOST (
+        type: numberField
+        label {
+            label: Rezidualna vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P259_VIJEK_TRAJANJA (
+        type: numberField
+        label {
+            label: Vijek trajanja
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @osnovno-sredstvo-opšti-podaci
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P259_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation amortizaciona-stopa-not-null (
+        name: Amortizaciona stopa NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_AMORTIZACIONA_STOPA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_AMORTIZACIONA_STOPA
+        }
+    )
+
+    validation donacija-not-null (
+        name: Donacija NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_DONACIJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_DONACIJA
+        }
+    )
+
+    validation grad-not-null (
+        name: Grad NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_GRAD_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_GRAD_ID
+        }
+    )
+
+    validation komentar-not-null (
+        name: Komentar NOT NULL
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_HISTORY_KOMENTAR
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_HISTORY_KOMENTAR
+        }
+    )
+
+    validation poreska-am-stopa-not-null (
+        name: Poreska am stopa NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_PORESKA_AMORTIZACIONA_STOPA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_PORESKA_AMORTIZACIONA_STOPA
+        }
+    )
+
+    validation procijenjen-vt-not-null (
+        name: Procijenjen VT NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_PROCIJENJENI_VIJEK_TRAJANJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_PROCIJENJENI_VIJEK_TRAJANJA
+        }
+    )
+
+    validation rezidualna-vr-not-null (
+        name: Rezidualna vr NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_REZIDUALNA_VRIJEDNOST
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_REZIDUALNA_VRIJEDNOST
+        }
+    )
+
+    validation vijek-trajanja-not-null (
+        name: Vijek trajanja NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P259_VIJEK_TRAJANJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P259_VIJEK_TRAJANJA
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 55283344542087913
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    l_os.id := :P259_ID;
+                
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    :P259_VIJEK_TRAJANJA := l_os.vijek_trajanja;
+                    :P259_AMORTIZACIONA_STOPA := l_os.amortizaciona_stopa;
+                    :P259_PROCIJENJENI_VIJEK_TRAJANJA := l_os.procijenjeni_vijek_trajanja;
+                    :P259_PORESKA_AMORTIZACIONA_STOPA := l_os.poreska_amortizaciona_stopa;
+                    :P259_GRAD_ID := l_os.grad_id;
+                    :P259_DONACIJA := l_os.donacija;
+                    :P259_REZIDUALNA_VRIJEDNOST := l_os.rezidualna_vrijednost;
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 55282520377087913
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P259_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_os t_sec_osnovna_sredstva;
+                BEGIN
+                    l_os := t_sec_osnovna_sredstva();
+                    
+                    l_os.id := :P259_ID;
+                    os_pkg.get_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                
+                    l_os.vijek_trajanja := :P259_VIJEK_TRAJANJA;
+                    l_os.amortizaciona_stopa := :P259_AMORTIZACIONA_STOPA;
+                    l_os.procijenjeni_vijek_trajanja := :P259_PROCIJENJENI_VIJEK_TRAJANJA;
+                    l_os.poreska_amortizaciona_stopa := :P259_PORESKA_AMORTIZACIONA_STOPA;
+                    l_os.grad_id := :P259_GRAD_ID;
+                    l_os.donacija := :P259_DONACIJA;
+                    l_os.rezidualna_vrijednost := :P259_REZIDUALNA_VRIJEDNOST;
+                
+                    l_os.history_komentar := :P259_HISTORY_KOMENTAR;
+                    os_pkg.update_osnovno_sredstvo (
+                        p_os => l_os
+                    );
+                 
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 55282918542087913
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

@@ -1,0 +1,112 @@
+/* =========================================================
+   Custom Navigation Menu Icons
+   Oracle APEX - zamjena standardnih font ikonica slikama
+   ========================================================= */
+
+/* Osnovna klasa - generička podešavanja za sve custom ikonice.
+   Ako tvoj navigation item renderuje ikonicu kao font-icon
+   (npr. <span class="fa fa-home">), ova klasa "gasi" font-icon
+   sadržaj i prikazuje sliku umjesto njega. */
+.fa.custom-nav-icon {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 22px 22px;
+    width: 22px;
+    height: 22px;
+    display: inline-block;
+}
+
+.fa.custom-nav-icon::before {
+    content: "" !important;
+}
+
+/* =========================================================
+   Pojedinačne ikonice po stavkama menija.
+   Za svaku stavku menija napravi novu klasu i promijeni
+   samo naziv fajla slike (background-image).
+
+   U Navigation Menu -> stavka -> polje "Icon" upiši:
+   custom-nav-icon icon-pocetna   (npr. za Početnu)
+   ========================================================= */
+
+/* VAŽNO: Unutar samog CSS fajla NE rade APEX supstitucioni
+   stringovi (#APP_FILES#, #APP_IMAGES#, #WORKSPACE_IMAGES#...).
+   Oni rade samo u HTML-u koji APEX renderuje (stranice, File URLs
+   polja i sl.), ali NE i u sadržaju statičnog CSS fajla - on se
+   šalje browseru "kao što jeste", bez ikakve obrade teksta.
+
+   Zato ovdje koristimo RELATIVNU putanju u odnosu na folder u
+   kojem se nalazi ovaj CSS fajl (npr. ako je nav-icons.css u
+   folderu "css", a slike u folderu "icons", relativna putanja
+   je "../icons/naziv-slike.png"). */
+
+.icon-pocetna {
+    background-image: url('../icons/icon-pocetna.png');
+}
+
+.icon-izvjestaji {
+    background-image: url('../icons/icon-izvjestaji.png');
+}
+
+.icon-korisnici {
+    background-image: url('../icons/icon-korisnici.png');
+}
+
+.icon-podesavanja {
+    background-image: url('../icons/icon-podesavanja.png');
+}
+
+.icon-custom-bank {
+    background-image: url('../icons/bank.png');
+}
+
+.icon-custom-bank-transfer {
+    background-image: url('../icons/bank-transfer.png');
+}
+
+.icon-custom-transaction-history {
+    background-image: url('../icons/transaction-history.png');
+}
+.icon-custom-money-exchange {
+    background-image: url('../icons/money-exchange.png');
+}
+.icon-custom-money {
+    background-image: url('../icons/money.png');
+}
+.icon-custom-cheque{
+    background-image: url('../icons/cheque.png');
+}
+.icon-custom-chart{
+    background-image: url('../icons/chart.png');
+}
+.icon-custom-pencil{
+    background-image: url('../icons/pencil.png');
+}
+.icon-custom-file-exchange{
+    background-image: url('../icons/file-exchange.png');
+}
+
+.icon-custom-search{
+    background-image: url('../icons/search.png');
+}
+.icon-custom-trash{
+    background-image: url('../icons/trash.png');
+}
+.icon-custom-printer{
+    background-image: url('../icons/printer.png');
+}
+.icon-custom-comment{
+    background-image: url('../icons/comment.png');
+}
+
+.icon-custom-diskette{
+    background-image: url('../icons/diskette.png');
+}
+.icon-custom-book{
+    background-image: url('../icons/book.png');
+}
+.icon-custom-task{
+    background-image: url('../icons/task.png');
+}
+ 
+ 

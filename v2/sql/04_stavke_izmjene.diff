@@ -1,0 +1,289 @@
+### SPECIFIKACIJA: 04_stavke.sql linije 352-375 [dodato]
++   352      -- v2 (Stavke i cjenovnici) -----------------------------------------
++   353      -- PDV stopa stavke u %: 0 kad OOJ nije u PDV sistemu; inače stopa
++   354      -- posebnog PDV indikatora stavke, a za "pun iznos" opšta stopa 17.
++   355      function pdv_stopa (
++   356          p_stavka_id in number,
++   357          p_ooj_id    in number default null
++   358      ) return number;
++   359  
++   360      -- 'Y' ako se stavka koristi u nekom dokumentu (faktura, ugovor,
++   361      -- robni dokument, popis, trebovanje, normativ, radni nalog).
++   362      function stavka_u_upotrebi (
++   363          p_stavka_id in number
++   364      ) return varchar2;
++   365  
++   366      -- Klasa "Ostalo" firme (pravi je ako ne postoji); podrazumijevana klasa.
++   367      function klasa_ostalo (
++   368          p_ooj_id in number
++   369      ) return number;
++   370  
++   371      -- Sljedeća slobodna numerička šifra stavke u OOJ (6 cifara).
++   372      function sljedeca_sifra (
++   373          p_ooj_id in number
++   374      ) return varchar2;
++   375  
+
+### TIJELO: 04_stavke.sql linije 431-431 [dodato]
++   431          l_petlja        number;
+
+### TIJELO: 04_stavke.sql linije 436-450 [dodato]
++   436  
++   437          -- v2: nadređena klasa ne smije biti podređena ovoj (petlja)
++   438          if l_nadredjeno_id is not null then
++   439              select count(*)
++   440                into l_petlja
++   441                from sec_klase_stavki
++   442               where id = l_nadredjeno_id
++   443               start with id = p_id
++   444             connect by nocycle prior id = nadredjeno_id;
++   445              if l_petlja > 0 then
++   446                  raise_application_error(-20102,
++   447                      'Nadređena klasa ne može biti jedna od podređenih klasa.');
++   448              end if;
++   449          end if;
++   450  
+
+### TIJELO: 04_stavke.sql linije 465-465 [dodato]
++   465          l_broj number;
+
+### TIJELO: 04_stavke.sql linije 467-476 [dodato]
++   467          -- v2: klasa sa podklasama ili stavkama se ne briše
++   468          select count(*) into l_broj from sec_klase_stavki where nadredjeno_id = p_id;
++   469          if l_broj = 0 then
++   470              select count(*) into l_broj from sec_stavke where klasa_id = p_id;
++   471          end if;
++   472          if l_broj > 0 then
++   473              raise_application_error(-20103,
++   474                  'Klasa ima podređene klase ili stavke i ne može se obrisati.');
++   475          end if;
++   476  
+
+### TIJELO: 04_stavke.sql linije 552-552 [dodato]
++   552          l_stopa number;
+
+### TIJELO: 04_stavke.sql linije 554-555 [dodato]
++   554          -- v2: MPC po stopi stavke i PDV sistemu OOJ (ranije fiksno 1,17)
++   555          l_stopa := pdv_stopa(p_stavka_id);
+
+### TIJELO: 04_stavke.sql linije 564-565 [zamijenjeno]
+-                     p_vpc := p_nabavna_cijena + ( p_nabavna_cijena * c1.marza / 100 );
+-                     p_mpc := p_vpc * 1.17;
+-                
++   564              p_vpc := round(p_nabavna_cijena + ( p_nabavna_cijena * c1.marza / 100 ), 2);
++   565              p_mpc := round(p_vpc * ( 1 + l_stopa / 100 ), 2);
+
+### TIJELO: 04_stavke.sql linije 580-583 [zamijenjeno]
+-              
+-              p_nabavna_cijena:=0;
+-              p_vpc:=0;
+-              p_mpc:=0;
+-            
++   580        p_nabavna_cijena := 0;
++   581        p_vpc := 0;
++   582        p_mpc := 0;
++   583        -- v2: posljednja aktivna cijena (ranije nasumična kad ih ima više)
+
+### TIJELO: 04_stavke.sql linije 585-590 [zamijenjeno]
+-                        from cjenovnici cj
+-                        join cjenovnik_stavke cs on cs.cjenovnik_id=cj.id
+-                        where cj.id=p_cjenovnik_id
+-                        and cs.stavka_id=p_stavka_id
+-                        and cs.valid='Y')
+-                        
++   585                  from cjenovnik_stavke cs
++   586                  where cs.cjenovnik_id = p_cjenovnik_id
++   587                  and cs.stavka_id = p_stavka_id
++   588                  and cs.valid = 'Y'
++   589                  order by cs.datum desc nulls last, cs.id desc
++   590                  fetch first 1 rows only)
+
+### TIJELO: 04_stavke.sql linije 592-594 [zamijenjeno]
+-                
+-                  p_nabavna_cijena:=c.nabavna_cijena;
+-                  p_vpc:=c.vpc;
+-                  p_mpc:=c.mpc;
+-              
++   592            p_nabavna_cijena := c.nabavna_cijena;
++   593            p_vpc := c.vpc;
++   594            p_mpc := c.mpc;
+
+### TIJELO: 04_stavke.sql linije 596-595 [uklonjeno]
+-            
+
+### TIJELO: 04_stavke.sql linije 690-690 [dodato]
++   690          -- v2 (O-06): klasa je obavezna; bez klase ide u "Ostalo"
+
+### TIJELO: 04_stavke.sql linije 711-711 [zamijenjeno]
+-                           p_klasa_id,
++   711                     coalesce(p_klasa_id, klasa_ostalo(p_ooj_id)),
+
+### TIJELO: 04_stavke.sql linije 736-736 [dodato]
++   736          -- v2 (O-06): klasa je obavezna; bez klase ide u "Ostalo"
+
+### TIJELO: 04_stavke.sql linije 746-746 [zamijenjeno]
+-                    klasa_id = p_klasa_id,
++   746              klasa_id = coalesce(p_klasa_id, klasa_ostalo(p_ooj_id)),
+
+### TIJELO: 04_stavke.sql linije 762-763 [zamijenjeno]
+-                update kif_stavke
++   762          -- v2 (O-02): samo fakture koje nisu fiskalizovane ni proknjižene
++   763          update kif_stavke ks
+
+### TIJELO: 04_stavke.sql linije 767-774 [zamijenjeno]
+-                    stavka_id = p_stavka_id;
++   767              ks.stavka_id = p_stavka_id
++   768              and exists (
++   769                  select 1
++   770                    from kif k
++   771                   where k.id = ks.kif_id
++   772                     and k.glavna_knjiga_id is null
++   773                     and nvl(k.fiskalizovano, 'N') = 'N'
++   774              );
+
+### TIJELO: 04_stavke.sql linije 782-791 [dodato]
++   782          -- v2: stavka iz dokumenata se ne briše (strani ključevi su isključeni)
++   783          if stavka_u_upotrebi(p_id) = 'Y' then
++   784              raise_application_error(-20101,
++   785                  'Stavka se koristi u dokumentima i ne može se obrisati. Deaktivirajte je.');
++   786          end if;
++   787  
++   788          delete from cjenovnik_stavke
++   789          where
++   790              stavka_id = p_id;
++   791  
+
+### TIJELO: 04_stavke.sql linije 1106-1106 [dodato]
++  1106          l_broj number;
+
+### TIJELO: 04_stavke.sql linije 1108-1117 [dodato]
++  1108          -- v2: cjenovnik sa cijenama ili dodijeljen skladištu se ne briše
++  1109          select count(*) into l_broj from cjenovnik_stavke where cjenovnik_id = p_id;
++  1110          if l_broj = 0 then
++  1111              select count(*) into l_broj from skladista where cjenovnik_id = p_id;
++  1112          end if;
++  1113          if l_broj > 0 then
++  1114              raise_application_error(-20104,
++  1115                  'Cjenovnik ima cijene ili je dodijeljen skladištu i ne može se obrisati. Deaktivirajte ga.');
++  1116          end if;
++  1117  
+
+### TIJELO: 04_stavke.sql linije 1139-1140 [dodato]
++  1139              order by datum desc nulls last, id desc
++  1140              fetch first 1 rows only
+
+### TIJELO: 04_stavke.sql linije 1159-1160 [zamijenjeno]
+-                    join cjenovnici c on c.id=cs.cjenovnik_id    
+-                    where cjenovnik_id = p_cjenovnik_id
++  1159              join cjenovnici c on c.id = cs.cjenovnik_id
++  1160              where cs.cjenovnik_id = p_cjenovnik_id
+
+### TIJELO: 04_stavke.sql linije 1163-1164 [dodato]
++  1163              order by cs.datum desc nulls last, cs.id desc
++  1164              fetch first 1 rows only
+
+### TIJELO: 04_stavke.sql linije 1329-1432 [dodato]
++  1329  
++  1330      -- v2 (Stavke i cjenovnici) -----------------------------------------
++  1331      function pdv_stopa (
++  1332          p_stavka_id in number,
++  1333          p_ooj_id    in number default null
++  1334      ) return number is
++  1335          c_opsta_stopa constant number := 17;
++  1336      begin
++  1337          for c1 in (
++  1338              select
++  1339                  s.ooj_id,
++  1340                  s.pdv_indikator,
++  1341                  pi.vrijednost
++  1342              from
++  1343                  sec_stavke s
++  1344                  left join sif.acc_pdv_indikatori pi on pi.id = s.pdv_indikator_id
++  1345              where
++  1346                  s.id = p_stavka_id
++  1347          ) loop
++  1348              if nvl(core.ooj_pkg.get_ooj_pdv_sistem(coalesce(p_ooj_id, c1.ooj_id)), 'N') != 'Y' then
++  1349                  return 0;
++  1350              end if;
++  1351              -- poseban PDV indikator (oslobođenje, 0%) samo kad je izabran;
++  1352              -- "pun iznos" (ili bez indikatora) = opšta stopa
++  1353              if c1.pdv_indikator = 'N' and c1.vrijednost is not null then
++  1354                  return c1.vrijednost;
++  1355              end if;
++  1356              return c_opsta_stopa;
++  1357          end loop;
++  1358  
++  1359          return c_opsta_stopa;
++  1360      end pdv_stopa;
++  1361  
++  1362      function stavka_u_upotrebi (
++  1363          p_stavka_id in number
++  1364      ) return varchar2 is
++  1365          l_ima number;
++  1366      begin
++  1367          select count(*)
++  1368            into l_ima
++  1369            from dual
++  1370           where exists (select 1 from kif_stavke         where stavka_id = p_stavka_id)
++  1371              or exists (select 1 from ugovor_stavke      where stavka_id = p_stavka_id)
++  1372              or exists (select 1 from operacija_stavke   where stavka_id = p_stavka_id)
++  1373              or exists (select 1 from popis_stavke       where stavka_id = p_stavka_id)
++  1374              or exists (select 1 from trebovanje_stavke  where stavka_id = p_stavka_id)
++  1375              or exists (select 1 from normativi          where stavka_id = p_stavka_id)
++  1376              or exists (select 1 from normativ_stavke    where stavka_id = p_stavka_id)
++  1377              or exists (select 1 from radni_nalozi       where stavka_id = p_stavka_id)
++  1378              or exists (select 1 from radni_nalog_stavke where stavka_id = p_stavka_id);
++  1379  
++  1380          if l_ima = 0 then
++  1381              -- cijene modula (šema SIF): dinamički, da paket ne zavisi od granta
++  1382              begin
++  1383                  execute immediate
++  1384                      'select count(*) from sif.sif_moduli_cijene where stavka_id = :1 and rownum = 1'
++  1385                      into l_ima using p_stavka_id;
++  1386              exception
++  1387                  when others then
++  1388                      l_ima := 0;
++  1389              end;
++  1390          end if;
++  1391  
++  1392          return case when l_ima > 0 then 'Y' else 'N' end;
++  1393      end stavka_u_upotrebi;
++  1394  
++  1395      function klasa_ostalo (
++  1396          p_ooj_id in number
++  1397      ) return number is
++  1398          pragma autonomous_transaction;
++  1399          l_id number;
++  1400      begin
++  1401          select max(id) keep (dense_rank first order by case valid when 'Y' then 0 else 1 end, id)
++  1402            into l_id
++  1403            from sec_klase_stavki
++  1404           where ooj_id = p_ooj_id
++  1405             and nadredjeno_id is null
++  1406             and upper(trim(naziv)) = 'OSTALO';
++  1407  
++  1408          if l_id is null and p_ooj_id is not null then
++  1409              insert into sec_klase_stavki (ooj_id, nadredjeno_id, naziv)
++  1410              values (p_ooj_id, null, 'Ostalo')
++  1411              returning id into l_id;
++  1412              commit;
++  1413          end if;
++  1414  
++  1415          return l_id;
++  1416      end klasa_ostalo;
++  1417  
++  1418      function sljedeca_sifra (
++  1419          p_ooj_id in number
++  1420      ) return varchar2 is
++  1421          l_max number;
++  1422      begin
++  1423          select max(to_number(sifra))
++  1424            into l_max
++  1425            from sec_stavke
++  1426           where ooj_id = p_ooj_id
++  1427             and regexp_like(sifra, '^[0-9]{1,15}$');
++  1428  
++  1429          return lpad(to_char(nvl(l_max, 0) + 1),
++  1430                      greatest(6, length(to_char(nvl(l_max, 0) + 1))), '0');
++  1431      end sljedeca_sifra;
++  1432  

@@ -1,0 +1,2290 @@
+page 71 (
+    name: Ugovor / Detalji
+    alias: UGOVOR-DETALJI
+    title: Ugovor / Detalji
+    pageGroup: @ugovori
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region dokumenta (
+        name: Dokumenta
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region klijent-wrapper (
+        name: Klijent Wrapper
+        type: staticContent
+        layout {
+            sequence: 90
+            parentRegion: @ugovor-detalji
+            slot: regionBody
+            columnSpan: 8
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P71_EDITABLE = 'N'
+        }
+    )
+
+    region stavke-ugovora (
+        name: Stavke ugovora
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    redni_broj,
+                    stavka_sifra || ' - ' || stavka_naziv AS stavka,
+                    opis,
+                    kolicina,
+                    jm_naziv,
+                    cijena,
+                    rabat,
+                    iznos,
+                    valuta_sifra
+                FROM
+                    vw_ugovor_stavke
+                WHERE
+                    ugovor_id = :P71_ID
+                ORDER BY
+                    redni_broj
+                
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            link {
+                target: {
+                    page: 75
+                    items: {
+                        P75_ID: #ID#
+                        P75_UGOVOR_ID: &P71_ID.
+                    }
+                    clearCache: 75
+                }
+                linkText: <img  src="#APP_FILES#icons/pencil.png" class="apex-edit-view"   style="height:22px !important; width:22px !important" alt="" >
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P71_EDITABLE = 'Y'
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Jedinica mjere
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RABAT (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Rabat %
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BROJ (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Redni Broj
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VALUTA_SIFRA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region ugovor-detalji (
+        name: Ugovor / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P71_EDITABLE = 'N'
+        }
+    )
+
+    pageItem P71_ANEKS_BROJ (
+        type: hidden
+        layout {
+            sequence: 260
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P71_AUTOMATSKO_PRODUZENJE (
+        type: switch
+        label {
+            label: Automatsko produženje
+            alignment: left
+        }
+        settings {
+            useDefaults: false
+            onValue: Y
+            onLabel: Da
+            offValue: N
+            offLabel: Ne
+        }
+        layout {
+            sequence: 290
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P71_BROJ (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P71_BROJ_STAVKI (
+        type: hidden
+        layout {
+            sequence: 250
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P71_DAN_DOSPIJECA (
+        type: numberField
+        label {
+            label: Dan dospijeća
+            alignment: left
+        }
+        settings {
+            minValue: 1
+            maxValue: 31
+        }
+        layout {
+            sequence: 270
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_DOKUMENTA (
+        type: fileUpload
+        label {
+            label: Dokumentacija
+            alignment: left
+        }
+        display {
+            displayAs: blockDropzone
+        }
+        storage {
+            type: appTempFiles
+            allowMultipleFiles: true
+        }
+        layout {
+            sequence: 10
+            region: @dokumenta
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_EDITABLE (
+        type: hidden
+        layout {
+            sequence: 240
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+    )
+
+    pageItem P71_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P71_INTERVAL_ID (
+        type: selectOne
+        label {
+            label: Interval
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-intervali
+        }
+        layout {
+            sequence: 190
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_IZNOS (
+        type: textField
+        label {
+            label: Iznos
+            alignment: left
+        }
+        layout {
+            sequence: 150
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: to_number(nvl(:P71_BROJ_STAVKI, '0')) > 0
+        }
+        help {
+            helpText: Kad ugovor ima stavke, iznos je njihov zbir.
+        }
+    )
+
+    pageItem P71_IZNOS_KM (
+        type: displayOnly
+        label {
+            label: Iznos u KM
+            alignment: left
+        }
+        layout {
+            sequence: 160
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_IZVRSILAC_NARUCIOC (
+        type: radioGroup
+        label {
+            label: Da li je klijent izvršilac / naručioc
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @izvrsilac-narucioc
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 110
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P71_KLIJENT_ID (
+        type: selectOne
+        label {
+            label: Klijent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @sec-klijenti
+        }
+        layout {
+            sequence: 10
+            region: @klijent-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_KURS (
+        type: numberField
+        label {
+            label: Kurs na dan početka
+            alignment: left
+        }
+        layout {
+            sequence: 170
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_NAZIV (
+        type: textField
+        label {
+            label: Naziv ugovora
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            cssClasses: apex_disabled
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_NAZIV_DISPLAY (
+        type: displayOnly
+        label {
+            label: Naziv ugovora
+            alignment: left
+        }
+        layout {
+            sequence: 80
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_OJ_ID (
+        type: selectOne
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+        }
+        layout {
+            sequence: 100
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P71_OTKAZNI_ROK_DANA (
+        type: numberField
+        label {
+            label: Otkazni rok (dana)
+            alignment: left
+        }
+        settings {
+            minValue: 0
+        }
+        layout {
+            sequence: 280
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_PREDMET (
+        type: textField
+        label {
+            label: Predmet
+            alignment: left
+        }
+        layout {
+            sequence: 120
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 60
+        }
+        validation {
+            maxLength: 4000
+        }
+    )
+
+    pageItem P71_PRODUZENJE_MJESECI (
+        type: numberField
+        label {
+            label: Produženje (mjeseci)
+            alignment: left
+        }
+        settings {
+            minValue: 1
+        }
+        layout {
+            sequence: 300
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_REFERENCA (
+        type: radioGroup
+        label {
+            label: Ugovor je referenca na drugi ugovor
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 50
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_REFERENCA_ID (
+        type: selectOne
+        label {
+            label: Referenca
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv AS d,
+                    id AS r
+                FROM
+                    ugovori
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND referenca = 'N'
+                    AND valid = 'Y'
+                    AND status = 'Z'
+                ```
+        }
+        layout {
+            sequence: 60
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_STATUS (
+        type: hidden
+        layout {
+            sequence: 220
+            region: @ugovor-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P71_STATUS_NAZIV (
+        type: displayOnly
+        label {
+            label: Status
+            alignment: left
+        }
+        layout {
+            sequence: 230
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_UGOVOR_END (
+        type: datePicker
+        label {
+            label: Kraj ugovora
+            alignment: left
+        }
+        settings {
+            minDate: item
+            minItem: P71_UGOVOR_START
+        }
+        layout {
+            sequence: 140
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P71_UGOVOR_START (
+        type: datePicker
+        label {
+            label: Početak ugovora
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P71_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 210
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+    )
+
+    pageItem P71_VALUTA_ID (
+        type: selectOne
+        label {
+            label: Valuta
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-valute
+        }
+        layout {
+            sequence: 180
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P71_VRSTA_UGOVORA_ID (
+        type: selectOne
+        label {
+            label: Vrsta ugovora
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @vrste-ugovora
+        }
+        layout {
+            sequence: 40
+            region: @ugovor-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 70
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P71_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_ID IS NOT NULL AND :P71_EDITABLE = 'Y'
+        }
+    )
+
+    button dodaj-stavku_1 (
+        buttonName: DODAJ_STAVKU
+        label: Dodaj Stavku
+        layout {
+            sequence: 10
+            region: @stavke-ugovora
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-square
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 75
+                items: {
+                    P75_UGOVOR_ID: &P71_ID.
+                }
+                clearCache: 75
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_EDITABLE = 'Y'
+        }
+    )
+
+    button new-client (
+        buttonName: NEW_CLIENT
+        label: Novi klijent
+        layout {
+            sequence: 10
+            region: @klijent-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-user-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_EDITABLE = 'Y'
+        }
+    )
+
+    button raskini (
+        buttonName: RASKINI
+        label: Raskini ugovor
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-times-square-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Ugovor i svi njegovi aneksi biće označeni kao raskinuti.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_STATUS = 'Z' AND :P71_REFERENCA_ID IS NULL
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_ID IS NOT NULL AND :P71_EDITABLE = 'Y'
+        }
+    )
+
+    button save-dokumenta (
+        buttonName: SAVE_DOKUMENTA
+        label: Sačuvaj dokumente
+        layout {
+            sequence: 60
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_ID IS NOT NULL AND :P71_EDITABLE = 'N'
+        }
+    )
+
+    button zakljuci (
+        buttonName: ZAKLJUCI
+        label: Zaključi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-check
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Nakon zaključenja ugovor se više ne može mijenjati. Izmjene idu kroz aneks.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_ID IS NOT NULL AND :P71_EDITABLE = 'Y'
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-kurs (
+        name: Change - Kurs
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: [
+                P71_VALUTA_ID
+                P71_UGOVOR_START
+            ]
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P71_KURS := ugovori_pkg.get_kurs (
+                        p_valuta_id => :P71_VALUTA_ID,
+                        p_ooj_id    => :APP_OOJ_ID,
+                        p_datum     => :P71_UGOVOR_START
+                    );
+                    ```
+                itemsToSubmit: [
+                    P71_VALUTA_ID
+                    P71_UGOVOR_START
+                ]
+                itemsToReturn: P71_KURS
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-produženje (
+        name: Change - Produženje
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: P71_AUTOMATSKO_PRODUZENJE
+        }
+        clientSideCondition {
+            type: item=value
+            item: P71_AUTOMATSKO_PRODUZENJE
+            value: Y
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P71_PRODUZENJE_MJESECI
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P71_PRODUZENJE_MJESECI
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction change-referenca-id (
+        name: Change - Referenca ID
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P71_REFERENCA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P71_REFERENCA_ID
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    ugovori_pkg.get_referenca (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_referenca_id => :P71_REFERENCA_ID,
+                        p_godina       => :APP_GODINA,
+                        p_naziv        => :P71_NAZIV,
+                        p_broj         => :P71_BROJ
+                    );
+                    ```
+                itemsToSubmit: [
+                    P71_BROJ
+                    P71_NAZIV
+                    P71_REFERENCA_ID
+                ]
+                itemsToReturn: [
+                    P71_BROJ
+                    P71_NAZIV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P71_NAZIV := null;
+                    :P71_BROJ := null;
+                    ```
+                itemsToSubmit: [
+                    P71_BROJ
+                    P71_NAZIV
+                ]
+                itemsToReturn: [
+                    P71_BROJ
+                    P71_NAZIV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P71_NAZIV
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P71_NAZIV
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-set-item (
+        name: Dialog Closed - Set item
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @new-client
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P71_KLIJENT_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-stavke (
+        name: Dialog Closed - Stavke
+        execution {
+            sequence: 80
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @stavke-ugovora
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    SELECT iznos, iznos_km, broj_stavki
+                    INTO :P71_IZNOS, :P71_IZNOS_KM, :P71_BROJ_STAVKI
+                    FROM vw_ugovori
+                    WHERE id = :P71_ID;
+                    ```
+                itemsToSubmit: P71_ID
+                itemsToReturn: [
+                    P71_IZNOS
+                    P71_IZNOS_KM
+                    P71_BROJ_STAVKI
+                ]
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke-ugovora
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction hide (
+        name: Hide
+        execution {
+            sequence: 40
+        }
+        when {
+            event: ready
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: [
+                    P71_NAZIV
+                    P71_REFERENCA_ID
+                ]
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction toggle-referenca-yn (
+        name: Toggle - Referenca YN
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P71_REFERENCA
+        }
+        clientSideCondition {
+            type: item=value
+            item: P71_REFERENCA
+            value: Y
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    core.protokoli_pkg.get_brojac (
+                        p_ooj_id             => :APP_OOJ_ID,
+                        p_vrsta_naloga_sifra => 'ug',
+                        p_godina             => :APP_GODINA,
+                        p_broj               => :P71_BROJ,
+                        p_naziv              => :P71_NAZIV
+                    );
+                    ```
+                itemsToSubmit: [
+                    P71_BROJ
+                    P71_NAZIV
+                ]
+                itemsToReturn: [
+                    P71_BROJ
+                    P71_NAZIV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 30
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P71_NAZIV
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-hide-2 (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P71_REFERENCA_ID
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P71_REFERENCA_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-show-2 (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P71_NAZIV
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation end-not-null (
+        name: End NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_UGOVOR_END
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_UGOVOR_END
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation in-not-null (
+        name: IN NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_IZVRSILAC_NARUCIOC
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_IZVRSILAC_NARUCIOC
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation interval-not-null (
+        name: Interval NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_INTERVAL_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_INTERVAL_ID
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation iznos-must-be-a-number (
+        name: Iznos MUST BE A NUMBER
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: itemIsNumeric
+            item: P71_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# mora biti broj.
+            associatedItem: @P71_IZNOS
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation iznos-not-null (
+        name: Iznos NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_IZNOS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_IZNOS
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation klijent-not-null (
+        name: Klijent NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_KLIJENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_KLIJENT_ID
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation kurs-not-null (
+        name: Kurs not null
+        execution {
+            sequence: 130
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_KURS
+        }
+        error {
+            errorMessage: Kurs na dan početka ugovora nije u kursnoj listi. Unesite kurs.
+            associatedItem: @P71_KURS
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST IN ('CREATE','SAVE','ZAKLJUCI') AND :P71_VALUTA_ID IS NOT NULL
+        }
+    )
+
+    validation oj-id-not-null (
+        name: OJ ID NOT NULL
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_OJ_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_OJ_ID
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation predmet-not-null (
+        name: Predmet NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_PREDMET
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_PREDMET
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation produženje (
+        name: Produženje
+        execution {
+            sequence: 140
+        }
+        validation {
+            plsqlExpression: :P71_AUTOMATSKO_PRODUZENJE = 'N' OR to_number(:P71_PRODUZENJE_MJESECI) > 0
+        }
+        error {
+            errorMessage: Kad je uključeno automatsko produženje, unesite trajanje produženja u mjesecima.
+            associatedItem: @P71_PRODUZENJE_MJESECI
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation referenca-not-null (
+        name: REFERENCA NOT NULL
+        execution {
+            sequence: 110
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_REFERENCA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_REFERENCA
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation start-not-null (
+        name: Start NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_UGOVOR_START
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_UGOVOR_START
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation valuta-not-null (
+        name: Valuta NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_VALUTA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_VALUTA_ID
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    validation vrsta-not-null (
+        name: Vrsta NOT NULL
+        execution {
+            sequence: 120
+        }
+        validation {
+            type: itemIsNotNull
+            item: P71_VRSTA_UGOVORA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P71_VRSTA_UGOVORA_ID
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,ZAKLJUCI
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 130
+        }
+        advanced {
+            executionMappingIdentifier: 28549637172165345
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE,ZAKLJUCI,RASKINI,SAVE_DOKUMENTA
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.delete_ugovor (
+                    p_id => :P71_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 28516825979706325
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process dokumenta (
+        name: Dokumenta
+        type: executeCode
+        source {
+            plsqlCode: ugovori_pkg.insert_ugovor_dokumenta(p_ugovor_id => :P71_ID, p_dokumenta => :P71_DOKUMENTA);
+        }
+        execution {
+            sequence: 120
+        }
+        advanced {
+            executionMappingIdentifier: 80196928181749130
+        }
+        serverSideCondition {
+            whenButtonPressed: @save-dokumenta
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.get_ugovor (
+                    p_id                 => :P71_ID,
+                    p_ooj_id             => :P71_OOJ_ID,
+                    p_klijent_id         => :P71_KLIJENT_ID,
+                    p_valuta_id          => :P71_VALUTA_ID,
+                    p_izvrsilac_narucioc => :P71_IZVRSILAC_NARUCIOC,
+                    p_ugovor_start       => :P71_UGOVOR_START,
+                    p_ugovor_end         => :P71_UGOVOR_END,
+                    p_iznos              => :P71_IZNOS,
+                    p_naziv              => :P71_NAZIV,
+                    p_broj               => :P71_BROJ,
+                    p_predmet            => :P71_PREDMET,
+                    p_referenca          => :P71_REFERENCA,
+                    p_referenca_id       => :P71_REFERENCA_ID,
+                    p_oj_id              => :P71_OJ_ID,
+                    p_interval_id        => :P71_INTERVAL_ID,
+                    p_valid              => :P71_VALID
+                );
+                
+                :P71_NAZIV_DISPLAY := :P71_NAZIV;
+                
+                ugovori_pkg.get_ugovor_dodatno (
+                    p_id                    => :P71_ID,
+                    p_vrsta_ugovora_id      => :P71_VRSTA_UGOVORA_ID,
+                    p_status                => :P71_STATUS,
+                    p_status_naziv          => :P71_STATUS_NAZIV,
+                    p_kurs                  => :P71_KURS,
+                    p_iznos_km              => :P71_IZNOS_KM,
+                    p_dan_dospijeca         => :P71_DAN_DOSPIJECA,
+                    p_otkazni_rok_dana      => :P71_OTKAZNI_ROK_DANA,
+                    p_automatsko_produzenje => :P71_AUTOMATSKO_PRODUZENJE,
+                    p_produzenje_mjeseci    => :P71_PRODUZENJE_MJESECI,
+                    p_aneks_broj            => :P71_ANEKS_BROJ,
+                    p_broj_stavki           => :P71_BROJ_STAVKI
+                );
+                
+                :P71_EDITABLE := ugovori_pkg.is_ugovor_editable_yn(:P71_ID);
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 28516469463706321
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_ID
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_ugovor_id NUMBER;
+                BEGIN
+                    IF :P71_REFERENCA = 'N' THEN
+                        :P71_REFERENCA_ID := null;
+                    END IF;
+                
+                    l_ugovor_id := ugovori_pkg.insert_ugovor (
+                        p_ooj_id                => :APP_OOJ_ID,
+                        p_klijent_id            => :P71_KLIJENT_ID,
+                        p_valuta_id             => :P71_VALUTA_ID,
+                        p_izvrsilac_narucioc    => :P71_IZVRSILAC_NARUCIOC,
+                        p_ugovor_start          => :P71_UGOVOR_START,
+                        p_ugovor_end            => :P71_UGOVOR_END,
+                        p_iznos                 => :P71_IZNOS,
+                        p_naziv                 => :P71_NAZIV,
+                        p_broj                  => :P71_BROJ,
+                        p_predmet               => :P71_PREDMET,
+                        p_referenca             => :P71_REFERENCA,
+                        p_referenca_id          => :P71_REFERENCA_ID,
+                        p_oj_id                 => :P71_OJ_ID,
+                        p_interval_id           => :P71_INTERVAL_ID,
+                        p_vrsta_ugovora_id      => :P71_VRSTA_UGOVORA_ID,
+                        p_status                => 'P',
+                        p_kurs                  => :P71_KURS,
+                        p_dan_dospijeca         => :P71_DAN_DOSPIJECA,
+                        p_otkazni_rok_dana      => :P71_OTKAZNI_ROK_DANA,
+                        p_automatsko_produzenje => :P71_AUTOMATSKO_PRODUZENJE,
+                        p_produzenje_mjeseci    => :P71_PRODUZENJE_MJESECI,
+                        p_godina                => :APP_GODINA
+                    );
+                
+                    ugovori_pkg.insert_ugovor_dokumenta (
+                        p_ugovor_id => l_ugovor_id,
+                        p_dokumenta => :P71_DOKUMENTA
+                    );
+                
+                    IF :P71_REFERENCA = 'N' THEN
+                        core.protokoli_pkg.update_brojac (
+                            p_ooj_id             => :APP_OOJ_ID,
+                            p_vrsta_naloga_sifra => 'ug',
+                            p_godina             => :APP_GODINA,
+                            p_value              => 1
+                        );
+                    END IF;
+                END;
+                
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        advanced {
+            executionMappingIdentifier: 28516672648706323
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process pripremi-aneks (
+        name: Pripremi aneks
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_osnovni NUMBER := :P71_REFERENCA_ID;
+                    l_izvor   NUMBER := ugovori_pkg.get_posljednja_verzija(:P71_REFERENCA_ID);
+                    l_naziv   VARCHAR2(255);
+                    l_broj    VARCHAR2(50);
+                    l_ref     VARCHAR2(1);
+                    l_ref_id  NUMBER;
+                    l_valid   VARCHAR2(1);
+                BEGIN
+                    -- Puni formu podacima posljednje zaključene verzije. Razlog: aneks nastaje kao kopija važećih uslova.
+                    ugovori_pkg.get_ugovor (
+                        p_id                 => l_izvor,
+                        p_ooj_id             => :P71_OOJ_ID,
+                        p_klijent_id         => :P71_KLIJENT_ID,
+                        p_valuta_id          => :P71_VALUTA_ID,
+                        p_izvrsilac_narucioc => :P71_IZVRSILAC_NARUCIOC,
+                        p_ugovor_start       => :P71_UGOVOR_START,
+                        p_ugovor_end         => :P71_UGOVOR_END,
+                        p_iznos              => :P71_IZNOS,
+                        p_naziv              => l_naziv,
+                        p_broj               => l_broj,
+                        p_predmet            => :P71_PREDMET,
+                        p_referenca          => l_ref,
+                        p_referenca_id       => l_ref_id,
+                        p_oj_id              => :P71_OJ_ID,
+                        p_interval_id        => :P71_INTERVAL_ID,
+                        p_valid              => l_valid
+                    );
+                
+                    ugovori_pkg.get_ugovor_dodatno (
+                        p_id                    => l_izvor,
+                        p_vrsta_ugovora_id      => :P71_VRSTA_UGOVORA_ID,
+                        p_status                => :P71_STATUS,
+                        p_status_naziv          => :P71_STATUS_NAZIV,
+                        p_kurs                  => :P71_KURS,
+                        p_iznos_km              => :P71_IZNOS_KM,
+                        p_dan_dospijeca         => :P71_DAN_DOSPIJECA,
+                        p_otkazni_rok_dana      => :P71_OTKAZNI_ROK_DANA,
+                        p_automatsko_produzenje => :P71_AUTOMATSKO_PRODUZENJE,
+                        p_produzenje_mjeseci    => :P71_PRODUZENJE_MJESECI,
+                        p_aneks_broj            => :P71_ANEKS_BROJ,
+                        p_broj_stavki           => :P71_BROJ_STAVKI
+                    );
+                
+                    -- Računa kurs na dan početka kad ga prethodna verzija nema.
+                    -- Razlog: ugovori napravljeni prije izmjena nemaju upisan kurs, pa bi forma aneksa ostala bez njega.
+                    --         Valuta i datum se čitaju iz baze, a ne sa forme, da ne zavisi od formata datuma.
+                    IF :P71_KURS IS NULL THEN
+                        SELECT ugovori_pkg.get_kurs(p_valuta_id => valuta_id, p_ooj_id => ooj_id, p_datum => ugovor_start)
+                        INTO :P71_KURS
+                        FROM ugovori
+                        WHERE id = l_izvor;
+                    END IF;
+                
+                    -- Postavlja oznake aneksa i računa njegov naziv i broj.
+                    :P71_REFERENCA    := 'Y';
+                    :P71_REFERENCA_ID := l_osnovni;
+                    :P71_STATUS       := 'P';
+                    :P71_EDITABLE     := 'Y';
+                
+                    ugovori_pkg.get_referenca (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_referenca_id => l_osnovni,
+                        p_godina       => :APP_GODINA,
+                        p_naziv        => :P71_NAZIV,
+                        p_broj         => :P71_BROJ
+                    );
+                END;
+                
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 80196623455749127
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P71_ID IS NULL AND :P71_REFERENCA_ID IS NOT NULL
+        }
+    )
+
+    process raskini (
+        name: Raskini
+        type: executeCode
+        source {
+            plsqlCode: ugovori_pkg.raskini_ugovor(p_id => :P71_ID);
+        }
+        execution {
+            sequence: 110
+        }
+        advanced {
+            executionMappingIdentifier: 80196801991749129
+        }
+        serverSideCondition {
+            whenButtonPressed: @raskini
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                ugovori_pkg.update_ugovor (
+                    p_id                    => :P71_ID,
+                    p_klijent_id            => :P71_KLIJENT_ID,
+                    p_valuta_id             => :P71_VALUTA_ID,
+                    p_izvrsilac_narucioc    => :P71_IZVRSILAC_NARUCIOC,
+                    p_ugovor_start          => :P71_UGOVOR_START,
+                    p_ugovor_end            => :P71_UGOVOR_END,
+                    p_iznos                 => :P71_IZNOS,
+                    p_predmet               => :P71_PREDMET,
+                    p_oj_id                 => :P71_OJ_ID,
+                    p_interval_id           => :P71_INTERVAL_ID,
+                    p_valid                 => :P71_VALID,
+                    p_vrsta_ugovora_id      => :P71_VRSTA_UGOVORA_ID,
+                    p_kurs                  => :P71_KURS,
+                    p_dan_dospijeca         => :P71_DAN_DOSPIJECA,
+                    p_otkazni_rok_dana      => :P71_OTKAZNI_ROK_DANA,
+                    p_automatsko_produzenje => :P71_AUTOMATSKO_PRODUZENJE,
+                    p_produzenje_mjeseci    => :P71_PRODUZENJE_MJESECI
+                );
+                
+                ugovori_pkg.insert_ugovor_dokumenta (
+                    p_ugovor_id => :P71_ID,
+                    p_dokumenta => :P71_DOKUMENTA
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        advanced {
+            executionMappingIdentifier: 28516753032706324
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,ZAKLJUCI
+        }
+    )
+
+    process zaključi (
+        name: Zaključi
+        type: executeCode
+        source {
+            plsqlCode: ugovori_pkg.zakljuci_ugovor(p_id => :P71_ID);
+        }
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 80196763489749128
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljuci
+        }
+    )
+
+)
+

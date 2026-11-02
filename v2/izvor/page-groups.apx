@@ -1,0 +1,60 @@
+pageGroup administracija (
+    name: Administracija
+)
+
+pageGroup blagajna (
+    name: Blagajna
+)
+
+pageGroup budžet (
+    name: Budžet
+)
+
+pageGroup erp-globalne-stranice (
+    name: ERP - Globalne stranice
+)
+
+pageGroup fakture-računi (
+    name: Fakture - računi
+)
+
+pageGroup glavna-knjiga (
+    name: Glavna knjiga
+)
+
+pageGroup kasa (
+    name: Kasa
+)
+
+pageGroup klijenti (
+    name: Klijenti
+)
+
+pageGroup konfiguracija (
+    name: Konfiguracija
+)
+
+pageGroup osnovna-sredstva (
+    name: Osnovna sredstva
+)
+
+pageGroup proizvodnja (
+    name: Proizvodnja
+)
+
+pageGroup robno-materijalno (
+    name: Robno - materijalno
+)
+
+pageGroup stavke (
+    name: Stavke
+)
+
+pageGroup ugovori (
+    name: Ugovori
+)
+
+pageGroup uio-dokumentacija (
+    name: UIO dokumentacija
+)
+

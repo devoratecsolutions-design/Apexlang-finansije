@@ -1,0 +1,2167 @@
+page 232 (
+    name: PDV Prijava
+    alias: PDV-PRIJAVA1
+    title: PDV Prijava
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    css {
+        inline:
+            ```css
+            #pdv .a-GV-header {
+            
+                height: 60px;
+            
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @glavna-knjiga-pdv-prijava
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region izlaz (
+        name: Izlaz
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: contentBody
+            columnSpan: 3
+            columnCssClasses: u-flex
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--noIcon
+                t-Alert--info
+            ]
+            cssClasses: u-flex-grow-1
+        }
+        accessibility {
+            useLandmark: false
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    region izlazni-pdv (
+        name: Izlazni PDV
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: contentBody
+            startNewRow: false
+            column: 7
+            columnSpan: 3
+            columnCssClasses: u-flex
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--noIcon
+                t-Alert--info
+            ]
+            cssClasses: u-flex-grow-1
+        }
+        accessibility {
+            useLandmark: false
+        }
+        readOnly {
+            type: always
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    region krajnja-potrošnja (
+        name: Krajnja potrošnja
+        type: staticContent
+        layout {
+            sequence: 110
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--noIcon
+                t-Alert--warning
+            ]
+        }
+        readOnly {
+            type: always
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    region p11-wrapper (
+        name: P11 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @izlaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p12-wrapper (
+        name: P12 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @izlaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p13-wrapper (
+        name: P13 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @izlaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p21-wrapper (
+        name: P21 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @ulaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p22-wrapper (
+        name: P22 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @ulaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p23-wrapper (
+        name: P23 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @ulaz
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p32-wrapper (
+        name: P32 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @krajnja-potrošnja
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p33-wrapper (
+        name: P33 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @krajnja-potrošnja
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p34-wrapper (
+        name: P34 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @krajnja-potrošnja
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p41-wrapper (
+        name: P41 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @ulazni-pdv
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p42-wrapper (
+        name: P42 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @ulazni-pdv
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p43-wrapper (
+        name: P43 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 70
+            parentRegion: @ulazni-pdv
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p51-wrapper (
+        name: P51 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @izlazni-pdv
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p61-wrapper (
+        name: P61 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @ulazni-pdv
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region p71-wrapper (
+        name: P71 - Wrapper
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @krajnja-potrošnja
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region pdv-prijava (
+        name: PDV Prijava
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT    
+                    isporuke_p11,
+                    izvoz_p12,
+                    isporuke_osl_pdv_p13,
+                    nabavke_p21,
+                    uvoz_p22,
+                    nabavke_poljoprivreda_p23,
+                    pdv_izlaz_p51,
+                    pdv_ulaz_p61,
+                    pdv_reg_obveznici_p41,
+                    pdv_uvoz_p42,
+                    pausal_poljoprivreda_p43,
+                    fbih_p32,
+                    rs_p33,
+                    dbr_p34,
+                    pdv_uplata_povrat_p71
+                FROM
+                    pdv_prijave
+                WHERE
+                    id = :P232_ID
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @value-attribute-pairs-column
+            templateOptions: [
+                #DEFAULT#
+                t-AVPList--rightAligned
+            ]
+        }
+
+        column DBR_P34 (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Brčko Distrikt - polje 34
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column FBIH_P32 (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Federacija Bosne i Hercegovine - polje 32
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column ISPORUKE_OSL_PDV_P13 (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Izporuke oslobodjene PDV - polje 13
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column ISPORUKE_P11 (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Isporuke - polje 11
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: p11
+            }
+        )
+
+        column IZVOZ_P12 (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Izvoz - polje 12
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column NABAVKE_P21 (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Sve nabavke sem polja 22 i 23 - polje 21
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column NABAVKE_POLJOPRIVREDA_P23 (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Vrijednost nabavke od poljoprivrednika - polje 23
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PAUSAL_POLJOPRIVREDA_P43 (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Pausal poljoprivrednici - polje 43
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PDV_IZLAZ_P51 (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: PDV obracunat na izlaze - polje 51
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PDV_REG_OBVEZNICI_P41 (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: PDV registrovani obveznici - polje 41
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PDV_ULAZ_P61 (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Ulazni PDV (ukupno) - polje 61
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PDV_UPLATA_POVRAT_P71 (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Iznos PDV-a za uplatu/povrat - polje 71
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column PDV_UVOZ_P42 (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: PDV na uvoz  - polje 42
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column RS_P33 (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Republika Srpska - polje 33
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+        column UVOZ_P22 (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Uvoz - polje 22
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+        )
+
+    )
+
+    region ulaz (
+        name: Ulaz
+        type: staticContent
+        layout {
+            sequence: 80
+            slot: contentBody
+            startNewRow: false
+            column: 4
+            columnSpan: 3
+            columnCssClasses: u-flex
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--noIcon
+                t-Alert--info
+            ]
+            cssClasses: u-flex-grow-1
+        }
+        accessibility {
+            useLandmark: false
+        }
+        readOnly {
+            type: always
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    region ulazni-pdv (
+        name: Ulazni PDV
+        type: staticContent
+        layout {
+            sequence: 100
+            slot: contentBody
+            startNewRow: false
+            column: 10
+            columnSpan: 3
+            columnCssClasses: u-flex
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--horizontal
+                t-Alert--noIcon
+                t-Alert--info
+            ]
+            cssClasses: u-flex-grow-1
+        }
+        accessibility {
+            useLandmark: false
+        }
+        readOnly {
+            type: always
+        }
+        config {
+            buildOption: @commented-out
+        }
+    )
+
+    pageItem P232_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P232_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    pageItem P232_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P232_P11 (
+        type: textField
+        label {
+            label: Isporuke - polje 11
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p11-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P12 (
+        type: textField
+        label {
+            label: Izvoz - polje 12
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p12-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P13 (
+        type: textField
+        label {
+            label: Izporuke oslobodjene PDV - polje 13
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p13-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P21 (
+        type: textField
+        label {
+            label: Sve nabavke sem polja 22 i 23 - polje 21
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p21-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P22 (
+        type: textField
+        label {
+            label: Uvoz - polje 22
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p22-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P23 (
+        type: textField
+        label {
+            label: Vrijednost nabavke od poljoprivrednika - polje 23
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p23-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P32 (
+        type: textField
+        label {
+            label: Federacija Bosne i Hercegovine - polje 32
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p32-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+        help {
+            helpText: Federacija BiH
+        }
+    )
+
+    pageItem P232_P33 (
+        type: textField
+        label {
+            label: Republika Srpska - polje 33
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p33-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+        help {
+            helpText: Republika Srpska
+        }
+    )
+
+    pageItem P232_P34 (
+        type: textField
+        label {
+            label: Brčko Distrikt - polje 34
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p34-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+        help {
+            helpText: Brcko Distrikt
+        }
+    )
+
+    pageItem P232_P41 (
+        type: textField
+        label {
+            label: PDV registrovani obveznici - polje 41
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p41-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P42 (
+        type: textField
+        label {
+            label: PDV na uvoz  - polje 42
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p42-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P43 (
+        type: textField
+        label {
+            label: Pausal poljoprivrednici - polje 43
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p43-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P51 (
+        type: textField
+        label {
+            label: PDV obracunat na izlaze - polje 51
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p51-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P61 (
+        type: textField
+        label {
+            label: Ulazni PDV (ukupno) - polje 61
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p61-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_P71 (
+        type: textField
+        label {
+            label: Iznos PDV-a za uplatu/povrat - polje 71
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @p71-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--boldDisplay
+            ]
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P232_PORESKI_PERIOD (
+        type: displayOnly
+        label {
+            label: Poreski period
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P232_VALID (
+        type: displayOnly
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy (
+        buttonName: COPY_11
+        label: Copy - P11
+        layout {
+            sequence: 10
+            region: @p11-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-10 (
+        buttonName: COPY_42
+        label: Copy - P42
+        layout {
+            sequence: 10
+            region: @p42-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-11 (
+        buttonName: COPY_43
+        label: Copy - P43
+        layout {
+            sequence: 10
+            region: @p43-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-12 (
+        buttonName: COPY_32
+        label: Copy - P32
+        layout {
+            sequence: 10
+            region: @p32-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-13 (
+        buttonName: COPY_33
+        label: Copy - P32
+        layout {
+            sequence: 10
+            region: @p33-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-14 (
+        buttonName: COPY_34
+        label: Copy - P34
+        layout {
+            sequence: 10
+            region: @p34-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-15 (
+        buttonName: COPY_71
+        label: Copy - P71
+        layout {
+            sequence: 10
+            region: @p71-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-2 (
+        buttonName: COPY_12
+        label: Copy - P12
+        layout {
+            sequence: 10
+            region: @p12-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-3 (
+        buttonName: COPY_13
+        label: Copy - P13
+        layout {
+            sequence: 10
+            region: @p13-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-4 (
+        buttonName: COPY_21
+        label: Copy - P21
+        layout {
+            sequence: 10
+            region: @p21-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-5 (
+        buttonName: COPY_22
+        label: Copy - P22
+        layout {
+            sequence: 10
+            region: @p22-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-6 (
+        buttonName: COPY_23
+        label: Copy - P23
+        layout {
+            sequence: 10
+            region: @p23-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-7 (
+        buttonName: COPY_51
+        label: Copy - P51
+        layout {
+            sequence: 10
+            region: @p51-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-8 (
+        buttonName: COPY_61
+        label: Copy - P61
+        layout {
+            sequence: 10
+            region: @p61-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button copy-9 (
+        buttonName: COPY_41
+        label: Copy - P41
+        layout {
+            sequence: 10
+            region: @p41-wrapper
+            slot: buttonStart
+        }
+        appearance {
+            buttonTemplate: @icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--noUI
+            ]
+            icon: fa-copy
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button knjizi (
+        buttonName: KNJIZI
+        label: Knjiži PDV prijavu
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-print
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item=value
+            item: P232_VALID
+            value: Y
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: Štampaj
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy (
+        name: Copy - 11
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy
+        }
+
+        action copy (
+            name: Copy 11
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P11').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 11')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-10 (
+        name: Copy - 42
+        execution {
+            sequence: 120
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-10
+        }
+
+        action copy (
+            name: Copy 42
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P42').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 42')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-11 (
+        name: Copy - 43
+        execution {
+            sequence: 130
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-11
+        }
+
+        action copy (
+            name: Copy 43
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P43').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 43')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-12 (
+        name: Copy - 32
+        execution {
+            sequence: 140
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-12
+        }
+
+        action copy (
+            name: Copy 32
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P32').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 32')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-13 (
+        name: Copy - 33
+        execution {
+            sequence: 150
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-13
+        }
+
+        action copy (
+            name: Copy 33
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P33').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 33')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-14 (
+        name: Copy - 34
+        execution {
+            sequence: 160
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-14
+        }
+
+        action copy (
+            name: Copy 34
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P34').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 34')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-15 (
+        name: Copy - 71
+        execution {
+            sequence: 170
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-15
+        }
+
+        action copy (
+            name: Copy 71
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P71').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 71')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-2 (
+        name: Copy - 12
+        execution {
+            sequence: 40
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-2
+        }
+
+        action copy (
+            name: Copy 12
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P12').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 12')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-3 (
+        name: Copy - 13
+        execution {
+            sequence: 50
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-3
+        }
+
+        action copy (
+            name: Copy 13
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P13').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 13')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-4 (
+        name: Copy - 21
+        execution {
+            sequence: 60
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-4
+        }
+
+        action copy (
+            name: Copy 21
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P21').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 21')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-5 (
+        name: Copy - 22
+        execution {
+            sequence: 70
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-5
+        }
+
+        action copy (
+            name: Copy 22
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P22').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 22')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-6 (
+        name: Copy - 23
+        execution {
+            sequence: 80
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-6
+        }
+
+        action copy (
+            name: Copy 23
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P23').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 23')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-7 (
+        name: Copy - 51
+        execution {
+            sequence: 90
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-7
+        }
+
+        action copy (
+            name: Copy 51
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P51').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 51')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-8 (
+        name: Copy - 61
+        execution {
+            sequence: 100
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-8
+        }
+
+        action copy (
+            name: Copy 61
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P61').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 61')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction copy-9 (
+        name: Copy - 41
+        execution {
+            sequence: 110
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @copy-9
+        }
+
+        action copy (
+            name: Copy 41
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    let str = apex.item('P232_P41').getValue();
+                    navigator.clipboard.writeText(str.trim());
+                    
+                    apex.message.showPageSuccess('Uspješno kopirano polje 41')
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print-pdv (
+        name: Print - PDV
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                        filename = 'pdv_prijava_' + $v("P232_PORESKI_PERIOD"), 
+                        report_path = '/reports/ACCOUNTING/izvjestaji/pdv_prijava', 
+                        report_parameters = {
+                            ID: $v("P232_ID")
+                        },
+                        new_tab = false
+                    );
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pdv_pkg.get_pdv_prijava (
+                    p_id                        => :P232_ID,
+                    p_ooj_id                    => :P232_OOJ_ID,
+                    p_poreski_period            => :P232_PORESKI_PERIOD,
+                    p_isporuke_p11              => :P232_P11,
+                    p_izvoz_p12                 => :P232_P12,
+                    p_isporuke_osl_pdv_p13      => :P232_P13,
+                    p_nabavke_p21               => :P232_P21,
+                    p_uvoz_p22                  => :P232_P22,
+                    p_nabavke_poljoprivreda_p23 => :P232_P23,
+                    p_pdv_izlaz_p51             => :P232_P51,
+                    p_pdv_ulaz_p61              => :P232_P61,
+                    p_pdv_reg_obveznici_p41     => :P232_P41,
+                    p_pdv_uvoz_p42              => :P232_P42,
+                    p_pausal_poljoprivreda_p43  => :P232_P43,
+                    p_fbih_p32                  => :P232_P32,
+                    p_rs_p33                    => :P232_P33,
+                    p_dbr_p34                   => :P232_P34,
+                    p_pdv_uplata_povrat_p71     => :P232_P71,
+                    p_valid                     => :P232_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 110812020044280208
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P232_ID
+        }
+    )
+
+    process knjizi-pdv-prijavu (
+        name: Knjizi PDV prijavu
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P232_NALOG_ID := glavna_knjiga_pkg.knjizi_pdv_prijava (
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_godina         => :APP_GODINA,
+                    p_pdv_prijava_id => :P232_ID,
+                    p_proknjizeno    => 'N'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 113290558313712135
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 201
+                items: {
+                    P201_ID: &P232_NALOG_ID.
+                }
+                clearCache: 201
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @knjizi
+        }
+    )
+
+)
+

@@ -1,0 +1,405 @@
+page 101 (
+    name: Izgled faktura
+    alias: IZGLED-FAKTURA
+    title: Izgled faktura
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <b><em>Izgled faktura</em></b> omogućava definisanje i podešavanje šablona koje preduzeće koristi 
+            prilikom izdavanja faktura. </br>
+            Sistem nudi tri unaprijed kreirana šablona između 
+            kojih možete odabrati onaj koji najbolje odgovara vizuelnom identitetu i potrebama poslovanja.</br>
+            Na ikonicu <b><em>„Pregled“</em></b> otvara se stranica <b><em>Izgled faktura / Pregled</em></b>, gdje imate jasan 
+            vizuelni prikaz izabranog šablona. </br>
+            Ikonica <b><em>„Odaberi“</em></b> koja omogućava brzu promjenu trenutnog šablona. 
+            ```
+    }
+
+    region izgled-faktura (
+        name: Izgled faktura
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region obrasci-faktura-report (
+        name: Obrasci faktura Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    null as link,
+                
+                    naziv,
+                    apex_page.get_url(
+                        p_page   => 102,
+                        p_items  => 'P102_ID',
+                        p_values => id
+                    ) as view_link,
+                    case
+                        when :P101_CURRENT_ID = id then
+                            null
+                        else
+                            apex_page.get_url(
+                                p_page    => 101,
+                                p_items   => 'P101_ID',
+                                p_values  => id,
+                                p_request => 'updateObrazac'
+                            )
+                    end as update_link,
+                    case 
+                        when :P101_CURRENT_ID = id then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-layout-1row-2row' as icon_class,
+                    CASE
+                        WHEN coalesce(:P101_ID, '0') = id THEN
+                            'is-active'
+                        ELSE
+                            ''
+                    END as list_class
+                
+                FROM
+                    sif.acc_obrasci_faktura
+                WHERE
+                    valid = 'Y'
+                ORDER BY
+                    id ASC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                t-MediaList--showIcons
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column ICON_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?UPDATE_LINK/}
+                        <a href="#UPDATE_LINK#">
+                            <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                                <span class="t-Icon t-Icon--left fa fa-edit"></span>
+                            </span>
+                        </a>
+                    {endif/}
+                    {if ?VIEW_LINK/}
+                        <a href="#VIEW_LINK#">
+                            <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                                <span class="t-Icon t-Icon--left fa fa-eye"></span>
+                            </span>
+                        </a>
+                    {endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: List Class
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column UPDATE_LINK (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Update Link
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VIEW_LINK (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: View Link
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @obrasci-faktura-report
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P101_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    pageItem P101_CURRENT_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: body
+        }
+    )
+
+    pageItem P101_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.firma_pkg.get_firma_obrazac (
+                    p_firma_id           => :APP_FIRMA_ID,
+                    p_obrazac_fakture_id => :P101_CURRENT_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 28514695518706303
+        }
+    )
+
+    process update-obrazac (
+        name: Update obrazac
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.firma_pkg.update_firma_obrazac (
+                    p_firma_id           => :APP_FIRMA_ID,
+                    p_obrazac_fakture_id => :P101_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 84888229682974339
+        }
+        serverSideCondition {
+            type: request=Value
+            value: updateObrazac
+        }
+    )
+
+)
+

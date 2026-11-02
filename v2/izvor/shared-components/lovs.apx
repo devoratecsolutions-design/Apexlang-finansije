@@ -1,0 +1,4048 @@
+lov acc-grupe-stavki (
+    name: ACC_GRUPE_STAVKI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_grupe_stavki
+            WHERE
+                valid = 'Y'
+                AND (ooj_id is null or ooj_id = :APP_OOJ_ID)
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov acc-if-stavke (
+    name: ACC_IF_STAVKE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                
+                ts.naziv as tip_stavke, sc.id,sc.sifra, sc.naziv, to_char(case c.tip when 'M' then cs.mpc else cs.vpc end, 'FM999G999G999G999G990D00') as jedinična_cijena
+                
+            FROM
+                skladista skl 
+                join cjenovnici c on c.id=skl.cjenovnik_id
+                join cjenovnik_stavke cs on cs.cjenovnik_id=c.id and cs.valid='Y'
+                join sec_stavke sc on sc.id=cs.stavka_id and sc.valid='Y'
+                join sif.acc_tipovi_stavki ts on ts.id=sc.tip_stavke_id
+            
+            WHERE  skl.ooj_id = :APP_OOJ_ID
+            AND skl.id=:A_SKLADISTE_ID
+            order by ts.id, sc.naziv
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column JEDINIČNA_CIJENA (
+        heading {
+            heading: Jedinična Cijena
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Sifra
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column TIP_STAVKE (
+        heading {
+            heading: Tip Stavke
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov acc-indikatori-kif (
+    name: ACC_INDIKATORI_KIF
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_pdv_indikatori
+            WHERE
+                ui IN ('I', 'O')
+                AND valid = 'Y'
+            ORDER BY
+                sifra ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov acc-klase-os (
+    name: ACC_KLASE_OS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                lpad('.', (level * 3) - 3, '.') || sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_klase_os
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            CONNECT BY
+                PRIOR id = parent_id
+            START WITH
+                parent_id IS null
+            ORDER SIBLINGS BY
+                naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov acc-klase-os-last-childs (
+    name: ACC_KLASE_OS_LAST_CHILDS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT *
+            FROM (
+                SELECT
+                    lpad('.', (level * 3) - 3, '.') || sifra || ' - ' || naziv as d,
+                    id as r,
+                    CONNECT_BY_ISLEAF as is_leaf
+                FROM
+                    sif.acc_klase_os
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    AND valid = 'Y'
+                CONNECT BY
+                    PRIOR id = parent_id
+                START WITH
+                    parent_id IS null
+                ORDER SIBLINGS BY naziv 
+            )
+            WHERE
+                is_leaf = 1
+            ORDER BY
+                d;
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov acc-mjesta-troska-gk (
+    name: ACC_MJESTA_TROSKA_AKTIVNO
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select mt.id, mt.sifra, mt.naziv, mt.nad_sifra, mt.nad_naziv, mt.odgovorna_osoba from sif.vw_mjesta_troska mt
+            where mt.ooj_id=:APP_OOJ_ID
+            and mt.valid='Y'
+            order by mt.sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: SIFRA
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAD_NAZIV (
+        heading {
+            heading: Nadređeno MT naziv
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAD_SIFRA (
+        heading {
+            heading: Nadređeno MT  šifra
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ODGOVORNA_OSOBA (
+        heading {
+            heading: Odgovorna Osoba
+        }
+        layout {
+            sequence: 60
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov acc-mjesta-troska-hij (
+    name: ACC_MJESTA_TROSKA_HIJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select lpad(unistr('\2003'), (level-1)*2, unistr('\2003'))
+                   ||  case when connect_by_isleaf = 0 then '▾ ' else '• ' end
+                   || k.sifra || ' - ' || k.naziv                   as naziv,
+                   ltrim(sys_connect_by_path(k.sifra || ' - ' || k.naziv, ' / '), ' / ') as putanja,
+                   k.id                                             as r
+            from sif.acc_mjesta_troska k
+            where k.valid <> 'N'
+            and k.ooj_id=:APP_OOJ_ID
+            and  k.id not in (select id
+                                  from sif.acc_mjesta_troska
+                                 start with id = :P131_ID
+                               connect by prior id = nad_id)
+            start with k.nad_id is null
+            connect by prior k.id = k.nad_id
+            order siblings by k.sifra
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: NAZIV
+    }
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column PUTANJA (
+        heading {
+            heading: Putanja
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column R (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+)
+
+lov acc-mjesta-troska-ooj (
+    name: ACC_MJESTA_TROSKA_OOJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select 
+                   mt.id, 
+                   mt.sifra,
+                   mt.naziv, 
+                   o.naziv as organizaciona_jedinica
+             from sif.acc_mjesta_troska mt
+             left join core.oj o on o.id=mt.oj_id
+             where mt.ooj_id=:APP_OOJ_ID
+             and mt.valid='Y'
+             order by mt.sifra
+             
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ORGANIZACIONA_JEDINICA (
+        heading {
+            heading: Organizaciona Jedinica
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Sifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov acc-moduli (
+    name: ACC_MODULI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select id, opis from sif.acc_moduli 
+            order by opis
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: OPIS
+    }
+)
+
+lov acc-radnici (
+    name: ACC_RADNICI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select r.id, r.interni_broj, r.ime || ' '||r.prezime as radnik, r.email,r.naziv_oj 
+            from sif.vw_acc_radnici r
+            where r.ooj_id=:APP_OOJ_ID
+            and r.valid='Y'
+            or r.id=:P131_RADNIK_ID
+            order by r.ime, r.prezime
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: RADNIK
+    }
+
+    column EMAIL (
+        heading {
+            heading: Email
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column INTERNI_BROJ (
+        heading {
+            heading: Interni Broj
+        }
+        layout {
+            sequence: 15
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV_OJ (
+        heading {
+            heading: Naziv Oj
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column RADNIK (
+        heading {
+            heading: Radnik
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov acc-statusi-naziv (
+    name: ACC_STATUSI.NAZIV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sif.acc_statusi
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov acc-transakcije-os (
+    name: ACC_TRANSAKCIJE_OS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_transakcije_os
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+    subscription {
+        master: @/240/acc-transakcije-os
+    }
+)
+
+lov acc-vezane-if-51 (
+    name: ACC_VEZANE_IF_51
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select k.id, k.naziv_fakture,k.datum_fakture,av.sifra as valuta,to_char(k.valuta_iznos, 'FM999G999G999G990D00') as iznos
+            from kif k
+            join sif.vrste_dokumenata vd on vd.id=k.vrsta_fakture_id
+            join sif.acc_valute av on av.id=k.valuta_id
+            where k.ooj_id=:APP_OOJ_ID
+            and NVL(k.stornirano,'N')='N'
+            and vd.sifra='IF'
+            and k.klijent_id = :P51_KLIJENT_ID
+            and :P51_VRSTA_FAKTURE_SIFRA IN ('KO','KZ')
+            and k.skladiste_id=:A_SKLADISTE_ID
+            union 
+            select k.id, k.naziv_fakture,k.datum_fakture,av.sifra as valuta,to_char(sum(nvl(k.valuta_iznos,0)-nvl(kz.iznos,0)), 'FM999G999G999G990D00') iznos
+            from kif k
+            left join  kif_avansi_zatvaranje kz on kz.avans_id=k.id
+            join sif.vrste_dokumenata vd on vd.id=k.vrsta_fakture_id
+            join sif.acc_valute av on av.id=k.valuta_id
+            where k.ooj_id=:APP_OOJ_ID
+            and NVL(k.stornirano,'N')='N'
+            and vd.sifra='AV'
+            and k.klijent_id = :P51_KLIJENT_ID
+            and :P51_VRSTA_FAKTURE_SIFRA='AVZ'
+            and k.skladiste_id=:A_SKLADISTE_ID
+            group by k.id, k.naziv_fakture,k.datum_fakture, av.sifra
+            having sum(nvl(k.valuta_iznos,0)-nvl(kz.iznos,0))>0
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV_FAKTURE
+    }
+
+    column DATUM_FAKTURE (
+        heading {
+            heading: Datum
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: date
+        }
+    )
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column IZNOS (
+        heading {
+            heading: Raspoloživi iznos
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV_FAKTURE (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column VALUTA (
+        heading {
+            heading: Valuta
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov blagajna-tipovi-promjena (
+    name: BLAGAJNA_TIPOVI_PROMJENA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                blagajna_tipovi_promjena
+            WHERE
+                ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov blagajne (
+    name: BLAGAJNE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                blagajne
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov budzetske-stavke (
+    name: BUDZETSKE_STAVKE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                lpad(naziv, length(naziv) + (level - 1) * 4, '.') AS d,
+                id AS r
+            FROM
+                budzetske_stavke
+            WHERE
+                ooj_id = :APP_OOJ_ID
+            CONNECT BY
+                PRIOR id = stavka_id
+            START WITH
+                stavka_id IS null
+            ORDER SIBLINGS BY
+                id
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov cjenovnici (
+    name: CJENOVNICI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ': ' || naziv AS d,
+                id AS r
+            FROM
+                cjenovnici
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov copy-of-acc-mjesta-troska-ooj (
+    name: ACC_MJESTA_TROSKA_OOJ_SVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select 
+                   mt.id, 
+                   mt.sifra,
+                   mt.naziv, 
+                   o.naziv as organizaciona_jedinica
+             from sif.acc_mjesta_troska mt
+             left join core.oj o on o.id=mt.oj_id
+             where mt.ooj_id=:APP_OOJ_ID
+             order by mt.sifra
+             
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ORGANIZACIONA_JEDINICA (
+        heading {
+            heading: Organizaciona Jedinica
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Sifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov da-ne (
+    name: DA_NE
+    source {
+        location: staticValues
+    }
+    subscription {
+        master: @/200/da-ne
+    }
+
+    entry n (
+        sequence: 2
+        display: NE
+        return: N
+    )
+
+    entry y (
+        sequence: 1
+        display: DA
+        return: Y
+    )
+
+)
+
+lov dani-dospijeca (
+    name: DANI_DOSPIJECA
+    source {
+        location: staticValues
+    }
+
+    entry lov-data-5 (
+        sequence: 5
+        display: 0 dana
+        return: 0
+    )
+
+    entry lov_data (
+        sequence: 1
+        display: 15 dana
+        return: 15
+    )
+
+    entry lov_data-2 (
+        sequence: 2
+        display: 30 dana
+        return: 30
+    )
+
+    entry lov_data-3 (
+        sequence: 3
+        display: 45 dana
+        return: 45
+    )
+
+    entry lov_data-4 (
+        sequence: 4
+        display: 90 dana
+        return: 90
+    )
+
+)
+
+lov duguje-potrazuje (
+    name: DUGUJE_POTRAZUJE
+    source {
+        location: staticValues
+    }
+
+    entry d (
+        sequence: 1
+        display: Duguje
+        return: D
+    )
+
+    entry p (
+        sequence: 2
+        display: Potražuje
+        return: P
+    )
+
+)
+
+lov feedback-rating (
+    name: FEEDBACK_RATING
+    source {
+        location: staticValues
+    }
+    subscription {
+        master: @/200/feedback-rating
+    }
+
+    entry lov_data (
+        sequence: 1
+        display: Positive
+        return: 3
+        globalization {
+            template: <span title="#DISPLAY_VALUE#" aria-label="#DISPLAY_VALUE#"><span class="fa fa-smile-o fa-2x feedback-positive" aria-hidden="true" ></span></span>
+        }
+    )
+
+    entry lov_data-2 (
+        sequence: 2
+        display: Neutral
+        return: 2
+        globalization {
+            template: <span title="#DISPLAY_VALUE#" aria-label="#DISPLAY_VALUE#"><span class="fa fa-emoji-neutral fa-2x feedback-neutral" aria-hidden="true" ></span></span>
+        }
+    )
+
+    entry lov_data-3 (
+        sequence: 3
+        display: Negative
+        return: 1
+        globalization {
+            template: <span title="#DISPLAY_VALUE#" aria-label="#DISPLAY_VALUE#"><span class="fa fa-frown-o fa-2x feedback-negative" aria-hidden="true" ></span></span>
+        }
+    )
+
+)
+
+lov glavna-knjiga-broj (
+    name: GLAVNA_KNJIGA.BROJ
+    source {
+        tableName: GLAVNA_KNJIGA
+    }
+    columnMapping {
+        return: ID
+        display: BROJ
+        defaultSort: BROJ
+    }
+)
+
+lov global-godine (
+    name: GLOBAL_GODINE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select extract(year from sysdate) - level + 1 as d,
+                   extract(year from sysdate) - level + 1 as r
+            from dual
+            connect by level <= 10
+            order by d desc;
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov hr-obrazovanje (
+    name: HR_OBRAZOVANJE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ' ( ' || sifra || ' )' as d,
+                id as r
+            FROM
+                sif.hr_sif_obrazovanja
+            WHERE
+                valid = 'Y'
+            ORDER BY
+                sequence ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/220/hr-obrazovanje
+    }
+)
+
+lov hr-projekti (
+    name: HR_PROJEKTI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                hrm.p_projekti
+            WHERE
+                ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov hr-radnici (
+    name: HR_RADNICI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                ime || ' ' || prezime as d,
+                id as r
+            FROM
+                hrm.hr_radnici
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND zaposlen_do IS null
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov hr-radnici-ime (
+    name: HR_RADNICI.IME
+    source {
+        tableOwner: HRM
+        tableName: HR_RADNICI
+    }
+    columnMapping {
+        return: ID
+        display: IME
+        defaultSort: IME
+    }
+)
+
+lov izvjestaji-blagajna (
+    name: IZVJESTAJI_BLAGAJNA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'BL'
+                AND valid = 'Y'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov izvjestaji-glavna-knjiga (
+    name: IZVJESTAJI_GLAVNA_KNJIGA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'GK'
+                AND valid = 'Y'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov izvjestaji-materijalno (
+    name: IZVJESTAJI_MATERIJALNO
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'MAT'
+                AND valid = 'Y'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov izvjestaji-robno (
+    name: IZVJESTAJI_ROBNO
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_izvjestaji i
+            WHERE
+                EXISTS (
+                    SELECT
+                        izvjestaj_id
+                    FROM
+                        sif.vw_izvjestaj_preduzetnici
+                    WHERE
+                        izvjestaj_id = i.id
+                        AND tip_preduzetnika_sifra = :APP_TIP_PREDUZETNIKA_SIFRA
+                )
+                AND tip = 'ROB'
+                AND valid = 'Y'
+            ORDER BY
+                sequence, naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov izvod-stavke-1801-popup (
+    name: IZVOD_STAVKE_1801_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select st.rbr as redni_broj, case when st.smjer='P' then 'PRILIV' else 'ODLIV' end as smjer, st.svrha_doznake, to_char(st.iznos,'999G999G999G999G990D00') as iznos, st.id
+            from accounting.izvod_stavke st 
+            where 1=1--st.izvod_id=:P1801_IZVOD_ID
+            order by st.rbr
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: REDNI_BROJ
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column IZNOS (
+        heading {
+            heading: Iznos
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: number
+        }
+    )
+
+    column REDNI_BROJ (
+        heading {
+            heading: Redni Broj
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: number
+        }
+    )
+
+    column SMJER (
+        heading {
+            heading: Smjer
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SVRHA_DOZNAKE (
+        heading {
+            heading: Svrha Doznake
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov izvrsilac-narucioc (
+    name: IZVRSILAC_NARUCIOC
+    source {
+        location: staticValues
+    }
+
+    entry i (
+        sequence: 1
+        display: Izvršilac
+        return: I
+    )
+
+    entry n (
+        sequence: 2
+        display: Naručioc
+        return: N
+    )
+
+)
+
+lov kif-naziv-fakture (
+    name: KIF.NAZIV_FAKTURE
+    source {
+        tableName: KIF
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV_FAKTURE
+        defaultSort: NAZIV_FAKTURE
+    }
+)
+
+lov kif-neknjizeno (
+    name: KIF_NEKNJIZENO
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv_fakture as d,
+                id as r
+            FROM
+                vw_kif
+            WHERE
+                glavna_knjiga_id IS null
+                AND ooj_id = :APP_OOJ_ID
+                AND lower(vrsta_naloga_sifra) != 'pr'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov kontni-okvir-klase (
+    name: KONTNI_OKVIR_KLASE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                code || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.vw_kontni_okvir_klase
+            WHERE
+                parent_klasa = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov kontni-okvir-klase-ooj (
+    name: KONTNI_OKVIR_KLASE_OOJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                rpad(code, :APP_KONTO_DUZINA, '0') || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_kontni_okvir_klase
+            WHERE
+                length(code) >= 4 
+                AND (ooj_id = :APP_OOJ_ID or ooj_id is null)
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov kontni-okvir-klase-ooj-popup (
+    name: KONTNI_OKVIR_KLASE_OOJ_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                rpad(code, :APP_KONTO_DUZINA, '0') konto, 
+                naziv as naziv,
+                id as id_konta
+            FROM
+                sif.acc_kontni_okvir_klase
+            WHERE
+                length(code) >= 4 
+                AND (ooj_id = :APP_OOJ_ID or ooj_id is null)
+                order by code
+            ```
+    }
+    columnMapping {
+        return: ID_KONTA
+        display: KONTO
+    }
+
+    column ID_KONTA (
+        show: false
+        heading {
+            heading: Id Konta
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column KONTO (
+        heading {
+            heading: Konto
+        }
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov kuf-neknjizeno (
+    name: KUF_NEKNJIZENO
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                klijent_naziv || ' - ' || naziv_fakture || ': ' || iznos_sa_pdv d,
+                id as r
+            FROM
+                vw_kuf
+            WHERE
+                glavna_knjiga_id IS null
+                AND ooj_id = :APP_OOJ_ID
+                AND godina = :APP_GODINA
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov lokacije (
+    name: LOKACIJE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                core.ooj_lokacije
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov nacin-placanja-izvoda (
+    name: NACIN_PLACANJA_IZVODA
+    source {
+        location: staticValues
+    }
+
+    entry g (
+        sequence: 1
+        display: Gotovina
+        return: G
+    )
+
+    entry z (
+        sequence: 2
+        display: Žiralno
+        return: Z
+    )
+
+)
+
+lov narudzbenice (
+    name: NARUDZBENICE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                narudzbenice
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND godina = :APP_GODINA
+                AND valid = 'Y'
+            ORDER BY
+                broj DESC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov normativi (
+    name: NORMATIVI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                normativi
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov oj (
+    name: OJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                lpad('.', (level * 3) - 3, '.') || naziv as d,
+                id as r
+            FROM
+                core.oj
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            CONNECT BY
+                PRIOR id = parent_id
+            START WITH
+                parent_id IS null
+            ORDER SIBLINGS BY
+                naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/200/oj
+    }
+)
+
+lov oj-naziv (
+    name: OJ.NAZIV
+    source {
+        tableOwner: CORE
+        tableName: OJ
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov ooj-banke (
+    name: OOJ_BANKE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                banka_naziv || ' - ' || ziro_racun as d,
+                id as r
+            FROM
+                core.vw_ooj_banke
+            WHERE
+                ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov ooj-naziv (
+    name: OOJ.NAZIV
+    source {
+        tableOwner: CORE
+        tableName: OOJ
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov ooj-ziro-racuni (
+    name: OOJ_ZIRO_RACUNI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select cr.id,cr.banka_naziv, cr.valuta, cr.sifra_racuna, cr.ziro_racun, cr.opis
+            from core.vw_ooj_ziro_racuni cr
+            where cr.ooj_id=:APP_OOJ_ID
+            and cr.valid='Y'
+            order by cr.banka_naziv
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: SIFRA_RACUNA
+    }
+
+    column BANKA_NAZIV (
+        heading {
+            heading: Banka
+        }
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ID (
+        show: false
+        layout {
+            sequence: 5
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column OPIS (
+        heading {
+            heading: Opis
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA_RACUNA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column VALUTA (
+        heading {
+            heading: Valuta
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ZIRO_RACUN (
+        heading {
+            heading: Broj
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov operacije-naziv (
+    name: OPERACIJE.NAZIV
+    source {
+        tableName: OPERACIJE
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov os-indikatori (
+    name: OS_INDIKATORI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ': ' || naziv AS d,
+                id AS r
+            FROM
+                sec_os_indikatori
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov osnovna-sredstva (
+    name: OSNOVNA_SREDSTVA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                id as r
+            FROM
+                sec_osnovna_sredstva
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+                AND history_id IS null
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov osnovna-sredstva-aktivirana (
+    name: OSNOVNA_SREDSTVA_AKTIVIRANA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                id as r
+            FROM
+                sec_osnovna_sredstva
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+                AND aktivirano = 'Y'
+                AND history_id IS null
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov osnovna-sredstva-display (
+    name: OSNOVNA_SREDSTVA_DISPLAY
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                id as r
+            FROM
+                sec_osnovna_sredstva
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND history_id IS null
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov osnovna-sredstva-priprema (
+    name: OSNOVNA_SREDSTVA_PRIPREMA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                id as r
+            FROM
+                sec_osnovna_sredstva
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+                AND priprema = 'Y'
+                AND history_id IS null
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov p-projekti (
+    name: P_PROJEKTI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                hrm.p_projekti
+            WHERE
+                ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov p201-nalog-id (
+    name: P201_NALOG_ID
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                vrsta_naloga_naziv || ' - ' || lpad(broj, 6, '0') as display,
+                vrsta_naloga_naziv,
+                lpad(broj, 6, '0') as broj_naloga,
+                proknjizeno,
+                id
+            FROM
+                vw_glavna_knjiga
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND godina = :APP_GODINA
+                AND lower(vrsta_naloga_sifra) = lower(:P201_VRSTA_NALOGA_SIFRA)
+            ORDER BY
+                to_number(broj) DESC
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: DISPLAY
+    }
+
+    column BROJ_NALOGA (
+        heading {
+            heading: Broj Naloga
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column DISPLAY (
+        heading {
+            heading: Display
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column PROKNJIZENO (
+        heading {
+            heading: Proknjizeno
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column VRSTA_NALOGA_NAZIV (
+        heading {
+            heading: Vrsta Naloga Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov pdv-indikator (
+    name: PDV_INDIKATOR
+    source {
+        location: staticValues
+    }
+
+    entry n (
+        sequence: 20
+        display: Poseban PDV-indikator
+        return: N
+    )
+
+    entry y (
+        sequence: 10
+        display: Pun iznos PDV-a
+        return: Y
+    )
+
+)
+
+lov pdv-indikatori-nula (
+    name: PDV_INDIKATORI_NULA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_pdv_indikatori
+            WHERE
+                ui = 'I'
+                AND valid = 'Y'
+                AND vrijednost = 0
+            ORDER BY
+                sifra ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov pdv-indikatori-svi (
+    name: PDV_INDIKATORI_SVI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select pi.id, pi.sifra||' - '||pi.naziv as naziv, case  pi.ui when 'I' then 'Izlazni' when 'U' then 'Ulazni' else 'Obracunski' end as tip
+            from sif.acc_pdv_indikatori pi
+            where valid = 'Y'
+            order by tip, sifra ASC
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column TIP (
+        heading {
+            heading: Tip
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov pdv-indikatori-ulazni (
+    name: PDV_INDIKATORI_ULAZNI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sif.acc_pdv_indikatori
+            WHERE
+                ui = 'U'
+                AND valid = 'Y'
+            ORDER BY
+                sifra ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov poreski-period (
+    name: PORESKI_PERIOD
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                month_name || ', ' || year as d,
+                month as r
+            FROM (
+                SELECT 
+                    trim(to_char(add_months(sysdate, -LEVEL + 1), 'Month', 'NLS_DATE_LANGUAGE = ''LATIN SERBIAN''')) AS month_name,
+                    to_char(add_months(sysdate, -LEVEL + 1), 'YYYY') as year,
+                    trunc(add_months(sysdate, -LEVEL + 1), 'MM') as month
+                FROM 
+                    DUAL
+                CONNECT BY 
+                    LEVEL <= 12
+            )
+            WHERE
+                year = :APP_GODINA
+            ORDER BY
+                month DESC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov poreski-period-char (
+    name: PORESKI_PERIOD_CHAR
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                month_name || ', ' || year as d,
+                month_year as r
+            FROM (
+                SELECT 
+                    trim(to_char(add_months(sysdate, -LEVEL + 1), 'Month', 'NLS_DATE_LANGUAGE = ''LATIN SERBIAN''')) AS month_name,
+                    to_char(add_months(sysdate, -LEVEL + 1), 'YYYY') as year,
+                    trunc(add_months(sysdate, -LEVEL + 1), 'MM') as month,
+                    to_char(add_months(sysdate, -LEVEL + 1), 'MM.YYYY') as month_year
+                FROM 
+                    DUAL
+                CONNECT BY 
+                    LEVEL <= 12
+            )
+            WHERE
+                year = :APP_GODINA
+            ORDER BY
+                month DESC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov poreski-period-yymm (
+    name: PORESKI_PERIOD_YYMM
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                month_name || ', ' || year as d,
+                year_month as r
+            FROM (
+                SELECT 
+                    trim(to_char(add_months(sysdate, -LEVEL + 1), 'Month', 'NLS_DATE_LANGUAGE = ''LATIN SERBIAN''')) AS month_name,
+                    to_char(add_months(sysdate, -LEVEL + 1), 'YYYY') as year,
+                    trunc(add_months(sysdate, -LEVEL + 1), 'MM') as month,
+                    to_char(add_months(sysdate, -LEVEL + 1), 'YYMM') as year_month
+                FROM 
+                    DUAL
+                CONNECT BY 
+                    LEVEL <= 12
+            )
+            WHERE
+                year = :APP_GODINA
+            ORDER BY
+                month DESC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov poreski-period-yyyy (
+    name: PORESKI_PERIOD_YYYY
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT DISTINCT
+                godina as r,
+                godina as d
+            FROM
+                core.protokoli
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov prihod-rashod (
+    name: PRIHOD_RASHOD
+    source {
+        location: staticValues
+    }
+
+    entry o (
+        sequence: 3
+        display: Ostalo
+        return: O
+    )
+
+    entry p (
+        sequence: 1
+        display: Prihod
+        return: P
+    )
+
+    entry r (
+        sequence: 2
+        display: Rashod
+        return: R
+    )
+
+)
+
+lov priliv-odliv (
+    name: PRILIV_ODLIV
+    source {
+        location: staticValues
+    }
+
+    entry o (
+        sequence: 2
+        display: Odliv
+        return: O
+    )
+
+    entry p (
+        sequence: 1
+        display: Priliv
+        return: P
+    )
+
+)
+
+lov sabloni (
+    name: SABLONI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sabloni
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sec-klase-stavki (
+    name: SEC_KLASE_STAVKI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select lpad(unistr('\2003'), (level-1)*2, unistr('\2003'))
+                   || case when connect_by_isleaf = 0 then '▾ ' else '• ' end
+                   || k.naziv                                        as naziv,
+                   ltrim(sys_connect_by_path(k.naziv, ' / '), ' / ') as putanja,
+                   id                                              as r
+            from (select * from sec_klase_stavki p where p.ooj_id=:APP_OOJ_ID) k
+            where k.id not in (select id
+                                from sec_klase_stavki
+                               start with id = :P126_ID
+                             connect by prior id = nadredjeno_id)
+            start with k.nadredjeno_id is null
+            connect by prior k.id = k.nadredjeno_id
+            order siblings by k.naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: NAZIV
+    }
+
+    column NAZIV (
+        heading {
+            heading: Naziv klase
+        }
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column PUTANJA (
+        heading {
+            heading: Putanja
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column R (
+        show: false
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+)
+
+lov sec-klase-stavki-naziv (
+    name: SEC_KLASE_STAVKI.NAZIV
+    source {
+        tableName: SEC_KLASE_STAVKI
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov sec-klijenti (
+    name: SEC_KLIJENTI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                vrsta_klijenta || ': ' || naziv as d,
+                id as r
+            FROM
+                sec_klijenti
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sec-klijenti-dobavljaci (
+    name: SEC_KLIJENTI_DOBAVLJACI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sec_klijenti
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+                AND vrsta_klijenta IN ('D', 'O')
+            ORDER BY
+                naziv 
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sec-klijenti-kupci (
+    name: SEC_KLIJENTI_KUPCI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                accounting.sec_klijenti
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+                AND vrsta_klijenta IN ('K', 'O')
+            ORDER BY
+                naziv 
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sec-klijenti-popup (
+    name: SEC_KLIJENTI_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT sc.id, sc.naziv, sc.adresa, sc.grad, sc.jib
+            FROM accounting.sec_klijenti sc
+            where sc.ooj_id=:APP_OOJ_ID
+            order by sc.naziv
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+
+    column ADRESA (
+        heading {
+            heading: Adresa
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column GRAD (
+        heading {
+            heading: Grad
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column JIB (
+        heading {
+            heading: Jib
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov sec-klijenti-vrsta-klijenta (
+    name: SEC_KLIJENTI.VRSTA_KLIJENTA
+    source {
+        tableName: SEC_KLIJENTI
+    }
+    columnMapping {
+        return: ID
+        display: VRSTA_KLIJENTA
+        defaultSort: VRSTA_KLIJENTA
+    }
+)
+
+lov sec-osnovna-sredstva-inventurni-naziv (
+    name: SEC_OSNOVNA_SREDSTVA.INVENTURNI_NAZIV
+    source {
+        tableName: SEC_OSNOVNA_SREDSTVA
+    }
+    columnMapping {
+        return: ID
+        display: INVENTURNI_NAZIV
+        defaultSort: INVENTURNI_NAZIV
+    }
+)
+
+lov sec-skladista (
+    name: SEC_SKLADISTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                skladista
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sec-stavke (
+    name: SEC_STAVKE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ': ' || naziv AS d,
+                id r
+            FROM
+                accounting.sec_stavke
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sec-stavke-naziv (
+    name: SEC_STAVKE.NAZIV
+    source {
+        tableName: SEC_STAVKE
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov sec-stavke-popup (
+    name: SEC_STAVKE_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select ts.naziv as tip_stavke,sc.id , sc.sifra, sc.naziv, case when sc.valid='Y' then 'Aktivno' else 'Neaktivno' end as status
+            from accounting.sec_stavke sc
+            left join sif.acc_tipovi_stavki ts on sc.tip_stavke_id=ts.id
+            where sc.ooj_id=:APP_OOJ_ID
+            order by ts.id, to_number(sc.sifra) desc
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: SIFRA
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column STATUS (
+        heading {
+            heading: Status
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column TIP_STAVKE (
+        heading {
+            heading: Tip stavke
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov sec-stavke-robe (
+    name: SEC_STAVKE_ROBE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ' - ' || naziv as d,
+                id as r
+            FROM
+                sec_stavke
+            WHERE
+                valid = 'Y'
+                AND ooj_id = :APP_OOJ_ID
+                AND tip_stavke_id IN (1,2,4)
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sekretarice (
+    name: SEKRETARICE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                initcap(ime) || ' ' || initcap(prezime) || ' - ' || email AS d,
+                id AS r
+            FROM
+                core.korisnici
+            WHERE
+                firma_id = :APP_FIRMA_ID
+                AND valid = 'Y'
+                AND core.korisnik_pkg.user_has_role(id, 'HR_SEKRETARICA_RLE') > 0
+            ORDER BY
+                ime,
+                prezime
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/200/sekretarice
+    }
+)
+
+lov sif-acc-tipovi-cijene (
+    name: SIF_ACC_TIPOVI_CIJENE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sif.acc_tipovi_cijena
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sif-acc-tipovi-skladista (
+    name: SIF_ACC_TIPOVI_SKLADISTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sif.acc_tipovi_skladista
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sif-aplikacije-dostupne (
+    name: SIF_APLIKACIJE_DOSTUPNE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            
+            FROM
+                sif.sif_aplikacije a
+            WHERE
+                hub = 'Y'
+                OR EXISTS (
+                    SELECT 1
+                    FROM sif.sif_aplikacija_role ar
+                    WHERE 
+                        sif_application_id = a.id
+                        AND rola_id IN (SELECT rola_id FROM core.korisnik_role WHERE korisnik_id = :APP_USER_ID)
+                )
+            ORDER BY
+                sequence
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/200/sif-aplikacije-dostupne
+    }
+)
+
+lov sif-banke (
+    name: SIF_BANKE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sif.sif_banke
+            WHERE
+                valid = 'Y'
+            ORDER BY
+                id
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-drzave (
+    name: SIF_DRZAVE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                name d,
+                id r
+            FROM
+                sif.sif_drzave
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+    subscription {
+        master: @/240/sif-drzave
+    }
+)
+
+lov sif-entiteti (
+    name: SIF_ENTITETI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                naziv as d,
+                id as r
+            FROM 
+                sif.sif_entiteti
+            WHERE 
+                valid = 'Y'
+            order by naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/240/sif-entiteti
+    }
+)
+
+lov sif-gradovi-bih (
+    name: SIF_GRADOVI_BIH
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT 
+                naziv || ' ( ' || lpad(sifra, 3, '0') || ' )' as d,
+                id as r
+            FROM 
+                sif.sif_gradovi
+            WHERE 
+                valid = 'Y'
+                AND drzava_id = 28
+            ORDER BY naziv
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-gradovi-bih-popup (
+    name: SIF_GRADOVI_BIH_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+              select lpad(g.sifra,3,'0') as sifra, 
+                     g.naziv as naziv, 
+                     g.id
+              from  sif.sif_gradovi g
+              where g.drzava_id=28
+              order by g.sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov sif-intervali (
+    name: SIF_INTERVALI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sif.sif_intervali
+            ORDER BY
+                broj_mjeseci ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-intervali-budzet (
+    name: SIF_INTERVALI_BUDZET
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                sif.sif_intervali
+            WHERE
+                valid = 'Y'
+                AND broj_mjeseci <= 12
+            ORDER BY
+                broj_mjeseci ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-jm (
+    name: SIF_JM
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sif.acc_jedinice_mjere
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-statusi-os (
+    name: SIF_STATUSI_OS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.sif_statusi
+            WHERE
+                valid = 'Y'
+                AND opis = 'OS'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sif-tip-klijenta (
+    name: SIF_TIP_KLIJENTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sif.acc_tipovi_klijenata
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-tip-placanja (
+    name: SIF_TIP_PLACANJA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sif.acc_tipovi_placanja
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-tip-stavki (
+    name: SIF_TIP_STAVKI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv d,
+                id r
+            FROM
+                sif.acc_tipovi_stavki
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-tipovi-kretanja-robe (
+    name: SIF_TIPOVI_KRETANJA_ROBE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_tipovi_kretanja_robe
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+    subscription {
+        master: @/240/acc-sif-tipovi-kretanja-robe
+    }
+)
+
+lov sif-tipovi-kretanja-robe-ooj (
+    name: SIF_TIPOVI_KRETANJA_ROBE_OOJ
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_tipovi_kretanja_robe
+            WHERE
+                valid = 'Y'
+                AND vrsta_naloga_id IN (
+                    SELECT 
+                        vrsta_naloga_id
+                    FROM
+                        core.protokoli
+                    WHERE
+                        ooj_id = :APP_OOJ_ID
+                        AND godina = :APP_GODINA
+                )
+            ORDER BY
+                id ASC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-tipovi-ugovora (
+    name: SIF_TIPOVI_UGOVORA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select
+                naziv d,
+                id r
+            from 
+                sif.hr_sif_tipovi_ugovora
+            where 
+                valid = 'Y'
+            order by id
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/220/sif-tipovi-ugovora
+    }
+)
+
+lov sif-uputstva (
+    name: SIF_UPUTSTVA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select
+                naziv d,
+                id r
+            from
+                sif.vw_uputstva
+            where
+                valid = 'Y'
+                and core.korisnik_pkg.user_has_role(:APP_USER_ID, rola_sifra) > 0;
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+    subscription {
+        master: @/200/sif-uputstva
+    }
+)
+
+lov sif-valute (
+    name: SIF_VALUTE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ': ' || naziv AS d,
+                id AS r
+            FROM
+                sif.acc_valute
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-valute-popup (
+    name: SIF_VALUTE_POPUP
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+             select v.naziv, v.sifra,v.id  
+             from sif.acc_valute v
+             where v.valid='Y'
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: SIFRA
+        defaultSort: SIFRA
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov sif-vrste-faktura (
+    name: SIF_VRSTE_FAKTURA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select vd.naziv as d, vd.id as r
+            from sif.vrste_dokumenata vd
+            join sif.acc_moduli am on vd.acc_modul_id = am.id
+            where vd.valid = 'Y'
+            and am.sifra = 'IF'
+            and vd.id in (
+                          select vrsta_naloga_id
+                          from core.protokoli
+                          where ooj_id = :APP_OOJ_ID
+                          and godina = :APP_GODINA
+                         )
+            order by VD.id asc
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-vrste-naloga (
+    name: SIF_VRSTE_NALOGA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                sifra || ' - ' || naziv d,
+                id r
+            FROM
+                sif.sif_vrste_naloga
+            WHERE
+                valid = 'Y'
+                AND app = 'ACC'
+                AND ooj_id = :APP_OOJ_ID
+            ORDER BY
+                sifra
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-vrste-naloga-izvodi (
+    name: SIF_VRSTE_NALOGA_IZVODI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select
+                sifra || ' - ' || naziv d,
+                id r
+            FROM
+                sif.sif_vrste_naloga
+            WHERE
+                valid = 'Y'
+                AND app = 'ACC'
+                AND acc_modul_id = 1
+                AND ooj_id = :APP_OOJ_ID
+            ORDER BY
+                sifra
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov sif-vrste-naloga-moduli (
+    name: SIF_VRSTE_NALOGA_MODULI_1850
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                vn.id,
+                vn.sifra,
+                vn.naziv
+            FROM
+                sif.sif_vrste_naloga vn
+            WHERE
+                    1 = 1
+                AND vn.ooj_id = :app_ooj_id
+                AND vn.valid = 'Y'
+                AND vn.acc_modul_id = :p1850_modul
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov sif-vrste-prihoda (
+    name: SIF_VRSTE_PRIHODA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_vrste_prihoda
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov sif-vrste-rashoda (
+    name: SIF_VRSTE_RASHODA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv as d,
+                id as r
+            FROM
+                sif.acc_vrste_rashoda
+            WHERE
+                valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov skladista (
+    name: SKLADISTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                lpad('.', (level * 3) - 3, '.') || naziv as d,
+                id as r
+            FROM
+                skladista
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            CONNECT BY
+                PRIOR id = nadredjeno_id
+            START WITH
+                nadredjeno_id IS null
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov skladista-korisnik (
+    name: SKLADISTA_KORISNIK
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                skladiste_naziv AS d,
+                skladiste_id AS r
+            FROM 
+                vw_skladiste_korisnici
+            WHERE
+                korisnik_id = :APP_USER_ID
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov skladista-naziv (
+    name: SKLADISTA.NAZIV
+    source {
+        tableName: SKLADISTA
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+        defaultSort: NAZIV
+    }
+)
+
+lov timeframe-4-weeks (
+    name: TIMEFRAME (4 WEEKS)
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select disp,
+                   val as seconds
+              from table( apex_util.get_timeframe_lov_data )
+             order by insert_order
+            ```
+    }
+    columnMapping {
+        return: SECONDS
+        display: DISP
+    }
+    subscription {
+        master: @/200/timeframe-4-weeks
+    }
+)
+
+lov tip-blagajne (
+    name: TIP_BLAGAJNE
+    source {
+        location: staticValues
+    }
+
+    entry b (
+        sequence: 1
+        display: Blagajna
+        return: B
+    )
+
+    entry db (
+        sequence: 2
+        display: Devizna blagajna
+        return: DB
+    )
+
+)
+
+lov tip-cijene (
+    name: TIP_CIJENE
+    source {
+        location: staticValues
+    }
+
+    entry m (
+        sequence: 10
+        display: MPC
+        return: M
+    )
+
+    entry v (
+        sequence: 20
+        display: VPC
+        return: V
+    )
+
+)
+
+lov tip-cjenovnika (
+    name: TIP_CJENOVNIKA
+    source {
+        location: staticValues
+    }
+
+    entry m (
+        sequence: 1
+        display: Maloprodaja
+        return: M
+    )
+
+    entry v (
+        sequence: 2
+        display: Veleprodaja
+        return: V
+    )
+
+)
+
+lov tip-dnevnik-stavka (
+    name: TIP_DNEVNIK_STAVKA
+    source {
+        location: staticValues
+    }
+
+    entry i (
+        sequence: 2
+        display: Isplata
+        return: I
+    )
+
+    entry u (
+        sequence: 1
+        display: Uplata
+        return: U
+    )
+
+)
+
+lov tipovi-kalkulacije (
+    name: TIPOVI_KALKULACIJE
+    source {
+        location: staticValues
+    }
+
+    entry a (
+        sequence: 30
+        display: Automatska raspodjela jednako na sve stavke
+        return: A
+    )
+
+    entry r (
+        sequence: 10
+        display: Ručni unos jedinicne cijene
+        return: R
+    )
+
+    entry u (
+        sequence: 20
+        display: Ručni unos ukupne vrijednosti
+        return: U
+    )
+
+)
+
+lov tipovi-kretanja (
+    name: TIPOVI_KRETANJA
+    source {
+        location: staticValues
+    }
+
+    entry i (
+        sequence: 1
+        display: Izlaz
+        return: I
+    )
+
+    entry n (
+        sequence: 3
+        display: Nivelacija
+        return: N
+    )
+
+    entry u (
+        sequence: 2
+        display: Ulaz
+        return: U
+    )
+
+)
+
+lov trebovanja (
+    name: TREBOVANJA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id AS r
+            FROM
+                trebovanja
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: D
+    }
+)
+
+lov ugovori (
+    name: UGOVORI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ': ' || predmet AS d,
+                id AS r
+            FROM
+                ugovori
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+            ORDER BY
+                broj DESC
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov ugovori-izvrsilac (
+    name: UGOVORI_IZVRSILAC
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ': ' || predmet AS d,
+                id AS r
+            FROM
+                ugovori
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+                AND izvrsilac_narucioc = 'I'
+                AND (
+                        (status = 'Z' AND (ugovor_end IS NULL OR ugovor_end >= trunc(sysdate)))
+                        -- Uvijek vraća ugovor koji je već upisan na fakturi (stavka P<stranica>_UGOVOR_ID).
+                        OR id = (SELECT to_number(v('P' || :APP_PAGE_ID || '_UGOVOR_ID')) FROM dual)
+                    )
+            ORDER BY
+                broj DESC
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov ugovori-izvrsilac-narucioc (
+    name: UGOVORI.IZVRSILAC_NARUCIOC
+    source {
+        tableName: UGOVORI
+    }
+    columnMapping {
+        return: ID
+        display: IZVRSILAC_NARUCIOC
+        defaultSort: IZVRSILAC_NARUCIOC
+    }
+)
+
+lov ugovori-narucioc (
+    name: UGOVORI_NARUCIOC
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv || ': ' || predmet AS d,
+                id AS r
+            FROM
+                ugovori
+            WHERE
+                ooj_id = :APP_OOJ_ID
+                AND valid = 'Y'
+                AND izvrsilac_narucioc = 'N'
+                AND (
+                        (status = 'Z' AND (ugovor_end IS NULL OR ugovor_end >= trunc(sysdate)))
+                        -- Uvijek vraća ugovor koji je već upisan na fakturi (stavka P<stranica>_UGOVOR_ID).
+                        OR id = (SELECT to_number(v('P' || :APP_PAGE_ID || '_UGOVOR_ID')) FROM dual)
+                    )
+            ORDER BY
+                broj DESC
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov uio-i-tip-dokumenta (
+    name: UIO_I_TIP_DOKUMENTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT  
+                code || ' - ' || naziv as d, 
+                id as r
+            FROM
+                sif.acc_uio_tipovi_dokumenata
+            WHERE
+                ui = 'I'
+            ORDER BY
+                code
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov uio-td-pi-52 (
+    name: UIO_TD_PI_51
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select ti.pdv_indikator_id id, ti.pdv_indikator_sifra||' - '||ti.pdv_indikator_naziv as naziv
+            from sif.vw_uio_tip_dokumenta_pdv_indikatori ti
+            where ti.valid='Y'
+            and (ti.entitet_id=:P51_ENTITET_ID or :P51_ENTITET_ID is null or ti.entitet_id is null)
+            and ti.ui='I'
+            order by ti.pdv_indikator_sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+)
+
+lov uio-td-pi-53 (
+    name: UIO_TD_PI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select ti.pdv_indikator_id id, ti.pdv_indikator_sifra||' - '||ti.pdv_indikator_naziv as naziv
+            from sif.vw_uio_tip_dokumenta_pdv_indikatori ti
+            where ti.valid='Y'
+            and ti.ui='I'
+            order by ti.pdv_indikator_sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov uio-u-tip-dokumenta (
+    name: UIO_U_TIP_DOKUMENTA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT  
+                code || ' - ' || naziv as d, 
+                id as r
+            FROM
+                sif.acc_uio_tipovi_dokumenata
+            WHERE
+                ui = 'U'
+            ORDER BY
+                code
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+
+lov view-as-report-chart (
+    name: VIEW_AS_REPORT_CHART
+    source {
+        location: staticValues
+    }
+    subscription {
+        master: @/200/view-as-report-chart
+    }
+
+    entry chart (
+        sequence: 2
+        display: Add Chart Page
+        return: CHART
+        globalization {
+            template: <span class="fa fa-pie-chart" aria-hidden="true"></span><span class="u-VisuallyHidden">#DISPLAY_VALUE#</span>
+        }
+    )
+
+    entry report (
+        sequence: 1
+        display: Add Report Page
+        return: REPORT
+        globalization {
+            template: <span class="fa fa-table" aria-hidden="true"></span><span class="u-VisuallyHidden">#DISPLAY_VALUE#</span>
+        }
+    )
+
+)
+
+lov view-as-report-map (
+    name: VIEW_AS_REPORT_MAP
+    source {
+        location: staticValues
+    }
+
+    entry map (
+        sequence: 2
+        display: Add Map Page
+        return: MAP
+        globalization {
+            template: <span class="fa fa-map" aria-hidden="true"></span><span class="u-VisuallyHidden">#DISPLAY_VALUE#</span>
+        }
+    )
+
+    entry report (
+        sequence: 1
+        display: Add Report Page
+        return: REPORT
+        globalization {
+            template: <span class="fa fa-table" aria-hidden="true"></span><span class="u-VisuallyHidden">#DISPLAY_VALUE#</span>
+        }
+    )
+
+)
+
+lov vrsta-klijenta (
+    name: VRSTA_KLIJENTA
+    source {
+        location: staticValues
+    }
+
+    entry d (
+        sequence: 20
+        display: Dobavljač
+        return: D
+    )
+
+    entry k (
+        sequence: 10
+        display: Kupac
+        return: K
+    )
+
+    entry o (
+        sequence: 30
+        display: Kupac - dobavljač
+        return: O
+    )
+
+)
+
+lov vrste-ugovora (
+    name: VRSTE_UGOVORA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                naziv AS d,
+                id    AS r
+            FROM
+                sif.acc_vrste_ugovora
+            WHERE
+                valid = 'Y'
+            ORDER BY
+                redoslijed,
+                naziv
+            
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
+

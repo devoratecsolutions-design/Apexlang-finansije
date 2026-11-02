@@ -1,0 +1,1222 @@
+page 105 (
+    name: Fiskalizacija
+    alias: FISKALIZACIJA
+    title: Fiskalizacija
+    pageGroup: @konfiguracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @finansije-konfiguracija
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            U okviru sekcije <b><em>Fiskalizacija</em></b> nalaze se dvije podsekcije: 
+            <ul>
+                <li>Kase</li> 
+                <li>Middleware.</li>
+            </ul>
+            Podsekcija <b><em>"Kase"</em></b> namijenjena je za unos i pregled fiskalnih kasa koje preduzeće koristi. </br>
+            Naziv kase unosi sa vaše strane, preostale parametre (Bearer, PIN i Host) obezbjeđuje 
+            ovlašćeni serviser fiskalnih kasa. </br>
+            Nakon unosa svih potrebnih podataka, klikom na dugme <b><em>"Kreiraj"</em></b> fiskalna kasa 
+            će biti uspješno registrovana u sistemu. </br>
+            </br>
+             
+            Podsekcija <b><em>"Middleware"</em></b> omogućava preuzimanje instalacionog fajla 
+            koji je vezan za vašu fiskalnu kasu. </br>
+            Klikom na odabranu kasu započinje preuzimanje fajla, 
+            koji se zatim instalira na vaš računar kako bi kasa mogla 
+            pravilno funkcionisati u sistemu fiskalizacije.
+            ```
+    }
+
+    region fiskalizacija (
+        name: Fiskalizacija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region kase (
+        name: Kase
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    
+                    naziv,
+                    host,
+                    updated,
+                    updated_by,
+                
+                    apex_page.get_url(
+                        p_page   => 108,
+                        p_items  => 'P108_ID',
+                        p_values => id
+                    ) as link,
+                    case 
+                        when valid = 'Y' then
+                            'u-color-5'
+                        else
+                            'u-color-9'
+                    end as icon_color_class,
+                    'fa fa-cash-register' as icon_class
+                FROM
+                    sec_kase
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column HOST (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Host
+            }
+            layout {
+                sequence: 120
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--icon #ICON_COLOR_CLASS#">
+                        #UPDATED# / #UPDATED_BY#
+                    </span>
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #HOST#
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+        column UPDATED (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Updated
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: SINCE
+            }
+        )
+
+        column UPDATED_BY (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Updated By
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                defaultSequence: 1
+            }
+        )
+
+    )
+
+    region middleware-development (
+        name: Middleware - Development
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    null as link,
+                    null as icon_color_class,
+                
+                    c001 as name,
+                    sif.utils_pkg.format_size(c002) as l_size,
+                    to_date(c003, 'MM/DD/YYYY') as time_created,
+                    c004 as storage_tier,
+                    c005 as archival_state,
+                    'erp-middleware-dev' AS bucket_name,
+                
+                    CASE
+                        WHEN sif.utils_pkg.is_authorized_wrapper('MAIN ADMIN') = 1 THEN
+                            apex_page.get_url(
+                                p_page        => 107,
+                                p_items       => 'P107_ID,P107_BUCKET_NAME,P107_OLD_NAME',
+                                p_values      => '' || seq_id || ',erp-middleware-dev,' || c001 || '',
+                                p_clear_cache => 107
+                            ) 
+                        ELSE
+                            null
+                    END AS rename_link,
+                    
+                    CASE
+                        WHEN sif.utils_pkg.is_authorized_wrapper('MAIN ADMIN') = 1 THEN
+                            apex_page.get_url(
+                                p_page    => 105,
+                                p_items   => 'P105_BUCKET_NAME,P105_OBJECT_NAME',
+                                p_values  => 'erp-middleware-dev,' || c001 || '',
+                                p_request => 'APPLICATION_PROCESS=DELETE_SDK'
+                            ) 
+                        ELSE
+                            null
+                    END AS delete_link,
+                    apex_page.get_url(
+                        p_page    => 105,
+                        p_items   => 'P105_BUCKET_NAME,P105_OBJECT_NAME',
+                        p_values  => 'erp-middleware-dev,' || c001 || '',
+                        p_request => 'APPLICATION_PROCESS=DOWNLOAD_SDK'
+                    ) as download_link,
+                    'fa fa-gears' as icon_class
+                    
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'DEVELOPMENT'
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ARCHIVAL_STATE (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Archival State
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+            security {
+                authorizationScheme: @main-admin
+            }
+        )
+
+        column BUCKET_NAME (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Bucket Name
+            }
+            layout {
+                sequence: 160
+            }
+        )
+
+        column DELETE_LINK (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Delete Link
+            }
+            layout {
+                sequence: 130
+            }
+        )
+
+        column DOWNLOAD_LINK (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Download Link
+            }
+            layout {
+                sequence: 140
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 150
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?RENAME_LINK/}
+                    <a href="#RENAME_LINK#">
+                        <span class="t-Button t-Button--noLabel u-hot t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-edit"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    
+                    {if ?DELETE_LINK/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft delete_sdk" data-object="#NAME#" data-bucket="#BUCKET_NAME#">
+                        <span class="t-Icon t-Icon--left fa fa-trash-o"></span>
+                    </span>
+                    {endif/}
+                    
+                    {if ?DOWNLOAD_LINK/}
+                    <a href="#DOWNLOAD_LINK#">
+                        <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-download"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: Size: <b>#L_SIZE#</b>, Release date: <b>#TIME_CREATED#</b>
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAME#
+            }
+        )
+
+        column L_SIZE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Veličina
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAME (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RENAME_LINK (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Rename Link
+            }
+            layout {
+                sequence: 120
+            }
+        )
+
+        column STORAGE_TIER (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Storage Tier
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            security {
+                authorizationScheme: @main-admin
+            }
+        )
+
+        column TIME_CREATED (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Vrijeme objavljivanja
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region middleware-relases (
+        name: Middleware - Relases
+        title: Middleware
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    null as icon_color_class,
+                
+                    c001 as name,
+                    sif.utils_pkg.format_size(c002) as l_size,
+                    to_date(c003, 'MM/DD/YYYY') as time_created,
+                    c004 as storage_tier,
+                    c005 as archival_state,
+                    'erp-middleware-releases' AS bucket_name,
+                
+                    CASE
+                        WHEN sif.utils_pkg.is_authorized_wrapper('MAIN ADMIN') = 1 THEN
+                            apex_page.get_url(
+                                p_page        => 107,
+                                p_items       => 'P107_ID,P107_BUCKET_NAME,P107_OLD_NAME',
+                                p_values      => '' || seq_id || ',erp-middleware-releases,' || c001 || '',
+                                p_clear_cache => 107
+                            ) 
+                        ELSE
+                            null
+                    END AS rename_link,
+                    
+                    CASE
+                        WHEN sif.utils_pkg.is_authorized_wrapper('MAIN ADMIN') = 1 THEN
+                            apex_page.get_url(
+                                p_page    => 105,
+                                p_items   => 'P105_BUCKET_NAME,P105_OBJECT_NAME',
+                                p_values  => 'erp-middleware-releases,' || c001 || '',
+                                p_request => 'APPLICATION_PROCESS=DELETE_SDK'
+                            ) 
+                        ELSE
+                            null
+                    END AS delete_link,
+                    CASE
+                        WHEN sif.utils_pkg.is_authorized_wrapper('MAIN ADMIN') = 0 THEN
+                            apex_page.get_url(
+                                p_page    => 105,
+                                p_items   => 'P105_BUCKET_NAME,P105_OBJECT_NAME',
+                                p_values  => 'erp-middleware-releases,' || c001 || '',
+                                p_request => 'APPLICATION_PROCESS=DOWNLOAD_SDK'
+                            )
+                        ELSE
+                            null
+                    END AS link,
+                    'fa fa-gears' as icon_class
+                    
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'RELEASES'
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column ARCHIVAL_STATE (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Archival State
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+            security {
+                authorizationScheme: @main-admin
+            }
+        )
+
+        column BUCKET_NAME (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Bucket Name
+            }
+            layout {
+                sequence: 150
+            }
+        )
+
+        column DELETE_LINK (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Delete Link
+            }
+            layout {
+                sequence: 120
+            }
+        )
+
+        column ICON_CLASS (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Icon Class
+            }
+            layout {
+                sequence: 140
+            }
+        )
+
+        column ICON_COLOR_CLASS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Icon Color Class
+            }
+            layout {
+                sequence: 100
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    {if ?RENAME_LINK/}
+                    <a href="#RENAME_LINK#">
+                        <span class="t-Button t-Button--noLabel u-hot t-Button--iconLeft">
+                            <span class="t-Icon t-Icon--left fa fa-edit"></span>
+                        </span>
+                    </a>
+                    {endif/}
+                    
+                    {if ?DELETE_LINK/}
+                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft delete_sdk" data-object="#NAME#" data-bucket="#BUCKET_NAME#">
+                        <span class="t-Icon t-Icon--left fa fa-trash-o"></span>
+                    </span>
+                    {endif/}
+                    ```
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: Size: <b>#L_SIZE#</b>, Release date: <b>#TIME_CREATED#</b>
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAME#
+            }
+        )
+
+        column L_SIZE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Veličina
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAME (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RENAME_LINK (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Rename Link
+            }
+            layout {
+                sequence: 110
+            }
+        )
+
+        column STORAGE_TIER (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Storage Tier
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+            security {
+                authorizationScheme: @main-admin
+            }
+        )
+
+        column TIME_CREATED (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Vrijeme objavljivanja
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            includeShowAll: false
+        }
+    )
+
+    pageItem P105_BUCKET_NAME (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+    )
+
+    pageItem P105_OBJECT_NAME (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 70
+            slot: body
+        }
+    )
+
+    button create-kasa (
+        buttonName: CREATE_KASA
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @kase
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 108
+                clearCache: 108
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button upload (
+        buttonName: UPLOAD
+        label: Novi unos
+        layout {
+            sequence: 30
+            region: @middleware-development
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 107
+                clearCache: 107
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+    )
+
+    dynamicAction delete (
+        name: Delete
+        execution {
+            sequence: 50
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .delete_sdk
+        }
+
+        action native-alert (
+            action: alert
+            settings {
+                message: Da li ste sigurni da želite izbrisati izabrani objekat?
+                style: danger
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    sif.oci_pkg.delete_object (
+                        p_bucket_name => :P105_BUCKET_NAME,
+                        p_object_name => :P105_OBJECT_NAME
+                    );
+                    ```
+                itemsToSubmit: [
+                    P105_OBJECT_NAME
+                    P105_BUCKET_NAME
+                ]
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    $s('P105_OBJECT_NAME', $(this.triggeringElement).data('object'));
+                    $s('P105_BUCKET_NAME', $(this.triggeringElement).data('bucket'));
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                showProcessing: false
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @kase
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @kase
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 3
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @middleware-development
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @middleware-development
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @middleware-relases
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-3 (
+        name: Dialog Closed - Refresh 4
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosecanceldialog
+            selectionType: region
+            region: @middleware-relases
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @middleware-relases
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process download-sdk (
+        name: DOWNLOAD_SDK
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.oci_pkg.get_object (
+                    p_bucket_name => :P105_BUCKET_NAME,
+                    p_object_name => :P105_OBJECT_NAME
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
+        }
+        advanced {
+            executionMappingIdentifier: 96526963427455932
+        }
+    )
+
+    process middleware-dev (
+        name: Middleware - Dev
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.oci_pkg.list_objects (
+                    p_collection_name => 'DEVELOPMENT',
+                    p_bucket_name     => 'erp-middleware-dev'
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 95066081360795749
+        }
+        security {
+            authorizationScheme: @main-admin
+        }
+    )
+
+    process middleware-releases (
+        name: Middleware - Releases
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.oci_pkg.list_objects (
+                    p_collection_name => 'RELEASES',
+                    p_bucket_name     => 'erp-middleware-releases'
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 95066132480795750
+        }
+    )
+
+)
+

@@ -1,0 +1,544 @@
+page 20 (
+    name: Stavke
+    alias: STAVKE1
+    title: Stavke
+    pageGroup: @stavke
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @fakture-stavke
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <b><em>Pregled</em></b> modula Stavke i cjenovnici: aktivne stavke, stavke bez cijene, posljednje promjene cijena
+            i aktivni cjenovnici. Klikom na pokazatelj ili stavku otvara se odgovarajuća lista ili forma.
+            ```
+    }
+
+    region stavke (
+        name: Stavke
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_stavke(:APP_OOJ_ID);
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavke-po-tipu (
+        name: Aktivne stavke po tipu
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chart {
+            type: donut
+        }
+        chartLayout {
+            height: 260
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series tip (
+            name: Stavke
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT ts.naziv AS label, count(*) AS value
+                    FROM sec_stavke s
+                    JOIN sif.acc_tipovi_stavki ts ON ts.id = s.tip_stavke_id
+                    WHERE s.ooj_id = :APP_OOJ_ID AND s.valid = 'Y'
+                    GROUP BY ts.naziv
+                    ORDER BY 2 DESC
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+    )
+
+    region stavke-po-klasama (
+        name: Stavke po klasama (10 najvećih)
+        type: chart
+        layout {
+            sequence: 30
+            slot: body
+            startNewRow: false
+            columnSpan: 8
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 260
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series klase (
+            name: Stavke
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT nvl(k.naziv, 'Bez klase') AS label, count(*) AS value
+                    FROM sec_stavke s
+                    LEFT JOIN sec_klase_stavki k ON k.id = s.klasa_id
+                    WHERE s.ooj_id = :APP_OOJ_ID AND s.valid = 'Y'
+                    GROUP BY nvl(k.naziv, 'Bez klase')
+                    ORDER BY 2 DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region bez-cijene (
+        name: Aktivne stavke bez cijene
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.id,
+                    s.sifra,
+                    s.naziv,
+                    ts.naziv AS tip,
+                    apex_page.get_url(p_page => 22, p_items => 'P22_ID', p_values => s.id) AS link
+                FROM sec_stavke s
+                LEFT JOIN sif.acc_tipovi_stavki ts ON ts.id = s.tip_stavke_id
+                WHERE s.ooj_id = :APP_OOJ_ID
+                  AND s.valid = 'Y'
+                  AND NOT EXISTS (SELECT 1 FROM cjenovnik_stavke cs WHERE cs.stavka_id = s.id AND cs.valid = 'Y')
+                ORDER BY s.id DESC
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 8
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Sve aktivne stavke imaju cijenu.
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: <a href="#LINK#"><span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#SIFRA#</span></span></a>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Tip
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 50
+            }
+        )
+
+    )
+
+    region promjene-cijena (
+        name: Posljednje promjene cijena
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.sifra,
+                    s.naziv,
+                    c.naziv AS cjenovnik,
+                    cs.vpc,
+                    cs.datum
+                FROM cjenovnik_stavke cs
+                JOIN cjenovnici c ON c.id = cs.cjenovnik_id
+                JOIN sec_stavke s ON s.id = cs.stavka_id
+                WHERE c.ooj_id = :APP_OOJ_ID
+                ORDER BY cs.datum DESC NULLS LAST, cs.id DESC
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 8
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Još nema unesenih cijena.
+        }
+
+        column SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#SIFRA#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CJENOVNIK (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Cjenovnik
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VPC (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: VPC
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region cjenovnici-pregled (
+        name: Aktivni cjenovnici
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    c.naziv,
+                    CASE c.tip WHEN 'M' THEN 'Maloprodajni' WHEN 'V' THEN 'Veleprodajni' END AS vrsta,
+                    (SELECT count(*) FROM cjenovnik_stavke cs WHERE cs.cjenovnik_id = c.id AND cs.valid = 'Y') AS cijena,
+                    (SELECT count(*) FROM skladista sk WHERE sk.cjenovnik_id = c.id) AS mjesta
+                FROM cjenovnici c
+                WHERE c.ooj_id = :APP_OOJ_ID AND c.valid = 'Y'
+                ORDER BY c.naziv
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 10
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema aktivnih cjenovnika.
+        }
+
+        column NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Cjenovnik
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Vrsta
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MJESTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Prodajnih mjesta
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+)
+

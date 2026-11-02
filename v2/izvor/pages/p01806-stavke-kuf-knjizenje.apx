@@ -1,0 +1,434 @@
+page 1806 (
+    name: Stavke KUF-knjizenje
+    alias: STAVKE-KUF-KNJIZENJE
+    title: Stavke KUF-knjizenje
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        width: 1600
+        height: 800
+        maxWidth: 1600
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region referentne-fakture (
+        name: Referentne fakture
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select vk.godina, vk.broj, vk.datum_fakture, vk.datum_valute,vk.tip_dokumenta as vrsta_fakture, vk.partner_naziv, vk.pdv_indikator,vk.iznos_bez_pdv, vk.iznos_sa_pdv, vk.naziv_fakture, vk.kuf_id as dodaj_stavku 
+                from vw_kufovi vk 
+                join (select distinct n003 as dok_id
+                      from apex_collections
+                      where collection_name = 'SADRZAJ_GK_UF') kol on vk.kuf_id=kol.dok_id
+                order by vk.datum_fakture
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 553464812658867503
+        }
+
+        column BROJ (
+            type: plainText
+            heading {
+                heading: Broj
+                alignment: end
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: R
+            }
+        )
+
+        column DATUM_FAKTURE (
+            type: plainText
+            heading {
+                heading: Datum Fakture
+            }
+            layout {
+                sequence: 230
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: S
+            }
+        )
+
+        column DATUM_VALUTE (
+            type: plainText
+            heading {
+                heading: Datum Valute
+            }
+            layout {
+                sequence: 240
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: T
+            }
+        )
+
+        column DODAJ_STAVKU (
+            type: link
+            heading {
+                heading: Dodaj stavku
+                alignment: center
+            }
+            layout {
+                sequence: 200
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    type: url
+                    url: #
+                }
+                linkText: <img  src="#APP_FILES#icons/add.png" class="apex-edit-view add-st"   style="height:22px !important; width:22px !important" alt="" >
+                linkAttributes: data-id=#DODAJ_STAVKU#
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: P
+            }
+            enableUsersTo {
+                hide: false
+                sort: false
+                filter: false
+                highlight: false
+                controlBreak: false
+                aggregate: false
+                compute: false
+                chart: false
+                groupBy: false
+                pivot: false
+            }
+        )
+
+        column GODINA (
+            type: plainText
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            type: plainText
+            heading {
+                heading: Iznos bez PDV-a
+                alignment: end
+            }
+            layout {
+                sequence: 280
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: X
+            }
+        )
+
+        column IZNOS_SA_PDV (
+            type: plainText
+            heading {
+                heading: Iznos sa PDV-om
+                alignment: end
+            }
+            layout {
+                sequence: 290
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Y
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            type: plainText
+            heading {
+                heading: Naziv Fakture
+            }
+            layout {
+                sequence: 300
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: Z
+            }
+        )
+
+        column PARTNER_NAZIV (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 260
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: V
+            }
+        )
+
+        column PDV_INDIKATOR (
+            type: plainText
+            heading {
+                heading: Pdv Indikator
+            }
+            layout {
+                sequence: 270
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: W
+            }
+        )
+
+        column VRSTA_FAKTURE (
+            type: plainText
+            heading {
+                heading: Vrsta Fakture
+            }
+            layout {
+                sequence: 250
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: U
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 2722768 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn BROJ (
+                sequence: 2
+            )
+
+            displayColumn DATUM_FAKTURE (
+                sequence: 4
+            )
+
+            displayColumn DATUM_VALUTE (
+                sequence: 5
+            )
+
+            displayColumn DODAJ_STAVKU (
+                sequence: 11
+            )
+
+            displayColumn GODINA (
+                sequence: 1
+            )
+
+            displayColumn IZNOS_BEZ_PDV (
+                sequence: 8
+            )
+
+            displayColumn IZNOS_SA_PDV (
+                sequence: 9
+            )
+
+            displayColumn NAZIV_FAKTURE (
+                sequence: 10
+            )
+
+            displayColumn PARTNER_NAZIV (
+                sequence: 6
+            )
+
+            displayColumn PDV_INDIKATOR (
+                sequence: 7
+            )
+
+            displayColumn VRSTA_FAKTURE (
+                sequence: 3
+            )
+
+        )
+
+    )
+
+    pageItem P1806_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @referentne-fakture
+            slot: regionBody
+        }
+    )
+
+    dynamicAction odabir-transakcije (
+        name: Odabir transakcije
+        execution {
+            sequence: 10
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .add-st
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    --dodajemo faktururu u templejt za knjiženje
+                    for r in (select k.naziv_fakture as opis_transakcije,k.datum_fakture as datum_dokumenta, k.partner_id as partner,k.pdv_indikator_id as id_pdv_indikatora, k.pdv_indikator_sifra as sifra_pdv_indikatora, k.tip_dokumenta_sifra as vrsta_dokumenta, 
+                                   k.valuta_id, k.iznos_bez_pdv, k.iznos_sa_pdv, k.kuf_id, 
+                                   'Ulazne fakture - UF/'||k.broj||'/'||k.godina as dokument
+                               from vw_kufovi k
+                               where k.kuf_id=:P1806_ID)
+                    loop
+                       apex_collection.add_member(
+                                p_collection_name => 'SADRZAJ_GK_UF',
+                                p_c001 => r.opis_transakcije,
+                                p_c002 => null,
+                                p_c003 => null,
+                                p_c004 => null,
+                                p_c005 => 'D',
+                                p_c006 => null,
+                                p_c007 => r.valuta_id,
+                                p_c008 => null,
+                                p_c009 => r.dokument,
+                                p_c010 => r.opis_transakcije,
+                                p_n001 => r.iznos_sa_pdv,
+                                p_n002 => 1,
+                                p_n003 => r.kuf_id,
+                                p_d001 => r.datum_dokumenta
+                            ); 
+                           
+                    end loop;       
+                    ```
+                itemsToSubmit: P1806_ID
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: jsExpression
+                jsExpression: $(this.triggeringElement).parent().data('id');
+            }
+            affectedElements {
+                selectionType: items
+                items: P1806_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process zatvori-modal (
+        name: Zatvori modal
+        type: closeDialog
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 281242249895292804
+        }
+    )
+
+)
+

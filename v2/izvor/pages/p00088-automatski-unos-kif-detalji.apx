@@ -1,0 +1,682 @@
+page 88 (
+    name: Automatski unos KIF / Detalji
+    alias: AUTOMATSKI-UNOS-KIF-DETALJI
+    title: Automatski unos KIF / Detalji
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region učitani-kif-fajl-pregled (
+        name: Učitani KIF fajl (pregled)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    c001 as vrsta_sloga,
+                    c002 as poreski_period,
+                    c003 as redni_br,
+                    c004 as tip_dokumenta,
+                    c005 as broj_fakture,
+                    to_date(c006, :P88_KIF_DATE_FORMAT) as datum_fakture,
+                    c007 as naziv_kupca,
+                    c008 as sjediste_kupca,
+                    c009 as pdv_broj_kupca,
+                    c010 as jib_broj_kupca,
+                    c011 as iznos_fakture,
+                    c012 as iznos_fakture_interne,
+                    c013 as iznos_fakture_izvozne,
+                    c014 as iznos_ostale_bez_pdv,
+                    c015 as iznos_osnovice_za_pdv,
+                    c016 as iznos_izlaz_pdv_za_pdv,
+                    c017 as iznos_osnovice_za_nepdv,
+                    c018 as iznos_izlaz_pdv_za_nepdv,
+                    c019 as iznos_pdv_32polje,
+                    c020 as iznos_pdv_33polje,
+                    c021 as iznos_pdv_34polje
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'LOAD_KIF'
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+
+        column BROJ_FAKTURE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Broj fakture
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 80
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_INTERNE (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Iznos interne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_FAKTURE_IZVOZNE (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Izvozne fakture
+                alignment: end
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_NEPDV (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: Izlaz PDV za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 200
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_IZLAZ_PDV_ZA_PDV (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Izlaz PDV za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 180
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_NEPDV (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: Osnovica za NEPDV
+                alignment: end
+            }
+            layout {
+                sequence: 190
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSNOVICE_ZA_PDV (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Osnovica za PDV
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_OSTALE_BEZ_PDV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Ostale bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_32POLJE (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            heading {
+                heading: PDV - 32 polje
+                alignment: end
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_33POLJE (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            heading {
+                heading: PDV - 33 polje
+                alignment: end
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS_PDV_34POLJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            heading {
+                heading: PDV - 34 polje
+                alignment: end
+            }
+            layout {
+                sequence: 230
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JIB_BROJ_KUPCA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: JIB broj kupca
+            }
+            layout {
+                sequence: 120
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV_KUPCA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Naziv kupca
+            }
+            layout {
+                sequence: 90
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_BROJ_KUPCA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: PDV broj kupca
+            }
+            layout {
+                sequence: 110
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PORESKI_PERIOD (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Poreski period
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column REDNI_BR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: RB
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SJEDISTE_KUPCA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Sjedište kupca
+            }
+            layout {
+                sequence: 100
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column TIP_DOKUMENTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Tip dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_SLOGA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+    )
+
+    pageItem P88_ERROR_COUNT (
+        type: displayOnly
+        label {
+            label: Broj grešaka
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P88_FILENAME (
+        type: displayOnly
+        label {
+            label: Filename
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P88_KIF_DATE_FORMAT (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+    )
+
+    pageItem P88_PP (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Unos u UIO
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    computation p88-kif-date-format (
+        itemName: P88_KIF_DATE_FORMAT
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    data_load_kif_date_format
+                FROM
+                    core.ooj
+                WHERE
+                    id = :APP_OOJ_ID
+                ```
+        }
+    )
+
+    process clear-cache (
+        name: Clear Cache
+        type: clearSessionState
+        clear {
+            type: pages
+            pages: 86
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 50556563867545150
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR loaded_rows IS (
+                        SELECT 
+                            c001 as vrsta_sloga,
+                            c002 as poreski_period,
+                            c003 as redni_br,
+                            c004 as tip_dokumenta,
+                            c005 as broj_fakture,
+                            -- to_date(c006, :P88_KIF_DATE_FORMAT) as datum_fakture,
+                            c006 as datum_fakture,
+                            c007 as naziv_kupca,
+                            c008 as sjediste_kupca,
+                            c009 as pdv_broj_kupca,
+                            c010 as jib_broj_kupca,
+                            c011 as iznos_fakture,
+                            c012 as iznos_fakture_interne,
+                            c013 as iznos_fakture_izvozne,
+                            c014 as iznos_ostale_bez_pdv,
+                            c015 as iznos_osnovice_za_pdv,
+                            c016 as iznos_izlaz_pdv_za_pdv,
+                            c017 as iznos_osnovice_za_nepdv,
+                            c018 as iznos_izlaz_pdv_za_nepdv,
+                            c019 as iznos_pdv_32polje,
+                            c020 as iznos_pdv_33polje,
+                            c021 as iznos_pdv_34polje
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'LOAD_KIF'
+                    ) ORDER BY seq_id ASC;
+                
+                    l_id NUMBER;
+                BEGIN
+                    FOR c1 IN loaded_rows LOOP
+                        apex_debug.message('c1.datum_fakture ' || c1.datum_fakture);
+                
+                        uio_pkg.insert_uio_kif (
+                            p_ooj_id                   => :APP_OOJ_ID,
+                            p_faktura_id               => null,
+                            p_vrsta_sloga              => c1.vrsta_sloga,
+                            p_poreski_period           => c1.poreski_period,
+                            p_redni_br                 => c1.redni_br,
+                            p_tip_dokumenta            => c1.tip_dokumenta,
+                            p_broj_fakture             => c1.broj_fakture,
+                            p_datum_fakture            => to_date(c1.datum_fakture, :P88_KIF_DATE_FORMAT),
+                            p_naziv_kupca              => c1.naziv_kupca,
+                            p_sjediste_kupca           => c1.sjediste_kupca,
+                            p_pdv_broj_kupca           => c1.pdv_broj_kupca,
+                            p_jib_broj_kupca           => c1.jib_broj_kupca,
+                            p_iznos_fakture            => c1.iznos_fakture,
+                            p_iznos_fakture_interne    => c1.iznos_fakture_interne,
+                            p_iznos_fakture_izvozne    => c1.iznos_fakture_izvozne,
+                            p_iznos_ostale_bez_pdv     => c1.iznos_ostale_bez_pdv,
+                            p_iznos_osnovice_za_pdv    => c1.iznos_osnovice_za_pdv,
+                            p_iznos_izlaz_pdv_za_pdv   => c1.iznos_izlaz_pdv_za_pdv,
+                            p_iznos_osnovice_za_nepdv  => c1.iznos_osnovice_za_nepdv,
+                            p_iznos_izlaz_pdv_za_nepdv => c1.iznos_izlaz_pdv_za_nepdv,
+                            p_iznos_pdv_32polje        => c1.iznos_pdv_32polje,
+                            p_iznos_pdv_33polje        => c1.iznos_pdv_33polje,
+                            p_iznos_pdv_34polje        => c1.iznos_pdv_34polje
+                        );
+                
+                        :P88_PP := c1.poreski_period;
+                    END LOOP;
+                
+                    uio_pkg.insert_history (
+                        p_ooj_id       => :APP_OOJ_ID,
+                        p_status_sifra => 'success',
+                        p_filename     => :P88_FILENAME,
+                        p_komentar     => 'Uspješno učitan KIF dokument u UIO KIF.'
+                    );
+                
+                    IF :P88_ERROR_COUNT > 0 THEN
+                        uio_pkg.insert_history (
+                            p_ooj_id       => :APP_OOJ_ID,
+                            p_status_sifra => 'error',
+                            p_filename     => :P88_FILENAME,
+                            p_komentar     => 'Učitani KIF dokument ima ' || :P88_ERROR_COUNT || ' grešaka.'
+                        );
+                    END IF;
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 50555448124545139
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        name: Go To Page 81
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 81
+                items: {
+                    P81_PORESKI_PERIOD: &P88_PP.
+                }
+                clearCache: 81
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 86
+                clearCache: 86
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancel
+        }
+    )
+
+)
+

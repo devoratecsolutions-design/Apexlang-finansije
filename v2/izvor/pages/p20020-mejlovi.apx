@@ -1,0 +1,151 @@
+page 20020 (
+    name: Mejlovi
+    alias: MEJLOVI
+    title: Mejlovi
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region push-notifications (
+        name: Push Notifications
+        type: staticContent
+        source {
+            htmlCode: Konfigurišite da li želite da primate mejlove od Human Resource Managment aplikacije. Ovo podešavanje se može promeniti u bilo kom trenutku.
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--wizard
+                t-Alert--customIcons
+                t-Alert--info
+                t-Alert--removeHeading js-removeLandmark
+                t-Form--xlarge
+            ]
+            cssClasses: a-pwaPush--subscriptionRegion
+            icon: fa-bell-o
+            renderComponents: belowContent
+        }
+    )
+
+    pageItem P20020_ENABLE_MAIL (
+        type: checkbox
+        label {
+            label: Uključite mejlove
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @push-notifications
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-top-sm
+            ]
+        }
+    )
+
+    button back (
+        buttonName: BACK
+        label: Podešavanja
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+                t-Button--iconLeft
+            ]
+            cssClasses: t-Button--inlineLink
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 20000
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction change (
+        name: Change
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P20020_ENABLE_MAIL
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    core.korisnik_pkg.toggle_mailing (
+                        p_korisnik_id => :APP_USER_ID,
+                        p_mailing     => :P20020_ENABLE_MAIL
+                    );
+                    ```
+                itemsToSubmit: P20020_ENABLE_MAIL
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.get_mailing (
+                    p_korisnik_id => :APP_USER_ID,
+                    p_mailing     => :P20020_ENABLE_MAIL
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 385562888986118753
+        }
+    )
+
+)
+

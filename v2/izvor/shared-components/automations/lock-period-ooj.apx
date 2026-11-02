@@ -1,0 +1,25 @@
+automation lock-period-ooj (
+    name: LOCK_PERIOD_OOJ
+    execution {
+        scheduleExpression: FREQ=MONTHLY;BYMONTHDAY=21;BYHOUR=6;BYMINUTE=0
+        actionsInitiatedOn: always
+    }
+
+    action lock-period-ooj (
+        name: LOCK_PERIOD_OOJ
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    lock_period_ooj;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+)
+

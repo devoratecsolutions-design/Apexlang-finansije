@@ -1,0 +1,464 @@
+page 271 (
+    name: Održavanja osnovnih sredstava
+    alias: ODRŽAVANJA-OSNOVNIH-SREDSTAVA
+    title: Održavanja osnovnih sredstava
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @osnovna-sredstva-pregled
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            Na stranici <b><em>“Održavanja”</em></b> iznad liste nalazi se filter pomoću kojeg je moguće prilagoditi 
+            prikaz podataka u izvještaju, pri čemu se podaci mogu filtrirati prema osnovnom sredstvu, 
+            broju dana i opciji da li je sljedeći servis u prošlosti ili ne. </br>
+            </br>
+            Kada želite da unesete održavanje za određeno sredstvo, potrebno je da odaberete opciju <b><em>“Novi unos”,</em></b>
+            nakon čega se otvara modalni dijalog u kojem je neophodno odabrati osnovno sredstvo, unijeti naziv i opis, 
+            definisati datum servisa, odrediti period za sljedeći servis (mjesec, šest mjeseci ili godina), 
+            unijeti cijenu održavanja i datum narednog servisa, a zatim potvrditi unos izborom dugmeta 
+            <b><em>“Kreiraj”.</em></b>
+            ```
+    }
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @održavanja-osnovnih-sredstava
+        }
+        layout {
+            sequence: 9
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P271_BROJ_DANA (
+            type: checkboxGroup
+            label {
+                label: Broj dana
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:365;365,180;180,90;90,30;30,14;14,7;7,1;1
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: BROJ_DANA
+            }
+        )
+
+        filter P271_IS_PAST (
+            type: radioGroup
+            label {
+                label: Sljedeći servis u prošlosti
+            }
+            lov {
+                type: sharedComponent
+                lov: @da-ne
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: IS_PAST
+            }
+        )
+
+        filter P271_OSNOVNO_SREDSTVO_ID (
+            type: checkboxGroup
+            label {
+                label: Osnovno sredstvo
+            }
+            lov {
+                type: sharedComponent
+                lov: @osnovna-sredstva-display
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: OSNOVNO_SREDSTVO_ID
+            }
+        )
+
+        filter P271_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga..
+            }
+        )
+
+    )
+
+    region održavanja (
+        name: Održavanja
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region održavanja-osnovnih-sredstava (
+        name: Održavanja osnovnih sredstava
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    osnovno_sredstvo_id,
+                    osnovno_sredstvo_naziv,
+                    osnovno_sredstvo_inventurni_naziv,
+                    naziv,
+                    opis,
+                    datum,
+                    cijena,
+                    sledeci_servis,
+                    trunc(sledeci_servis) - trunc(sysdate) as broj_dana,
+                    CASE
+                        WHEN trunc(sledeci_servis) - trunc(sysdate) < 0 THEN
+                            'Y'
+                        ELSE
+                            'N'
+                    END AS is_past
+                FROM
+                    vw_osnovno_sredstvo_odrzavanje
+                WHERE
+                    ooj_id = :APP_OOJ_ID
+                    -- AND trunc(sledeci_servis) - trunc(sysdate) 
+                ORDER BY
+                    broj_dana DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        performance {
+            maxRowsToProcess: 500
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column BROJ_DANA (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Broj dana do sljedećeg servisa
+            }
+            layout {
+                sequence: 92
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 72
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 62
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Pregled
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 268
+                    items: {
+                        P268_ID: #ID#
+                    }
+                    clearCache: 268
+                }
+                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IS_PAST (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 102
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 42
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 52
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 2
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_INVENTURNI_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Inventurni naziv
+            }
+            layout {
+                sequence: 12
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column OSNOVNO_SREDSTVO_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 22
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SLEDECI_SERVIS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Sljedeći servis
+            }
+            layout {
+                sequence: 82
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @održavanja
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 268
+                clearCache: 268
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @osnovna-sredstva-izmjena
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @održavanja-osnovnih-sredstava
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @održavanja-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @održavanja-osnovnih-sredstava
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)
+

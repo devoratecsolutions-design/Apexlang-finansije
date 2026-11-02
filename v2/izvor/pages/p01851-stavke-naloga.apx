@@ -1,0 +1,1436 @@
+page 1851 (
+    name: Stavke naloga
+    alias: STAVKE-NALOGA
+    title: Stavke naloga
+    pageGroup: @glavna-knjiga
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+    }
+    css {
+        inline:
+            ```css
+            /* Scroll Results Only in Side Column */
+            .t-Body-side {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .search-results {
+                flex: 1;
+                overflow: auto;
+            }
+            /* Format Search Region */
+            .search-region {
+                border-bottom: 1px solid rgba(0,0,0,.1);
+                flex-shrink: 0;
+            }
+            
+            #stavke_ig_ig_report_settings {
+                display: none;
+            }
+            
+            #ui-id-1 > th > span {
+                display: none;
+            }
+            
+            #P201_TOTAL_CONTAINER > div.t-Form-labelContainer {
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }
+            #P201_TOTAL_CONTAINER > div.t-Form-inputContainer {
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+
+    region nalog (
+        name: Nalog
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: js-master-region
+        }
+    )
+
+    region referentni-dokumenti (
+        name: Referentni dokumenti
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select rd.*
+                from vw_gk_referentni_dokumenti rd
+                join (select distinct sn.modul_id, sn.ref_dokument_id 
+                     from vw_nalozi_gk_stavke sn 
+                     where sn.nalog_id=:P1851_NALOG_ID) st on rd.dokument_id=st.ref_dokument_id and rd.modul_id=st.modul_id;
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @nalog
+            slot: subRegions
+            columnSpan: 6
+        }
+        appearance {
+            template: @collapsible
+            templateOptions: [
+                #DEFAULT#
+                js-useLocalStorage
+                is-collapsed
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column BROJ (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Broj
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column DOKUMENT_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column GODINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Godina
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+        )
+
+        column IZNOS_BEZ_PDV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV-a
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1851_MODUL=3
+            }
+        )
+
+        column IZNOS_SA_PDV (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV-om
+                alignment: end
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1851_MODUL=3
+            }
+        )
+
+        column MODUL_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 140
+            }
+        )
+
+        column PARTNER (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 100
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1851_MODUL=3
+            }
+        )
+
+        column PDV_INDIKATOR (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Pdv Indikator
+            }
+            layout {
+                sequence: 110
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1851_MODUL=3
+            }
+        )
+
+        column PROMET (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Promet
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P1851_MODUL!=3
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Vrsta dokumenta
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+    )
+
+    region stavke-konta-knjizeno (
+        name: Stavke konta - Knjizeno
+        title: Stavke konta
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select sn.*
+                from vw_nalozi_gk_stavke sn
+                where sn.nalog_id=:P1851_NALOG_ID
+                order by sn.redni_broj
+                ```
+        }
+        layout {
+            sequence: 80
+            slot: body
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ir
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 274067712746449642
+        }
+
+        column DATUM_DOKUMENTA (
+            type: plainText
+            heading {
+                heading: Datum dokumenta
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column DATUM_DOSPJECA (
+            type: plainText
+            heading {
+                heading: Datum dospjeća
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column DODJELA (
+            type: plainText
+            heading {
+                heading: Komentar
+            }
+            layout {
+                sequence: 240
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: X
+            }
+        )
+
+        column IZNOS (
+            type: plainText
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column KONTO (
+            type: plainText
+            heading {
+                heading: Konto
+            }
+            layout {
+                sequence: 200
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: T
+            }
+        )
+
+        column KONTO_ID (
+            type: hidden
+            heading {
+                heading: Konto Id
+            }
+            layout {
+                sequence: 190
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: S
+            }
+        )
+
+        column MJESTO_TROSKA (
+            type: plainText
+            heading {
+                heading: Mjesto troška
+            }
+            layout {
+                sequence: 150
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: O
+            }
+        )
+
+        column MODUL_ID (
+            type: plainText
+            heading {
+                heading: Modul Id
+                alignment: end
+            }
+            layout {
+                sequence: 270
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: AA
+            }
+        )
+
+        column MT_ID (
+            type: hidden
+            heading {
+                heading: Mt Id
+            }
+            layout {
+                sequence: 140
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: N
+            }
+        )
+
+        column NALOG_ID (
+            type: hidden
+            heading {
+                heading: Nalog Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column OOJ_ID (
+            type: hidden
+            heading {
+                heading: Ooj Id
+            }
+            layout {
+                sequence: 230
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: W
+            }
+        )
+
+        column OPIS (
+            type: plainText
+            heading {
+                heading: Opis
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column OPSTINA (
+            type: plainText
+            heading {
+                heading: Opština
+            }
+            layout {
+                sequence: 180
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: R
+            }
+        )
+
+        column OPSTINA_ID (
+            type: hidden
+            heading {
+                heading: Opstina Id
+            }
+            layout {
+                sequence: 170
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column PARNER_ID (
+            type: hidden
+            heading {
+                heading: Parner Id
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Partner
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: M
+            }
+        )
+
+        column RADNIK (
+            type: plainText
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 280
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: AB
+            }
+        )
+
+        column RADNIK_ID (
+            type: hidden
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 160
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: P
+            }
+        )
+
+        column REDNI_BROJ (
+            type: plainText
+            heading {
+                heading: Rbr
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column REF_DOKUMENT (
+            type: plainText
+            heading {
+                heading: Ref. dokument
+            }
+            layout {
+                sequence: 210
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: U
+            }
+        )
+
+        column REF_DOKUMENT_ID (
+            type: plainText
+            heading {
+                heading: Ref Dokument Id
+                alignment: end
+            }
+            layout {
+                sequence: 260
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Z
+            }
+        )
+
+        column REF_OPIS_DOKUMENTA (
+            type: plainText
+            heading {
+                heading: Opis ref. dokumenta
+            }
+            layout {
+                sequence: 220
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: V
+            }
+        )
+
+        column STAVKA_ID (
+            type: link
+            heading {
+                heading: -
+                alignment: center
+            }
+            layout {
+                sequence: 250
+                columnAlignment: center
+            }
+            link {
+                target: {
+                    page: 1852
+                    items: {
+                        P1852_ID: #STAVKA_ID#
+                    }
+                    clearCache: Y
+                }
+                linkText: <img  src="#APP_FILES#icons/comment.png" class="apex-edit-view edit-comment"   style="height:22px !important; width:22px !important" alt="" >
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Y
+            }
+        )
+
+        column STRANA_KNJIZENJA (
+            type: plainText
+            heading {
+                heading: Strana Knjiženja
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column TIP_STAVKE (
+            type: hidden
+            heading {
+                heading: Tip Stavke
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column VALUTA (
+            type: plainText
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column VALUTA_ID (
+            type: plainText
+            heading {
+                heading: Valuta Id
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column VALUTA_IZNOS (
+            type: plainText
+            heading {
+                heading: Valuta Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+        pageHeader {
+            pageHeaderText: Stavke konta
+        }
+
+        savedReport 2743271 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn DATUM_DOKUMENTA (
+                sequence: 4
+            )
+
+            displayColumn IZNOS (
+                sequence: 12
+            )
+
+            displayColumn KONTO (
+                sequence: 10
+            )
+
+            displayColumn MJESTO_TROSKA (
+                sequence: 9
+            )
+
+            displayColumn OPIS (
+                sequence: 5
+            )
+
+            displayColumn OPSTINA (
+                sequence: 7
+            )
+
+            displayColumn PARTNER (
+                sequence: 6
+            )
+
+            displayColumn RADNIK_ID (
+                sequence: 8
+            )
+
+            displayColumn REDNI_BROJ (
+                sequence: 1
+            )
+
+            displayColumn REF_DOKUMENT (
+                sequence: 3
+            )
+
+            displayColumn REF_OPIS_DOKUMENTA (
+                sequence: 2
+            )
+
+            displayColumn STAVKA_ID (
+                sequence: 13
+            )
+
+            displayColumn STRANA_KNJIZENJA (
+                sequence: 11
+            )
+
+            aggregate (
+                column: IZNOS
+            )
+
+        )
+
+    )
+
+    pageItem P1851_BROJ (
+        type: displayOnly
+        label {
+            label: Broj
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_DATUM_NALOGA (
+        type: displayOnly
+        label {
+            label: Datum
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_DUGUJE (
+        type: displayOnly
+        label {
+            label: Duguje
+            alignment: left
+        }
+        layout {
+            sequence: 170
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @stavke-konta-knjizeno
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_KREIRAO (
+        type: displayOnly
+        label {
+            label: Kreirao
+            alignment: left
+        }
+        layout {
+            sequence: 190
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_MODUL (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 210
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_NALOG_PROKNJIZEN (
+        type: hidden
+        layout {
+            sequence: 90
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_NALOG_STORNIRAN (
+        type: hidden
+        layout {
+            sequence: 100
+            region: @nalog
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_OPIS (
+        type: displayOnly
+        label {
+            label: Opis
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-lg
+            ]
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_POTRAZUJE (
+        type: displayOnly
+        label {
+            label: Potražuje
+            alignment: left
+        }
+        layout {
+            sequence: 180
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P1851_VRSTA_NALOGA (
+        type: displayOnly
+        label {
+            label: Nalog
+            alignment: left
+        }
+        layout {
+            sequence: 110
+            region: @nalog
+            slot: regionBody
+            alignment: left
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 40
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--padLeft
+            ]
+            icon: fa-pencil-square-o
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 202
+                items: {
+                    P202_ID: &P1851_ID.
+                }
+                clearCache: 202
+                action: resetPagination
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    button print (
+        buttonName: PRINT
+        label: <img  src="#APP_FILES#icons/printer.png" class="apex-edit-view"   style="height:32px !important; width:32px !important" alt="" >
+        layout {
+            sequence: 20
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--link
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        config {
+            buildOption: @feature-printing
+        }
+    )
+
+    button storniraj (
+        buttonName: STORNIRAJ
+        label: Storniraj
+        layout {
+            sequence: 10
+            region: @nalog
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-undo-arrow
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 1853
+                items: {
+                    P1853_ID: &P1851_NALOG_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Da li ste sigurni da želite stornirati nalog?
+            style: information
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P1851_NALOG_STORNIRAN
+            value: Y
+        }
+    )
+
+    dynamicAction change-proknizeno (
+        name: Change proknizeno
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: P1851_PROKNJIZENO
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: null;
+                itemsToSubmit: P1851_PROKNJIZENO
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed (
+        name: Dialog Closed
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @nalog
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode: apex.message.showPageSuccess('Glavna Knjiga row(s) updated.');
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @nalog
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction print (
+        name: Print
+        execution {
+            sequence: 120
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @print
+        }
+        config {
+            buildOption: @feature-printing
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    generate_report(
+                        filename = 'nalog.pdf',
+                        report_path = '/reports/ACCOUNTING/glavna_knjiga/nalog_knjizenje', 
+                        report_parameters = {
+                            ID: $v("P1851_ID")
+                        },
+                        new_tab = false
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+            config {
+                buildOption: @feature-printing
+            }
+        )
+
+    )
+
+    dynamicAction refresh-after-deialog-close (
+        name: Refresh   after deialog close
+        execution {
+            sequence: 130
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @stavke-konta-knjizeno
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @stavke-konta-knjizeno
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction submit-page (
+        name: Submit Page
+        execution {
+            sequence: 90
+        }
+        when {
+            selectionType: items
+            items: P1851_NALOG_ID
+        }
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: CHANGE_NALOG
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction toggle (
+        name: Toggle
+        execution {
+            sequence: 110
+        }
+        when {
+            selectionType: items
+            items: P1851_TOTAL
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P1851_TOTAL
+        }
+        config {
+            buildOption: @commented-out
+        }
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: items
+                items: P1851_TOTAL
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+            clientSideCondition {
+                type: itemIsNull
+                item: P1851_TOTAL
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: items
+                items: P1851_TOTAL
+            }
+            execution {
+                sequence: 10
+            }
+            clientSideCondition {
+                type: itemIsNotNull
+                item: P1851_TOTAL
+            }
+            config {
+                buildOption: @commented-out
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                select g.sifra||'-'||g.naziv as nalog, g.datum_naloga, g.broj, to_char(g.duguje,'999G999G999G999G990D00'), to_char(g.potrazuje,'999G999G999G999G990D00'),g.nalog_kreirao, g.stornirano, g.opis
+                into   :P1851_VRSTA_NALOGA, :P1851_DATUM_NALOGA, :P1851_BROJ, :P1851_DUGUJE, :P1851_POTRAZUJE, :P1851_KREIRAO, :P1851_NALOG_STORNIRAN, :P1851_OPIS
+                from accounting.vw_nalozi_gk  g
+                where g.nalog_id=:P1851_NALOG_ID;
+                
+                select distinct sn.modul_id
+                into :P1851_MODUL
+                from vw_nalozi_gk_stavke sn 
+                where sn.nalog_id=:P1851_NALOG_ID;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 274470628831735405
+        }
+    )
+
+)
+

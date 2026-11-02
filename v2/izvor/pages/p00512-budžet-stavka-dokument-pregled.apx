@@ -1,0 +1,70 @@
+page 512 (
+    name: Budžet stavka / Dokument / Pregled
+    alias: BUDŽET-STAVKA-DOKUMENT-PREGLED
+    title: Budžet stavka / Dokument / Pregled
+    pageGroup: @budžet
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    pageItem P512_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+    )
+
+    dynamicAction preview (
+        name: Preview
+        execution {
+            sequence: 10
+        }
+        when {
+            event: ready
+        }
+
+        action native-download (
+            action: download
+            fileHandling {
+                viewFileAs: inline
+            }
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        dokument,
+                        dokument_filename,
+                        dokument_mimetype
+                    FROM
+                        budzet_stavka_dokumenti
+                    WHERE
+                        id = :P512_ID
+                    ```
+                itemsToSubmit: P512_ID
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+)
+

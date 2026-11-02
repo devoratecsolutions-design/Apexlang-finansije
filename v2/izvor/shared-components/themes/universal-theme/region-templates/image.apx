@@ -1,0 +1,326 @@
+regionTemplate image (
+    name: Image
+    templateClass: custom1
+    templateOptions {
+        preset: [
+            t-ImageRegion--auto
+            t-ImageRegion--cover
+            t-ImageRegion--square
+            t-ImageRegion--noFilter
+        ]
+    }
+    region {
+        template: <div id="#REGION_STATIC_ID#" class="t-ImageRegion #REGION_CSS_CLASSES#" #REGION_LANDMARK_ATTRIBUTES# #REGION_ATTRIBUTES#><img src="#REGION_IMAGE_URL#" alt="#REGION_IMAGE_ALT_TEXT#" #REGION_IMAGE_ATTRIBUTES# /></div>
+    }
+    advanced {
+        identifier: IMAGE
+    }
+    subscription {
+        master: @image
+    }
+
+    templateOption image-stretch (
+        name: Image Stretch
+        sequence: 1
+        appearance {
+            cssClasses: t-ImageRegion--stretch
+        }
+        advanced {
+            identifier: IMAGE_STRETCH
+        }
+        subscription {
+            master: @image/image-stretch
+        }
+    )
+
+    templateOption filter-blur (
+        name: Blur
+        group: @region/image-filter
+        sequence: 430
+        appearance {
+            cssClasses: t-ImageRegion--blur
+        }
+        advanced {
+            identifier: FILTER_BLUR
+        }
+        subscription {
+            master: @image/filter-blur
+        }
+    )
+
+    templateOption filter-grayscale (
+        name: Grayscale
+        group: @region/image-filter
+        sequence: 410
+        appearance {
+            cssClasses: t-ImageRegion--grayscale
+        }
+        advanced {
+            identifier: FILTER_GRAYSCALE
+        }
+        subscription {
+            master: @image/filter-grayscale
+        }
+    )
+
+    templateOption filter-invert (
+        name: Invert
+        group: @region/image-filter
+        sequence: 440
+        appearance {
+            cssClasses: t-ImageRegion--invert
+        }
+        advanced {
+            identifier: FILTER_INVERT
+        }
+        subscription {
+            master: @image/filter-invert
+        }
+    )
+
+    templateOption filter-none (
+        name: None
+        group: @region/image-filter
+        sequence: 400
+        appearance {
+            cssClasses: t-ImageRegion--noFilter
+        }
+        advanced {
+            identifier: FILTER_NONE
+        }
+        subscription {
+            master: @image/filter-none
+        }
+    )
+
+    templateOption filter-saturate (
+        name: Saturate
+        group: @region/image-filter
+        sequence: 450
+        appearance {
+            cssClasses: t-ImageRegion--saturate
+        }
+        advanced {
+            identifier: FILTER_SATURATE
+        }
+        subscription {
+            master: @image/filter-saturate
+        }
+    )
+
+    templateOption filter-sepia (
+        name: Sepia
+        group: @region/image-filter
+        sequence: 420
+        appearance {
+            cssClasses: t-ImageRegion--sepia
+        }
+        advanced {
+            identifier: FILTER_SEPIA
+        }
+        subscription {
+            master: @image/filter-sepia
+        }
+    )
+
+    templateOption ratio-1-1 (
+        name: 1:1 (Square)
+        group: @region/image-ratio
+        sequence: 110
+        appearance {
+            cssClasses: t-ImageRegion--1x1
+        }
+        advanced {
+            identifier: RATIO_1_1
+        }
+        subscription {
+            master: @image/ratio-1-1
+        }
+    )
+
+    templateOption ratio-16-9 (
+        name: 16:9 (Widescreen)
+        group: @region/image-ratio
+        sequence: 120
+        appearance {
+            cssClasses: t-ImageRegion--16x9
+        }
+        advanced {
+            identifier: RATIO_16_9
+        }
+        subscription {
+            master: @image/ratio-16-9
+        }
+    )
+
+    templateOption ratio-2-1 (
+        name: 2:1 (Univisium)
+        group: @region/image-ratio
+        sequence: 140
+        appearance {
+            cssClasses: t-ImageRegion--2x1
+        }
+        advanced {
+            identifier: RATIO_2_1
+        }
+        subscription {
+            master: @image/ratio-2-1
+        }
+    )
+
+    templateOption ratio-4-3 (
+        name: 4:3 (Standard)
+        group: @region/image-ratio
+        sequence: 130
+        appearance {
+            cssClasses: t-ImageRegion--4x3
+        }
+        advanced {
+            identifier: RATIO_4_3
+        }
+        subscription {
+            master: @image/ratio-4-3
+        }
+    )
+
+    templateOption ratio-auto (
+        name: Auto
+        group: @region/image-ratio
+        sequence: 100
+        appearance {
+            cssClasses: t-ImageRegion--auto
+        }
+        advanced {
+            identifier: RATIO_AUTO
+        }
+        subscription {
+            master: @image/ratio-auto
+        }
+    )
+
+    templateOption scale-contain (
+        name: Contain
+        group: @region/image-scale
+        sequence: 200
+        appearance {
+            cssClasses: t-ImageRegion--contain
+        }
+        advanced {
+            identifier: SCALE_CONTAIN
+        }
+        subscription {
+            master: @image/scale-contain
+        }
+    )
+
+    templateOption scale-cover (
+        name: Cover
+        group: @region/image-scale
+        sequence: 210
+        appearance {
+            cssClasses: t-ImageRegion--cover
+        }
+        advanced {
+            identifier: SCALE_COVER
+        }
+        subscription {
+            master: @image/scale-cover
+        }
+    )
+
+    templateOption scale-down (
+        name: Scale Down
+        group: @region/image-scale
+        sequence: 230
+        appearance {
+            cssClasses: t-ImageRegion--scale-down
+        }
+        advanced {
+            identifier: SCALE_DOWN
+        }
+        subscription {
+            master: @image/scale-down
+        }
+    )
+
+    templateOption scale-fill (
+        name: Fill
+        group: @region/image-scale
+        sequence: 220
+        appearance {
+            cssClasses: t-ImageRegion--fill
+        }
+        advanced {
+            identifier: SCALE_FILL
+        }
+        subscription {
+            master: @image/scale-fill
+        }
+    )
+
+    templateOption shape-circle (
+        name: Circle
+        group: @region/image-shape
+        sequence: 320
+        appearance {
+            cssClasses: t-ImageRegion--circle
+        }
+        advanced {
+            identifier: SHAPE_CIRCLE
+        }
+        subscription {
+            master: @image/shape-circle
+        }
+    )
+
+    templateOption shape-rounded (
+        name: Rounded
+        group: @region/image-shape
+        sequence: 310
+        appearance {
+            cssClasses: t-ImageRegion--rounded
+        }
+        advanced {
+            identifier: SHAPE_ROUNDED
+        }
+        subscription {
+            master: @image/shape-rounded
+        }
+    )
+
+    templateOption shape-square (
+        name: Square
+        group: @region/image-shape
+        sequence: 300
+        appearance {
+            cssClasses: t-ImageRegion--square
+        }
+        advanced {
+            identifier: SHAPE_SQUARE
+        }
+        subscription {
+            master: @image/shape-square
+        }
+    )
+
+    slot regionBody (
+        name: Region Body
+        staticId: BODY
+        supports {
+            regions: false
+        }
+        gridLayout {
+            gridSupport: false
+        }
+    )
+
+    slot subRegions (
+        name: Sub Regions
+        staticId: SUB_REGIONS
+        gridLayout {
+            gridSupport: false
+        }
+    )
+
+)
+

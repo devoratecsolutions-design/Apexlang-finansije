@@ -1,0 +1,162 @@
+regionTemplate search-results-container (
+    name: Search Results Container
+    templateClass: regionWithoutTitle
+    templateOptions {
+        default: u-colors
+    }
+    region {
+        template:
+            ```html
+            <div class="t-ResultsRegion #REGION_CSS_CLASSES#" id="#REGION_STATIC_ID#" #REGION_LANDMARK_ATTRIBUTES# #REGION_ATTRIBUTES#>
+              <div class="t-ResultsRegion-search">#SEARCH_FIELD#</div>
+              #BODY#
+              #SUB_REGIONS#
+            </div>
+            
+            ```
+    }
+    accessibility {
+        landmarkType: region
+    }
+    advanced {
+        identifier: SEARCH_RESULTS_CONTAINER
+    }
+    subscription {
+        master: @search-results-container
+    }
+
+    templateOption apply-theme-colors (
+        name: Apply Theme Colors
+        sequence: 1
+        appearance {
+            cssClasses: u-colors
+        }
+        help {
+            helpText: Applies the colors from the theme's color palette to the icons or initials within search results.
+        }
+        advanced {
+            identifier: APPLY_THEME_COLORS
+        }
+        subscription {
+            master: @search-results-container/apply-theme-colors
+        }
+    )
+
+    templateOption icon-size-large (
+        name: Large
+        group: @region/icon-size
+        sequence: 3
+        appearance {
+            cssClasses: t-ResultsRegion--iconLg
+        }
+        help {
+            helpText: Sets the icon size to large (64px).
+        }
+        advanced {
+            identifier: ICON_SIZE_LARGE
+        }
+        subscription {
+            master: @search-results-container/icon-size-large
+        }
+    )
+
+    templateOption icon-size-medium (
+        name: Medium
+        group: @region/icon-size
+        sequence: 2
+        appearance {
+            cssClasses: t-ResultsRegion--iconMd
+        }
+        help {
+            helpText: Sets the icon size to medium (32px).
+        }
+        advanced {
+            identifier: ICON_SIZE_MEDIUM
+        }
+        subscription {
+            master: @search-results-container/icon-size-medium
+        }
+    )
+
+    templateOption icon-size-small (
+        name: Small
+        group: @region/icon-size
+        sequence: 1
+        appearance {
+            cssClasses: t-ResultsRegion--iconSm
+        }
+        help {
+            helpText: Sets the icon size to small (16px).
+        }
+        advanced {
+            identifier: ICON_SIZE_SMALL
+        }
+        subscription {
+            master: @search-results-container/icon-size-small
+        }
+    )
+
+    templateOption result-appearance-boxed (
+        name: Boxed
+        group: @region/result-appearance
+        sequence: 1
+        appearance {
+            cssClasses: t-ResultsRegion--boxed
+        }
+        advanced {
+            identifier: RESULT_APPEARANCE_BOXED
+        }
+        subscription {
+            master: @search-results-container/result-appearance-boxed
+        }
+    )
+
+    templateOption result-appearance-flat (
+        name: Flat
+        group: @region/result-appearance
+        sequence: 2
+        appearance {
+            cssClasses: t-ResultsRegion--flat
+        }
+        advanced {
+            identifier: RESULT_APPEARANCE_FLAT
+        }
+        subscription {
+            master: @search-results-container/result-appearance-flat
+        }
+    )
+
+    slot searchField (
+        name: Search Field
+        staticId: SEARCH_FIELD
+        supports {
+            items: true
+            buttons: true
+        }
+        gridLayout {
+            gridSupport: false
+        }
+    )
+
+    slot searchResults (
+        name: Search Results
+        staticId: BODY
+        supports {
+            items: true
+            buttons: true
+        }
+        gridLayout {
+            gridSupport: false
+        }
+    )
+
+    slot subRegions (
+        name: Sub Regions
+        staticId: SUB_REGIONS
+        gridLayout {
+            gridSupport: false
+        }
+    )
+
+)
+

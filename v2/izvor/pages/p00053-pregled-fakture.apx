@@ -1,0 +1,2870 @@
+page 53 (
+    name: Pregled fakture
+    alias: PREGLED-FAKTURE
+    title: Pregled fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    css {
+        inline:
+            ```css
+               #avansi_rpt th#R,
+               #avansi_rpt td[headers="R"] {
+                 display: none;
+               }
+            
+            .iznosi-forma .t-Form-fieldContainer {
+              display: flex !important;
+              align-items: baseline;
+              justify-content: space-between;
+              gap: 12px;
+              width: 100%;
+            }
+            .iznosi-forma .t-Form-labelContainer {
+              flex: 1 1 auto !important;
+              width: auto !important;
+              max-width: none !important;
+              text-align: left !important;
+              padding-left: 0;
+            }
+            .iznosi-forma .t-Form-inputContainer {
+              flex: 0 0 auto !important;
+              width: auto !important;
+              max-width: none !important;
+            }
+            .iznosi-forma .display_only {
+              display: block;
+              text-align: right;
+              font-weight: 600;
+            }
+            
+            .iznosi-forma .rk-ukupno {
+              border-top: 1px solid #d5d8dd;
+              margin-top: 8px;
+              padding-top: 8px;
+            }
+            
+            .iznosi-forma .rk-ukupno .display_only {
+              font-size: 1rem;
+              font-weight: 700;
+            }
+            /* labela */
+            .iznosi-forma .rk-ukupno .t-Form-label {
+              font-size: 1rem;
+              font-weight: 700;
+              color: inherit;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+    help {
+        helpText:
+            ```html
+            U završnoj fazi unosa otvara se stranica na kojoj ćete završiti kreiranje fakture 
+            na kojoj imate mogućnost za unos posebnih napomena koje će biti prikazane na fakturi. 
+            Nakon toga korisnik dobija pregled svih ključnih podataka: 
+            <ul>
+                <li>osnovni podaci o fakturi, </li>
+                <li>podaci o klijentu,</li> 
+                <li>stavke </li>
+                <li>ukupna cijena</li>
+            </ul>
+            Kada se provjeri ispravnost, faktura se 
+            kreira potvrdom na dugme <b><em>"Kreiraj"</em></b>. </br>
+            Nakon kreiranja potrebno je odštampati fakturu i 
+            fiskalni račun potvrdom na dugme kreiraj i fiskalizuj.</br>
+            Ovakav proces unosa i obrade izlaznih faktura omogućava dosljednu evidenciju, 
+            te potpunu integraciju sa KIF-om i PDV prijavom.
+            ```
+    }
+
+    region klijent (
+        name: Klijent
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    tip_klijenta_naziv,
+                    naziv,
+                    drzava_naziv,
+                    adresa,
+                    grad,
+                    email,
+                    jib,
+                    pib
+                FROM
+                    vw_klijenti
+                WHERE
+                    id = :P53_KLIJENT_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @osnovni-podaci_1
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @value-attribute-pairs-column
+            templateOptions: [
+                #DEFAULT#
+                t-AVPList--leftAligned
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column ADRESA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Adresa
+            }
+            layout {
+                sequence: 40
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND adresa IS NOT null
+                    ```
+            }
+        )
+
+        column DRZAVA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Država
+            }
+            layout {
+                sequence: 30
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND drzava_id IS NOT null
+                    ```
+            }
+        )
+
+        column EMAIL (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Email
+            }
+            layout {
+                sequence: 60
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND email IS NOT null
+                    ```
+            }
+        )
+
+        column GRAD (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Grad
+            }
+            layout {
+                sequence: 50
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND grad IS NOT null
+                    ```
+            }
+        )
+
+        column JIB (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: JIB
+            }
+            layout {
+                sequence: 70
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND jib IS NOT null
+                    ```
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND naziv IS NOT null
+                    ```
+            }
+        )
+
+        column PIB (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: PIB
+            }
+            layout {
+                sequence: 80
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND pib IS NOT null
+                    ```
+            }
+        )
+
+        column TIP_KLIJENTA_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Tip klijenta
+            }
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: rowsReturned
+                sqlQuery:
+                    ```sql
+                    SELECT 1
+                    FROM sec_klijenti
+                    WHERE
+                        id = :P53_KLIJENT_ID
+                        AND tip_klijenta_id IS NOT null
+                    ```
+            }
+        )
+
+    )
+
+    region lista-stavki (
+        name: Stavke
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c001 as stavka_id,
+                    s.sifra as stavka_sifra,
+                    s.naziv as stavka_naziv,
+                    c002 as jm_id,
+                    jm.naziv as jm_naziv,
+                    c003 as kolicina,
+                    to_char(c004, '999G999G999G999G990D00') as cijena,
+                    to_char(c004/:P52_KURS, '999G999G999G999G990D00') as cijena_u_valuti,
+                    c005 as rabat,
+                    c006 as pdv,
+                    to_char(c007, '999G999G999G999G990D00') as iznos,
+                    to_char(c007/:P52_KURS, '999G999G999G999G990D00') as iznos_u_valuti_bez_pdv,
+                    to_char(c008, '999G999G999G999G990D00') as iznos_pdv,
+                    to_char(c008/:P52_KURS, '999G999G999G999G990D00') as iznos_u_valuti_sa_pdv,
+                    c010 as  PDV_indikator
+                FROM
+                    apex_collections c
+                    LEFT JOIN sec_stavke s ON c.c001 = s.id
+                    LEFT JOIN sif.acc_jedinice_mjere jm ON c.c002 = jm.id
+                WHERE
+                    collection_name = 'FAKTURA_STAVKE'
+                ORDER BY
+                    seq_id ASC
+                
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @osnovni-podaci_1
+            slot: subRegions
+            columnSpan: 12
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: center
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column CIJENA_U_VALUTI (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Cijena (&P53_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: center
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column IZNOS_PDV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: center
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column IZNOS_U_VALUTI_BEZ_PDV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV (&P53_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column IZNOS_U_VALUTI_SA_PDV (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV (&P53_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P53_VALUTA_SIFRA
+                value: BAM
+            }
+        )
+
+        column JM_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: center
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: "PDV % "
+                alignment: center
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_INDIKATOR (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 160
+            }
+        )
+
+        column RABAT (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Rabat %
+                alignment: center
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SEQ_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 10
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv stavke
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Šifra stavke
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region osnovni-podaci (
+        name: Osnovni podaci
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    :P53_NAZIV_FAKTURE as naziv_fakture,
+                    coalesce(:P53_DANI, :P51_DANI_NEW) as dani,
+                    :P53_DATUM_FAKTURE as datum_fakture,
+                    :P53_DATUM_VALUTE as datum_valute,
+                    :P53_TIP_PLACANJA_ID as tip_placanja,
+                    :P53_VALUTA_ID as valuta,
+                    :P53_TIP_DOKUMENTA_NAZIV as uio_tip_dokumenta,
+                    :P51_FAKTURA_ID as faktura_id,
+                    :P51_UGOVOR_ID as ugovor_id,
+                    :P51_OJ_ID as oj_id
+                FROM
+                    dual
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @osnovni-podaci_1
+            slot: subRegions
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        componentAppearance {
+            template: @value-attribute-pairs-column
+            templateOptions: [
+                #DEFAULT#
+                t-AVPList--leftAligned
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column DANI (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Dani dospijeća
+            }
+            layout {
+                sequence: 20
+            }
+        )
+
+        column DATUM_FAKTURE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Datum fakture
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column DATUM_VALUTE (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum valute
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column FAKTURA_ID (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Referentna faktura
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        naziv_fakture as d,
+                        id as r
+                    FROM
+                        kif
+                    ```
+            }
+            layout {
+                sequence: 80
+            }
+            serverSideCondition {
+                type: itemIsNotNull
+                item: P51_FAKTURA_ID
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Naziv fakture
+            }
+            layout {
+                sequence: 10
+            }
+        )
+
+        column OJ_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Organizaciona jedinica
+            }
+            lov {
+                type: sharedComponent
+                lov: @oj
+            }
+            layout {
+                sequence: 100
+            }
+            serverSideCondition {
+                type: itemIsNotNull
+                item: P51_OJ_ID
+            }
+        )
+
+        column TIP_PLACANJA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Tip plaćanja
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tip-placanja
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+        column UGOVOR_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Ugovor
+            }
+            lov {
+                type: sharedComponent
+                lov: @ugovori-narucioc
+            }
+            layout {
+                sequence: 90
+            }
+            serverSideCondition {
+                type: itemIsNotNull
+                item: P51_UGOVOR_ID
+            }
+        )
+
+        column UIO_TIP_DOKUMENTA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: UIO tip dokumenta
+            }
+            layout {
+                sequence: 60
+            }
+        )
+
+        column VALUTA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: plainTextBasedOnLov
+            heading {
+                heading: Valuta
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-valute
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+    )
+
+    region osnovni-podaci_1 (
+        name: Osnovni podaci
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @pregled
+            slot: wizardSubRegions
+            columnSpan: 8
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pregled (
+        name: Pregled
+        type: list
+        source {
+            list: @wizard-izlazna-faktura
+        }
+        layout {
+            sequence: 200
+            slot: body
+        }
+        appearance {
+            template: @wizard-container
+            templateOptions: [
+                #DEFAULT#
+                t-Wizard--hideStepsXSmall
+            ]
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    region primljeni-avansi (
+        name: Uračunj primljene avanse
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select *,
+                
+                        APEX_ITEM.HIDDEN(
+                            p_idx        => 3,
+                            p_value      => id
+                        ) AS id_r,
+                  
+                        APEX_ITEM.DISPLAY_AND_SAVE(
+                            p_idx        => 2,
+                            p_value      =>TO_CHAR(raspolozivo, 'FM999G999G999G999G990D00')
+                
+                        ) AS raspolozivo_r,
+                
+                
+                        APEX_ITEM.TEXT(
+                        p_idx        => 1,
+                        p_value      => TO_CHAR(0, 'FM999G999G999G999G990D00'), 
+                        p_size       => 13,
+                        p_attributes => 'style="text-align: right;" class="u-textRight"'
+                    ) AS za_uracunavanje
+                from vw_kif_raspolozivi_avansi v
+                where v.ooj_id=:APP_OOJ_ID
+                and (:P53_VALUTA_SIFRA='BAM' or v.valuta_sifra='BAM' or v.valuta_sifra=:P53_VALUTA_SIFRA)
+                and v.klijent_id=:P53_KLIJENT_ID
+                order by v.datum_fakture 
+                ```
+        }
+        layout {
+            sequence: 40
+            parentRegion: @osnovni-podaci_1
+            slot: subRegions
+            columnSpan: 12
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-ir
+        }
+        advanced {
+            htmlDomId: avansi_rpt
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare 
+                v_pom number;
+                begin 
+                
+                select count(*) 
+                into v_pom 
+                from vw_kif_raspolozivi_avansi v
+                where v.ooj_id=:APP_OOJ_ID;
+                
+                if v_pom>0 then 
+                    return true;
+                else 
+                    return false;
+                end if;
+                
+                
+                end;
+                ```
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        searchBar {
+            includeSearchBar: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 77812698628055348
+        }
+
+        column DATUM_FAKTURE (
+            type: plainText
+            heading {
+                heading: Datum Fakture
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column FAKTURA_PDV (
+            type: hidden
+            heading {
+                heading: Faktura Pdv
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column ID (
+            type: hidden
+            heading {
+                heading: Id
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column ID_R (
+            type: percentGraph
+            heading {
+                heading: R
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                htmlDomId: R
+                endUserAlias: S
+            }
+        )
+
+        column ISKORISCENO (
+            type: plainText
+            heading {
+                heading: Iskorišćeno
+                alignment: end
+            }
+            layout {
+                sequence: 170
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D0000
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: P
+            }
+        )
+
+        column IZNOS_FAKTURE (
+            type: hidden
+            heading {
+                heading: Iznos Fakture
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column IZNOS_FAKTURE_NOPDV (
+            type: hidden
+            heading {
+                heading: Iznos Fakture Nopdv
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column KLIJENT_ID (
+            type: plainText
+            heading {
+                heading: Klijent Id
+                alignment: end
+            }
+            layout {
+                sequence: 240
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: W
+            }
+        )
+
+        column NAZIV (
+            type: hidden
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column NAZIV_FAKTURE (
+            type: plainText
+            heading {
+                heading: Naziv Fakture
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column OOJ_ID (
+            type: hidden
+            heading {
+                heading: Ooj Id
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: hidden
+            heading {
+                heading: Raspolozivo
+            }
+            layout {
+                sequence: 180
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: Q
+            }
+        )
+
+        column RASPOLOZIVO_R (
+            type: percentGraph
+            heading {
+                heading: Raspoloživo
+                alignment: center
+            }
+            layout {
+                sequence: 210
+                columnAlignment: end
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: T
+            }
+        )
+
+        column SIFRA (
+            type: hidden
+            heading {
+                heading: Sifra
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column STOPA_PDV (
+            type: plainText
+            heading {
+                heading: Stopa Pdv
+                alignment: end
+            }
+            layout {
+                sequence: 230
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: V
+            }
+        )
+
+        column STORNIRANO (
+            type: hidden
+            heading {
+                heading: Stornirano
+            }
+            layout {
+                sequence: 190
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: R
+            }
+        )
+
+        column VALUTA_ID (
+            type: hidden
+            heading {
+                heading: Valuta Id
+            }
+            layout {
+                sequence: 160
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: O
+            }
+        )
+
+        column VALUTA_IZNOS (
+            type: hidden
+            heading {
+                heading: Valuta Iznos
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column VALUTA_IZNOS_PDV (
+            type: plainText
+            heading {
+                heading: Uplaćeno u valuti
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column VALUTA_NAZIV (
+            type: hidden
+            heading {
+                heading: Valuta Naziv
+            }
+            layout {
+                sequence: 150
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: N
+            }
+        )
+
+        column VALUTA_PDV (
+            type: hidden
+            heading {
+                heading: Valuta Pdv
+            }
+            layout {
+                sequence: 130
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        column VALUTA_SIFRA (
+            type: plainText
+            heading {
+                heading: Valuta
+            }
+            layout {
+                sequence: 140
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: M
+            }
+        )
+
+        column ZA_URACUNAVANJE (
+            type: percentGraph
+            heading {
+                heading: Za uračunavanje
+                alignment: center
+            }
+            layout {
+                sequence: 220
+                columnAlignment: end
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: U
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn DATUM_FAKTURE (
+                sequence: 3
+            )
+
+            displayColumn ID_R (
+                sequence: 1
+            )
+
+            displayColumn ISKORISCENO (
+                sequence: 6
+            )
+
+            displayColumn NAZIV_FAKTURE (
+                sequence: 2
+            )
+
+            displayColumn RASPOLOZIVO_R (
+                sequence: 7
+            )
+
+            displayColumn VALUTA_IZNOS_PDV (
+                sequence: 5
+            )
+
+            displayColumn VALUTA_SIFRA (
+                sequence: 4
+            )
+
+            displayColumn ZA_URACUNAVANJE (
+                sequence: 8
+            )
+
+        )
+
+    )
+
+    region rekapitulacija (
+        name: Rekapitulacija
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @pregled
+            slot: wizardSubRegions
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+                margin-top-none
+            ]
+        }
+    )
+
+    region ukupno (
+        name: Faktura
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @rekapitulacija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--noBorder
+                t-Region--scrollBody
+                margin-top-lg
+            ]
+            cssClasses: iznosi-forma
+        }
+        advanced {
+            htmlDomId: faktura
+        }
+    )
+
+    region umanjenje-za-primljeni-avans (
+        name: Umanjenje za primljeni avans
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @rekapitulacija
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                margin-left-lg
+                margin-right-sm
+            ]
+            cssClasses: iznosi-forma
+        }
+        advanced {
+            htmlDomId: rekap_avans
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                select 1
+                from apex_collections ak 
+                where collection_name = 'FAKTURA_AVANS';
+                ```
+        }
+    )
+
+    region umanjenje-za-primljeni-avans_1 (
+        name: Placanje
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @rekapitulacija
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: iznosi-forma
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 50
+            parentRegion: @osnovni-podaci_1
+            slot: subRegions
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P53_AVANS_SWITCH (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            region: @primljeni-avansi
+            slot: edit
+        }
+    )
+
+    pageItem P53_AVANS_URACUNAT (
+        type: switch
+        label {
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @primljeni-avansi
+            slot: edit
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P53_AV_OSNOVICA (
+        type: textField
+        label {
+            label: Osnovica avansa (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @umanjenje-za-primljeni-avans
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_AV_PDV (
+        type: textField
+        label {
+            label: PDV avansa  (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @umanjenje-za-primljeni-avans
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_AV_UKUPNO (
+        type: textField
+        label {
+            label: Ukupno avans  (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @umanjenje-za-primljeni-avans
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: rk-ukupno
+            width: 30
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_DANI (
+        type: hidden
+        layout {
+            sequence: 70
+            slot: body
+        }
+    )
+
+    pageItem P53_DATUM_FAKTURE (
+        type: hidden
+        layout {
+            sequence: 80
+            slot: body
+        }
+    )
+
+    pageItem P53_DATUM_VALUTE (
+        type: hidden
+        layout {
+            sequence: 90
+            slot: body
+        }
+    )
+
+    pageItem P53_FAKTURA_BROJ (
+        type: hidden
+        layout {
+            sequence: 60
+            slot: body
+        }
+    )
+
+    pageItem P53_FAKTURA_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    pageItem P53_FISKAL_BR (
+        type: hidden
+        layout {
+            sequence: 150
+            slot: body
+        }
+    )
+
+    pageItem P53_KLIJENT_ID (
+        type: hidden
+        layout {
+            sequence: 40
+            slot: body
+        }
+    )
+
+    pageItem P53_KURS (
+        type: hidden
+        layout {
+            sequence: 140
+            slot: body
+        }
+    )
+
+    pageItem P53_NAZIV_FAKTURE (
+        type: hidden
+        layout {
+            sequence: 50
+            slot: body
+        }
+    )
+
+    pageItem P53_ORIG (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P53_OSNOVICA (
+        type: textField
+        label {
+            label: Osnovica (BAM)
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_OSNOVICA_VALUTA (
+        type: textField
+        label {
+            label: Osnovica (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_PDV (
+        type: textField
+        label {
+            label: PDV (BAM)
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_PDV_INDIKATOR_ID (
+        type: hidden
+        layout {
+            sequence: 170
+            slot: body
+        }
+    )
+
+    pageItem P53_PDV_VALUTA (
+        type: textField
+        label {
+            label: PDV (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_POSEBNE_NAPOMENE (
+        type: textarea
+        label {
+            label: Posebne napomene
+            alignment: left
+        }
+        settings {
+            autoHeight: true
+            charCounter: true
+        }
+        layout {
+            sequence: 30
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            maxLength: 4000
+        }
+    )
+
+    pageItem P53_PRINT_PN (
+        type: radioGroup
+        label {
+            label: Štampa posebnih napomena
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @wrapper
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P53_TIP_DOKUMENTA_ID (
+        type: hidden
+        layout {
+            sequence: 160
+            slot: body
+        }
+    )
+
+    pageItem P53_TIP_DOKUMENTA_NAZIV (
+        type: hidden
+        layout {
+            sequence: 180
+            slot: body
+        }
+    )
+
+    pageItem P53_TIP_PLACANJA_ID (
+        type: hidden
+        layout {
+            sequence: 100
+            slot: body
+        }
+    )
+
+    pageItem P53_UKUPNO (
+        type: textField
+        label {
+            label: Ukupno sa PDV (BAM)
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: rk-ukupno
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_UKUPNO_PLACANJE (
+        type: textField
+        label {
+            label: Za plaćanje  (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @umanjenje-za-primljeni-avans_1
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: [
+                #DEFAULT#
+                margin-left-sm
+            ]
+            cssClasses: rk-ukupno
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_UKUPNO_PLACANJE_VALUTA (
+        type: textField
+        label {
+            label: Za plaćanje  (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @umanjenje-za-primljeni-avans_1
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: rk-ukupno
+            width: 30
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_UKUPNO_VALUTA (
+        type: textField
+        label {
+            label: Ukupno sa PDV  (&P53_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @ukupno
+            slot: regionBody
+            alignment: left
+            labelColumnSpan: 6
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+            cssClasses: rk-ukupno
+            width: 30
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P53_VALUTA_SIFRA
+            value: BAM
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P53_VALUTA_ID (
+        type: hidden
+        layout {
+            sequence: 110
+            slot: body
+        }
+    )
+
+    pageItem P53_VALUTA_NAZIV (
+        type: hidden
+        layout {
+            sequence: 120
+            slot: body
+        }
+    )
+
+    pageItem P53_VALUTA_SIFRA (
+        type: hidden
+        layout {
+            sequence: 130
+            slot: body
+        }
+    )
+
+    pageItem P53_VRSTA_FAKTURE_ID (
+        type: hidden
+        layout {
+            sequence: 190
+            slot: body
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @pregled
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 50
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button finish (
+        buttonName: FINISH
+        label: Kreiraj
+        layout {
+            sequence: 20
+            region: @pregled
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button finish-fiskalizacija (
+        buttonName: FINISH_FISKALIZACIJA
+        label: Kreiraj i fiskalizuj
+        layout {
+            sequence: 10
+            region: @pregled
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-cash-register
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P53_ORIG != 82 AND :APP_KASA_ID IS NOT null
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @pregled
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction uračunaj-avanse (
+        name: Uračunaj avanse
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P53_AVANS_URACUNAT
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    if :P53_AVANS_URACUNAT='Y' then 
+                    
+                        :P53_AVANS_SWITCH:='N';
+                    
+                    else
+                    
+                        :P53_AVANS_SWITCH:='Y';
+                    
+                    end if;
+                    ```
+                itemsToSubmit: P53_AVANS_URACUNAT
+                itemsToReturn: P53_AVANS_SWITCH
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                      var novo  = $v("P53_AVANS_URACUNAT");
+                      var staro = $v("P53_AVANS_SWITCH");
+                    
+                      // vrati switch na staro stanje, bez novog change događaja
+                      $s("P53_AVANS_URACUNAT", staro, null, true);
+                    
+                      // pošalji željeno stanje i submituj
+                      $s("P53_AVANS_SWITCH", novo);
+                    ```
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-set-value (
+            action: setValue
+            settings {
+                value: 1
+            }
+            affectedElements {
+                selectionType: items
+                items: P53_AVANS_KLIKNUT
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-submit-page (
+            action: submitPage
+            settings {
+                requestButtonName: AVANS_TOGGLE
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation print-not-null (
+        name: Print NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P53_PRINT_PN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P53_PRINT_PN
+        }
+        serverSideCondition {
+            type: request=Value
+            value: FINISH,FINISH_FISKALIZACIJA
+        }
+    )
+
+    validation uračunaj-avans (
+        name: Uračunaj AVANS
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare 
+                
+                v_iznos_fakture number;
+                v_1 number:=0;
+                v_2 number:=0;
+                v_3 number:=0;
+                v_iznos_avansa_uk number:=0;
+                v_iznos_avansa number:=0;
+                v_iznos_avansa_rasp number:=0;
+                
+                v_poruka varchar2(200):='';
+                v_protokol_pom number;
+                
+                
+                
+                
+                begin
+                
+                
+                
+                
+                    if :P53_AVANS_SWITCH='Y' then 
+                
+                
+                        select count(*)
+                        into v_protokol_pom
+                        from sif.vrste_dokumenata vd
+                        join core.protokoli cp on vd.id=cp.vrsta_naloga_id
+                        where  vd.sifra = 'AVZ'
+                        and vd.ooj_id=:APP_OOJ_ID
+                        and cp.godina=:APP_GODINA;
+                
+                        if v_protokol_pom=0 then 
+                
+                           return  'Najprije je potrebno definisati numeraciju za vrstu dokumenta Avansna faktura - Zatvaranje!'; 
+                
+                        else
+                
+                   
+                                for i in 1..apex_application.g_f01.count
+                                loop
+                                
+                                    v_iznos_avansa := to_number(replace(replace(trim(apex_application.g_f01(i)), ','), ' '),'999999999999990D99','NLS_NUMERIC_CHARACTERS=''.,''');
+                                    v_iznos_avansa_rasp:=to_number(apex_application.g_f02(i), 'FM999G999G999G999G990D00');
+                
+                                    if v_iznos_avansa>0 then
+                                        v_2:=v_2+1;
+                                    end if;
+                
+                                    if v_iznos_avansa<0 then
+                                        v_1:=v_1+1;
+                                    end if;
+                
+                                    if v_iznos_avansa>v_iznos_avansa_rasp then
+                                        v_3:=v_3+1;
+                                    end if;
+                
+                                    v_iznos_avansa_uk:=v_iznos_avansa_uk+v_iznos_avansa;
+                                end loop;
+                
+                
+                                if v_1>0 then
+                
+                                    return 'Uračunati avans ne može biti manji od 0!'; 
+                
+                
+                                elsif v_2=0 then
+                
+                                    return 'Morate unijeti barem jedan iznos već od 0!'; 
+                            
+                
+                                elsif v_3>0 then
+                
+                                    return 'Uračunati avans ne može bit veći od raspoloživog!'; 
+                            
+                
+                                else 
+                
+                                    
+                                    SELECT sum(nvl(c008,0))
+                                    into v_iznos_fakture
+                                    from apex_collections c
+                                    where collection_name = 'FAKTURA_STAVKE';
+                
+                                    if v_iznos_fakture<v_iznos_avansa_uk then 
+                
+                                        return 'Uračunati avans ne može biti veći od iznosa fakture!';
+                
+                                    end if;
+                
+                
+                
+                                end if;
+                
+                        end if;
+                
+                    else
+                
+                               
+                        return  null;
+                    end if;
+                
+                
+                end;
+                ```
+        }
+        serverSideCondition {
+            type: request=Value
+            value: AVANS_TOGGLE
+        }
+    )
+
+    computation p53-tip-dokumenta-naziv (
+        itemName: P53_TIP_DOKUMENTA_NAZIV
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    code || ' - ' || naziv
+                FROM
+                    sif.acc_uio_tipovi_dokumenata
+                WHERE
+                    id = :P53_TIP_DOKUMENTA_ID
+                ```
+        }
+    )
+
+    computation p53-valuta-naziv (
+        itemName: P53_VALUTA_NAZIV
+        execution {
+            sequence: 20
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv
+                FROM
+                    sif.acc_valute
+                WHERE
+                    id = :P53_VALUTA_ID;
+                ```
+        }
+    )
+
+    computation p53-valuta-sifra (
+        itemName: P53_VALUTA_SIFRA
+        execution {
+            sequence: 30
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    sifra
+                FROM
+                    sif.acc_valute
+                WHERE
+                    id = :P53_VALUTA_ID;
+                ```
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                SELECT
+                
+                    to_char(sum(c007),'999G999G999G999G990D00') osnovica, 
+                    to_char(round(sum(c007)/:P53_KURS,2),'999G999G999G999G990D00') osnovica_valuta,
+                    to_char(sum(c008) - sum(c007),'999G999G999G999G990D00') pdv, 
+                    to_char(round(sum(c008)/:P53_KURS,2) - round(sum(c007)/:P53_KURS,2),'999G999G999G999G990D00') pdv_valuta,
+                    to_char(sum(c008),'999G999G999G999G990D00') ukupno, 
+                    to_char(round(sum(c008)/:P53_KURS,2),'999G999G999G999G990D00') ukupno_valuta
+                
+                INTO
+                    :P53_OSNOVICA,
+                    :P53_OSNOVICA_VALUTA,
+                    :P53_PDV,
+                    :P53_PDV_VALUTA, 
+                    :P53_UKUPNO,
+                    :P53_UKUPNO_VALUTA
+                
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'FAKTURA_STAVKE';
+                
+                
+                
+                with avans_konvert as (select  case when :P53_VALUTA_SIFRA=val.sifra then to_number(c002)
+                                                    when :P53_VALUTA_SIFRA='BAM' then     round(sif.acc_pkg.convert_valuta_to_bam(val.id,:APP_OOJ_ID,k.datum_fakture,to_number(c002)),2)
+                                                    else round(sif.acc_pkg.convert_valuta_from_bam(:P53_VALUTA_ID,:APP_OOJ_ID,k.datum_fakture,to_number(c002)),2)
+                                                    end as iznos_valuta, 
+                                                    pdv.vrijednost as pdv_v 
+                                        from apex_collections ak 
+                                        join kif k on ak.c001=k.id
+                                        join sif.acc_valute val on val.id=k.valuta_id
+                                        join sif.acc_pdv_indikatori pdv on pdv.id=k.pdv_indikator_id
+                                        where collection_name = 'FAKTURA_AVANS')
+                
+                select  '-'||to_char(round(sum(iznos_valuta / (1 + pdv_v / 100)), 2),'999G999G999G999G990D00') as osnovica,
+                        '-'||to_char((sum(iznos_valuta)- round(sum(iznos_valuta / (1 + pdv_v / 100)), 2)),'999G999G999G999G990D00') as pdv,
+                        '-'||to_char(sum(iznos_valuta),'999G999G999G999G990D00') ukupno
+                into    :P53_AV_OSNOVICA,
+                        :P53_AV_PDV,
+                        :P53_AV_UKUPNO
+                from avans_konvert;
+                
+                :P53_UKUPNO_PLACANJE:=to_number(:P53_UKUPNO,'999G999G999G999G990D00')-to_number(nvl(replace(:P53_AV_UKUPNO,'-',''),'0.00'),'999G999G999G999G990D00');
+                :P53_UKUPNO_PLACANJE_VALUTA:=to_number(:P53_UKUPNO_VALUTA,'999G999G999G999G990D00')-to_number(nvl(replace(:P53_AV_UKUPNO,'-',''),'0.00'),'999G999G999G999G990D00');
+                
+                :P53_UKUPNO_PLACANJE:=to_char(:P53_UKUPNO_PLACANJE,'999G999G999G999G990D00');
+                :P53_UKUPNO_PLACANJE_VALUTA:=to_char(:P53_UKUPNO_PLACANJE_VALUTA,'999G999G999G999G990D00');
+                
+                
+                
+                
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 78193501222625322
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    CURSOR c_stavke IS (
+                        SELECT
+                            c001 as stavka_id,
+                            c002 as jm_id,
+                            c003 as kolicina,
+                            c004 as cijena,
+                            c005 as rabat,
+                            c006 as pdv,
+                            c007 as iznos,
+                            c008 as iznos_pdv,
+                            c010 as pdv_indikator
+                        FROM
+                            apex_collections c
+                        WHERE
+                            collection_name = 'FAKTURA_STAVKE'
+                        ) ORDER BY seq_id ASC;
+                
+                    l_faktura_id    NUMBER;
+                
+                    l_iznos_slovima VARCHAR2(1000);
+                    l_iznos         NUMBER;
+                    l_iznos_nopdv   NUMBER;
+                    l_iznos_valuta  NUMBER;
+                    l_iznos_valuta_npdv NUMBER;
+                
+                    l_sifra         VARCHAR2(64);
+                    l_av_id     number;
+                    l_avz_id    number:=null;
+                    l_av_nf     varchar2(100);
+                    l_av_broj   number;
+                    l_av_slovima varchar2(200);
+                    l_av_iznos_km number;
+                BEGIN
+                    SELECT sifra
+                    INTO l_sifra
+                    FROM sif.vrste_dokumenata
+                    WHERE
+                        id = :P53_VRSTA_FAKTURE_ID;
+                
+                    FOR c1 IN (
+                        SELECT
+                            CASE
+                                WHEN :P53_VALUTA_SIFRA = 'BAM' THEN 
+                                    sif.spell_pkg.spell_serbian_number (coalesce(round(sum(c008), 2), 0), 'Y', 'J', :P53_VALUTA_NAZIV)
+                                ELSE
+                                    sif.spell_pkg.spell_serbian_number (coalesce(round(sum(c008/:P53_KURS), 2), 0), 'Y', 'J', :P53_VALUTA_NAZIV)
+                            END as slovima,
+                            sum(c008) as iznos,
+                            sum(c007) as iznos_nopdv,
+                
+                            round(sum(c008/:P53_KURS), 2) as iznos_valuta,
+                            round(sum(c007/:P53_KURS), 2) as iznos_valuta_npdv
+                
+                        FROM
+                            apex_collections
+                        WHERE
+                            collection_name = 'FAKTURA_STAVKE'
+                
+                    ) LOOP
+                        l_iznos_slovima := c1.slovima;
+                        l_iznos := c1.iznos;
+                        l_iznos_nopdv := c1.iznos_nopdv;
+                        l_iznos_valuta := c1.iznos_valuta;
+                        l_iznos_valuta_npdv := c1.iznos_valuta_npdv;
+                
+                    END LOOP;
+                
+                    l_faktura_id := finansije_pkg.insert_kif (
+                        p_glavna_knjiga_id     => null,
+                        p_klijent_id           => :P53_KLIJENT_ID,
+                        p_valuta_id            => :P53_VALUTA_ID,
+                        p_valuta_iznos         => l_iznos_valuta,
+                        p_valuta_iznos_pdv     => l_iznos_valuta_npdv,
+                        p_ooj_id               => :APP_OOJ_ID,
+                        p_predracun_id         => null,
+                        p_faktura_broj         => :P53_FAKTURA_BROJ,
+                        p_naziv_fakture        => :P53_NAZIV_FAKTURE,
+                        p_godina               => :APP_GODINA,
+                        p_datum_uplatnice      => null,
+                        p_iznos_fakture        => l_iznos,
+                        p_iznos_slovima        => l_iznos_slovima,
+                        p_datum_valute         => :P53_DATUM_VALUTE,
+                        p_iznos_fakture_nopdv  => l_iznos_nopdv,
+                        p_uplaceno             => 'N',
+                        p_posebne_napomene     => :P53_POSEBNE_NAPOMENE,
+                        p_datum_fakture        => :P53_DATUM_FAKTURE,
+                        p_print_pn             => :P53_PRINT_PN,
+                        p_tip_placanja_id      => :P53_TIP_PLACANJA_ID,
+                        p_uio_tip_dokumenta_id => :P53_TIP_DOKUMENTA_ID,
+                        p_vrsta_fakture_id     => :P53_VRSTA_FAKTURE_ID,
+                        p_faktura_id           => :P51_FAKTURA_ID,
+                        p_tip_cijene           => :P51_TIP_CIJENE,
+                        p_dani_dospijeca       => coalesce(:P53_DANI, :P51_DANI_NEW),
+                        p_ugovor_id            => :P51_UGOVOR_ID,
+                        p_oj_id                => :P51_OJ_ID,
+                        p_skladiste_id         => :A_SKLADISTE_ID, 
+                        p_pdv_indikator_id     => :P53_PDV_INDIKATOR_ID
+                    );
+                
+                    FOR stavka IN c_stavke LOOP
+                        finansije_pkg.insert_kif_stavka (
+                            p_kif_id           => l_faktura_id,
+                            p_stavka_id        => stavka.stavka_id,
+                            p_jm_id            => stavka.jm_id,
+                            p_kolicina         => stavka.kolicina,
+                            p_cijena           => stavka.cijena,
+                            p_rabat            => stavka.rabat,
+                            p_pdv              => stavka.pdv,
+                            p_iznos            => stavka.iznos,
+                            p_pdv_indikator_id => stavka.pdv_indikator
+                        );
+                
+                    END LOOP;
+                
+                    core.protokoli_pkg.update_brojac (
+                        p_ooj_id             => :APP_OOJ_ID,
+                        p_vrsta_naloga_sifra => l_sifra,
+                        p_godina             => :APP_GODINA,
+                        p_value              => 1
+                    );
+                
+                    :P53_FAKTURA_ID := l_faktura_id;
+                
+                    --- avansi zatvaranje  -----
+                
+                    for k in ( select c001 as avans_id, c002 iznos from apex_collections c where collection_name='FAKTURA_AVANS')
+                    loop
+                
+                
+                        
+                        --storno iznosa originalnog avansa---
+                
+                        for ki in (select kk.*,val.sifra as valuta_sifra, val.naziv as valuta_naziv,  pdv.vrijednost, vd.sifra as vrsta_dokumenta_sifra
+                                  from kif kk 
+                                  join sif.acc_valute val on val.id=kk.valuta_id
+                                  join sif.acc_pdv_indikatori pdv on pdv.id=kk.pdv_indikator_id
+                                  join sif.vrste_dokumenata vd on vd.id=kk.vrsta_fakture_id
+                                  where kk.id=k.avans_id)
+                        loop
+                
+                           apex_debug.info('BROJAC ulaz: ooj=%s sifra=%s godina=%s',
+                                :APP_OOJ_ID, ki.vrsta_dokumenta_sifra, :APP_GODINA);
+                
+                            core.protokoli_pkg.get_brojac (
+                                            p_ooj_id             => :APP_OOJ_ID,
+                                            p_vrsta_naloga_sifra => 'AVZ',
+                                            p_godina             => :APP_GODINA,
+                                            p_broj               => l_av_broj,
+                                            p_naziv              => l_av_nf
+                                        );
+                
+                            apex_debug.info('BROJAC izlaz: broj=%s naziv=%s', l_av_broj, l_av_nf);
+                
+                            l_av_iznos_km:=round(sif.acc_pkg.convert_valuta_to_bam(ki.valuta_id,:APP_OOJ_ID,ki.datum_fakture,to_number(k.iznos)),2);
+                
+                            l_av_id := finansije_pkg.insert_kif (
+                                                        p_glavna_knjiga_id     => null,
+                                                        p_klijent_id           => ki.klijent_id,
+                                                        p_valuta_id            => ki.valuta_id,
+                                                        p_valuta_iznos         => -round(k.iznos / (1 + ki.vrijednost / 100), 2),
+                                                        p_valuta_iznos_pdv     => -k.iznos,
+                                                        p_ooj_id               => ki.ooj_id,
+                                                        p_predracun_id         => null,
+                                                        p_faktura_broj         => l_av_broj,
+                                                        p_naziv_fakture        => l_av_nf,
+                                                        p_godina               => :APP_GODINA,
+                                                        p_datum_uplatnice      => null,
+                                                        p_iznos_fakture        => -l_av_iznos_km,
+                                                        p_iznos_slovima        => '-'||sif.spell_pkg.spell_serbian_number (k.iznos, 'Y', 'J', ki.valuta_naziv),
+                                                        p_datum_valute         => :P53_DATUM_FAKTURE,
+                                                        p_iznos_fakture_nopdv  => -round(l_av_iznos_km / (1 + ki.vrijednost / 100), 2),
+                                                        p_uplaceno             => 'Y',
+                                                        p_posebne_napomene     => :P53_NAZIV_FAKTURE,
+                                                        p_datum_fakture        => :P53_DATUM_FAKTURE,
+                                                        p_print_pn             => ki.print_pn,
+                                                        p_tip_placanja_id      => ki.tip_placanja_id,
+                                                        p_uio_tip_dokumenta_id => ki.uio_tip_dokumenta_id,
+                                                        p_vrsta_fakture_id     => ki.vrsta_fakture_id,
+                                                        p_faktura_id           => ki.id,
+                                                        p_tip_cijene           => ki.tip_cijene,
+                                                        p_dani_dospijeca       => 0,
+                                                        p_ugovor_id            => ki.ugovor_id,
+                                                        p_oj_id                => ki.oj_id,
+                                                        p_skladiste_id         => ki.skladiste_id, 
+                                                        p_pdv_indikator_id     => ki.pdv_indikator_id
+                                                    );
+                            for av_stavka in (select * from kif_stavke ks where ks.kif_id=ki.id)
+                            loop
+                                 
+                                 finansije_pkg.insert_kif_stavka (
+                                        p_kif_id           => l_av_id,
+                                        p_stavka_id        => av_stavka.stavka_id,
+                                        p_jm_id            => av_stavka.jm_id,
+                                        p_kolicina         => -av_stavka.kolicina,
+                                        p_cijena           => l_av_iznos_km,
+                                        p_rabat            => av_stavka.rabat,
+                                        p_pdv              => av_stavka.pdv,
+                                        p_iznos            => -l_av_iznos_km,
+                                        p_pdv_indikator_id => av_stavka.pdv_indikator_id
+                                    );
+                
+                            end loop;
+                
+                             core.protokoli_pkg.update_brojac (
+                                    p_ooj_id             => :APP_OOJ_ID,
+                                    p_vrsta_naloga_sifra =>  'AVZ',
+                                    p_godina             => :APP_GODINA,
+                                    p_value              => 1
+                                );
+                
+                            ------veza kif-avans-----
+                
+                            finansije_pkg.insert_kif_avansi_zatvaranje (
+                                  p_ooj_id            =>  :APP_OOJ_ID,
+                                  p_avans_id          =>  k.avans_id,
+                                  p_faktura_id        =>  l_faktura_id,
+                                  P_avans_zatvaranja_id  => l_av_id,
+                                  p_datum_zatvaranja  =>  :P53_DATUM_FAKTURE,
+                                  p_iznos             =>  k.iznos,
+                                  p_napomena          =>  :P53_NAZIV_FAKTURE,
+                                  p_id                =>  l_avz_id
+                            );
+                
+                
+                
+                
+                        end loop; 
+                
+                    end loop;
+                
+                    --------
+                
+                    -- IF :P53_VRSTA_FAKTURE_ID = 1 THEN
+                    --     skladista_pkg.insert_kif (
+                    --         p_ooj_id => :APP_OOJ_ID,
+                    --         p_godina => :APP_GODINA,
+                    --         p_kif_id => l_faktura_id
+                    --     );
+                    -- END IF;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Uspješno ste kreirali fakturu.
+        }
+        advanced {
+            executionMappingIdentifier: 157240417026773843
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: FINISH,FINISH_FISKALIZACIJA
+        }
+    )
+
+    process new (
+        name: Uračunaj avanse
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    v_iznos_avansa number;
+                    v_avans_id number;
+                BEGIN
+                
+                    apex_collection.create_or_truncate_collection (
+                            p_collection_name => 'FAKTURA_AVANS');
+                
+                    if :P53_AVANS_SWITCH='Y' THEN 
+                
+                       for i in 1..apex_application.g_f01.count
+                        loop
+                        
+                            v_iznos_avansa := to_number(replace(replace(trim(apex_application.g_f01(i)), ','), ' '),'999999999999990D99','NLS_NUMERIC_CHARACTERS=''.,''');
+                            v_avans_id     := apex_application.g_f03(i);
+                
+                
+                          if v_iznos_avansa>0 then 
+                
+                              apex_collection.add_member (
+                                    p_collection_name => 'FAKTURA_AVANS',
+                                    p_c001            => v_avans_id,
+                                    p_c002            => v_iznos_avansa
+                                );
+                                
+                          end if;
+                
+                        end loop;
+                
+                    end if;
+                
+                 :P53_AVANS_URACUNAT:=:P53_AVANS_SWITCH;
+                    
+                END;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 78194435934625331
+        }
+        serverSideCondition {
+            type: request=Value
+            value: AVANS_TOGGLE
+        }
+    )
+
+    branch (
+        name: Go To Page 50 - KIF
+        execution {
+            sequence: 30
+        }
+        behavior {
+            target: {
+                page: 50
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 52
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+    branch (
+        name: Go To Page 61 - Go To Fiskalizacija
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 61
+                items: {
+                    P61_ID: &P53_FAKTURA_ID.
+                    P61_ACCEPTED: N
+                    P61_ORIG: 53
+                }
+                clearCache: 61
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @finish-fiskalizacija
+        }
+    )
+
+)
+

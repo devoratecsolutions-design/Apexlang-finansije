@@ -1,0 +1,773 @@
+page 87 (
+    name: Obrada zahtjeva / Detalji
+    alias: OBRADA-ZAHTJEVA-DETALJI
+    title: Obrada zahtjeva / Detalji
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--lg
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region kif (
+        name: KIF
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region kuf (
+        name: KUF
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: contentBody
+            startNewRow: false
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P87_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P87_KIF_AFTER (
+        type: textField
+        label {
+            label: Preskoči posljednjih N redova
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @kif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KIF_BEFORE (
+        type: textField
+        label {
+            label: Preskoči prvih N redova
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @kif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KIF_DATE_FORMAT (
+        type: textField
+        label {
+            label: KIF date format
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @kif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KIF_STATIC_ID (
+        type: selectOne
+        label {
+            label: Data Load KIF static ID
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    name as d,
+                    static_id as r
+                FROM
+                    apex_appl_data_loads
+                WHERE
+                    application_id = :APP_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @kif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KUF_AFTER (
+        type: textField
+        label {
+            label: Preskoči posljednjih N redova
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @kuf
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KUF_BEFORE (
+        type: textField
+        label {
+            label: Preskoči prvih N redova
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @kuf
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KUF_DATE_FORMAT (
+        type: textField
+        label {
+            label: KUF date format
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @kuf
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_KUF_STATIC_ID (
+        type: selectOne
+        label {
+            label: Data Load KUF static ID
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    name as d,
+                    static_id as r
+                FROM
+                    apex_appl_data_loads
+                WHERE
+                    application_id = :APP_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            region: @kuf
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P87_MAIL (
+        type: radioGroup
+        label {
+            label: Pošalji automatski generisan mejl
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    button accept (
+        buttonName: ACCEPT
+        label: Prihvati
+        layout {
+            sequence: 40
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-5
+            icon: fa-check-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button decline (
+        buttonName: DECLINE
+        label: Odbij
+        layout {
+            sequence: 30
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-remove
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button download-kif (
+        buttonName: DOWNLOAD_KIF
+        label: Preuzmite KIF primjer
+        layout {
+            sequence: 10
+            region: @kif
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-download
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button download-kuf (
+        buttonName: DOWNLOAD_KUF
+        label: Preuzmite KUF primjer
+        layout {
+            sequence: 10
+            region: @kuf
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+            ]
+            icon: fa-download
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction download-kif (
+        name: Download KIF
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @download-kif
+        }
+
+        action native-download (
+            action: download
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        data_load_kif_example,
+                        data_load_kif_example_filename,
+                        data_load_kif_example_mimetype
+                    FROM
+                        core.ooj
+                    WHERE
+                        id = :P87_ID
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction download-kuf (
+        name: Download KUF
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @download-kuf
+        }
+
+        action native-download (
+            action: download
+            source {
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        data_load_kuf_example,
+                        data_load_kuf_example_filename,
+                        data_load_kuf_example_mimetype
+                    FROM
+                        core.ooj
+                    WHERE
+                        id = :P87_ID
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation kif-after-not-null (
+        name: KIF after NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KIF_AFTER
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KIF_AFTER
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kif-before-not-null (
+        name: KIF before NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KIF_BEFORE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KIF_BEFORE
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kif-format-not-null (
+        name: KIF format NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KIF_DATE_FORMAT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KIF_DATE_FORMAT
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kif-static-id-not-null (
+        name: KIF STATIC ID NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KIF_STATIC_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KIF_STATIC_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kuf-after-not-null (
+        name: KUF after NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KUF_AFTER
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KUF_AFTER
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kuf-before-not-null (
+        name: KUF before NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KUF_BEFORE
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KUF_BEFORE
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kuf-format-not-null (
+        name: KUF format NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KUF_DATE_FORMAT
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KUF_DATE_FORMAT
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    validation kuf-static-id-not-null (
+        name: KUF STATIC ID NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P87_KUF_STATIC_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P87_KUF_STATIC_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    process accept (
+        name: Accept
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.update_data_load (
+                    p_ooj_id                    => :P87_ID,
+                    p_data_load_status_id       => sif.sif_pkg.get_status_id('prihvaceno'),
+                    p_data_load_kif_static_id   => :P87_KIF_STATIC_ID,
+                    p_data_load_kif_before      => :P87_KIF_BEFORE,
+                    p_data_load_kif_after       => :P87_KIF_AFTER,
+                    p_data_load_kif_date_format => :P87_KIF_DATE_FORMAT,
+                    p_data_load_kuf_static_id   => :P87_KUF_STATIC_ID,
+                    p_data_load_kuf_before      => :P87_KUF_BEFORE,
+                    p_data_load_kuf_after       => :P87_KUF_AFTER,
+                    p_data_load_kuf_date_format => :P87_KuF_DATE_FORMAT
+                );
+                
+                IF :P87_MAIL = 'Y' THEN
+                    uio_pkg.posalji_uio_odgovor (
+                        p_app_id  => :APP_ID,
+                        p_ooj_id  => :P87_ID,
+                        p_odgovor => 'Y'
+                    );
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 50278898330322044
+        }
+        serverSideCondition {
+            whenButtonPressed: @accept
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 50279496831322050
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: ACCEPT,DECLINE
+        }
+    )
+
+    process decline (
+        name: Decline
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.update_data_load (
+                    p_ooj_id                    => :P87_ID,
+                    p_data_load_status_id       => sif.sif_pkg.get_status_id('odbijeno'),
+                    p_data_load_kif_static_id   => null,
+                    p_data_load_kif_before      => null,
+                    p_data_load_kif_after       => null,
+                    p_data_load_kif_date_format => null,
+                    p_data_load_kuf_static_id   => null,
+                    p_data_load_kuf_before      => null,
+                    p_data_load_kuf_after       => null,
+                    p_data_load_kuf_date_format => null
+                );
+                
+                IF :P87_MAIL = 'Y' THEN
+                    uio_pkg.posalji_uio_odgovor (
+                        p_app_id  => :APP_ID,
+                        p_ooj_id  => :P87_ID,
+                        p_odgovor => 'N'
+                    );
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 50278958268322045
+        }
+        serverSideCondition {
+            whenButtonPressed: @decline
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.get_ooj_data_load (
+                    p_ooj_id                    => :P87_ID,
+                    p_data_load_kif_static_id   => :P87_KIF_STATIC_ID,
+                    p_data_load_kif_before      => :P87_KIF_BEFORE,
+                    p_data_load_kif_after       => :P87_KIF_AFTER,
+                    p_data_load_kif_date_format => :P87_KIF_DATE_FORMAT,
+                    p_data_load_kuf_static_id   => :P87_KUF_STATIC_ID,
+                    p_data_load_kuf_before      => :P87_KUF_BEFORE,
+                    p_data_load_kuf_after       => :P87_KUF_AFTER,
+                    p_data_load_kuf_date_format => :P87_KuF_DATE_FORMAT
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 50329683122018304
+        }
+    )
+
+)
+

@@ -1,0 +1,8 @@
+# Git sam ujednačava krajeve redova (Windows/Linux)
+* text=auto
+
+# Binarni fajlovi – git ih ne poredi red po red
+*.zip  binary
+*.xlsx binary
+*.docx binary
+*.png  binary

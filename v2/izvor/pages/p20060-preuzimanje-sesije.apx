@@ -1,0 +1,212 @@
+page 20060 (
+    name: Preuzimanje sesije
+    alias: PREUZIMANJE-SESIJE
+    title: Preuzimanje sesije
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region info (
+        name: Info
+        type: staticContent
+        source {
+            htmlCode: Da li ste sigurni da želite preuzeti sesiju osnovne organizacione jedinice - <b>&P20060_OOJ_NAME.</b>
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20060_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+    )
+
+    pageItem P20060_OOJ_NAME (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+    )
+
+    pageItem P20060_PAGE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button confirm (
+        buttonName: CONFIRM
+        label: Potvrdi
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrow-circle-o-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.ooj_pkg.get_ooj_name (
+                    p_id    => :P20060_OOJ_ID,
+                    p_naziv => :P20060_OOJ_NAME
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 391101555231980880
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P20060_OOJ_ID
+        }
+    )
+
+    process rejoin-session (
+        name: Rejoin session
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.rejoin_session (
+                    p_firma_id        => :APP_FIRMA_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_user_id         => :APP_USER_ID,
+                    p_radnik_id       => :APP_RADNIK_ID,
+                    p_session_changed => :APP_SESSION_CHANGED,
+                    p_firma_id_new    => null,
+                    p_ooj_id_new      => :P20060_OOJ_ID,
+                    p_user_id_new     => null,
+                    p_radnik_id_new   => null,
+                    p_firma_id_back   => :APP_FIRMA_ID_BACK,
+                    p_ooj_id_back     => :APP_OOJ_ID_BACK,
+                    p_user_id_back    => :APP_USER_ID_BACK,
+                    p_radnik_id_back  => :APP_RADNIK_ID_BACK
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 391101924947980879
+        }
+    )
+
+    branch (
+        name: Go To Page &P20060_PAGE_ID.
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: &P20060_PAGE_ID.
+            }
+        }
+    )
+
+)
+

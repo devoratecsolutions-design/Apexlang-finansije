@@ -1,0 +1,448 @@
+# Finansije v2 – faza 1: navigacija, dashboardi, uniformne forme
+
+Datum: 29.10.2026 · Osnova: APEXlang export aplikacije 290 (APEX 26.1) + DDL šema ACCOUNTING, SIF, CORE, HRM
+
+## Sadržaj isporuke
+
+| Fajl / folder | Šta je |
+|---|---|
+| `finansije-v2.zip` | Kompletna izmijenjena aplikacija (APEXlang, ista struktura kao originalni export) |
+| `sql/01_indeksi.sql` | Indeksi koji nedostaju (najveći dobitak na performansama) |
+| `sql/02_dashboard_views.sql` | Lagani view-ovi za dashboarde (`VW_DASH_*`) |
+| `sql/03_dashboard_pkg.sql` | Paket `ACCOUNTING.DASHBOARD_PKG` – svi KPI brojevi na jednom mjestu |
+| `forms_log.md` | Spisak svih automatskih izmjena na formama (stranica / stavka / dugme) |
+
+## Redoslijed instalacije (DEV)
+
+1. Kao **ACCOUNTING**, iz UTF-8 klijenta (SQLcl / SQL Developer / PL/SQL Developer sa UTF-8):
+   1. `01_indeksi.sql` – po mogućnosti van radnog vremena (kreira indekse ONLINE i skuplja statistiku)
+   2. `02_dashboard_views.sql` – na kraju ispisuje status view-ova; svi moraju biti `VALID`
+   3. `03_dashboard_pkg.sql` – mora se kompajlirati bez grešaka
+   4. Test: `select dashboard_pkg.kpi_fakture(<ooj_id>, 2026) from dual;` vraća HTML
+2. Import `finansije-v2.zip` **pod novim ID-jem** (npr. 1290):
+   - promijeniti alias (npr. `FINANSIJE_V2`) – alias mora biti jedinstven u workspace-u
+   - **odmah isključiti automatizacije u kopiji** (Shared Components → Automations: amortizacija, održavanje OS, zaključavanje perioda), da se ne izvršavaju dvaput
+   - pri testiranju paziti na fiskalizaciju, slanje faktura i mailove (kopija koristi iste servise)
+3. Kad se odobri – import preko ID-ja 290 (prvo DEV, pa produkcija), uz prethodni backup export.
+
+SQL skripte ne mijenjaju ništa što postojeća aplikacija koristi – stara verzija radi isto i nakon njih.
+
+## Šta je urađeno
+
+### 1. Navigacija i podjela modula
+- Glavni meni poredan po grupama: **Poslovanje** (Fakture, Klijenti, Ugovori, Stavke i cjenovnici) → **Finansije** (Glavna knjiga, Izvodi i banke, Blagajna, PDV/UIO) → **Imovina i zalihe** (Osnovna sredstva, Robno-materijalno, Proizvodnja) → **Planiranje** (Budžet) → Konfiguracija, Administracija sistema.
+- Jedinstvene Font APEX ikone (ranije miks slika i font ikona; Robno i UIO su imali istu ikonu).
+- U svakom modulu sa podmenijem prva stavka je **Pregled** (dashboard modula) – iz bilo kog ekrana modula korisnik se jednim klikom vraća na pregled.
+
+### 2. Početna stranica
+- **Pregled poslovanja** – traka sa 5 pokazatelja: fakturisano u godini, ulazne fakture, potraživanja (+ dospjelo), obaveze (+ dospjelo), novčana sredstva (banka + blagajna). Svaki pokazatelj vodi na odgovarajući ekran, ali samo ako korisnik ima pravo na taj ekran.
+- Grafikon **izlazne i ulazne fakture po mjesecima** i **starost potraživanja** (nije dospjelo / 1-30 / 31-60 / 61-90 / preko 90 dana).
+- **Moduli po grupama** – kartice sa opisom, poštuju postojeće autorizacije i uslove (npr. Osnovna sredstva samo za doo/ad/vsp…).
+- Zadržano: obavještenja, izbor godine / skladišta / kase, period zaključan do, brzi pristup.
+- Preseljeno na **Glavna knjiga → Pregled**: salda po grupama konta (novčana sredstva, PDV, obaveze, potraživanja) i grafikon kretanja stanja na računu.
+- Uklonjeni stari grafikoni neplaćenih faktura po klijentu (zamijenjeni preglednijim tabelama na dashboardu Faktura).
+
+### 3. Dashboardi modula
+
+| Modul | Stranica | Sadržaj |
+|---|---|---|
+| Fakture | 2 | 5 pokazatelja (KIF, KUF, nenaplaćeno, neplaćeno, za obradu: nefiskalizovano + neproknjiženo), starost potraživanja i obaveza, 10 najvećih kupaca, dospjela potraživanja po kupcu, dospjele obaveze |
+| Glavna knjiga | 199 | nalozi u godini, neproknjiženi, stavke GK, posljednja PDV prijava; salda po grupama konta; kretanje stanja na računu; nalozi po vrsti |
+| Blagajna | 450 | stanje, prijem/plaćanja ovog mjeseca, neproknjiženi dnevnici; promet po mjesecima; stanje po blagajnama |
+| Robno-materijalno | 300 | dokumenti, otvorena trebovanja, otvorene kalkulacije, popisi u toku, skladišta; dokumenti po mjesecima; posljednji dokumenti |
+| Proizvodnja | 400 | radni nalozi, planirana količina, normativi; nalozi po statusu; posljednji nalozi |
+| Budžet | 500 | planirano, realizovano, % realizacije; plan i realizacija po org. jedinicama |
+| PDV / UIO | 80 | UIO KIF, UIO KUF, posljednji generisani fajl; zapisi po mjesecima |
+| Konfiguracija | 100 | sve postavke kao mreža kartica |
+| Osnovna sredstva | 250 | traka pokazatelja iznad postojećih izvještaja (aktivna, knjigovodstvena vrijednost, u pripremi, otpisana) |
+| Izvodi, Klijenti, Ugovori, Stavke | 1010, 10, 70, 20 | traka pokazatelja iznad postojeće liste |
+
+Svi brojevi se računaju u `DASHBOARD_PKG` (jedno mjesto za izmjenu poslovne logike), a izgled određuje `css/finansije-ui.css`.
+
+### 4. Uniformne forme
+Forme su već ~80% bile ujednačene (drawer, plutajuće labele, dugmad u footeru). Ispravljena su odstupanja:
+- 23 dugmeta sa engleskim nazivima → standard: **Odustani / Kreiraj / Ažuriraj / Obriši**
+- 25 dugmadi bez ikone → standardni izgled (tekst + ikona, iste opcije kao ostatak aplikacije)
+- 6 dugmadi **Obriši bez potvrde** → dodata potvrda (`APP_TEXT$DELETE_MSG`)
+- 7 drawer-a osnovnih sredstava otvarao se s lijeve strane → sada svi s desne
+- 10 polja koja su obavezna (bezuslovna NOT NULL validacija) a nisu bila tako označena → oznaka obaveznog polja
+- 2 polja sa labelom iznad → plutajuća labela (PDV obrazac i administratorske stranice namjerno nisu dirane)
+- Zajednički CSS: oznaka obaveznog polja, razmak polja, poravnanje cifara u iznosima
+
+## Nalazi analize (za naredne faze)
+
+**Performanse**
+- `GLAVNA_KNJIGA_STAVKE` nije imala indekse na `GLAVNA_KNJIGA_ID`, `KIF_ID`, `KUF_ID`, `KONTNA_KLASA_ID`, `KLIJENT_ID`. `VW_KIF`/`VW_KUF` za svaku fakturu sumiraju uplate iz te tabele → bez indeksa full scan po redu. Riješeno skriptom 01.
+- `VW_KIF` po svakom redu poziva `spell_pkg`, `acc_pkg.convert_bam` i 3 skalarna podupita, a liste faktura je koriste za prikaz. Preporuka za fazu 2: liste prebaciti na lakši view, a "iznos slovima" računati samo na štampi.
+- `VW_OSNOVNA_SREDSTVA` po redu zove 7 funkcija iz `os_pkg` – lista OS će biti spora sa većim brojem sredstava.
+- `deployments/default.json` ima `debugging: true` – na produkciji isključiti.
+
+**Integritet podataka**
+- 77 stranih ključeva bez indeksa, a većina FK-ova je **DISABLED** (npr. sve veze `GLAVNA_KNJIGA_STAVKE` → KIF/KUF/nalog). Baza ne čuva konzistentnost – preporuka: provjeriti siroče zapise i uključiti FK-ove (`ENABLE NOVALIDATE` kao prvi korak).
+- `KIF.RADNI_NALOG_ID` referencira `CAR_SERVICE.RADNI_NALOZI` (druga aplikacija) – zavisnost između aplikacija.
+- Uplate iz izvoda se u `VW_KIF` računaju kao `SUM(ABS(iznos))` – kad se nalog sa uplatom stornira, storno stavke (-iznos) se broje kao dodatna uplata. Dashboard view-ovi to ispravno isključuju; postojeći `VW_KIF`/`check_kif_uplaceno` imaju istu grešku (predlog za ispravku u fazi 2).
+
+**Struktura aplikacije**
+- Vjerovatno duplirane stranice: 408–412 (`radni-nalozi1` …, generisane forme sa engleskim nazivima) uz 401–407, te izvodi na dva mjesta – modul Izvodi (1010–1012) i Glavna knjiga → Izvodi (220–222). Treba odlučiti koje ostaju.
+- 255 stranica, 167 modalnih; samo 5 koristi nativni Form region – sve ostalo ide kroz pakete (get/insert/update procedure). To je dosljedno i ostaje tako.
+
+## Za potvrdu (poslovna logika KPI-jeva)
+- Fakturisano/potraživanja uključuju fakture u statusu **P (u pripremi)**. Ako treba samo zaključene/proknjižene – jedna izmjena u `VW_DASH_KIF`/`VW_DASH_KUF`.
+- Predračuni (vrsta naloga `pr`) su isključeni iz svih iznosa.
+- Iznosi su u KM (`valuta_id = 1`); devizni računi i blagajne nisu uključeni u zbir.
+- Budžet: uzima se posljednja verzija nakon rebalansa (`VW_DASH_BUDZET_AKTUELNI`).
+
+## Pilot: Izlazne fakture (stranica 50) – nova radna lista
+
+Uzorak za sve radne liste (fakture, nalozi, izvodi...). Kompatibilno sa APEX 24.2.
+
+- **Filteri iznad liste (Smart Filters)** umjesto lijeve kolone: pretraga + chipovi Period, Naplata, Kupac, Vrsta fakture, Org. jedinica, Proknjiženo, Fiskalizovano, Stornirano (+ Sistemska samo za ESSCOM). Desno polje **Sortiraj**. Uklonjeni lijeva kolona i dugme za njeno skrivanje.
+- **Lista**: broj fakture je link na detalje (vrsta ispod broja), datum sa valutom, iznosi poravnati desno sa zbirom, **status naplate** kao badge (Naplaćena / Djelimično / Nenaplaćena / Dospjela N d / Predračun / Stornirana), uplate kroz izvod i ručno kao obojeni iznosi (klik otvara isti dijalog kao ranije), **status** kao chipovi (Za knjiženje – klik vodi na knjiženje / Proknjižena, Fiskalizovana, UIO), **akcije** kopiraj / el. štampa / štampa sa potpisom u jednoj koloni. Uklonjene PNG ikone.
+- Paginacija "1 – 50 od N" sa brojevima stranica.
+- Ispravke usput: filter "Proknjiženo" ranije nije radio (kolona je u upitu bila URL, ne D/N); dugmad za štampu su imala isti HTML id u svakom redu – sada klase.
+- Filter "Uplaćeno" (D/N) zamijenjen filterom **Naplata** sa 6 stanja; filter "Kreirao nalog" je i ranije bio isključen pa nije prenesen.
+
+## Radne liste po obrascu pilota (12 stranica) + bočni meni
+
+Obrazac sa stranice 50 primijenjen na sve radne liste koje su imale lijevi panel sa filterima:
+
+| Stranica | Lista |
+|---|---|
+| 10 | Klijenti |
+| 20 | Stavke |
+| 40 | Ulazne fakture – **isti prikaz kao izlazne**: status plaćanja (Plaćena / Djelimično / Neplaćena / Dospjela N d / Stornirana), plaćanja kroz izvod i ručno, status knjiženja i UIO, pregled dokumenta |
+| 70 | Ugovori |
+| 200 | Nalozi za knjiženje |
+| 271 | Održavanja osnovnih sredstava |
+| 320 | Trebovanja |
+| 330 | Operacije (dokumenti skladišta) |
+| 350 | Nivelacija cijena |
+| 1001 | Žiro računi |
+| 1010 | Izvodi |
+| 1900 | Kursna lista |
+
+Na svim: filteri iznad liste (Smart Filters), bez lijeve kolone i dugmeta za njeno skrivanje, izgled liste kao na p50 (zaglavlje, razmaci, poravnanje cifara), ikona olovke umjesto slika, help tekst prilagođen.
+Filteri koji nisu preneseni: rasponi iznosa na ulaznim fakturama (iznos se traži kroz pretragu), dva filtera po boji uplate na ulaznim (zamijenjeni filterom **Plaćanje**) i jedan filter koji je i ranije bio isključen (p350).
+
+Namjerno nisu dirane: **251** Lista osnovnih sredstava (prebacivanje mapa/lista sa dva seta filtera), **371/372** materijalni i robni izvještaji (lijevo se bira izvještaj i parametri – tu panel ima smisla) i stranice sa lijevom kolonom bez filtera (izvještaji GK, izvodi u GK, skladišta, radni nalozi, budžet...).
+
+**Bočni meni:** hover je sada neutralno siv (ranije zelen iz teme), aktivna stranica ima blagu sivu pozadinu i tanku zelenu liniju, a modul u kojem se korisnik nalazi samo podebljan tekst.
+
+## Sve ostale pregledne stranice (55) + svjetliji hover u meniju
+
+**Liste bez filtera** – dodata pretraga iznad liste i moderan izgled: 27 Lista cjenovnika, 72 Dokumentacija ugovora, 101 Izgled faktura, 103 Numeracija, 114 Grupe stavki, 121 Banke, 123 Potpisi, 263 Amortizacija, 277 Zajednički indikatori, 340 Kalkulacije, 360 Popisi, 401 Radni nalozi, 453 Tipovi promjena, 503 Budžeti. Liste u obliku "media list" (konfiguracija) dobile izgled redova sa naslovom i opisom.
+
+**Izvještaji i filteri sa lijeve strane prebačeni iznad sadržaja:**
+- 251 Lista osnovnih sredstava – "Pregledaj kao" i "Dodatna polja" u traci, filteri za mapu i listu iznad sadržaja (Prostorija više ne zavisi od Lokacije – prikazuju se prostorije iz rezultata; ranija kaskada na mapi je koristila pogrešnu stavku)
+- 371 Materijalni i 372 Robni izvještaji – izbor izvještaja (i datum) u traci, filteri iznad svakog izvještaja
+- 459 Izvještaji blagajne – izbor izvještaja, blagajna i period u traci
+
+**Stabla** (109 Kontni okvir, 116 Klase OS, 125 Klase stavki, 130 Mjesta troška) – jedinstvena traka: pretraga dok se kuca (označava pogotke, otvara grane, broj rezultata, Esc briše), Proširi sve / Skupi sve. Logika je u novom zajedničkom fajlu `js/finansije-ui.js`; stare pretrage na stranicama uklonjene.
+
+**Master-detail stranice ostaju sa lijevim panelom** (tu je to pravi obrazac – lijevo izbor, desno detalji), ali sa novim izgledom: 210 Izvještaji GK (meni izvještaja), 220 Izvodi (kalendar izvoda), 310 Skladišta, 421 Normativi, 509/519/521 Budžet po OJ.
+
+**Izgled svih ostalih tabela** na preglednim i detaljnim stranicama: classic report (fin-list), Interactive Report (fin-ir), Interactive Grid (fin-grid) – ujednačena zaglavlja, razmaci, poravnanje cifara, ikona olovke.
+
+**Bočni meni:** hover je vrlo svijetla zelena (#eef8f5) sa tamnim tekstom, aktivna stranica malo jača nijansa + tanka zelena linija.
+
+Spisak po stranicama: `docs/pregledi_log.md`.
+
+## Modul Stavke i cjenovnici (dorada po analizi i odlukama O-02 – O-10)
+
+Analiza, opis korisnika i odluke: dokument „Stavke i cjenovnici – analiza i prijedlog modula“.
+
+**Redoslijed instalacije:** `sql/04_stavke.sql` kao ACCOUNTING **prije** importa (forme koriste nove funkcije paketa; postojeće tabele se ne mijenjaju). Skripta prvo sačuva trenutni izvor paketa u `STAVKE_PKG_BACKUP_V2`, prikazuje greške kompajliranja i staje prije izmjene podataka ako paket nije ispravan. Jedina izmjena podataka: stavke bez klase premještaju se u klasu „Ostalo“ (ispisuje broj).
+
+- **Meni modula:** Pregled, Stavke, Cjenovnici, Cijene, Klase stavki, Grupe za knjiženje (samo dvojno knjigovodstvo). Klase i grupe uklonjene iz Konfiguracije.
+- **Stavka (22):** sekcije Osnovni podaci / Klasifikacija / Porez (samo PDV sistem) / Praćenje i status; šifra se predlaže (najveća numerička + 1, npr. 000011) i mora biti jedinstvena; klasa obavezna (podrazumijevano „Ostalo“); JM podrazumijevano „kom“; serijski broj za sve tipove; upozorenje kad grupa nema podešena konta; dugme Obriši samo za stavku koja se ne koristi u dokumentima; retroaktivni naziv samo na nefiskalizovanim i neproknjiženim fakturama. **Ispravljeno P-01:** proces brisanja više se ne izvršava pri „Ažuriraj“.
+- **Cijena (26):** sekcije; nabavna opciona (usluge), marža samo kao pomoć za račun – ne čuva se (za postojeću cijenu računa se iz nabavne i VPC, inače prijedlog sa stavke), VPC obavezna; račun u pregledaču u oba smjera (nabavna + marža → VPC → MPC, ili MPC → VPC); van PDV sistema samo „Prodajna cijena“ (MPC = VPC); upozorenje kad je prodajna ispod nabavne.
+- **Cjenovnik (28), Klasa (126), Grupa (115):** obavezna i jedinstvena šifra; brisanje samo kad nema cijena/stavki/podklasa; zabrana petlje u klasama.
+- **Liste Stavke (21) i Cijene (25):** obrazac sa filterima iznad (kao izlazne fakture); stavke sa oznakom „Bez cijene“; cijene sa prekidačem „Prikaži istoriju cijena“ i oznakom „ispod nabavne“.
+- **Paket STAVKE_PKG:** MPC po stopi stavke i PDV sistemu (ranije fiksno 1,17 – utiče i na zaključavanje kalkulacije), uvijek posljednja aktivna cijena, zaštite pri brisanju, nove funkcije `pdv_stopa`, `stavka_u_upotrebi`, `sljedeca_sifra`, `klasa_ostalo`.
+
+**Za module koji slijede (nije dirano):** O-01 maloprodajni cjenovnik na fakturi (MPC kao osnovica + PDV), P-14 neispravan poziv `get_stavka_cijena` na stranici 52, nivelacija pri promjeni MPC, poreska oznaka za fiskalni uređaj.
+
+### Stavke i cjenovnici – drugi krug (povratne informacije)
+- **Pregled (20)** više ne prikazuje izlazne fakture. Sada: pokazatelji kataloga (aktivne stavke, bez cijene, aktivni cjenovnici, promjene cijena u 30 dana), stavke po tipu i po klasama, aktivne stavke bez cijene (klik otvara stavku), posljednje promjene cijena, aktivni cjenovnici. Pokazatelji su u `DASHBOARD_PKG.kpi_stavke` → **ponovo pokrenuti `sql/03_dashboard_pkg.sql`** (DEV i produkcija).
+- **Lista stavki (21):** uklonjena kolona i filter „Cijene“; PDV kolona i filter samo za firme u PDV sistemu.
+- **Cjenovnici (27, 28):** lista kao ostale liste modula (filteri iznad, vrsta, broj cijena, prodajna mjesta, status); forma u sekcijama.
+- **Forme modula (22, 26, 28, 115, 126):** labele iznad polja, niža polja (36 px), bijela pozadina sa tankim okvirom i plavim fokusom umjesto sivih „plutajućih“ polja; obavezno prazno polje više nije obojeno roza.
+
+### Stavke i cjenovnici – treći krug (izgled formi, nabavna cijena)
+- **Forme:** svaka sekcija je svijetla kartica sa istaknutim naslovom (zelena oznaka, tamni podebljani tekst); polja preko cijele širine kolone (naziv stavke u punoj širini), labela iznad polja, crvena zvjezdica uz svako obavezno polje, manji razmaci, sve poravnato po istoj lijevoj liniji; Da/Ne izbori kao segmentirani prekidač.
+- **Cijena (26):** nabavna cijena se samo prikazuje („iz kalkulacije“) i pri snimanju se uzima iz baze (posljednja aktivna cijena), ne iz forme – mijenja je samo kalkulacija u modulu Robno-materijalno. Marža ostaje pomoć za račun VPC.
+
+## Modul Ulazne fakture – korak 2: hitne ispravke (30.10.2026)
+
+Analiza, odluke i plan: dokument „Ulazne fakture – analiza i prijedlozi dorada“. Opis oba modula: `docs/Opis modula - Stavke i Ulazne fakture.docx`.
+
+**Redoslijed instalacije:** `sql/06_kuf.sql` kao ACCOUNTING **prije** importa (forma ulazne fakture koristi novi paket `KUF_PKG`). Skripta pravi samo novi paket; postojeći paketi, tabele i podaci se ne mijenjaju. Na produkciji je uključena u `deploy_prod.sql`.
+
+- **Preuzmi KUF (43):** ZIP sadrži samo dokumente izabrane firme (ranije svih firmi za taj mjesec).
+- **Ulazna faktura (41):**
+  - datum fakture mora biti u radnoj godini;
+  - datum prijema i datum valute ne mogu biti prije datuma fakture;
+  - isti dobavljač i isti broj fakture ne mogu se unijeti dva puta u istoj godini (stornirane fakture se ne računaju);
+  - interni broj se uzima iz brojača tek pri snimanju, pa dva korisnika ne mogu dobiti isti broj;
+  - PDV indikatori se nude iz mapiranja tip dokumenta/indikator, pa nema obračunskih i tehničkih indikatora; tip dokumenta se postavlja sam, a kombinacija se provjerava;
+  - ugovor se bira samo među ugovorima izabranog dobavljača;
+  - dokument nije obavezan i može imati do 10 MB.
+- **Brisanje:** provjera je sada i na serveru (`KUF_PKG.obrisi`). Ne briše se faktura koja je proknjižena ili stornirana (i storno dokument), ima UIO zapis, plaćanja ili kalkulaciju, ili je u zaključanom periodu. Poruka kaže razlog. Brojač se vraća samo za godinu fakture.
+- **Pregled dokumenta (42):** samo za fakturu izabrane firme.
+- **`sql/kuf_provjera_indikatora.sql`:** skripta koja samo čita. Poredi PDV indikatore i mapiranje u bazi sa Excel tabelom i broji fakture na koje utiču nalazi. Pokrenuti je na DEV-u (po želji i na produkciji) i poslati ispis.
+
+**Slijedi (koraci 3–5):**
+- PDV pravila u šifarniku;
+- PDV specifikacija fakture;
+- vrste dokumenata (UF, UAV, UAVZ, UKO, UKZ);
+- zatvaranje avansa;
+- dokumenti u posebnoj tabeli;
+- nova forma i prilagođavanje tipu preduzetnika;
+- UIO KUF iz specifikacije.
+
+## Pravila razvoja (dogovoreno 30.10.2026)
+- Poslovna logika ide u bazu (paketi i view-ovi), a ne u SQL i PL/SQL napisan direktno na stranicama. Stranica samo poziva paket ili čita view: LOV-ovi preko view-a ili funkcije, validacije preko funkcija paketa, procesi preko procedura.
+- Upiti moraju biti optimizovani: bez skalarnih podupita po redu tamo gdje ide join ili agregat, filteri po indeksiranim kolonama (ooj_id, godina), bez funkcija nad kolonama u WHERE, BLOB-ovi se ne čitaju u listama.
+- SIF objekti se čitaju samo kroz objekte na koje ACCOUNTING ima pravo (view-ovi i paketi, ne tabele).
+
+## Modul Ulazne fakture – korak 3: PDV pravila u šifarniku (30.10.2026)
+
+**Rezultat provjere (DEV):**
+- mapiranje indikator / tip dokumenta se potpuno slaže sa Excel tabelom;
+- u KUF-u 216 od 222 fakture nema PDV indikator, a `KUF.godina` je kod starijih faktura često prazna;
+- 5 grupa mogućih duplikata (dobavljač + broj fakture);
+- jedna faktura ima S1 sa tipom 07.
+
+**`sql/07_pdv_indikatori.sql`** pokrenuti kao **SIF**, prije importa:
+- nove kolone `POLJE_OSNOVICE`, `POLJE_PDV`, `POLJE_KP` (32/33/34 ili KP = prema entitetu firme), `PRAVO_NA_ODBITAK`, `PDV_DOBAVLJACU`, `VRSTA`;
+- nazivi su ujednačeni, cijelim riječima;
+- D5 je dobio ispravan naziv, O1 stopu 17;
+- O6 ima jedan aktivan red (ulazni);
+- P8 i BU su deaktivirani, a XI i XU ostaju;
+- rezervna kopija je u `ACC_PDV_INDIKATORI_BACKUP_V2`, a vraćanje ide skriptom `07_pdv_indikatori_vracanje.sql`.
+
+**`sql/06_kuf.sql` (ponovo pokrenuti):** kada je `KUF.godina` prazna, provjera duplikata i vraćanje brojača uzimaju godinu iz datuma fakture.
+
+## Modul Ulazne fakture – korak 4a: model podataka i KUF_PKG v2 (30.10.2026)
+
+Korak 3 je pokrenut na DEV-u i prošao je bez greške. Ažurirano je 56 indikatora, a P8, BU i duplikat O6 su deaktivirani.
+
+**`sql/08_kuf_model.sql`** (ACCOUNTING; poslije 07):
+- nove tabele `KUF_PDV` (PDV specifikacija), `KUF_DOKUMENTI`, `KUF_AVANSI_ZATVARANJE` i `KUF_MIGRACIJA_V2`;
+- nove kolone `KUF.VRSTA_DOKUMENTA_ID` i `VEZA_KUF_ID`. `IZNOS_SA_PDV` je uvijek iznos sa fakture dobavljača: kod obrnute naplate i uvoza jednak je iznosu bez PDV-a, a obračunati PDV za UIO postoji samo u PDV specifikaciji;
+- vrste dokumenata UAV, UAVZ, UKO i UKZ za svaku firmu, sa brojačima (prefiks prema UF);
+- prazna godina se popunjava iz datuma fakture;
+- svaka faktura dobija vrstu dokumenta;
+- dokumenti se kopiraju u `KUF_DOKUMENTI`;
+- view `VW_KUF_PDV_SPEC` daje specifikaciju za svaku fakturu. Ako faktura nema svoje redove, specifikacija se izvodi iz zaglavlja, pa postojeća forma i knjiženje rade kao i do sada.
+- Vraćanje: `08_kuf_model_vracanje.sql`, pa `06_kuf.sql`.
+
+**`sql/09_kuf_pkg.sql`** (ACCOUNTING; poslije 08): `KUF_PKG` v2 sa svom logikom forme:
+- `snimi` (broj iz brojača vrste dokumenta tek pri snimanju);
+- `snimi_pdv_red`, `obrisi_pdv_red`, `preracunaj` (KM iz iznosa u valuti i kursa);
+- `pripremi_specifikaciju`, `provjeri`, `zakljucaj`, `otkljucaj`;
+- `storniraj` (sopstveni datum i broj, bez kopije dokumenta, negativni PDV redovi);
+- `obrisi`, `dodaj_dokument` i `obrisi_dokument`.
+
+Paket je kompatibilan sa trenutnom formom.
+
+**Slijedi:** 4b (nova forma 41 i lista 40, na `KUF_PKG` i view-ovima) i 4c (zatvaranje avansa).
+
+## Modul Ulazne fakture – korak 4b: nova forma i lista (30.10.2026)
+
+Skripte 08 i 09 (stara numeracija) prošle su na DEV-u. Dodato je 64 vrste dokumenata i 36 brojača, popunjena je godina kod 216 faktura, a kopirano je 70 dokumenata.
+
+**Nova numeracija SQL skripti:** `08_kuf_model.sql` → `09_kuf_views.sql` (novo) → `10_kuf_pkg.sql` (ranije 09). Stari `09_kuf_pkg.sql` je zastario.
+
+- **`09_kuf_views.sql`:** `VW_KUF_LISTA`, `VW_KUF_FORMA`, `VW_KUF_VRSTE_DOKUMENATA`, `VW_KUF_PDV_INDIKATORI`, `VW_KUF_UGOVORI`, `VW_KUF_VEZE`, `VW_KUF_DOKUMENTI`. Stranice ne čitaju tabele direktno.
+- **`10_kuf_pkg.sql`:** dodati su `provjeri_zaglavlje`, `kurs_prikaz` i `stope_json`, a redni broj PDV reda se dodjeljuje automatski.
+- **Ulazna faktura (41), nova forma:**
+  - stil `fin-form` sa sekcijama „Dokument i dobavljač“, „Datumi“, „Iznosi i PDV“ i „Skenirani dokument“;
+  - traka sa brojem i statusom;
+  - vrsta dokumenta i polje „Odnosi se na fakturu“ (KO, KZ, zatvaranje avansa);
+  - PDV specifikacija kao tabela, sa PDV-om po stopi i zbirovima izračunatim u pregledaču;
+  - kurs na datum fakture;
+  - više dokumenata uz fakturu;
+  - zaključana, proknjižena ili stornirana faktura je samo za čitanje;
+  - firme van PDV sistema nemaju PDV indikatore ni UIO;
+  - sva logika je u `KUF_PKG`.
+- **Lista (40):**
+  - čita `VW_KUF_LISTA` (bez BLOB-a);
+  - status prikazuje „U pripremi“ i vrstu dokumenta;
+  - novi filteri su Vrsta dokumenta i Status;
+  - „Proknjiženo“ i „Za knjiženje“ vide se samo kod dvojnog knjigovodstva.
+- **Pregled (42) i Preuzmi KUF (43):** dokumenti se čitaju iz `KUF_DOKUMENTI`.
+
+## Modul Ulazne fakture – korak 4c: storno veze, avans, knjižno odobrenje, meni (31.10.2026)
+
+**Baza** (pokrenuti ponovo kao ACCOUNTING: 08 → 09 → 10; sve se može pokretati više puta)
+
+- 08: `KUF_PDV.IZVOR_RED_ID` (red originala / avansa iz kojeg je red preuzet) + indeks; kolona i u `VW_KUF_PDV_SPEC`.
+- 09: `VW_KUF_FORMA` dobija veze (storno, original, faktura na koju se odnosi, zatvaranje avansa i iznos), `VW_KUF_VEZE.ima_zatvaranje_avansa`, `VW_KUF_LISTA.zatvoreno_avansom`, novi `VW_KUF_AVANSI` (zaključeni nestornirani avansi i raspoloživi iznos).
+- 10 (KUF_PKG): `raspolozivo_reda`, `preuzmi_stavke`, `uskladi_avans`, `avans_raspolozivo`, `avans_za_zatvaranje`, `provjeri_avans`, `veze_html`; izmijenjeni `snimi`, `snimi_pdv_red`, `preracunaj`, `provjeri_zaglavlje`, `provjeri`, `zakljucaj`, `otkljucaj`, `storniraj`, `obrisi`, `razlog_zabrane_brisanja`.
+
+**Pravila**
+
+- Avansna faktura (UAV) ima tačno jednu stavku.
+- Zatvaranje avansa (UAVZ) i knjižno odobrenje (UKO): stavke se pri snimanju preuzimaju sa avansa / originalne fakture (KO dobija indikator N3 / N4 / N5). Novi red se ne može dodati, indikator se ne mijenja, iznos se može samo smanjiti – najviše do raspoloživog (kolona *Raspoloživo* u specifikaciji).
+- Ulazna faktura: prekidač *Faktura je konačna i u nju je uračunat avans* → izbor avansa istog dobavljača, prikaz raspoloživog, iznos (predlaže se raspoloživo, ne može biti veći). Pri snimanju se automatski pravi / mijenja / briše dokument zatvaranja avansa; zaključava se i otključava zajedno sa fakturom.
+- Faktura sa zatvaranjem avansa ne može dobiti KO (nije u izboru i paket odbija); faktura sa KO ne može uračunati avans.
+- Storno ulazne fakture stornira i njeno automatsko zatvaranje avansa; automatsko zatvaranje se ne stornira samostalno.
+- U traci dokumenta su linkovi na povezane dokumente: storno dokument / stornirani original, originalna faktura ili avans, zatvaranje avansa, faktura uz koju je zatvaranje napravljeno.
+- Lista (40): zatvaranje avansom ulazi u status plaćanja; storno dokument se prikazuje kao storniran.
+
+**Meni:** modernizovan bočni meni – neutralni hover (#f1f3f6), aktivna stranica vrlo svijetla mint (#eaf8f2) sa tankom linijom #2fbf8f, ikona aktivnog modula zelena; nigdje više puna tamna zelena sa bijelim tekstom.
+
+## Modul Ulazne fakture – korak 4d: valute, preuzimanje stavki u formi, više avansa (31.10.2026)
+
+**Baza** (kao ACCOUNTING: 09 → 10; 08 se ne pokreće ponovo)
+
+- 09: `VW_KUF_LISTA` dobija valutu i iznos u valuti; `VW_KUF_AVANSI` valutu; novi `VW_KUF_URACUNATI_AVANSI`; `VW_KUF_FORMA` umjesto jednog avansa ima `IMA_AVANS` (više avansa po fakturi).
+- 10 (KUF_PKG): nove `valuta_sifra`, `valute_dozvoljene`, `avans_info`, `stavke_za_preuzimanje`, `snimi_avans_red`, `obrisi_avans_red`, `uskladi_avanse`; izbačene `uskladi_avans`, `avans_za_zatvaranje`, `provjeri_avans`; `snimi_pdv_red` prima `p_izvor_red_id`; `snimi` više sam ne preuzima stavke (dolaze iz forme), kod promjene veze briše redove stare veze; zatvaranje avansa je u valuti avansa i preračunava se po kursu na dan avansa.
+
+**Forma 41**
+
+- KO i zatvaranje avansa: stavke se popune u tabeli čim se izabere faktura (bez snimanja). Iznos se može samo smanjiti (provjera odmah u tabeli i u bazi), red se može obrisati, novi se ne dodaje, indikator se ne mijenja. Kolona *Raspoloživo* vidi se samo kod ova dva dokumenta; širine kolona smanjene da nema skrolovanja.
+- Konačna faktura: tabela *Uračunati avansi* – više avansa, za svaki valuta, raspoloživo, iznos koji se zatvara (predlaže se raspoloživo) i iznos u KM. Iznosi se mogu ispravljati sve dok faktura nije zaključana; svaki red je automatski dokument zatvaranja avansa.
+- Valute: avans i faktura moraju biti u istoj valuti ili u kombinaciji KM – strana valuta (npr. USD faktura i EUR avans nije dozvoljeno). U izboru se nude samo dozvoljeni avansi.
+- Ispravljena greška „Set value not allowed for field“ pri izmjeni snimljenog reda: PDV kolona više nije zaključana na serveru (zaključava je pregledač), pa se izračun može upisati.
+
+**Lista 40:** kod strane valute ispod iznosa u KM piše iznos u valuti; novi filter *Valuta* (nudi samo valute koje firma koristi).
+
+## Modul Ulazne fakture – korak 4e: ispravke poslije prvog testa 4d (31.10.2026)
+
+- Forma više ne skače na tabelu pri izboru vrste dokumenta (uzrok: ponovno iscrtavanje kolona u tabeli), pa se dobavljač i faktura mogu normalno izabrati.
+- KO / zatvaranje avansa: bez automatskog praznog reda (zato su bila dva reda); preuzimanje važi samo za posljednji izbor fakture; red zatvaranja avansa se ne može obrisati; greška za prekoračen iznos se prikazuje jednom.
+- Izbor fakture za KO i zatvaranje nudi samo fakture sa raspoloživim iznosom (prikazan u izboru); avans se zatvara/uračunava samo kad je zaključen.
+- Dokument bez PDV specifikacije se ne može snimiti.
+- Obavještenje o preuzetim stavkama je kratka napomena ispod tabele.
+- Tabela uračunatih avansa: bez praznog reda, uže kolone; izbor avansa radi i prije izbora valute.
+- Avansna faktura i storno dokument su podrazumijevano plaćeni (novi dokumenti u bazi, a lista ih tako prikazuje i za postojeće).
+- Baza: `VW_KUF_VEZE` (status, raspoloživo), KUF_PKG (`provjeri_stavke`, provjere zaključenog avansa, brisanje reda zatvaranja, `uplaceno` za avans i storno).
+
+## Modul Ulazne fakture – testiranje u pregledaču i ispravke 4f (31.10.2026)
+
+Testirano u Chrome-u (firma 219, debug log): avans (unos, jedna stavka, zaključavanje), konačna faktura sa dva avansa (snimanje, ispravka iznosa, zaključavanje, storno sa oba zatvaranja), KO (preuzimanje, limit, raspoloživo za drugi KO), KO se ne nudi na fakturu sa zatvaranjem ni na avans, ručno zatvaranje avansa, valute (EUR faktura vidi EUR i KM avanse, USD faktura ne vidi EUR avans), prazan dokument, statusi u listi, automatsko zatvaranje poruke.
+
+Ispravke:
+- ORA-06502 pri snimanju novih redova: vrijednosti iz tabela idu kroz `kuf_pkg.broj` (tekst → broj, privremeni ID novog reda → null).
+- Poslovne poruke paketa šalju se kao „Greška CORP-KUF: …“ (zbog CORE.ERROR_MANAGER) – vidi otvoreno pitanje ispod.
+- Duplikat broja fakture traži se samo unutar iste vrste dokumenta; automatsko zatvaranje dobija opis „Zatvaranje avansa … uz …“.
+- KO i KZ samo na ulaznu fakturu (izbor i baza); poruke se same zatvaraju nakon 5 s; jasan status u listi (U pripremi / Zaključena / Proknjižena).
+- Avans: „Dodaj red“ nestaje kad postoji red; izbor avansa širi, bez duplog naslova; lista avansa se osvježi po promjeni dobavljača ili valute; dugme „Novi“ dobavljač skriveno na zaključenom dokumentu; valuta KO / zatvaranja se popuni prema izabranoj fakturi.
+
+Odloženo (odluka 31.10.2026 – za sada ostaje ovako): CORE.ERROR_MANAGER poredi `p_error.message` (koji počinje sa „ORA-20201: “) sa 'Greška CORP-%', pa poslovne poruke i dalje vide kao generičku grešku. Potrebna jednoredna izmjena u handleru (poređenje preko `apex_error.get_first_ora_error_text`).
+
+## Modul Ulazne fakture – korak 4g: dokumenti, zaključene veze, datum prijema (31.10.2026)
+
+- KO, KZ i zatvaranje avansa samo na **zaključene** fakture (izbor u formi i `provjeri_zaglavlje`).
+- Datum prijema ne može biti prije datuma fakture (kalendar i `provjeri_zaglavlje`).
+- Dokumenti: više fajlova odjednom uz komentar (`KUF_DOKUMENTI.OPIS`, 08), mogu se dodavati i na zaključenu fakturu (dugme „Dodaj dokumente“), brisanje iz liste dok je faktura u pripremi; prikaz kao kartice (ikona po tipu, komentar, datum, veličina).
+- Lista (40): kolona **Dokumenti** umjesto Akcije – ikonica spajalice sa brojem dokumenata; otvara stranicu 42.
+- Stranica 42 je sada pregled svih dokumenata fakture (Otvori u novom tabu / Preuzmi) preko aplikacijskog procesa `KUF_DOKUMENT` i `kuf_pkg.posalji_dokument` (provjera firme, bez BLOB-a u listi).
+- Baza: 08 (kolona OPIS), 09 (`VW_KUF_DOKUMENTI.opis`), 10 (`dodaj_dokument` sa više fajlova i opisom, `posalji_dokument`, nove provjere).
+
+## Modul Ulazne fakture – korak 4h: kompaktni dokumenti, komentar po dokumentu, valuta veze (31.10.2026)
+
+- Dokumenti u formi: manja zona za dodavanje (jedan red), lista jedan red po dokumentu; komentar se upisuje u redu za svaki dokument i snima odmah (`kuf_pkg.opis_dokumenta`), polje komentara na nivou fakture uklonjeno.
+- KO, KZ i zatvaranje avansa preuzimaju valutu sa povezane fakture / avansa i polje se ne može mijenjati (forma: `VEZA_VALUTA`; baza: `snimi` uvijek upisuje valutu veze).
+- Ispravljeno iz testa 4g: kartice dokumenata imaju svoju klasu (`fin-prilog`, ranije se sudarale sa `fin-doc` u listama), forma ne skače pri izboru KO, naslov sekcije Dokumenti.
+
+## Modul Ulazne fakture – korak 4i: UIO samo za zaključene + analiza UIO KUF (31.10.2026)
+
+- Provjereno u pregledaču (4h): kompaktni dokumenti, komentar po dokumentu se snima, valuta zaključana kod KO bez skakanja forme.
+- UIO: izbačeno dugme „Snimi i unesi u UIO KUF“ (nova faktura je u pripremi); dugme „UIO KUF“ samo za zaključenu fakturu u PDV sistemu; str. 84 nudi samo zaključene fakture i provjerava `kuf_pkg.razlog_zabrane_uio`; meni PDV / UIO vidi svaka firma u PDV sistemu (ranije samo dvojno knjigovodstvo).
+
+Analiza UIO KUF (stanje): ručni unos (84) računa PDV fiksno 17 % i ne koristi PDV specifikaciju; automatski unos (90, `nalog_to_kuf_uio`) radi samo iz proknjiženih naloga (nema za prosto knjigovodstvo), indikatori su zakucani u kodu, poreski period po datumu fakture, KO/negativni iznosi zakomentarisani; iznosi su tekst (VARCHAR2); nema veze reda UIO sa stavkama, ni zabrane izmjene fakture poslije unosa u UIO osim provjere u brisanju. Prijedlog: UIO KUF iz `KUF_PDV` + polja indikatora (POLJE_OSNOVICE/POLJE_PDV/POLJE_KP, PRAVO_NA_ODBITAK, PDV_DOBAVLJACU), period po datumu prijema, automatski pri zaključavanju ili grupno po periodu, KO/storno kao negativni slogovi.
+
+Odluka (31.10.2026): UIO moduli se za sada ne diraju. Dorada UIO KUF (iz PDV specifikacije, period po datumu prijema – Pravilnik čl. 66; avansi po plaćanju – čl. 67; KO/KZ po promjeni osnovice – čl. 69) radi se zajedno sa PDV prijavom, nakon modula knjiženja. Redoslijed: ulazne fakture → knjiženje → PDV prijava + UIO.
+
+## Ulazne fakture – datumi na našem jeziku (31.10.2026)
+- Forma 41: uklonjene APEX provjere min. datuma (poruke na engleskom). Datum prijema, datum valute i zaključan period provjerava KUF_PKG.provjeri_zaglavlje (nova poruka: „Datum fakture je u zaključanom periodu (zaključano do …)“).
+
+## Modul Robno-materijalno – korak R1: dokumenti skladišta, prijemnica (31.10.2026)
+- Odluke: vrste dokumenata iz SIF.VRSTE_DOKUMENATA (modul MAT); prijemnicu pravi skladištar ručno, zaključava je kalkulacija; zaglavlje: skladište, broj, datum, dobavljač (obavezan), broj i datum otpremnice, opis; stare stranice 330/331 zamijenjene odmah.
+- SQL (redom): 11_rm_model.sql (kolone VRSTA_DOKUMENTA_ID, STATUS, OTPREMNICA_BROJ/DATUM, REDNI_BROJ, indeksi, brojač PRI, stare prijemnice -> PRI), 12_rm_pkg.sql (RM_DOKUMENT_PKG), 13_rm_views.sql (VW_RM_*).
+- p330 Dokumenti skladišta: filteri vrsta / status / dobavljač, statusi U pripremi / U kalkulaciji / Zaključen / Proknjižen / Storniran, upozorenje za nekompletne serijske brojeve, dugme „Novi dokument“ (meni vrsta koje nova forma podržava – za sada Prijemnica). Stari dokumenti se otvaraju na pregledu (p332).
+- p331 Dokument skladišta: zaglavlje, stavke (artikal, JM, količina, SB, napomena), pregled serijskih brojeva po stavci.
+- p337 Serijski brojevi: barkod / ručni unos / QR opseg (razdjelnici novi red, razmak, ; , : /), uvoz iz xlsx/csv (prva kolona), brisanje; provjera duplikata i SB koji je već na stanju; ne može više SB od količine.
+- Pravila u bazi: usluga se ne prima; količina > 0 (cijela za SB artikle); artikal jednom po dokumentu; datum ne u budućnosti / zaključanom periodu / drugoj godini; otpremnica ne poslije prijema; skladište se ne mijenja dok ima stavki; dokument u kalkulaciji ili zaključen se ne mijenja ni briše.
+
+## Modul Robno-materijalno – korak R2: skladišta i izbor skladišta (31.10.2026)
+- Uzrok poruke „Neophodno je da konfigurišete formu numeracije“ na ulaznim fakturama: APP_GODINA = najveća godina sa aktivnim brojačem, a 11_rm_model je napravio brojač PRI i za 2027. 14_rm_skladista.sql ga uklanja (broj 0); 11_rm_model ubuduće pravi brojače samo do tekuće godine. Poslije skripte ponovo se prijaviti.
+- Izbor skladišta premješten sa početne stranice u module: na stranicama Robno-materijalno (300, 320–372) i Izlazne fakture (50) je izbornik „Skladište“ (globalna stranica). Aplikacijska kalkulacija A_SKLADISTE_ID bira važeće skladište korisnika (prvo po šifri ako nijedno nije izabrano).
+- p310 Skladišta: nova lista (vrsta Robno/Materijalno + cjenovnik, OJ, zaduženi radnik, konto samo za dvojno, broj artikala i vrijednost na stanju, korisnici, status), filteri, link na stanje.
+- p311 Skladište: sekcije Osnovni podaci / Organizacija / Adresa / Korisnici skladišta; cjenovnik samo za robno (obavezan); tip cijene i valuta se više ne biraju; konto samo za dvojno knjigovodstvo; zaduženi radnik iz SIF.ACC_RADNICI; kad skladište ima dokumente mijenjaju se samo radnik, adresa, fax, napomena i aktivnost; deaktivacija nije moguća dok ima robe; brisanje samo bez dokumenata i podređenih skladišta.
+- p312 Dodavanje korisnika skladišta (više odjednom); p313 Stanje skladišta (interaktivni izvještaj – šifra i naziv odvojeno, izvoz u Excel/PDF).
+- Navigacija: Robno-materijalno → Dokumenti → Svi dokumenti / Prijemnice / Nova prijemnica.
+- SQL: 14_rm_skladista.sql (radnik HRM -> SIF.ACC_RADNICI sa mapiranjem po imenu, SKLADISTA_MIGRACIJA_V2, VW_SKLADISTA, VW_RM_SKLADISTA, VW_RM_SKLADISTE_STANJE, RM_SKLADISTE_PKG).
+
+## Zalihe robe / Materijal i oprema – korak R3 (31.10.2026)
+- Modul Robno-materijalno razdvojen na dva modula u meniju i na početnoj: „Zalihe robe“ (robna skladišta: dokumenti, kalkulacije, nivelacije, popis, skladišta, robni izvještaji) i „Materijal i oprema“ (ostala skladišta: dokumenti, trebovanja, kalkulacije, popis, skladišta, materijalni izvještaji). Kontekst modula: A_RM_MODUL (ROB/MAT) iz linkova menija; skladište se pamti posebno po modulu (A_SKL_ROB / A_SKL_MAT); aplikacijski proces RM_KONTEKST.
+- Izbor skladišta: oznaka u traci naslova (ikona, „Skladište“, šifra · naziv) sa padajućom listom i pretragom (procesi RM_SKLADISTA / RM_SKLADISTE_IZBOR); nudi samo skladišta modula dodijeljena korisniku. Izlazne fakture rade sa robnim skladištima.
+- Podmeni sa vrstama dokumenata uklonjen iz navigacije (dokumenti se biraju na listi dugmetom „Novi dokument“).
+- Dokument (p331): stavke kao kod ulaznih faktura (tabela u sekciji forme, bez trake za pretragu), kolone Na skladištu, Jed. cijena, Iznos, ukupno ispod tabele. Ulaz: cijenu unosi korisnik (predlaže se prosječna). Izlaz: jedinična prosječna cijena na datum dokumenta (samo zaključeni dokumenti), količina najviše do raspoloživog.
+- Količine (RM_DOKUMENT_PKG.stanje / obradjeno / raspolozivo): stanje = svi ulazi i izlazi; obrađeno = zaključeni; raspoloživo = zaključeni ulazi − svi izlazi (nezaključeni izlaz odmah smanjuje raspoloživo). Stanje skladišta (p313) prikazuje sve tri količine, prosječnu cijenu i vrijednost (zaključeno).
+- Forma skladišta: „Skladište je aktivno“ u posebnom redu; tip skladišta nudi samo tipove modula; novo skladište dobija tip modula.
+- SQL ponovo: 12_rm_pkg.sql, 13_rm_views.sql, 14_rm_skladista.sql.
+- Ispravka R3: linkovi menija modula više ne prenose A_RM_MODUL u URL-u (greška checksum-a na stranicama 300–372); modul se postavlja AJAX-om (proces RM_MODUL, finRm.idi) pa se otvara stranica bez argumenata.
+
+## Zalihe robe / Materijal i oprema – korak R4 (01.11.2026)
+- Dokument (p331): šira forma (xl), sekcije „Dokument“ i „Dobavljač i ugovor“ jedna pored druge; polje „Opis / komentar“ (višeredno); polje Ugovor (ugovori izabranog dobavljača) – i na listi dokumenata; iz stavki uklonjena Napomena.
+- Količine i cijene: unos prihvata 23.45 i 23,45 (tačka ili zarez), prikaz bez prateće tačke (23 umjesto 23.); isto pravilo u JS (finIg.num) i u bazi (kuf_pkg.broj).
+- Zatvaranje bilo kog modalnog prozora (snimi, obriši, zatvori, X) ponovo učitava stranicu ispod – na svim stranicama modula (300–372, 311, 331).
+- Serijski brojevi (p337): odvojeni „Barkod čitač ili ručni unos“ (Enter odmah snima broj i osvježava listu, AJAX) i „QR kod“ (opseg, dugme); brisanje broja osvježava samo listu i brojač; zatvaranje osvježava dokument.
+- Pregled modula (p300) i KPI (dashboard_pkg.kpi_zalihe): samo skladišta korisnika u tom modulu (VW_RM_KORISNIK_SKLADISTA); naslov modula u putanji (&A_RM_NAZIV.).
+- Skladište: zaduženi radnik je obavezan.
+- SQL ponovo, ovim redom: 12_rm_pkg.sql, 13_rm_views.sql, 14_rm_skladista.sql, 03_dashboard_pkg.sql.
+
+## Korak R5 – serijski brojevi i cijena (01.11.2026)
+- Serijski brojevi (p337): izbor načina unosa (Barkod / ručno – podrazumijevano, Iz liste raspoloživih – samo izlazni dokumenti, QR kod, Excel / CSV); vidi se samo izabrana sekcija. Lista raspoloživih serijskih brojeva skladišta (VW_RM_SB_STANJE) sa pretragom i dodavanjem jednim klikom; izlaz prima samo raspoložive serijske brojeve (RM_DOKUMENT_PKG.sb_raspoloziv).
+- Zatvaranje unosa serijskih brojeva osvježava samo regione dokumenta (stavke, serijski brojevi), ne cijelu stranicu.
+- Jedinična cijena na stavkama formatirana (hiljade, 2 decimale; više samo kad postoje).
+- SQL ponovo: 12_rm_pkg.sql, 13_rm_views.sql.
+
+## Kalkulacija – korak R6 (01.11.2026)
+- Odluke: nabavnu vrijednost stavke čine raspoređeni iznosi svih faktura i zavisnih troškova; kalkulacija obuhvata više prijemnica istog skladišta; datum kalkulacije nije datum prijemnice (ne smije biti prije); cjenovnik se ne mijenja (cijene se samo čitaju za prijedlog); otključavanje samo administrator, samo materijalna skladišta i dok roba nije izdata; štampa u sljedećoj fazi; uvoz/JCI i naknadni trošak se ne rade.
+- 15_rm_kalkulacija.sql: kolone KALKULACIJE (skladiste_id, status, nacin_raspodjele), KALKULACIJA_KUF (iznos, sa_pdv), KALKULACIJA_STAVKE (osnovica, ručni iznos, nabavna vrijednost/cijena, marža, VPC, PDV, MPC, ulazna cijena prijemnice), tabela KALKULACIJA_TROSKOVI, brojač KALK, paket RM_KALKULACIJA_PKG, view-ovi VW_RM_KALKULACIJE, VW_RM_KALK_FAKTURE, VW_RM_KALKULACIJA_STAVKE.
+- Fakture: samo zaključene UF sa raspoloživim iznosom; firma van PDV sistema raspoređuje sa PDV-om, firma u PDV sistemu bira; jedna faktura na više kalkulacija (iskorišteni udio). Zavisni troškovi bez fakture (opis, iznos).
+- Raspodjela: po vrijednosti (podrazumijevano), po količini, linearno, ručno; razlika zaokruživanja na stavku najveće vrijednosti.
+- Robna skladišta: marža %, VPC, MPC (MPC = VPC + PDV artikla), međusobni preračun u formi, upozorenje na negativnu maržu; prijedlog VPC/MPC iz važećeg cjenovnika skladišta.
+- Zaključavanje: cijene u prijemnice (nabavna; za robna i marža, PDV, MPC), prijemnice zaključene (roba raspoloživa). Otključavanje vraća ulazne cijene prijemnica.
+- p340 lista (prijemnice, fakture, nabavna vrijednost, status) i p341 forma: osnovni podaci + pregled iznosa (fakture, troškovi, za raspodjelu, raspoređeno, razlika), tabovi Prijemnice / Fakture i troškovi / Stavke i cijene.
+
+## Kalkulacija – korak R7: raspodjela po fakturi / trošku (01.11.2026)
+- Način raspodjele se bira za svaku fakturu i svaki zavisni trošak (po vrijednosti, po količini, linearno, ručno); svaki izvor se posebno raspoređuje na stavke prijemnica (nova tabela KALKULACIJA_RASPODJELA). Nabavna vrijednost / cijena stavke = zbir raspodjela svih izvora; na tabu cijena se vidi i sastav nabavne cijene po izvorima.
+- Dodavanje ili uklanjanje prijemnice, dodavanje fakture ili troška poništava dotadašnju raspodjelu; izmjena iznosa, PDV opcije ili načina raspodjele poništava raspodjelu tog izvora.
+- Novi tab „Raspodjela“: lista izvora sa stanjem (raspoređeno / nije), dugme „Raspodijeli fakture i troškove“, tabela raspodjele izabranog izvora (ručni unos iznosa kod ručne raspodjele).
+- Tab „Nabavne i prodajne cijene“: marža, VPC i MPC se unose tek kad su svi izvori raspoređeni; zaključavanje provjerava da je svaki izvor potpuno raspoređen.
+- SQL ponovo: 15_rm_kalkulacija.sql.
+
+## Kalkulacija – korak R8: nova forma (01.11.2026)
+- Kalkulacija više nije modalni prozor nego obična stranica (dugmad u traci naslova, povratak na listu).
+- Prvi tab „Prijemnice, fakture i troškovi“ radi i za novu kalkulaciju: prijemnice se biraju u tabeli (kao fakture), zajedno sa fakturama i troškovima, pa se sve snima odjednom.
+- Tab „Raspodjela“: lijevo fakture i troškovi sa obojenim indikatorom (zeleno = raspoređeno, žuto = nije); klik učitava samo panel raspodjele (AJAX) sa izabranim načinom raspodjele; raspodjela po artiklima (zbirno iz svih prijemnica, iznos se dijeli na redove prijemnica srazmjerno količini); dugme „Sačuvaj raspodjelu“ čuva bez ponovnog učitavanja; „Raspodijeli sve automatske“.
+- Tab „Nabavne i prodajne cijene“: cijene po artiklu (bez prijemnice i vrijednosti prijemnice), kolone nabavna cijena pa nabavna vrijednost; poseban region „Sastav nabavne cijene“ – klik na artikal prikazuje fakture/troškove i raspoređene iznose.
+- SQL ponovo: 15_rm_kalkulacija.sql (RM_KALKULACIJA_PKG: izvor_json, snimi_raspodjelu_izvora, rasporedi_json, stanje_json, snimi_prijemnicu_red, snimi_cijene_artikla).
+
+## Test Zalihe robe / Materijal i oprema – korak R9 (01.11.2026)
+Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti (nova prijemnica, stavke sa decimalnom količinom i cijenom, ugovor, snimanje), serijski brojevi (barkod + Enter, duplikat, zatvaranje), skladišta i stanje, kalkulacija od kreiranja do zaključavanja (prijemnica + faktura, raspodjela po vrijednosti, marža/VPC/MPC, sastav nabavne cijene). Računica raspodjele i iznosa provjerena (npr. 23,45 × 1.234,50 = 28.949,03; 1.000 KM po vrijednosti → 935,38 + 64,62).
+
+**Pronađene greške i ispravke**
+- **Poslovne poruke iz tabela (IG) bile su skrivene:** greška iz paketa pri snimanju stavki (npr. „Prijemnica je uključena u kalkulaciju…“, „Unesite jediničnu cijenu…“) prikazivala se kao „Greška CORP-… kontaktirajte administratora“. Procesi redova (stavke dokumenta, sve tabele kalkulacije) sada prikazuju tekst greške; neočekivane greške i dalje idu u log sa referentnim brojem.
+- **Bočni meni:** u modulu Materijal i oprema bila je označena stavka Zalihe robe (oba modula dijele stranice) – podmeni je sada vidljiv samo za aktivni modul. Na podstranicama (stanje skladišta, forma kalkulacije, dokument, serijski brojevi) meni je gubio označenu stavku – stavke menija su sada aktivne i za svoje podstranice.
+- **Bočni meni – kontrast:** otvoreni podmeni je imao zelenu podlogu teme sa tamnim tekstom; podloga uklonjena (svijetli meni kao ostatak aplikacije).
+- **Naslov kartice pregledača** na pregledu modula: „Zalihe robe“ / „Materijal i oprema“ umjesto „Robno - materijalno“.
+- **Poruke na engleskom:** „… must have some value“, „1 error has occurred“ → „… je obavezno polje.“, „Pronađena je 1 greška.“, „Broj grešaka: %0.“
+- **Stavke dokumenta:** na ulaznom dokumentu cijena se više ne popunjava sa „0.00“ (polje ostaje prazno za unos; prijedlog samo kad postoji prosječna cijena); unesena cijena se formatira (12,4 → 12.40).
+- **Ugovor** na dokumentu izgledao je kao onemogućeno (sivo) polje – izbor iz liste sada ima bijelu pozadinu.
+- **Serijski brojevi:** u izboru načina unosa bio je prazan prvi segment – uklonjen.
+- **Stanje skladišta (313):** količine su se prikazivale sa tačkom na kraju („3.“) – sada 3 decimale („3.000“).
+- **Lista skladišta:** „u sastavu: -“ više se ne prikazuje kad skladište nema nadređeno.
+- **Kalkulacija – cijene:** tabela cijena preko cijele širine (ranije su VPC/PDV/MPC bili skriveni horizontalnim skrolom), sastav nabavne cijene ispod; VPC iz marže zaokružen na 2 decimale, marža na 2 decimale (ranije se poslije snimanja prikazivalo 19.9999 umjesto 20).
+
+**Provjereno – radi ispravno:** KPI i grafikon po modulu i skladištima korisnika, izbor skladišta, lista dokumenata i meni „Novi dokument“, decimalna količina, iznos i zbir, osvježavanje liste po zatvaranju forme, serijski brojevi (Enter, duplikat odbijen, osvježavanje regiona), stanje/obrađeno/raspoloživo, kreiranje kalkulacije u prvom koraku, KUF sa raspoloživim iznosom i PDV opcijom, raspodjela i indikatori, zaključavanje (prijemnica zaključena, vrijednost zaliha 1.000 KM).
+
+**Napomene (nije greška):** filteri liste dokumenata se pojavljuju kao prijedlozi pri kucanju u pretragu (isto kao ostale liste); izbor modula i skladišta je vezan za sesiju – dva taba iste prijave dijele izabrani modul.
+
+**SQL ponovo:** `14_rm_skladista.sql` (view VW_RM_SKLADISTA – nadređeno), `03_dashboard_pkg.sql` (poslije 14, kao i ranije), `15_rm_kalkulacija.sql` (zaokruživanje marže/VPC). Zatim import aplikacije.

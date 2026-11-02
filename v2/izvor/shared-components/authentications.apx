@@ -1,0 +1,14 @@
+authentication erp-users (
+    name: ERP Users
+    type: custom
+    settings {
+        authFunctionName: core.korisnik_pkg.authenticate
+    }
+    sessionSharing {
+        type: workspaceSharing
+    }
+    subscription {
+        master: @/200/erp-users
+    }
+)
+

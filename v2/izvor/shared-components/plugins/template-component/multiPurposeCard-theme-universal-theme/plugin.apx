@@ -1,0 +1,90 @@
+plugin multiPurposeCard (
+    name: MULTI PURPOSE CARD
+    staticId: THEME_220$MULTI_PURPOSE_CARD
+    theme: @universal-theme
+    templateComponent {
+        availableAs: [
+            partial
+            report
+        ]
+        partial:
+            ```html
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <style>
+            .grid-container {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+              grid-gap: 10px;
+              padding: 3px;
+            }
+            
+            @media (max-width: 600px) {
+                  /* For screens 600px and below */
+                  .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                  }
+                }
+            
+            .grid-item {
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              
+              color: black;
+              border:solid 1px #BORDER_COLOR#;
+              box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+              padding: 10px;
+              text-align: center;
+              border-radius: #RADIUS#%;
+              transition: transform 0.4s ease-in-out;
+            }
+            
+            .grid-item:hover {
+              transform: translateY(-5px); 
+              transform: rotate3d(5, 5, 2, -360deg);
+              box-shadow: rgba(50, 100, 40, 0.3) 30px 50px 25px -40px, rgba(50, 100, 40, 0.1) 0px 25px 30px 0px;
+            }
+            
+            
+            .grid-item i {
+              font-size: 25px;
+              margin-bottom: 8px;
+            }
+            
+            .grid-item p {
+              margin: 0;
+            }
+            </style>
+            </head>
+            <body>
+            
+              <a href="#LINK#">
+                <div class="grid-item" style="background-color: #BG_COLOR#;">
+                  <img src="#IMG#" width="#IMG_WIDTH#" height="#IMG_HEIGHT#">
+                  <b>#TITLE#</b>
+                  <p>#SUB_TITLE#</p>
+                </div>
+              </a>    
+            
+            </body>
+            </html>
+            
+            ```
+        reportBody: <div class="grid-container"> #APEX$ROWS#</div>
+        reportRow: <span #APEX$ROW_IDENTIFICATION#>#APEX$PARTIAL#</span>
+        numberOfLazyLoadingSkeletons: 3
+    }
+    component {
+        standardAttributes: regionTemplateAttr
+    }
+    information {
+        version: 1.0
+    }
+    subscription {
+        master: @/220/templateComponent/multiPurposeCard/universal-theme
+    }
+)
+

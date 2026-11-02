@@ -1,0 +1,70 @@
+page 85 (
+    name: Download UIO
+    alias: DOWNLOAD-UIO1
+    title: Download UIO
+    pageGroup: @uio-dokumentacija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    pageItem P85_DOWNLOAD_TOKEN (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P85_PORESKI_PERIOD (
+        type: hidden
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    pageItem P85_TYPE (
+        type: hidden
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    process generate-csv-zip (
+        name: Generate CSV / ZIP
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                csv_pkg.create_csv (
+                    p_type           => :P85_TYPE,
+                    p_ooj_id         => :APP_OOJ_ID,
+                    p_pdv_period     => :P85_PORESKI_PERIOD,
+                    p_download_token => :P85_DOWNLOAD_TOKEN
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 181965368194053305
+        }
+        serverSideCondition {
+            type: request=Value
+            value: DOWNLOAD_UIO
+        }
+    )
+
+)
+

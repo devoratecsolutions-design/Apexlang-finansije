@@ -1,0 +1,3875 @@
+page 52 (
+    name: Stavke fakture
+    alias: STAVKE-FAKTURE
+    title: Stavke fakture
+    pageGroup: @fakture-računi
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    css {
+        inline:
+            ```css
+            .t-MediaList-item:hover {
+                --ut-medialist-item-background-color: var(--ut-medialist-item-hover-background-color, var(--ut-component-highlight-background-color));
+            }
+            
+            .a-CardView:hover {
+                background-color: var(--ut-medialist-item-hover-background-color, var(--ut-component-highlight-background-color));
+            }
+            
+            /* Popup LOV – širine kolona: 1 Tip | 2 Šifra | 3 Naziv | 4 Cijena */
+            .a-PopupLOV-dialog col[data-idx="1"] { width: 80px  !important; }
+            .a-PopupLOV-dialog col[data-idx="2"] { width: 80px  !important; }
+            .a-PopupLOV-dialog col[data-idx="3"] { width: auto  !important; }  /* Naziv dobija ostatak */
+            .a-PopupLOV-dialog col[data-idx="4"] { width: 110px !important;  text-align: right;}
+            
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            U narednom koraku definišu se stavke fakturisanja.</br> 
+            Ukoliko se fakturiše nova stavka, koja nije postojeća u sistemu, 
+            moguće je iz ovog dijaloga definisati novu stavku.</br>
+            Na stavci se definiše, da li je stavka oporeziva (pun iznos PDV-a) kao i cijena stavke.</br>
+            U tabu <b><em>"Najčešće stavke"</em></b> svakom korisniku biće prikazane one stavke koje se u 
+            radu najčešće koriste. </br>
+            Na ovaj način obezbjeđena je intuitivnost i brzina unosa – dovoljno je da kliknete na karticu 
+            željene stavke, nakon čega će se ta stavka automatski pojaviti u izvještaju ispod.</br>
+            Ukoliko želite da izvršite izmjenu podataka za neku od stavki, 
+            potrebno je da kliknete na dugme <b><em>"Ažuriraj"</em></b>, nakon čega se prebacujete na tab <b><em>"Unos"</em></b>. 
+            Tamo možete promijeniti podatke koje želite za odabranu stavku, a proces završavate 
+            klikom na dugme <b><em>"Ažuriraj stavku"</em></b>. </br>
+            U tabu <b><em>"Lista stavki"</em></b> prikazuje se pregled svih dostupnih stavki.</br> 
+            Na dnu izvještaja nalaze se opcije Previous i Next, koje vam omogućavaju da lako 
+            pretražujete i pronalazite željenu stavku. </br>
+            Klikom na stavku iz liste, ona se automatski unosi u izvještaj ispod. </br>
+            Nakon što je stavka dodata, dovoljno je da kliknete na dugme <b><em>"Sljedeći korak"</em></b> kako biste nastavili proces.
+            Nakon što se unese odabarana stavka i količina fakturisanja sistem povlači podatke sa stavke. 
+            Definisanu cijenu, ukoliko je potrebno, moguće je ručno izmijeniti.
+            ```
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @stavke
+            slot: wizardSubRegions
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    region lista (
+        name: "Lista "
+        type: staticContent
+        layout {
+            sequence: 40
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: never
+        }
+    )
+
+    region lista-report (
+        name: Lista Report
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    null as list_title,
+                    null as list_text,
+                    null as list_badge,
+                    null as link,
+                
+                    sc.naziv,
+                    CASE
+                        WHEN c.tip = 'M' THEN
+                            'MPC: ' || to_char(cs.mpc, '999G999G999G999G990D00') || ' KM'
+                        ELSE
+                            'VPC: ' || to_char(cs.vpc, '999G999G999G999G990D00') || ' KM'
+                    END AS  cijena,
+                
+                    'padding-left-none' AS link_class,
+                    'data-id=' || sc.id AS link_attr
+                FROM skladista sk
+                JOIN cjenovnici c on sk.cjenovnik_id=c.id 
+                JOIN cjenovnik_stavke cs  on c.id=cs.cjenovnik_id and cs.valid='Y'
+                JOIN sec_stavke sc on cs.stavka_id=sc.id 
+                WHERE sc.ooj_id = :APP_OOJ_ID
+                AND sc.valid = 'Y'
+                AND sk.id=:A_SKLADISTE_ID
+                    
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @lista
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: [
+                fin-list
+                fin-list--media
+            ]
+        }
+        reportLayout {
+            numberOfRows: 5
+        }
+        componentAppearance {
+            template: @media-list
+            templateOptions: [
+                t-MediaList--showDesc
+                t-MediaList--stack
+                t-MediaList--iconsRounded
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        messages {
+            whenNoDataFound:
+                ```
+                Nema pronađenih podataka.
+                
+                ```
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Cijena
+            }
+            layout {
+                sequence: 90
+            }
+        )
+
+        column LINK (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Link
+            }
+            layout {
+                sequence: 40
+            }
+        )
+
+        column LINK_ATTR (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Link Attr
+            }
+            layout {
+                sequence: 70
+            }
+        )
+
+        column LINK_CLASS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Link Class
+            }
+            layout {
+                sequence: 80
+            }
+        )
+
+        column LIST_BADGE (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: List Badge
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column LIST_TEXT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: List Text
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression: #CIJENA#
+            }
+        )
+
+        column LIST_TITLE (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: List Title
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                htmlExpression: #NAZIV#
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 50
+            }
+        )
+
+    )
+
+    region lista-stavki (
+        name: Lista stavki
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    seq_id,
+                    c001 as stavka_id,
+                    s.sifra as stavka_sifra,
+                    s.naziv as stavka_naziv,
+                    c002 as jm_id,
+                    jm.naziv as jm_naziv,
+                    c003 as kolicina,
+                    to_char(c004, '999G999G999G999G990D00') as cijena,
+                    to_char(c004/:P52_KURS, '999G999G999G999G990D00') as cijena_u_valuti,
+                    c005 as rabat,
+                    c006 as pdv,
+                    to_char(c007, '999G999G999G999G990D00') as iznos,
+                    to_char(c007/:P52_KURS, '999G999G999G999G990D00') as iznos_u_valuti_bez_pdv,
+                    to_char(c008, '999G999G999G999G990D00') as iznos_pdv,
+                    to_char(c008/:P52_KURS, '999G999G999G999G990D00') as iznos_u_valuti_sa_pdv,
+                    c010 as PDV_INDIKATOR
+                FROM
+                    apex_collections c
+                    LEFT JOIN sec_stavke s ON c.c001 = s.id
+                    LEFT JOIN sif.acc_jedinice_mjere jm ON c.c002 = jm.id
+                WHERE
+                    collection_name = 'FAKTURA_STAVKE'
+                ORDER BY
+                    seq_id ASC
+                ```
+        }
+        layout {
+            sequence: 60
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        advanced {
+            htmlDomId: stavke_list
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema pronađenih podataka.
+        }
+
+        column CIJENA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: center
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column CIJENA_U_VALUTI (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Cijena (&P52_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column DERIVED$01 (
+            reportColumnQueryId: 11
+            derivedColumn: Y
+            heading {
+                heading: Obriši
+            }
+            layout {
+                sequence: 170
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="t-Button t-Button--noLabel t-Button--icon t-Button--link t-Button--hot delete-stavka" data-id=#SEQ_ID#>
+                        <span class="t-Icon fa fa-trash-o"></span>
+                    </span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: center
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column IZNOS_PDV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: center
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column IZNOS_U_VALUTI_BEZ_PDV (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV (&P52_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column IZNOS_U_VALUTI_SA_PDV (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV  (&P52_VALUTA_SIFRA.)
+                alignment: center
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P52_VALUTA_NAZIV
+                value: KM
+            }
+        )
+
+        column JM_ID (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 30
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: center
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: PDV %
+                alignment: center
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PDV_INDIKATOR (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 160
+            }
+        )
+
+        column RABAT (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Rabat %
+                alignment: center
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SEQ_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Ažuriraj
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 52
+                    items: {
+                        P52_SEQ_ID: #SEQ_ID#
+                    }
+                    request: editStavka
+                }
+                linkText: <span aria-label="Ažuriraj" class="fa fa-edit" title="Ažuriraj"></span>
+            }
+            sorting {
+                sortable: false
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 20
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Naziv stavke
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Šifra stavke
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region najčešće-stavke-cards (
+        name: Najčešće stavke - Cards
+        title: Najčešće stavke
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    s.id,
+                    s.sifra || ': ' || s.naziv AS naziv,
+                    to_char(stavke_pkg.get_stavka_cijena(:P51_CJENOVNIK_ID, s.id, null), '999G999G999G999G990D00') || ' KM' as cijena
+                FROM 
+                    sec_stavke s
+                    JOIN (
+                        SELECT 
+                            stavka_id
+                        FROM 
+                            vw_kif_stavke
+                        WHERE
+                            ooj_id = :APP_OOJ_ID
+                        GROUP BY 
+                            stavka_id
+                        ORDER BY 
+                            COUNT(*) DESC
+                        FETCH FIRST 10 ROWS ONLY
+                    ) k ON k.stavka_id = s.id
+                WHERE
+                    s.valid = 'Y'
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--removeHeader js-removeLandmark
+                t-CardsRegion--styleC
+                margin-top-md
+                margin-bottom-md
+            ]
+        }
+        advanced {
+            htmlDomId: stavke-cards
+            customAttributes: data-id="#ID#"
+            regionDisplaySelector: true
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 
+                    1
+                
+                FROM 
+                    sec_stavke s
+                    JOIN (
+                        SELECT 
+                            stavka_id
+                        FROM 
+                            vw_kif_stavke
+                        WHERE
+                            ooj_id = :APP_OOJ_ID
+                        GROUP BY 
+                            stavka_id
+                        ORDER BY 
+                            COUNT(*) DESC
+                        FETCH FIRST 10 ROWS ONLY
+                    ) k ON k.stavka_id = s.id
+                WHERE 1=0
+                ```
+        }
+        componentAppearance {
+            gridColumns: 5
+        }
+        card {
+            primaryKeyColumn1: ID
+        }
+        subtitle {
+            column: NAZIV
+            cssClasses: u-bold
+        }
+        secondaryBody {
+            column: CIJENA
+        }
+    )
+
+    region rds (
+        name: RDS
+        type: regionDisplaySelector
+        layout {
+            sequence: 10
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-top-md
+            ]
+        }
+        settings {
+            includeShowAll: false
+            rememberSelection: bySession
+        }
+    )
+
+    region search (
+        name: Search
+        type: smartFilters
+        source {
+            filteredRegion: @lista-report
+        }
+        layout {
+            sequence: 10
+            parentRegion: @lista
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P52_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+    )
+
+    region stavka-wrapper (
+        name: Stavka Wrapper
+        type: staticContent
+        layout {
+            sequence: 120
+            parentRegion: @unos
+            slot: regionBody
+        }
+        appearance {
+            template: @item-container
+            templateOptions: [
+                #DEFAULT#
+                t-ItemContainer--alignStretch
+            ]
+        }
+    )
+
+    region stavke (
+        name: Stavke
+        type: list
+        source {
+            list: @wizard-izlazna-faktura
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @wizard-container
+            templateOptions: [
+                #DEFAULT#
+                t-Wizard--hideStepsXSmall
+            ]
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    region stavke-wrapper (
+        name: Stavke - Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @stavke
+            slot: wizardSubRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region ukupno (
+        name: Ukupno
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    CASE
+                        WHEN :P52_VALUTA_ID = 1 THEN 
+                            sif.spell_pkg.spell_serbian_number (coalesce(round(sum(c008), 2), 0), 'Y', 'J', :P52_VALUTA_NAZIV)
+                        ELSE
+                            sif.spell_pkg.spell_serbian_number (coalesce(round(sum(sif.acc_pkg.convert_bam(
+                                p_valuta_id => :P52_VALUTA_ID,
+                                p_bam => c008
+                            )), 2), 0), 'Y', 'J', :P52_VALUTA_NAZIV)
+                    END as slovima,
+                    sum(c008) as ukupno_pdv,
+                    sum(c007) as ukupno,
+                
+                    sum(sif.acc_pkg.convert_bam(
+                        p_valuta_id => :P52_VALUTA_ID,
+                        p_bam => c008
+                    )) as ukupno_valuta
+                FROM
+                    apex_collections
+                WHERE
+                    collection_name = 'FAKTURA_STAVKE'
+                ```
+        }
+        layout {
+            sequence: 70
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            htmlDomId: stavke_ukupno
+        }
+        componentAppearance {
+            template: @contextual-info
+            templateOptions: [
+                #DEFAULT#
+                t-ContextualInfo-item--stacked
+                t-ContextualInfo-label--stacked
+                t-Report--hideNoPagination
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+
+        column SLOVIMA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Slovima
+            }
+            layout {
+                sequence: 30
+            }
+        )
+
+        column UKUPNO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Iznos bez PDV
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #UKUPNO# KM
+            }
+        )
+
+        column UKUPNO_PDV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Iznos sa PDV
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #UKUPNO_PDV# KM
+            }
+        )
+
+        column UKUPNO_VALUTA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: U valuti
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: 999G999G999G999G990D00
+            }
+            columnFormatting {
+                htmlExpression: #UKUPNO_VALUTA# &P52_VALUTA_NAZIV.
+            }
+            serverSideCondition {
+                type: item!=value
+                item: P52_VALUTA_ID
+                value: 1
+            }
+        )
+
+    )
+
+    region unos (
+        name: Unos
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @stavke-wrapper
+            slot: regionBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+    )
+
+    pageItem P52_CIJENA (
+        type: numberField
+        label {
+            label: Jedinična cijena
+            alignment: left
+        }
+        layout {
+            sequence: 190
+            region: @unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+    )
+
+    pageItem P52_CIJENA_VALUTA (
+        type: numberField
+        label {
+            label: Jedinična cijena  (&P52_VALUTA_SIFRA.)
+            alignment: left
+        }
+        layout {
+            sequence: 200
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P52_VALUTA_NAZIV
+            value: KM
+        }
+    )
+
+    pageItem P52_IZNOS (
+        type: displayOnly
+        label {
+            label: Iznos bez PDV
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 220
+            region: @unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P52_IZNOS_PDV (
+        type: displayOnly
+        label {
+            label: Iznos sa PDV
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 240
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P52_IZNOS_VALUTA (
+        type: displayOnly
+        label {
+            label: Iznos bez PDV  (&P52_VALUTA_SIFRA.)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 230
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P52_VALUTA_NAZIV
+            value: KM
+        }
+    )
+
+    pageItem P52_IZNOS_VALUTA_PDV (
+        type: displayOnly
+        label {
+            label: Iznos sa PDV  (&P52_VALUTA_SIFRA.)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 250
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P52_VALUTA_NAZIV
+            value: KM
+        }
+    )
+
+    pageItem P52_JM_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 150
+            region: @unos
+            slot: regionBody
+        }
+        security {
+            encryptSessionState: false
+        }
+    )
+
+    pageItem P52_JM_NAZIV (
+        type: displayOnly
+        label {
+            label: Jedinica mjere
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 160
+            region: @unos
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P52_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P51_VRSTA_FAKTURE_SIFRA IN ('AV', 'AVZ')
+        }
+    )
+
+    pageItem P52_KURS (
+        type: hidden
+        layout {
+            sequence: 70
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_PDV (
+        type: displayOnly
+        label {
+            label: PDV ( % )
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 210
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P52_PDV_HIDDEN (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 180
+            region: @unos
+            slot: regionBody
+        }
+        help {
+            helpText:
+                ```html
+                <div>
+                <ol>
+                    <li>A1 -Izlazna faktura kupcu sa IB om <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>A2 -Interna faktura.. utrošena sredsva i treba pdv <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>A4 -Manjak <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>A5 -Polog pazara… <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>A6 -Usluge od inostranih dobavljača <b><em>-polja PDV prijave: 51</b></em></li>
+                    <li>A7 -PDV na primljeni avans <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>B1 -Fakture kupcu bez IB a <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>B4 -Avans kupaca bez IB-a <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>C1 -Stavka koja je oslobodjena plaćanja <b><em>-polja PDV prijave:13</b></em></li>
+                    <li>C2 -Kamata u računu <b><em>-polja PDV prijave:-</b></em></li>
+                    <li>C4 -PDV za prodaju vozila gdje se nije koristo odbitni pdv <b><em>-polja PDV prijave:-</b></em></li>
+                    <li>C5 -Fakture za nato- nemaju pdv <b><em>-polja PDV prijave:11</b></em></li>
+                    <li>D1 -KO za obveznike <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>D2 -KO neobveznicima <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>I1 -Izvoz <b><em>-polja PDV prijave:12</b></em></li>
+                </ol>
+                </div>
+                ```
+        }
+    )
+
+    pageItem P52_PDV_INDIKATOR_DOKUMENT_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_PDV_INDIKATOR_DOKUMENT_VRIJEDNOST (
+        type: hidden
+        layout {
+            sequence: 40
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_PDV_INDIKATOR_ID (
+        type: selectOne
+        label {
+            label: PDV Indikator
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @uio-td-pi-53
+        }
+        layout {
+            sequence: 170
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: item=value
+            item: APP_PDV_SISTEM
+            value: Y
+        }
+        help {
+            helpText:
+                ```html
+                <div>
+                <ol>
+                    <li>A1 -Izlazna faktura kupcu sa IB om <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>A2 -Interna faktura.. utrošena sredsva i treba pdv <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>A4 -Manjak <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>A5 -Polog pazara… <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>A6 -Usluge od inostranih dobavljača <b><em>-polja PDV prijave: 51</b></em></li>
+                    <li>A7 -PDV na primljeni avans <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>B1 -Fakture kupcu bez IB a <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>B4 -Avans kupaca bez IB-a <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>C1 -Stavka koja je oslobodjena plaćanja <b><em>-polja PDV prijave:13</b></em></li>
+                    <li>C2 -Kamata u računu <b><em>-polja PDV prijave:-</b></em></li>
+                    <li>C4 -PDV za prodaju vozila gdje se nije koristo odbitni pdv <b><em>-polja PDV prijave:-</b></em></li>
+                    <li>C5 -Fakture za nato- nemaju pdv <b><em>-polja PDV prijave:11</b></em></li>
+                    <li>D1 -KO za obveznike <b><em>-polja PDV prijave:11,51</b></em></li>
+                    <li>D2 -KO neobveznicima <b><em>-polja PDV prijave:11,51 i (32 ili 33 ili 34)</b></em></li>
+                    <li>I1 -Izvoz <b><em>-polja PDV prijave:12</b></em></li>
+                </ol>
+                </div>
+                ```
+        }
+    )
+
+    pageItem P52_POM (
+        type: hidden
+        layout {
+            sequence: 50
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_RABAT (
+        type: numberField
+        label {
+            label: Rabat ( % )
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @unos
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P51_VRSTA_FAKTURE_SIFRA IN ('AV', 'AVZ')
+        }
+    )
+
+    pageItem P52_SEQ_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 110
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_STAVKA_ID (
+        type: popupLov
+        label {
+            label: Stavka
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 400
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-if-stavke
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @stavka-wrapper
+            slot: item
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P52_TIP_CIJENE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 100
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_TIP_DOKUMENTA_ID (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_VALUTA_ID (
+        type: hidden
+        layout {
+            sequence: 60
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_VALUTA_NAZIV (
+        type: hidden
+        layout {
+            sequence: 80
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    pageItem P52_VALUTA_SIFRA (
+        type: hidden
+        layout {
+            sequence: 90
+            region: @unos
+            slot: regionBody
+        }
+    )
+
+    button add (
+        buttonName: ADD
+        label: Dodaj stavku
+        layout {
+            sequence: 270
+            region: @unos
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--simple
+                t-Button--iconLeft
+                t-Button--stretch
+                t-Button--padTop
+                t-Button--gapBottom
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                declare 
+                v_pom number;
+                begin
+                
+                
+                
+                    IF UPPER(:P51_VRSTA_FAKTURE_SIFRA)  IN ('KO','KZ','AVZ')  THEN 
+                
+                        return  FALSE;
+                
+                    ELSIF UPPER(:P51_VRSTA_FAKTURE_SIFRA)  IN ('AV') THEN
+                
+                        select count(*)
+                        into v_pom
+                        from  apex_collections c
+                        where collection_name = 'FAKTURA_STAVKE';
+                        
+                        if v_pom>0 then
+                            return false;
+                        end if;
+                
+                
+                    END IF;
+                
+                    return true;
+                end;
+                ```
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @stavke
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 50
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button new-stavka (
+        buttonName: NEW_STAVKA
+        label: Nova stavka
+        layout {
+            sequence: 10
+            region: @stavka-wrapper
+            slot: buttonEnd
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 22
+                clearCache: 22
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P51_VRSTA_FAKTURE_ID not in (3,4)
+        }
+    )
+
+    button next (
+        buttonName: NEXT_2
+        label: Sljedeći korak
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button next-2 (
+        buttonName: NEXT_1
+        label: Sljedeći korak
+        layout {
+            sequence: 30
+            region: @stavke
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @stavke
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 51
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button update (
+        buttonName: UPDATE
+        label: Ažuriraj stavku
+        layout {
+            sequence: 260
+            region: @unos
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--large
+                t-Button--iconLeft
+                t-Button--stretch
+                t-Button--padTop
+                t-Button--gapBottom
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    dynamicAction add-to-collection (
+        name: Add to collection
+        execution {
+            sequence: 60
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @add
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P52_STAVKA_ID') !== "" && 
+                $v('P52_JM_ID') !== "" &&
+                $v('P52_KOLICINA') !== "" && 
+                $v('P52_CIJENA') !== "" && 
+                $v('P52_RABAT') !== "" && 
+                $v('P52_PDV') !== "" && 
+                $v('P52_IZNOS') !== "" && 
+                $v('P52_IZNOS_PDV') !== "" && 
+                ($v('P52_PDV_INDIKATOR_ID') !== "" || $v('P52_PDV_HIDDEN') !== "")
+                ```
+        }
+
+        action native-alert (
+            action: alert
+            settings {
+                title: Nedovoljno podataka
+                message: Morate popuniti sva označena polja.
+                icon: fa-exclamation-circle-o
+                cssClasses: u-color-9
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-clear (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: [
+                    P52_STAVKA_ID
+                    P52_JM_ID
+                    P52_CIJENA
+                ]
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+        action native-clear_1 (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: P52_KOLICINA
+            }
+            execution {
+                sequence: 60
+                fireOnInit: false
+            }
+            serverSideCondition {
+                type: itemIsNotInColonDelimitedList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: AV,AVZ
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_tip_stavke_id NUMBER;
+                        l_pom number;
+                    BEGIN
+                    
+                    
+                        if :P52_KOLICINA<=0 then 
+                             raise_application_error(-20001, 'Količina mora biti veća od 0.');
+                        end if;
+                    
+                        SELECT
+                            tip_stavke_id
+                        INTO
+                            l_tip_stavke_id
+                        FROM
+                            sec_stavke
+                        WHERE
+                            id = :P52_STAVKA_ID;
+                    
+                        /*IF l_tip_stavke_id = 1 THEN
+                            IF stavke_pkg.get_stavka_stanje_kolicina (
+                                p_stavka_id    => :P52_STAVKA_ID,
+                                p_skladiste_id => :A_SKLADISTE_ID
+                            ) < :P52_KOLICINA THEN
+                                raise_application_error(-20001, 'Nemate tu količinu na stanju.');
+                            END IF;
+                        END IF;*/
+                    
+                        select count(1)
+                        into   l_pom
+                        from   apex_collections
+                        where  collection_name = 'FAKTURA_STAVKE'
+                        and    c001             = :P52_STAVKA_ID;
+                    
+                        if l_pom>0 then 
+                    
+                            raise_application_error(-20001, 'Već ste dodali tu stavku u fakturu.');
+                    
+                        else 
+                    
+                            apex_collection.add_member (
+                            p_collection_name => 'FAKTURA_STAVKE',
+                            p_c001            => :P52_STAVKA_ID,
+                            p_c002            => :P52_JM_ID,
+                            p_c003            => :P52_KOLICINA,
+                            p_c004            => to_number(:P52_CIJENA,'999G999G999G999G990D00'),
+                            p_c005            => :P52_RABAT,
+                            p_c006            => :P52_PDV,
+                            p_c007            => to_number(:P52_IZNOS,'999G999G999G999G990D00'),
+                            p_c008            => to_number(:P52_IZNOS_PDV,'999G999G999G999G990D00'),
+                            p_c009            => :P52_TIP_CIJENE,
+                            p_c010            => :P52_PDV_INDIKATOR_ID
+                        );
+                    
+                        end if;
+                    
+                    
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_JM_ID
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_PDV_INDIKATOR_DOKUMENT_ID
+                ]
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 80
+                fireOnInit: false
+            }
+        )
+
+        action native-show-2 (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 90
+                fireOnInit: false
+            }
+        )
+
+        action show-button (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next
+            }
+            execution {
+                sequence: 110
+                fireOnInit: false
+            }
+        )
+
+        action show-button-2 (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next-2
+            }
+            execution {
+                sequence: 100
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction clicked-cards (
+        name: Clicked - Cards
+        execution {
+            sequence: 120
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .a-CardView-item
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    var stavka_id = $(this.triggeringElement).data('id');
+                    
+                    // Call PL/SQL to add to collection
+                    apex.server.process(
+                        "ADD_TO_COLLECTION",   
+                        { x01: stavka_id }, 
+                        {
+                            success: function(pData) {
+                                console.log("Added to collection:", stavka_id);
+                    
+                                apex.region("stavke_ukupno").refresh();
+                                apex.region("stavke_list").refresh();
+                            }
+                        }
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+        action native-show-2 (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 60
+                fireOnInit: false
+            }
+        )
+
+        action show-button (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next-2
+            }
+            execution {
+                sequence: 70
+                fireOnInit: false
+            }
+        )
+
+        action show-button-2 (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next
+            }
+            execution {
+                sequence: 80
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction clicked-delete-stavka (
+        name: Clicked - Delete stavka
+        execution {
+            sequence: 140
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .delete-stavka
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    var stavka_id = $(this.triggeringElement).data('id');
+                    
+                    // Call PL/SQL to add to collection
+                    apex.server.process(
+                        "DELETE_FROM_COLLECTION",   
+                        { x01: stavka_id }, 
+                        {
+                            success: function(pData) {
+                                console.log("Removed fromed collection:", stavka_id);
+                    
+                                apex.region("stavke_ukupno").refresh();
+                                apex.region("stavke_list").refresh();
+                            }
+                        }
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction clicked-medialist (
+        name: Clicked - Medialist
+        execution {
+            sequence: 130
+            eventScope: dynamic
+        }
+        when {
+            event: click
+            selectionType: jQuerySelector
+            jquerySelector: .t-MediaList-itemWrap
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    var stavka_id = $(this.triggeringElement).data('id');
+                    
+                    // Call PL/SQL to add to collection
+                    apex.server.process(
+                        "ADD_TO_COLLECTION",   
+                        { x01: stavka_id }, 
+                        {
+                            success: function(pData) {
+                                console.log("Added to collection:", stavka_id);
+                    
+                                apex.region("stavke_ukupno").refresh();
+                                apex.region("stavke_list").refresh();
+                            }
+                        }
+                    );
+                    
+                    ```
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-show-2 (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+
+        action show-button (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next-2
+            }
+            execution {
+                sequence: 60
+                fireOnInit: false
+            }
+        )
+
+        action show-button-2 (
+            name: Show Button
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @next
+            }
+            execution {
+                sequence: 70
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-set-item (
+        name: Dialog Closed - Set item
+        execution {
+            sequence: 90
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @new-stavka
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: items
+                items: P52_STAVKA_ID
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction edit-stavke-toggle-buttons (
+        name: Edit Stavke - Toggle Buttons
+        execution {
+            sequence: 110
+        }
+        when {
+            event: ready
+        }
+        clientSideCondition {
+            type: item!=value
+            item: P52_SEQ_ID
+            value: 0
+        }
+
+        action hide-add (
+            name: Hide - Add
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @add
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+        action hide-update (
+            name: Hide - Update
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @update
+            }
+            execution {
+                sequence: 20
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action native-add-class (
+            action: addClass
+            settings {
+                class: apex_disabled
+            }
+            affectedElements {
+                selectionType: items
+                items: P52_STAVKA_ID
+            }
+            execution {
+                sequence: 30
+            }
+        )
+
+        action native-remove-class (
+            action: removeClass
+            settings {
+                class: apex_disabled
+            }
+            affectedElements {
+                selectionType: items
+                items: P52_STAVKA_ID
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action show-add (
+            name: Show - Add
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @add
+            }
+            execution {
+                sequence: 30
+                fireWhenEventResultIs: false
+            }
+        )
+
+        action show-update (
+            name: Show - Update
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @update
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction enable-disable-items (
+        name: Enable/Disable Items
+        execution {
+            sequence: 150
+        }
+        when {
+            event: ready
+        }
+
+        action disable-on-domaća-valuta (
+            name: Disable on domaća valuta
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P52_CIJENA_VALUTA
+            }
+            execution {
+                sequence: 30
+            }
+            serverSideCondition {
+                type: functionBody
+                plsqlFunctionBody:
+                    ```plsql
+                    if :P52_VALUTA_SIFRA='BAM' and :P51_VRSTA_DOKUMENTA_SIFRA IN ('AV','AVZ') then 
+                        return true;
+                    else 
+                        return false;
+                    end if;
+                    ```
+            }
+        )
+
+        action disable-on-redovne-fakture (
+            name: Disable on Redovne fakture
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: [
+                    P52_CIJENA
+                    P52_CIJENA_VALUTA
+                ]
+            }
+            execution {
+                sequence: 20
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P51_VRSTA_FAKTURE_SIFRA NOT IN ('AV', 'AVZ')
+            }
+        )
+
+        action disable-on-strana-valuta (
+            name: Disable on strana valuta
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P52_CIJENA
+            }
+            execution {
+                sequence: 40
+            }
+            serverSideCondition {
+                type: functionBody
+                plsqlFunctionBody:
+                    ```plsql
+                    if :P52_VALUTA_SIFRA!='BAM' and :P51_VRSTA_FAKTURE_SIFRA in ('AV','AVZ') then 
+                        return true;
+                    else 
+                        return false;
+                    end if;
+                    ```
+            }
+        )
+
+        action native-disable (
+            name: "Disable on Avans "
+            action: disable
+            affectedElements {
+                selectionType: items
+                items: P52_PDV_INDIKATOR_ID
+            }
+            execution {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P51_VRSTA_FAKTURE_SIFRA IN ('AV', 'AVZ') AND :APP_PDV_SISTEM='Y'
+            }
+        )
+
+    )
+
+    dynamicAction get-iznos (
+        name: Get iznos
+        execution {
+            sequence: 70
+        }
+        when {
+            selectionType: items
+            items: [
+                P52_CIJENA
+                P52_PDV
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: $v('P52_KOLICINA') !== "" && $v('P52_CIJENA') !== "" && $v('P52_RABAT') !== "" && $v('P52_PDV') !== ""
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_cijena NUMBER;
+                        l_cijena_valuta number;
+                        l_jed_cijena number;
+                        l_jed_cijena_valuta number;
+                    BEGIN
+                        l_jed_cijena:=to_number(:P52_CIJENA,'999G999G999G999G990D00');
+                        
+                        l_cijena :=l_jed_cijena - (l_jed_cijena * :P52_RABAT / 100);
+                    
+                        :P52_IZNOS := round(:P52_KOLICINA * l_cijena,2);
+                        :P52_IZNOS_PDV := round(:P52_IZNOS + (:P52_IZNOS * :P52_PDV / 100),2);
+                    
+                    
+                        :P52_IZNOS:=to_char(:P52_IZNOS,'999G999G999G999G990D00');
+                        :P52_IZNOS_PDV:=to_char(:P52_IZNOS_PDV,'999G999G999G999G990D00');
+                    
+                        
+                        
+                        if :P52_VALUTA_NAZIV !='KM' then
+                    
+                            l_jed_cijena_valuta:= to_number(:P52_CIJENA,'999G999G999G999G990D00')/:P52_KURS;
+                            l_cijena :=l_jed_cijena_valuta - (l_jed_cijena_valuta * :P52_RABAT / 100);
+                    
+                            :P52_IZNOS_VALUTA := round(:P52_KOLICINA * l_cijena,2);
+                            :P52_IZNOS_VALUTA_PDV := round(:P52_IZNOS_VALUTA + (:P52_IZNOS_VALUTA * :P52_PDV / 100),2);
+                            :P52_IZNOS_VALUTA:=to_char(:P52_IZNOS_VALUTA,'999G999G999G999G990D00');
+                            :P52_IZNOS_VALUTA_PDV:=to_char(:P52_IZNOS_VALUTA_PDV,'999G999G999G999G990D00');
+                    
+                        end if;
+                    
+                    
+                        
+                    EXCEPTION
+                        WHEN others THEN
+                            raise_application_error(-20001, 'Pogrešan unos jedinične cijene.');
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_CIJENA_VALUTA
+                ]
+                itemsToReturn: [
+                    P52_IZNOS
+                    P52_IZNOS_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_VALUTA_PDV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P52_IZNOS := null;
+                    :P52_IZNOS_PDV := null;
+                    :P52_IZNOS_VALUTA := null;
+                    :P52_IZNOS_VALUTA_PDV := null;
+                    ```
+                itemsToSubmit: [
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                ]
+                itemsToReturn: [
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_IZNOS_VALUTA_PDV
+                    P52_IZNOS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-iznos_1 (
+        name: Get iznos
+        execution {
+            sequence: 50
+        }
+        when {
+            event: keyup
+            selectionType: items
+            items: [
+                P52_KOLICINA
+                P52_RABAT
+            ]
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: $v('P52_KOLICINA') !== "" && $v('P52_CIJENA') !== "" && $v('P52_RABAT') !== "" && $v('P52_PDV') !== ""
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_cijena NUMBER;
+                        l_jed_cijena number;
+                        l_jed_cijena_valuta number;
+                    BEGIN
+                        l_jed_cijena:=to_number(:P52_CIJENA,'999G999G999G999G990D00');
+                        l_cijena := l_jed_cijena - (l_jed_cijena * :P52_RABAT / 100);
+                    
+                        :P52_IZNOS := round(:P52_KOLICINA * l_cijena,2);
+                        :P52_IZNOS_PDV := round(:P52_IZNOS + (:P52_IZNOS * :P52_PDV / 100),2);
+                    
+                        :P52_IZNOS:=to_char(:P52_IZNOS,'999G999G999G999G990D00');
+                        :P52_IZNOS_PDV:=to_char(:P52_IZNOS_PDV,'999G999G999G999G990D00');
+                    
+                    
+                         
+                        if :P52_VALUTA_NAZIV !='KM' then
+                    
+                            l_jed_cijena_valuta:= to_number(:P52_CIJENA,'999G999G999G999G990D00')/:P52_KURS;
+                            l_cijena :=l_jed_cijena_valuta - (l_jed_cijena_valuta * :P52_RABAT / 100);
+                    
+                            :P52_IZNOS_VALUTA := round(:P52_KOLICINA * l_cijena,2);
+                            :P52_IZNOS_VALUTA_PDV := round(:P52_IZNOS_VALUTA + (:P52_IZNOS_VALUTA * :P52_PDV / 100),2);
+                            :P52_IZNOS_VALUTA:=to_char(:P52_IZNOS_VALUTA,'999G999G999G999G990D00');
+                            :P52_IZNOS_VALUTA_PDV:=to_char(:P52_IZNOS_VALUTA_PDV,'999G999G999G999G990D00');
+                    
+                        end if;
+                    
+                    EXCEPTION
+                        WHEN others THEN
+                            raise_application_error(-20001, 'Pogrešan unos jedinične cijene.');
+                    END;
+                    
+                    
+                    ```
+                itemsToSubmit: [
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_CIJENA_VALUTA
+                ]
+                itemsToReturn: [
+                    P52_IZNOS
+                    P52_IZNOS_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_VALUTA_PDV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P52_IZNOS := null;
+                    :P52_IZNOS_PDV := null;
+                    :P52_IZNOS_VALUTA := null;
+                    :P52_IZNOS_VALUTA_PDV := null;
+                    ```
+                itemsToSubmit: [
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                ]
+                itemsToReturn: [
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_IZNOS_VALUTA_PDV
+                    P52_IZNOS
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jedinica-mjere (
+        name: Get jedinica mjere
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P52_STAVKA_ID
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: "$v('P52_STAVKA_ID') !== \"\" "
+        }
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    select sc.jm_id 
+                    into :P52_JM_ID
+                    from accounting.sec_stavke sc 
+                    where sc.id=:P52_STAVKA_ID;
+                    ```
+                itemsToSubmit: P52_STAVKA_ID
+                itemsToReturn: P52_JM_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jedinicna-cijena (
+        name: Get jedinicna cijena
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P52_STAVKA_ID
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression: "$v('P52_STAVKA_ID') !== \"\" "
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P52_CIJENA := null;
+                    :P52_CIJENA_VALUTA:=null;
+                    ```
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_KOLICINA
+                    P52_CIJENA
+                ]
+                itemsToReturn: [
+                    P52_CIJENA
+                    P52_CIJENA_VALUTA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-execute-plsql-code-2 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    :P52_CIJENA := stavke_pkg.get_stavka_cijena (
+                        p_cjenovnik_id  => :P51_CJENOVNIK,
+                        p_stavka_id     => :P52_STAVKA_ID,
+                        p_tip_cijene    => :P52_TIP_CIJENE
+                    
+                    );
+                    
+                     :P52_CIJENA_VALUTA:=:P52_CIJENA/:P52_KURS;
+                    
+                    
+                     --:P52_CIJENA := to_char(:P52_CIJENA,'999G999G999G999G990D00');
+                     --:P52_CIJENA_VALUTA := to_char(:P52_CIJENA_VALUTA,'999G999G999G999G990D00');
+                    
+                    
+                     
+                    ```
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_TIP_CIJENE
+                    P52_CIJENA
+                ]
+                itemsToReturn: [
+                    P52_CIJENA
+                    P52_CIJENA_VALUTA
+                    P52_PDV
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jedinična-cijana-km (
+        name: Get jedinična cijana KM
+        execution {
+            sequence: 80
+        }
+        when {
+            selectionType: items
+            items: P52_CIJENA_VALUTA
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: ":P51_VRSTA_FAKTURE_SIFRA IN ('AV', 'AVZ') "
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_cijena NUMBER;
+                        l_cijena_valuta number;
+                        l_jed_cijena number;
+                        l_jed_cijena_valuta number;
+                    BEGIN
+                    
+                        
+                        :P52_CIJENA:=round(to_number(:P52_CIJENA_VALUTA,'999G999G999G999G990D00')*:P52_KURS,2);
+                    
+                        
+                    EXCEPTION
+                    
+                        WHEN others THEN
+                            raise_application_error(-20001, 'Pogrešan unos jedinične cijene.');
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P52_CIJENA_VALUTA
+                    P52_KURS
+                ]
+                itemsToReturn: P52_CIJENA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-jm-naziv (
+        name: Get JM naziv
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P52_JM_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select jm.naziv
+                    from sif.acc_jedinice_mjere jm 
+                    where jm.id=:P52_JM_ID
+                    ```
+                itemsToSubmit: P52_JM_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P52_JM_NAZIV
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    dynamicAction hide-on-load (
+        name: Hide on load
+        execution {
+            sequence: 100
+        }
+        when {
+            event: ready
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM apex_collections
+                WHERE
+                    collection_name = 'FAKTURA_STAVKE'
+                ```
+        }
+
+        action hide-button (
+            name: Hide Button
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @next
+            }
+            execution {
+                sequence: 40
+            }
+        )
+
+        action hide-button-2 (
+            name: Hide Button
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @next-2
+            }
+            execution {
+                sequence: 30
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+        action native-hide-2 (
+            action: hide
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 20
+            }
+        )
+
+    )
+
+    dynamicAction set-pdv-on-change (
+        name: Set PDV - on change
+        execution {
+            sequence: 60
+        }
+        when {
+            selectionType: items
+            items: P52_PDV_HIDDEN
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :APP_PDV_SISTEM='Y'  then 
+                
+                    return true;
+                
+                else 
+                
+                    return false;
+                
+                end if ;
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P52_PDV := :P52_PDV_HIDDEN;
+                itemsToSubmit: [
+                    P52_PDV
+                    P52_PDV_HIDDEN
+                ]
+                itemsToReturn: P52_PDV
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-stavka-get-pdv (
+        name: Setup stavka - Get PDV
+        execution {
+            sequence: 50
+        }
+        when {
+            selectionType: items
+            items: [
+                P52_STAVKA_ID
+                P52_PDV_INDIKATOR_ID
+            ]
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P52_STAVKA_ID
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :APP_PDV_SISTEM='Y'  then 
+                
+                    return true;
+                
+                else 
+                
+                    return false;
+                
+                end if ;
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_pdv_indikator   VARCHAR2(1);
+                        l_pdv_indikator_id NUMBER;
+                    BEGIN
+                    
+                    
+                        select p.vrijednost
+                        into :P52_PDV_HIDDEN
+                        from sif.acc_pdv_indikatori p 
+                        where p.id=:P52_PDV_INDIKATOR_ID;
+                    
+                    END;
+                    ```
+                itemsToSubmit: P52_PDV_INDIKATOR_ID
+                itemsToReturn: P52_PDV_HIDDEN
+                showProcessing: true
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction setup-stavka-get-pdv-with-indikator (
+        name: Setup stavka - Get PDV with indikator
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P52_STAVKA_ID
+        }
+        clientSideCondition {
+            type: itemIsNotNull
+            item: P52_STAVKA_ID
+        }
+        serverSideCondition {
+            type: functionBody
+            plsqlFunctionBody:
+                ```plsql
+                IF :APP_PDV_SISTEM='Y'  then 
+                
+                    return true;
+                
+                else 
+                
+                    return false;
+                
+                end if ;
+                ```
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_pdv_indikator   VARCHAR2(1);
+                        l_pdv_indikator_id NUMBER;
+                    BEGIN
+                    
+                    
+                        IF :P52_PDV_INDIKATOR_DOKUMENT_VRIJEDNOST=17 and :P51_VRSTA_FAKTURE_SIFRA!='AV' THEN 
+                    
+                    
+                            stavke_pkg.get_stavka (
+                                p_id               => :P52_STAVKA_ID,
+                                p_jm_id            => :P52_JM_ID,
+                                p_pdv_indikator    => l_pdv_indikator,
+                                p_pdv_indikator_id => l_pdv_indikator_id
+                            );
+                    
+                            IF l_pdv_indikator = 'Y' THEN
+                                :P52_PDV_INDIKATOR_ID := :P52_PDV_INDIKATOR_DOKUMENT_ID;
+                            ELSE
+                                :P52_PDV_INDIKATOR_ID := l_pdv_indikator_id;
+                            END IF;
+                    
+                        ELSIF :P51_VRSTA_FAKTURE_SIFRA='AV' then 
+                            :P52_PDV_INDIKATOR_ID := :P52_PDV_INDIKATOR_DOKUMENT_ID;
+                        end if;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_JM_ID
+                    P52_PDV_INDIKATOR_DOKUMENT_ID
+                ]
+                itemsToReturn: P52_PDV_INDIKATOR_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction submit-item (
+        name: Submit item
+        execution {
+            sequence: 30
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @add
+        }
+
+        action native-execute-plsql-code_1 (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: select null into :P52_POM from dual;
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_KOLICINA
+                    P52_RABAT
+                ]
+                itemsToReturn: P52_POM
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    console.log({
+                        P52_STAVKA_ID:         $v('P52_STAVKA_ID'),
+                        P52_JM_ID:             $v('P52_JM_ID'),
+                        P52_KOLICINA:          $v('P52_KOLICINA'),
+                        P52_CIJENA:            $v('P52_CIJENA'),
+                        P52_RABAT:             $v('P52_RABAT'),
+                        P52_PDV:               $v('P52_PDV'),
+                        P52_IZNOS:             $v('P52_IZNOS'),
+                        P52_IZNOS_PDV:         $v('P52_IZNOS_PDV'),
+                        P52_PDV_INDIKATOR_ID:  $v('P52_PDV_INDIKATOR_ID'),
+                        P52_PDV_HIDDEN:        $v('P52_PDV_HIDDEN')
+                    });
+                    ```
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction update-collection (
+        name: Update collection
+        execution {
+            sequence: 70
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @update
+        }
+        clientSideCondition {
+            type: jsExpression
+            javaScriptExpression:
+                ```javascript-browser
+                $v('P52_STAVKA_ID') !== "" && 
+                $v('P52_JM_ID') !== "" &&
+                $v('P52_KOLICINA') !== "" && 
+                $v('P52_CIJENA') !== "" && 
+                $v('P52_RABAT') !== "" && 
+                $v('P52_PDV') !== "" && 
+                $v('P52_IZNOS') !== "" && 
+                $v('P52_IZNOS_PDV') !== "" && 
+                ($v('P52_PDV_INDIKATOR_ID') !== "" || $v('P52_PDV_HIDDEN') !== "")
+                ```
+        }
+
+        action native-alert (
+            action: alert
+            settings {
+                title: Nedovoljno podataka
+                message: Morate popuniti sva označena polja.
+                icon: fa-exclamation-circle-o
+                cssClasses: u-color-9
+            }
+            execution {
+                sequence: 10
+                fireWhenEventResultIs: false
+                fireOnInit: false
+            }
+        )
+
+        action native-clear (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: [
+                    P52_STAVKA_ID
+                    P52_JM_ID
+                    P52_CIJENA
+                ]
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action native-clear_1_1 (
+            action: clear
+            affectedElements {
+                selectionType: items
+                items: P52_KOLICINA
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+            serverSideCondition {
+                type: itemIsNotInColonDelimitedList
+                item: P51_VRSTA_FAKTURE_SIFRA
+                list: AV,AVZ
+            }
+        )
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    DECLARE
+                        l_tip_stavke_id NUMBER;
+                        l_pom number;
+                    BEGIN
+                        SELECT
+                            tip_stavke_id
+                        INTO
+                            l_tip_stavke_id
+                        FROM
+                            sec_stavke
+                        WHERE
+                            id = :P52_STAVKA_ID;
+                    
+                        /*IF l_tip_stavke_id = 1 THEN
+                            IF stavke_pkg.get_stavka_stanje_kolicina (
+                                p_stavka_id    => :P52_STAVKA_ID,
+                                p_skladiste_id => :A_SKLADISTE_ID
+                            ) < :P52_KOLICINA THEN
+                                raise_application_error(-20001, 'Nemate tu količinu na stanju.');
+                            END IF;
+                        END IF;*/
+                    
+                    
+                        select count(1)
+                        into   l_pom
+                        from   apex_collections
+                        where  collection_name = 'FAKTURA_STAVKE'
+                        and    c001             = :P52_STAVKA_ID
+                        and    seq_id!=:P52_SEQ_ID;
+                    
+                        if l_pom>0 then 
+                    
+                            raise_application_error(-20001, 'Već ste dodali tu stavku u fakturu.');
+                    
+                        else 
+                    
+                            apex_collection.update_member (
+                                p_collection_name => 'FAKTURA_STAVKE',
+                                p_seq             => :P52_SEQ_ID,
+                                p_c001            => :P52_STAVKA_ID,
+                                p_c002            => :P52_JM_ID,
+                                p_c003            => :P52_KOLICINA,
+                                p_c004            => to_number(:P52_CIJENA,'999G999G999G999G990D00'),
+                                p_c005            => :P52_RABAT,
+                                p_c006            => :P52_PDV,
+                                p_c007            => to_number(:P52_IZNOS,'999G999G999G999G990D00'),
+                                p_c008            => to_number(:P52_IZNOS_PDV,'999G999G999G999G990D00'),
+                                p_c009            => :P52_TIP_CIJENE,
+                                p_c010            => :P52_PDV_INDIKATOR_ID
+                            );
+                    
+                        end if;
+                    
+                        :P52_SEQ_ID := null;
+                    END;
+                    ```
+                itemsToSubmit: [
+                    P52_STAVKA_ID
+                    P52_JM_ID
+                    P52_KOLICINA
+                    P52_CIJENA
+                    P52_RABAT
+                    P52_PDV
+                    P52_IZNOS_VALUTA
+                    P52_IZNOS_PDV
+                    P52_SEQ_ID
+                ]
+                itemsToReturn: P52_SEQ_ID
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-hide (
+            action: hide
+            affectedElements {
+                selectionType: button
+                button: @update
+            }
+            execution {
+                sequence: 90
+            }
+        )
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action native-show (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @ukupno
+            }
+            execution {
+                sequence: 60
+                fireOnInit: false
+            }
+        )
+
+        action native-show-2 (
+            action: show
+            affectedElements {
+                selectionType: region
+                region: @lista-stavki
+            }
+            execution {
+                sequence: 70
+                fireOnInit: false
+            }
+        )
+
+        action native-show_1 (
+            action: show
+            affectedElements {
+                selectionType: button
+                button: @add
+            }
+            execution {
+                sequence: 100
+            }
+        )
+
+    )
+
+    computation p52-pdv-indikator-dokument-sifra (
+        itemName: P52_PDV_INDIKATOR_DOKUMENT_VRIJEDNOST
+        execution {
+            sequence: 30
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                select p.vrijednost
+                from sif.acc_pdv_indikatori p 
+                where p.id=:P52_PDV_INDIKATOR_DOKUMENT_ID
+                ```
+        }
+    )
+
+    computation p52-valuta-naziv (
+        itemName: P52_VALUTA_NAZIV
+        execution {
+            sequence: 10
+            point: afterHeader
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv
+                FROM
+                    sif.acc_valute
+                WHERE
+                    id = :P52_VALUTA_ID
+                ```
+        }
+    )
+
+    computation p52-valuta-sifra (
+        itemName: P52_VALUTA_SIFRA
+        execution {
+            sequence: 20
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT
+                    sifra
+                FROM
+                    sif.acc_valute
+                WHERE
+                    id = :P52_VALUTA_ID
+                ```
+        }
+    )
+
+    process add-to-collection (
+        name: ADD_TO_COLLECTION
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_stavka_id NUMBER := apex_application.g_x01;
+                    l_tip_stavke_id NUMBER;
+                    l_jm_id  NUMBER;
+                    l_cijena NUMBER;
+                
+                    l_pdv    NUMBER;
+                    l_pdv_indikator   VARCHAR2(1);
+                    l_pdv_indikator_id NUMBER;
+                
+                    l_seq_id NUMBER;
+                    l_kolicina NUMBER;
+                    l_iznos NUMBER;
+                    l_iznos_pdv NUMBER;
+                BEGIN
+                    SELECT
+                        tip_stavke_id
+                    INTO
+                        l_tip_stavke_id
+                    FROM
+                        sec_stavke
+                    WHERE
+                        id = l_stavka_id;
+                
+                    IF :APP_TIP_PREDUZETNIKA_SIFRA IN ('msp', 'vsp_prosto') THEN
+                        stavke_pkg.get_stavka (
+                            p_id               => l_stavka_id,
+                            p_jm_id            => l_jm_id,
+                            p_pdv_indikator    => l_pdv_indikator,
+                            p_pdv_indikator_id => l_pdv_indikator_id
+                        );
+                
+                    ELSIF :APP_TIP_PREDUZETNIKA_SIFRA IN ('doo', 'ad', 'vsp_dvojno') THEN
+                        stavke_pkg.get_stavka (
+                            p_id               => l_stavka_id,
+                            p_jm_id            => l_jm_id,
+                            p_pdv_indikator    => l_pdv_indikator,
+                            p_pdv_indikator_id => l_pdv_indikator_id
+                        );
+                
+                        IF l_pdv_indikator = 'Y' THEN
+                            l_pdv_indikator_id := :P51_PDV_INDIKATOR_ID;
+                        END IF;
+                        
+                        sif.acc_pkg.get_pdv_indikator (
+                            p_id         => l_pdv_indikator_id,
+                            p_vrijednost => l_pdv
+                        );
+                    END IF;
+                
+                    l_cijena := stavke_pkg.get_stavka_cijena (
+                        p_id         => l_stavka_id,
+                        p_tip_cijene => :P52_TIP_CIJENE
+                    );
+                
+                    SELECT
+                        seq_id,
+                        c003,
+                        c007,
+                        c008
+                    INTO
+                        l_seq_id,
+                        l_kolicina,
+                        l_iznos,
+                        l_iznos_pdv
+                    FROM
+                        apex_collections
+                    WHERE
+                        collection_name = 'FAKTURA_STAVKE'
+                        AND c001 = l_stavka_id;
+                
+                    IF l_seq_id IS NOT null THEN
+                        l_kolicina := l_kolicina + 1;
+                        l_iznos := l_cijena * l_kolicina;
+                        l_iznos_pdv := round(l_iznos + (l_iznos * l_pdv / 100), 2);
+                        
+                        IF l_tip_stavke_id = 1 THEN
+                            IF stavke_pkg.get_stavka_stanje_kolicina (
+                                p_stavka_id    => l_stavka_id,
+                                p_skladiste_id => :A_SKLADISTE_ID
+                            ) < l_kolicina THEN
+                                raise_application_error(-20001, 'Nemate tu količinu na stanju.');
+                            END IF;
+                        END IF;
+                
+                        apex_collection.update_member (
+                            p_collection_name => 'FAKTURA_STAVKE',
+                            p_seq             => l_seq_id,
+                            p_c001            => l_stavka_id,
+                            p_c002            => l_jm_id,
+                            p_c003            => l_kolicina,
+                            p_c004            => l_cijena,
+                            p_c005            => 0,
+                            p_c006            => l_pdv,
+                            p_c007            => l_iznos,
+                            p_c008            => l_iznos_pdv,
+                            p_c009            => :P52_TIP_CIJENE,
+                            p_c010            => l_pdv_indikator_id
+                        );
+                    END IF;
+                
+                    apex_json.open_object;
+                    apex_json.write('status','success');
+                    apex_json.close_object;
+                
+                    EXCEPTION
+                        WHEN no_data_found THEN
+                            IF l_tip_stavke_id = 1 THEN
+                                IF stavke_pkg.get_stavka_stanje_kolicina (
+                                    p_stavka_id    => l_stavka_id,
+                                    p_skladiste_id => :A_SKLADISTE_ID
+                                ) < l_kolicina THEN
+                                    raise_application_error(-20001, 'Nemate tu količinu na stanju.');
+                                END IF;
+                            END IF;
+                
+                            apex_collection.add_member (
+                                p_collection_name => 'FAKTURA_STAVKE',
+                                p_c001            => l_stavka_id,
+                                p_c002            => l_jm_id,
+                                p_c003            => 1,
+                                p_c004            => l_cijena,
+                                p_c005            => 0,
+                                p_c006            => l_pdv,
+                                p_c007            => l_cijena,
+                                p_c008            => round(l_cijena + (l_cijena * l_pdv / 100), 2),
+                                p_c009            => :P52_TIP_CIJENE,
+                                p_c010            => l_pdv_indikator_id
+                            );
+                            
+                            apex_json.open_object;
+                            apex_json.write('status','success');
+                            apex_json.close_object;
+                    
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: ajaxCallback
+        }
+        advanced {
+            executionMappingIdentifier: 186399848551573801
+        }
+    )
+
+    process delete-from-collection (
+        name: DELETE_FROM_COLLECTION
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                apex_collection.delete_member (
+                    p_collection_name => 'FAKTURA_STAVKE',
+                    p_seq             => apex_application.g_x01
+                );
+                
+                apex_json.open_object;
+                apex_json.write('status','success');
+                apex_json.close_object;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
+        }
+        advanced {
+            executionMappingIdentifier: 186472460852598503
+        }
+    )
+
+    process edit-stavka (
+        name: Edit stavka
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                IF :P52_SEQ_ID!=0 THEN
+                    SELECT
+                        c001,
+                        c002,
+                        c003,
+                        c004,
+                        round(c004/:P51_KURS,2),
+                        c005,
+                        c006,
+                        c007,
+                        round(c007/:P51_KURS,2),
+                        c008,
+                        round(c008/:P51_KURS,2)
+                    INTO
+                        :P52_STAVKA_ID,
+                        :P52_JM_ID,
+                        :P52_KOLICINA,
+                        :P52_CIJENA,
+                        :P52_CIJENA_VALUTA,
+                        :P52_RABAT,
+                        :P52_PDV,
+                        :P52_IZNOS,
+                        :P52_IZNOS_VALUTA, 
+                        :P52_IZNOS_PDV,
+                        :P52_IZNOS_VALUTA_PDV
+                    FROM
+                    	apex_collections
+                    WHERE
+                    	collection_name = 'FAKTURA_STAVKE'
+                    	AND seq_id = :P52_SEQ_ID;
+                
+                
+                        :P52_IZNOS_VALUTA:=to_char(:P52_IZNOS_VALUTA,'999G999G999G999G990D00');
+                        :P52_IZNOS_VALUTA_PDV:=to_char(:P52_IZNOS_VALUTA_PDV,'999G999G999G999G990D00');
+                        :P52_IZNOS:=to_char(:P52_IZNOS,'999G999G999G999G990D00');
+                        :P52_IZNOS_PDV:=to_char(:P52_IZNOS_PDV,'999G999G999G999G990D00');
+                
+                
+                
+                else
+                
+                        :P52_STAVKA_ID:=null;
+                        :P52_JM_ID:=null;
+                        :P52_KOLICINA:=null;
+                        :P52_CIJENA:=null;
+                        :P52_CIJENA_VALUTA:=null;
+                        :P52_RABAT:=null;
+                        :P52_PDV:=null;
+                        :P52_IZNOS:=null;
+                        :P52_IZNOS_PDV:=null;
+                        :P52_IZNOS_VALUTA:=null;
+                        :P52_IZNOS_VALUTA_PDV:=null;
+                
+                        if :APP_PDV_SISTEM!='Y' then
+                
+                            :P52_PDV:=0;
+                
+                        else 
+                
+                            :P52_PDV:=null;
+                
+                        end if;
+                
+                        if :P51_VRSTA_FAKTURE_SIFRA in ('AV','AVZ') then 
+                            :P52_KOLICINA:=1;
+                        end if;
+                
+                
+                
+                END IF;
+                
+                
+                
+                apex_collection.create_or_truncate_collection (
+                            p_collection_name => 'FAKTURA_AVANS');
+                
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeRegions
+        }
+        advanced {
+            executionMappingIdentifier: 157194973591764769
+        }
+    )
+
+    process insert-to-collection (
+        name: Insert to collection
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                IF :P51_VRSTA_FAKTURE_SIFRA = 'KO' THEN -- Knjizno odobrenje
+                    apex_collection.delete_collection (
+                        p_collection_name => 'FAKTURA_STAVKE'
+                    );
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'FAKTURA_STAVKE',
+                        p_query           => '
+                            SELECT
+                                stavka_id,
+                                jm_id,
+                                kolicina,
+                                cijena * (-1),
+                                rabat,
+                                pdv * (-1),
+                                iznos * (-1),
+                                (iznos + (iznos * pdv / 100)) * (-1) as iznos_pdv,
+                                tip_cijene,
+                                pdv_indikator_id
+                            FROM
+                                vw_kif_stavke
+                            WHERE
+                                kif_id = ' || :P51_FAKTURA_ID || '
+                    ');
+                ELSIF :P51_VRSTA_FAKTURE_SIFRA = 'KZ' THEN -- Knjizno zaduzenje
+                    apex_collection.delete_collection (
+                        p_collection_name => 'FAKTURA_STAVKE'
+                    );
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'FAKTURA_STAVKE',
+                        p_query           => '
+                            SELECT
+                                stavka_id,
+                                jm_id,
+                                kolicina,
+                                cijena,
+                                rabat,
+                                pdv,
+                                iznos,
+                                (iznos + (iznos * pdv / 100)) as iznos_pdv,
+                                tip_cijene,
+                                pdv_indikator_id
+                            FROM
+                                vw_kif_stavke
+                            WHERE
+                                kif_id = ' || :P51_FAKTURA_ID || '
+                    ');
+                
+                ELSIF  :P51_VRSTA_FAKTURE_SIFRA = 'AVZ' THEN -- Knjizno zaduzenje
+                    apex_collection.delete_collection (
+                        p_collection_name => 'FAKTURA_STAVKE'
+                    );
+                
+                    apex_collection.create_collection_from_query (
+                        p_collection_name => 'FAKTURA_STAVKE',
+                        p_query           => '
+                                  select  stavka_id,
+                                            jm_id,
+                                            -kolicina,
+                                            zat.preostalo_osnovica,
+                                            rabat,
+                                            zat.pdv_stopa,
+                                            -zat.preostalo_osnovica,
+                                            -zat.preostalo_pdv,
+                                            tip_cijene,
+                                            pdv_indikator_id
+                                 from vw_kif_stavke ks
+                                 join (select id, 
+                                             pdv_stopa, 
+                                             round((iznos_fakture-zatvoreno_km)/(1+pdv_stopa/100),2) preostalo_osnovica,
+                                             iznos_fakture-zatvoreno_km preostalo_pdv
+                                       from (select k.id, ap.vrijednost as pdv_stopa,
+                                                  k.iznos_fakture,
+                                                  sum(round(sif.acc_pkg.convert_valuta_to_bam(av.id,k.ooj_id,k.datum_fakture,nvl(kz.iznos,0)),2)) as zatvoreno_km
+                                           from accounting.kif k
+                                           join sif.acc_valute av on av.id=k.valuta_id
+                                           join sif.acc_pdv_indikatori ap on ap.id=k.pdv_indikator_id
+                                           left join accounting.kif_avansi_zatvaranje kz on kz.avans_id=k.id 
+                                           where k.id=' || :P51_FAKTURA_ID || '
+                                           group by ap.vrijednost,k.iznos_fakture, k.id)) zat on ks.kif_id=zat.id
+                    ');
+                
+                
+                
+                END IF;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 157194578509764769
+        }
+        serverSideCondition {
+            type: request=Value
+            value: stavke
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 51
+                items: {
+                    P52_SEQ_ID: 0
+                }
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+    branch (
+        name: Go To Page 53
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 53
+                items: {
+                    P53_KURS: &P52_KURS.
+                    P53_AVANS_URACUNAT: N
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: NEXT_1,NEXT_2
+        }
+    )
+
+)
+

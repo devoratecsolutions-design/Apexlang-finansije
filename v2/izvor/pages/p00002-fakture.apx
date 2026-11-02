@@ -1,0 +1,552 @@
+page 2 (
+    name: Fakture - računi
+    alias: FAKTURE
+    title: Fakture - računi
+    pageGroup: @fakture-računi
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @fakture-osnovna
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region fakture-računi (
+        name: Fakture - računi
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pokazatelji (
+        name: Pokazatelji
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                RETURN dashboard_pkg.kpi_fakture(:APP_OOJ_ID, :APP_GODINA);
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region starost-salda (
+        name: Starost potraživanja i obaveza
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartLayout {
+            height: 280
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series potrazivanja (
+            name: Potraživanja
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        b.kategorija,
+                        coalesce(sum(d.otvoreno), 0) AS iznos
+                    FROM
+                        (
+                            SELECT 1 AS rb, 'Nije dospjelo' AS kategorija FROM dual UNION ALL
+                            SELECT 2, '1-30 dana'  FROM dual UNION ALL
+                            SELECT 3, '31-60 dana' FROM dual UNION ALL
+                            SELECT 4, '61-90 dana' FROM dual UNION ALL
+                            SELECT 5, 'Preko 90'   FROM dual
+                        ) b
+                        LEFT JOIN (
+                            SELECT
+                                CASE
+                                    WHEN datum_valute IS NULL OR datum_valute >= trunc(sysdate) THEN 1
+                                    WHEN trunc(sysdate) - datum_valute <= 30 THEN 2
+                                    WHEN trunc(sysdate) - datum_valute <= 60 THEN 3
+                                    WHEN trunc(sysdate) - datum_valute <= 90 THEN 4
+                                    ELSE 5
+                                END AS rb,
+                                otvoreno
+                            FROM
+                                vw_dash_kif
+                            WHERE
+                                ooj_id = :APP_OOJ_ID
+                                AND otvoreno > 0
+                                AND je_predracun = 'N'
+                        ) d ON d.rb = b.rb
+                    GROUP BY
+                        b.rb,
+                        b.kategorija
+                    ORDER BY
+                        b.rb
+                    ```
+            }
+            columnMapping {
+                label: KATEGORIJA
+                value: IZNOS
+            }
+            appearance {
+                color: #2271b1
+            }
+        )
+
+        series obaveze (
+            name: Obaveze
+            execution {
+                sequence: 20
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        b.kategorija,
+                        coalesce(sum(d.otvoreno), 0) AS iznos
+                    FROM
+                        (
+                            SELECT 1 AS rb, 'Nije dospjelo' AS kategorija FROM dual UNION ALL
+                            SELECT 2, '1-30 dana'  FROM dual UNION ALL
+                            SELECT 3, '31-60 dana' FROM dual UNION ALL
+                            SELECT 4, '61-90 dana' FROM dual UNION ALL
+                            SELECT 5, 'Preko 90'   FROM dual
+                        ) b
+                        LEFT JOIN (
+                            SELECT
+                                CASE
+                                    WHEN datum_valute IS NULL OR datum_valute >= trunc(sysdate) THEN 1
+                                    WHEN trunc(sysdate) - datum_valute <= 30 THEN 2
+                                    WHEN trunc(sysdate) - datum_valute <= 60 THEN 3
+                                    WHEN trunc(sysdate) - datum_valute <= 90 THEN 4
+                                    ELSE 5
+                                END AS rb,
+                                otvoreno
+                            FROM
+                                vw_dash_kuf
+                            WHERE
+                                ooj_id = :APP_OOJ_ID
+                                AND otvoreno > 0
+                        ) d ON d.rb = b.rb
+                    GROUP BY
+                        b.rb,
+                        b.kategorija
+                    ORDER BY
+                        b.rb
+                    ```
+            }
+            columnMapping {
+                label: KATEGORIJA
+                value: IZNOS
+            }
+            appearance {
+                color: #c4473a
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region top-kupci (
+        name: Najveći kupci u godini (sa PDV)
+        type: chart
+        layout {
+            sequence: 30
+            slot: body
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-panel
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 280
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Nema podataka za izabrani period.
+        }
+
+        series kupci (
+            name: Fakturisano
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        k.naziv AS kupac,
+                        sum(f.iznos) AS iznos
+                    FROM
+                        vw_dash_kif f
+                        JOIN sec_klijenti k ON k.id = f.klijent_id
+                    WHERE
+                        f.ooj_id = :APP_OOJ_ID
+                        AND f.godina = :APP_GODINA
+                        AND f.je_predracun = 'N'
+                    GROUP BY
+                        k.id,
+                        k.naziv
+                    ORDER BY
+                        2 DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    ```
+            }
+            columnMapping {
+                label: KUPAC
+                value: IZNOS
+            }
+            appearance {
+                color: #00a982
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region dospjela-potrazivanja (
+        name: Dospjela potraživanja po kupcu
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    k.naziv AS kupac,
+                    count(*) AS broj_faktura,
+                    sum(f.otvoreno) AS dug,
+                    trunc(sysdate) - min(f.datum_valute) AS dana
+                FROM
+                    vw_dash_kif f
+                    JOIN sec_klijenti k ON k.id = f.klijent_id
+                WHERE
+                    f.ooj_id = :APP_OOJ_ID
+                    AND f.je_predracun = 'N'
+                    AND f.otvoreno > 0
+                    AND f.datum_valute < trunc(sysdate)
+                GROUP BY
+                    k.id,
+                    k.naziv
+                ORDER BY
+                    dug DESC
+                FETCH FIRST 10 ROWS ONLY
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 10
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema dospjelih potraživanja.
+        }
+
+        column KUPAC (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Kupac
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column BROJ_FAKTURA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Faktura
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DUG (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Dospjeli dug
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DANA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Najstarije
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression: <span class="fin-due">#DANA# d</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region dospjele-obaveze (
+        name: Dospjele obaveze
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    k.naziv AS dobavljac,
+                    f.naziv_fakture AS faktura,
+                    f.otvoreno AS iznos,
+                    trunc(sysdate) - f.datum_valute AS dana
+                FROM
+                    vw_dash_kuf f
+                    LEFT JOIN sec_klijenti k ON k.id = f.klijent_id
+                WHERE
+                    f.ooj_id = :APP_OOJ_ID
+                    AND f.otvoreno > 0
+                    AND f.datum_valute < trunc(sysdate)
+                ORDER BY
+                    f.datum_valute
+                FETCH FIRST 10 ROWS ONLY
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+                t-Region--noPadding
+            ]
+            cssClasses: fin-panel
+        }
+        reportLayout {
+            numberOfRows: 10
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+                t-Report--hideNoPagination
+            ]
+        }
+        messages {
+            whenNoDataFound: Nema dospjelih obaveza.
+        }
+
+        column DOBAVLJAC (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Dobavljač
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column FAKTURA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Faktura
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Za platiti
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DANA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Kasni
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression: <span class="fin-due">#DANA# d</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+)
+

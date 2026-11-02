@@ -1,0 +1,25 @@
+automation os-amortizacija (
+    name: OS_AMORTIZACIJA
+    execution {
+        scheduleExpression: FREQ=MONTHLY;BYMONTHDAY=1;BYHOUR=3;BYMINUTE=0
+        actionsInitiatedOn: always
+    }
+
+    action os-automatska-amortizacija (
+        name: os_automatska_amortizacija
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                    os_automatska_amortizacija;
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+)
+

@@ -1,0 +1,221 @@
+page 20000 (
+    name: Podešavanja
+    alias: PODEŠAVANJA
+    title: Podešavanja
+    pageGroup: @erp-globalne-stranice
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            t-Dialog--noPadding
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    css {
+        inline:
+            ```css
+            #P20000_FOTO {
+                margin-top: 0px;
+                border-radius: 8px;
+            }
+            ```
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText: This page contains a list of settings applicable to the current application user.
+    }
+
+    region mini-box (
+        name: Mini box
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <center>
+                    <span class="u-bold">&P20000_USER.</span>
+                    <br>
+                    <br>
+                    <span class="u-bold">&P20000_USERNAME.</span>
+                    <br>
+                    <span>&P20000_EMAIL.</span>
+                </center>
+                ```
+        }
+        layout {
+            sequence: 20
+            parentRegion: @wrapper
+            slot: regionBody
+            startNewRow: false
+            columnCssClasses: u-flex
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--removeHeader js-removeLandmark
+                t-Region--scrollBody
+                margin-top-none
+                margin-bottom-sm
+            ]
+            cssClasses: u-flex-grow-1
+        }
+        advanced {
+            customAttributes: style="display: flex; justify-content: center; align-items: center"
+        }
+    )
+
+    region settings (
+        name: Settings
+        type: list
+        source {
+            list: @user-settings
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @media-list
+            templateOptions: [
+                #DEFAULT#
+                t-MediaList--showBadges
+                t-MediaList--iconsRounded
+            ]
+        }
+    )
+
+    region user-info (
+        name: User info
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: regionBody
+            columnSpan: 3
+            columnCssClasses: mxw240
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: [
+                margin-md
+                margin-bottom-none
+                u-flex-grow-1
+            ]
+        }
+    )
+
+    pageItem P20000_EMAIL (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @user-info
+            slot: regionBody
+        }
+    )
+
+    pageItem P20000_FOTO (
+        type: displayImage
+        label {
+            alignment: left
+        }
+        settings {
+            basedOn: blobColSql
+            sqlQuery:
+                ```sql
+                select 
+                    foto,
+                    korisnik_naziv as alt_text,
+                    foto_filename,
+                    foto_mimetype
+                from 
+                    core.vw_korisnici
+                WHERE 
+                    id = :APP_USER_ID
+                
+                ```
+        }
+        layout {
+            sequence: 40
+            region: @user-info
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            cssClasses: padding-top-none
+        }
+    )
+
+    pageItem P20000_USER (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @user-info
+            slot: regionBody
+        }
+    )
+
+    pageItem P20000_USERNAME (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @user-info
+            slot: regionBody
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.get_user (
+                    p_id       => :APP_USER_ID,
+                    p_name     => :P20000_USER,
+                    p_email    => :P20000_EMAIL,
+                    p_username => :P20000_USERNAME
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 389201383414599097
+        }
+    )
+
+)
+

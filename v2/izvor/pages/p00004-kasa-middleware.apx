@@ -1,0 +1,48 @@
+page 4 (
+    name: Kasa / Middleware
+    alias: KASA-MIDDLEWARE
+    title: Kasa / Middleware
+    pageGroup: @kasa
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @modal-dialog
+        templateOptions: [
+            #DEFAULT#
+            t-Dialog--noPadding
+        ]
+    }
+    dialog {
+        width: 640
+        height: 680
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region iframe (
+        name: IFrame
+        type: url
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: active
+        }
+        settings {
+            url: http://localhost:5000/api/active
+            iframeAttrs: width="600" height="600"
+        }
+    )
+
+)
+

@@ -1,0 +1,413 @@
+page 272 (
+    name: Osnovno sredstvo / Prenos sredstava
+    alias: OSNOVNO-SREDSTVO-PRENOS-SREDSTAVA
+    title: Osnovno sredstvo / Prenos sredstava
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons-bar (
+        name: Buttons Bar
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P272_DATUM (
+        type: datePicker
+        label {
+            label: Datum knjiženja
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P272_ID (
+        type: displayOnly
+        label {
+            label: Osnovno sredstvo
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sharedComponent
+            lov: @osnovna-sredstva-display
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P272_KNJIZI_YN (
+        type: radioGroup
+        label {
+            label: Proknjiži komplet
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+        help {
+            helpText: Ukoliko je odabrana opcije "NE" u tom slučaju će biti omogućena naknadna korekcija u pregledu "Naloga za knjiženje"
+        }
+    )
+
+    pageItem P272_KOLICINA (
+        type: numberField
+        label {
+            label: Količina
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            slot: contentBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText:
+                ```html
+                Unesite količinu koja je preostala.
+                
+                ```
+        }
+    )
+
+    pageItem P272_NALOG_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+    )
+
+    pageItem P272_PRENOS_ID (
+        type: selectOne
+        label {
+            label: Osnovno sredstvo za prenos
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    naziv || ' ( ' || inventurni_naziv || ' )' as d,
+                    id as r
+                FROM
+                    sec_osnovna_sredstva
+                WHERE
+                    valid = 'Y'
+                    AND ooj_id = :APP_OOJ_ID
+                    AND aktivirano = 'Y'
+                    AND history_id IS null
+                    AND id != :P272_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: contentBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button prenos (
+        buttonName: PRENOS
+        label: Prenos
+        layout {
+            sequence: 20
+            region: @buttons-bar
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-arrows-h
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation datum-not-null (
+        name: Datum NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P272_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P272_DATUM
+        }
+    )
+
+    validation knjizi-not-null (
+        name: Knjizi NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P272_KNJIZI_YN
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P272_KNJIZI_YN
+        }
+    )
+
+    validation kolicina-lower (
+        name: Kolicina LOWER
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P272_ID
+                    AND kolicina > :P272_KOLICINA
+                ```
+        }
+        error {
+            errorMessage: #LABEL# ne može biti veća ili jednaka trenutnoj količini.
+            associatedItem: @P272_KOLICINA
+        }
+    )
+
+    validation kolicina-not-null (
+        name: Kolicina NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P272_KOLICINA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P272_KOLICINA
+        }
+    )
+
+    validation prenos-not-null (
+        name: Prenos NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P272_PRENOS_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P272_PRENOS_ID
+        }
+    )
+
+    computation p272-kolicina (
+        itemName: P272_KOLICINA
+        execution {
+            sequence: 10
+        }
+        computation {
+            sqlQuery:
+                ```sql
+                SELECT kolicina
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P272_ID
+                ```
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                SELECT 1
+                FROM sec_osnovna_sredstva
+                WHERE
+                    id = :P272_ID
+                    AND kolicina > 1
+                ```
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        settings {
+            itemsToReturn: P272_NALOG_ID
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 114042833244047228
+        }
+        serverSideCondition {
+            whenButtonPressed: @prenos
+        }
+    )
+
+    process prenos (
+        name: Prenos
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P272_NALOG_ID := os_pkg.prenos_osnovno_sredstvo (
+                    p_id          => :P272_ID,
+                    p_prenos_id   => :P272_PRENOS_ID,
+                    p_godina      => :APP_GODINA,
+                    p_datum       => :P272_DATUM,
+                    p_proknjizeno => :P272_KNJIZI_YN,
+                    p_kolicina    => :P272_KOLICINA
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 114042959979047229
+        }
+        serverSideCondition {
+            whenButtonPressed: @prenos
+        }
+    )
+
+)
+

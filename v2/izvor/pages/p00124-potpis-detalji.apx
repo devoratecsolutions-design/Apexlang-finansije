@@ -1,0 +1,396 @@
+page 124 (
+    name: Potpis / Detalji
+    alias: POTPIS-DETALJI
+    title: Potpis / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region potpis-detalji (
+        name: Potpis / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P124_EMAIL_POTPIS (
+        type: richTextEditor
+        label {
+            label: Potpis
+            alignment: left
+        }
+        settings {
+            format: html
+            toolbar: full
+            minHeight: 320
+            allowCustomHtml: true
+        }
+        layout {
+            sequence: 40
+            region: @potpis-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                {
+                  "extraPlugins": "image2,uploadimage",
+                  "removePlugins": "image",
+                  "uploadUrl": "/ords/your-schema/upload-image"
+                }
+                
+                ```
+        }
+    )
+
+    pageItem P124_KORISNIK_DISPLAY (
+        type: displayOnly
+        label {
+            label: Korisnik
+            alignment: left
+        }
+        settings {
+            basedOn: lov
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    korisnik_naziv AS d,
+                    id AS r
+                FROM
+                    core.vw_korisnici
+                WHERE
+                    id = :P124_KORISNIK_ID
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @potpis-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P124_KORISNIK_ID
+        }
+    )
+
+    pageItem P124_KORISNIK_ID (
+        type: selectOne
+        label {
+            label: Korisnik
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    korisnik_naziv AS d,
+                    id AS r
+                FROM
+                    core.vw_korisnici
+                WHERE
+                    firma_id = :APP_FIRMA_ID
+                    AND email_potpis IS null
+                ```
+        }
+        layout {
+            sequence: 20
+            region: @potpis-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P124_KORISNIK_ID
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P124_KORISNIK_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    validation korisnik-not-null (
+        name: Korisnik NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P124_KORISNIK_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P124_KORISNIK_ID
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    validation potpis-not-null (
+        name: Potpis NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P124_EMAIL_POTPIS
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P124_EMAIL_POTPIS
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 118102118511448585
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.delete_email_potpis (
+                    p_korisnik_id  => :P124_KORISNIK_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 118122013588556406
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.get_email_potpis (
+                    p_korisnik_id  => :P124_KORISNIK_ID,
+                    p_email_potpis => :P124_EMAIL_POTPIS
+                );
+                
+                :P124_KORISNIK_DISPLAY := :P124_KORISNIK_ID;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 118122125411556407
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P124_KORISNIK_ID
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                core.korisnik_pkg.update_email_potpis (
+                    p_korisnik_id  => :P124_KORISNIK_ID,
+                    p_email_potpis => :P124_EMAIL_POTPIS
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 118121951145556405
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

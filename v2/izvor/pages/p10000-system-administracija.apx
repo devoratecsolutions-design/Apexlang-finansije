@@ -1,0 +1,124 @@
+page 10000 (
+    name: System administracija
+    alias: SYSTEM-ADMINISTRACIJA
+    title: System administracija
+    pageGroup: @administracija
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authorizationScheme: @main-admin
+        deepLinking: false
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    help {
+        helpText:
+            ```html
+            <p>The administration page allows application owners (Administrators) to configure the application and maintain common data used across the application.
+            By selecting one of the available settings, administrators can potentially change how the application is displayed and/or features available to the end users.</p>
+            <p>Access to this page should be limited to Administrators only.</p>
+            ```
+    }
+
+    region activity-reports (
+        name: Activity Reports
+        type: list
+        source {
+            list: @activity-reports
+        }
+        layout {
+            sequence: 60
+            parentRegion: @column
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        config {
+            buildOption: @feature-activity-reporting
+        }
+        componentAppearance {
+            listTemplate: @media-list
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region administracija (
+        name: Administracija
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region column (
+        name: Column 1
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region configuration (
+        name: Configuration
+        type: list
+        source {
+            list: @application-configuration
+        }
+        layout {
+            sequence: 40
+            parentRegion: @column
+            slot: regionBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+        }
+        config {
+            buildOption: @feature-configuration-options
+        }
+        componentAppearance {
+            listTemplate: @media-list
+            templateOptions: #DEFAULT#
+        }
+    )
+
+)
+

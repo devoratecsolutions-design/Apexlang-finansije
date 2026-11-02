@@ -1,0 +1,568 @@
+page 141 (
+    name: Radnici / Detalji
+    alias: RADNICI-DETALJI
+    title: Radnici / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region mjesta-troška-detalji (
+        name: Rdnici / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P141_EMAIL (
+        type: textField
+        label {
+            label: Email
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 70
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P141_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @mjesta-troška-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P141_IME (
+        type: textField
+        label {
+            label: Ime
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 50
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P141_INTERNI_BROJ (
+        type: textField
+        label {
+            label: Interni broj radnika
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 40
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P141_OJ_ID (
+        type: popupLov
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 90
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P141_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @mjesta-troška-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P141_PREZIME (
+        type: textField
+        label {
+            label: Prezime
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P141_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 100
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P141_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P141_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P141_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P141_ID
+        }
+    )
+
+    dynamicAction close-dialog (
+        name: Close dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: ready
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    function zameniX() {
+                        var topWin = window.top;
+                        var $ = topWin.apex.jQuery;
+                        var btn = $('.ui-dialog-titlebar-close', topWin.document);
+                    
+                        if (btn.length) {
+                            btn.off('click').on('click', function(e) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                    
+                                apex.page.cancelWarnOnUnsavedChanges();
+                                topWin.apex.navigation.dialog.close(true);
+                            });
+                        }
+                    }
+                    
+                    var observer = new MutationObserver(zameniX);
+                    observer.observe(window.top.document.documentElement, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                    
+                    zameniX();
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation prezime-not-null (
+        name: Prezime NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P141_PREZIME
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P141_PREZIME
+        }
+    )
+
+    validation validate-email (
+        name: Validate email
+        execution {
+            sequence: 100
+        }
+        validation {
+            plsqlExpression:
+                ```plsql
+                :P141_EMAIL IS NULL OR REGEXP_LIKE (
+                    :P141_EMAIL,
+                    '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+                )
+                ```
+        }
+        error {
+            errorMessage: Nekorektan unos u polju email.
+            associatedItem: @P141_EMAIL
+        }
+    )
+
+    validation šifra-not-null (
+        name: Ime NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P141_IME
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P141_IME
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 20627644196544372
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.delete_acc_radnici (
+                    p_id => :P141_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        successMessage {
+            successMessage: Radnik obrisan.
+        }
+        advanced {
+            executionMappingIdentifier: 20629204397544376
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                
+                sif.acc_pkg.get_acc_radnici (
+                    p_id              => :P141_ID,
+                    p_ooj_id          => :P141_OOJ_ID,
+                    p_interni_broj    => :P141_INTERNI_BROJ,
+                    p_ime             => :P141_IME,
+                    p_prezime         => :P141_PREZIME,
+                    p_email           => :P141_EMAIL,
+                    p_oj_id           => :P141_OJ_ID,
+                    p_valid           => :P141_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 20628043947544373
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.insert_acc_radnici (
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_interni_broj    => :P141_INTERNI_BROJ,
+                    p_ime             => initcap(:P141_IME),
+                    p_prezime         => initcap(:P141_PREZIME),
+                    p_email           => :P141_EMAIL,
+                    p_oj_id           => :P141_OJ_ID,
+                    p_valid           => 'Y',
+                    p_id              => :P141_ID
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Radnik uspješno kreiran.
+        }
+        advanced {
+            executionMappingIdentifier: 20628445479544374
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.update_acc_radnici (
+                    p_id              => :P141_ID,
+                    p_ooj_id          => :APP_OOJ_ID,
+                    p_interni_broj    => :P141_INTERNI_BROJ,
+                    p_ime             => initcap(:P141_IME),
+                    p_prezime         => initcap(:P141_PREZIME),
+                    p_email           => :P141_EMAIL,
+                    p_oj_id           => :P141_OJ_ID,
+                    p_valid           => :P141_VALID
+                );
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Izmjene sačuvane.
+        }
+        advanced {
+            executionMappingIdentifier: 20628818240544375
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

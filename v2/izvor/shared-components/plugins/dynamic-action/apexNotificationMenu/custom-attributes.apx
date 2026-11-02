@@ -1,0 +1,525 @@
+customAttribute attribute_01 (
+    apexlangName: configjson
+    attribute: 1
+    name: ConfigJSON
+    type: javaScriptCode
+    validation {
+        required: true
+    }
+    appearance {
+        sequence: 4
+    }
+    default {
+        value:
+            ```
+            {
+                "refresh": 0,
+                "mainIcon": "fa-bell",
+                "mainIconColor": "white",
+                "mainIconBackgroundColor": "rgba(70,70,70,0.9)",
+                "mainIconBlinking": false,
+                "counterBackgroundColor": "rgb(232, 55, 55 )",
+                "counterFontColor": "white",
+                "linkTargetBlank": false,
+                "showAlways": false,
+                "browserNotifications": {
+                    "enabled": true,
+                    "cutBodyTextAfter": 100,
+                    "link": false
+                },
+                "accept": {
+                    "color": "#44e55c",
+                    "icon": "fa-check"
+                },
+                "decline": {
+                    "color": "#b73a21",
+                    "icon": "fa-close"
+                },
+                "hideOnRefresh": true
+            }
+            ```
+    }
+    help {
+        helpText:
+            ```
+            <pre>
+            {
+                "refresh": 0,
+                "mainIcon": "fa-bell",
+                "mainIconColor": "white",
+                "mainIconBackgroundColor": "rgba(70,70,70,0.9)",
+                "mainIconBlinking": false,
+                "counterBackgroundColor": "rgb(232, 55, 55 )",
+                "counterFontColor": "white",
+                "linkTargetBlank": false,
+                "showAlways": false,
+                "browserNotifications": {
+                    "enabled": true,
+                    "cutBodyTextAfter": 100,
+                    "link": false
+                },
+                "accept": {
+                    "color": "#44e55c",
+                    "icon": "fa-check"
+                },
+                "decline": {
+                    "color": "#b73a21",
+                    "icon": "fa-close"
+                },
+                "hideOnRefresh": true
+            }
+            </pre>
+            <br>
+            <h3>Explanation:</h3>
+              <dl>
+              <dt>refresh (number)</dt>
+              <dd>refresh time of cards in seconds if 0 then no refresh will be set</dd>
+              <dl>
+              <dt>mainIcon(string)</dt>
+              <dd>icon of the menu</dd>
+              <dl>
+              <dt>mainIconColor(string)</dt>
+              <dd>color of the icon e.g. #ffffff, green...</dd>
+              <dl>
+              <dt>counterBackgroundColor(string)</dt>
+              <dd>color of the icon background e.g. #ffffff, green...</dd>
+              <dl>
+              <dt>mainIconBlinking(boolean)</dt>
+              <dd>used to get icon blinking</dd>
+              <dl>
+              <dt>counterBackgroundColor(string)</dt>
+              <dd>color of the counter background e.g. #ffffff, green...</dd>
+              <dl>
+              <dt>counterFontColor(string)</dt>
+              <dd>color of the counter font color e.g. #ffffff, green...</dd>
+              <dl>
+              <dt>linkTargetBlank(boolean)</dt>
+              <dd>link to target blank or not</dd>
+              <dl>
+              <dt>showAlways(boolean)</dt>
+              <dd>Use to set if also shown when no notifications occured</dd>
+              <dt>browserNotifications.enable(boolean)</dt>
+              <dd>Use the notification API of the browser to show notifications</dd>
+              <dt>browserNotifications.cutBodyTextAfter(number)</dt>
+              <dd>Set max length of shown body text</dd>
+              <dt>browserNotifications.link(boolean)</dt>
+              <dd>set if link of node entry is directly called or if just when click on notification the browser tab is openend where notification was fired</dd>
+              <dt>accept.color(string)</dt>
+              <dd>color of accept icon</dd>
+              <dt>accept.icon(string)</dt>
+              <dd>accept icon</dd>
+              <dt>decline.color(string)</dt>
+              <dd>color of decline icon</dd>
+              <dt>decline.icon(string)</dt>
+              <dd>decline icon</dd>
+              <dt>hideOnRefresh(boolean)</dt>
+              <dd>Set if Notification menu should hide on Refresh.</dd>
+            ```
+    }
+)
+
+customAttribute attribute_02 (
+    apexlangName: elementId
+    attribute: 2
+    name: Element ID
+    validation {
+        required: true
+    }
+    appearance {
+        sequence: 3
+    }
+    default {
+        value: notification-menu
+    }
+)
+
+customAttribute attribute_03 (
+    apexlangName: itemsToSubmit
+    attribute: 3
+    name: Items to Submit
+    type: pageItems
+    appearance {
+        sequence: 2
+    }
+)
+
+customAttribute attribute_04 (
+    apexlangName: sqlSource
+    attribute: 4
+    name: SQL Source
+    type: sqlQuery
+    validation {
+        required: true
+        minColumns: 1
+    }
+    appearance {
+        sequence: 1
+    }
+    default {
+        value:
+            ```
+            SELECT /* sets the icon of the list item */
+                'fa-exclamation-triangle' AS NOTE_ICON, 
+                /* sets the color of the list icon */
+                'rgb(192,0,15)' AS NOTE_ICON_COLOR, 
+                /* sets the title of the list item (html possible) */
+                'Alarm occurred' AS NOTE_HEADER,
+                /* sets the text of the list item (html possible */
+                'There''s an alarm in <b>Station 3</b>. Error code is <b style="color:rgba(192,0,15);">#304-AD. </b>' AS NOTE_TEXT, 
+                /* set the link when click on list item */
+                'javascript:alert("Click on Notification Entry");void(0);' AS NOTE_LINK, 
+                /* sets the color of the left box shadow */
+                'rgb(192,0,15)' AS NOTE_COLOR,
+                /* Link or js that is executed when press accept link (if left or null not accept is shown */ 
+                'javascript:alert("Accepted");void(0);' AS NOTE_ACCEPT,
+                /* Link or js that is executed when press decline link (if left or null not decline is shown */ 
+                'javascript:alert("Declined");void(0);' AS NOTE_DECLINE,
+                /* When enable Browser Notifications in ConfigJSON then you can select which notifications should not be fire browser not. */
+                0 AS NO_BROWSER_NOTIFICATION
+            FROM
+                DUAL
+            UNION ALL
+            SELECT
+                'fa-wrench' AS NOTE_ICON,
+                '#3e6ebc' AS NOTE_ICON_COLOR,
+                'System maintenance' AS NOTE_HEADER,
+                'In the time between <b>08:30</b> and <b>11:00</b> a system maintenance takes place. The systems can only be used in read-only mode and are limited in use' AS NOTE_TEXT,
+                'https://apex.world' AS NOTE_LINK,
+                '#3e6ebc' AS NOTE_COLOR,
+                NULL AS NOTE_ACCEPT,
+                'javascript:alert("Declined");void(0);' AS NOTE_DECLINE,
+                /* When enable Browser Notifications in ConfigJSON then you can select which notifications should not be fire browser not. */
+                0 AS NO_BROWSER_NOTIFICATION
+            FROM
+                DUAL
+            WHERE
+                2 = ROUND(
+                    DBMS_RANDOM.VALUE(
+                        1,
+                        2
+                    )
+                )
+            ```
+    }
+    help {
+        helpText:
+            ```
+            <pre>
+            SELECT /* sets the icon of the list item */
+                'fa-exclamation-triangle' AS NOTE_ICON, 
+                /* sets the color of the list icon */
+                'rgb(192,0,15)' AS NOTE_ICON_COLOR, 
+                /* sets the title of the list item (html possible) */
+                'Alarm occurred' AS NOTE_HEADER,
+                /* sets the text of the list item (html possible */
+                'There''s an alarm in <b>Station 3</b>. Error code is <b style="color:rgba(192,0,15);">#304-AD. </b>' AS NOTE_TEXT, 
+                /* set the link when click on list item */
+                'javascript:alert("Click on Notification Entry");void(0);' AS NOTE_LINK, 
+                /* sets the color of the left box shadow */
+                'rgb(192,0,15)' AS NOTE_COLOR,
+                /* Link or js that is executed when press accept link (if left or null not accept is shown */ 
+                'javascript:alert("Accepted");void(0);' AS NOTE_ACCEPT,
+                /* Link or js that is executed when press decline link (if left or null not decline is shown */ 
+                'javascript:alert("Declined");void(0);' AS NOTE_DECLINE,
+                /* When enable Browser Notifications in ConfigJSON then you can select which notifications should not be fire browser not. */
+                0 AS NO_BROWSER_NOTIFICATION
+            FROM
+                DUAL
+            UNION ALL
+            SELECT
+                'fa-wrench' AS NOTE_ICON,
+                '#3e6ebc' AS NOTE_ICON_COLOR,
+                'System maintenance' AS NOTE_HEADER,
+                'In the time between <b>08:30</b> and <b>11:00</b> a system maintenance takes place. The systems can only be used in read-only mode and are limited in use' AS NOTE_TEXT,
+                'https://apex.world' AS NOTE_LINK,
+                '#3e6ebc' AS NOTE_COLOR,
+                NULL AS NOTE_ACCEPT,
+                'javascript:alert("Declined");void(0);' AS NOTE_DECLINE,
+                /* When enable Browser Notifications in ConfigJSON then you can select which notifications should not be fire browser not. */
+                0 AS NO_BROWSER_NOTIFICATION
+            FROM
+                DUAL
+            WHERE
+                2 = ROUND(
+                    DBMS_RANDOM.VALUE(
+                        1,
+                        2
+                    )
+                )
+            </pre>
+            ```
+    }
+)
+
+customAttribute attribute_05 (
+    apexlangName: escapeSpecialCharacters
+    attribute: 5
+    name: Escape special Characters
+    type: yesNo
+    appearance {
+        sequence: 50
+    }
+    default {
+        value: true
+    }
+    help {
+        helpText: This value determines whether all texts that the plug-in inserts into the page should be escaped. This is necessary if texts come from user input or insecure sources to prevent XSS.
+    }
+)
+
+customAttribute attribute_06 (
+    apexlangName: sanitizeHtml
+    attribute: 6
+    name: Sanitize HTML
+    type: yesNo
+    appearance {
+        sequence: 60
+    }
+    default {
+        value: true
+    }
+    dependingOn {
+        attribute: @attribute_05/component
+        conditionType: !=
+        value: Y
+    }
+    help {
+        helpText: Sanitizes HTML e.g. &lt;script&gt; tags will be removed.
+    }
+)
+
+customAttribute attribute_07 (
+    apexlangName: sanitizeHtmlOptions
+    attribute: 7
+    name: Sanitize HTML Options
+    type: javaScriptCode
+    validation {
+        required: true
+    }
+    appearance {
+        sequence: 70
+    }
+    default {
+        value:
+            ```
+            {
+              "ALLOWED_ATTR": [
+                "accesskey",
+                "align",
+                "alt",
+                "always",
+                "autocomplete",
+                "autoplay",
+                "border",
+                "cellpadding",
+                "cellspacing",
+                "charset",
+                "class",
+                "colspan",
+                "dir",
+                "height",
+                "href",
+                "id",
+                "lang",
+                "name",
+                "rel",
+                "required",
+                "rowspan",
+                "src",
+                "style",
+                "summary",
+                "tabindex",
+                "target",
+                "title",
+                "type",
+                "value",
+                "width"
+              ],
+              "ALLOWED_TAGS": [
+                "a",
+                "address",
+                "b",
+                "blockquote",
+                "br",
+                "caption",
+                "code",
+                "dd",
+                "div",
+                "dl",
+                "dt",
+                "em",
+                "figcaption",
+                "figure",
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "hr",
+                "i",
+                "img",
+                "label",
+                "li",
+                "nl",
+                "ol",
+                "p",
+                "pre",
+                "s",
+                "span",
+                "strike",
+                "strong",
+                "sub",
+                "sup",
+                "table",
+                "tbody",
+                "td",
+                "th",
+                "thead",
+                "tr",
+                "u",
+                "ul"
+              ]
+            }
+            ```
+    }
+    dependingOn {
+        attribute: @attribute_06/component
+        conditionType: =
+        value: Y
+    }
+    help {
+        helpText:
+            ```
+            This Clob Loader includes a sanitizer for HTML as option to use:
+            A Full Description you will find on: https://github.com/cure53/DOMPurify
+            Example: 
+            <pre>
+            {
+              "ALLOWED_ATTR": [
+                "accesskey",
+                "align",
+                "alt",
+                "always",
+                "autocomplete",
+                "autoplay",
+                "border",
+                "cellpadding",
+                "cellspacing",
+                "charset",
+                "class",
+                "colspan",
+                "dir",
+                "height",
+                "href",
+                "id",
+                "lang",
+                "name",
+                "rel",
+                "required",
+                "rowspan",
+                "src",
+                "style",
+                "summary",
+                "tabindex",
+                "target",
+                "title",
+                "type",
+                "value",
+                "width"
+              ],
+              "ALLOWED_TAGS": [
+                "a",
+                "address",
+                "b",
+                "blockquote",
+                "br",
+                "caption",
+                "code",
+                "dd",
+                "div",
+                "dl",
+                "dt",
+                "em",
+                "figcaption",
+                "figure",
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "hr",
+                "i",
+                "img",
+                "label",
+                "li",
+                "nl",
+                "ol",
+                "p",
+                "pre",
+                "s",
+                "span",
+                "strike",
+                "strong",
+                "sub",
+                "sup",
+                "table",
+                "tbody",
+                "td",
+                "th",
+                "thead",
+                "tr",
+                "u",
+                "ul"
+              ]
+            }
+            </pre>
+            <pre>
+            # make output safe for usage in jQuery's $()/html() method (default is false)
+            SAFE_FOR_JQUERY: true
+            
+            # strip {{ ... }} and &amp;lt;% ... %&amp;gt; to make output safe for template systems
+            # be careful please, this mode is not recommended for production usage.
+            # allowing template parsing in user-controlled HTML is not advised at all.
+            # only use this mode if there is really no alternative.
+            SAFE_FOR_TEMPLATES: true
+            
+            # allow only &amp;lt;b&amp;gt;
+            ALLOWED_TAGS: ['b']
+            
+            # allow only &amp;lt;b&amp;gt; and &amp;lt;q&amp;gt; with style attributes (for whatever reason)
+            ALLOWED_TAGS: ['b', 'q'], ALLOWED_ATTR: ['style']
+            
+            # allow all safe HTML elements but neither SVG nor MathML
+            USE_PROFILES: {html: true}
+            
+            # allow all safe SVG elements and SVG Filters
+            USE_PROFILES: {svg: true, svgFilters: true}
+            
+            # allow all safe MathML elements and SVG
+            USE_PROFILES: {mathMl: true, svg: true}
+            
+            # leave all as it is but forbid &amp;lt;style&amp;gt;
+            FORBID_TAGS: ['style']
+            
+            # leave all as it is but forbid style attributes
+            FORBID_ATTR: ['style']
+            
+            # extend the existing array of allowed tags
+            ADD_TAGS: ['my-tag']
+            
+            # extend the existing array of attributes
+            ADD_ATTR: ['my-attr']
+            
+            # prohibit HTML5 data attributes (default is true)
+            ALLOW_DATA_ATTR: false
+            
+            # allow external protocol handlers in URL attributes (default is false)
+            # by default only http, https, ftp, ftps, tel, mailto, callto, cid and xmpp are allowed.
+            ALLOW_UNKNOWN_PROTOCOLS: true
+            </pre>
+            ```
+    }
+)
+

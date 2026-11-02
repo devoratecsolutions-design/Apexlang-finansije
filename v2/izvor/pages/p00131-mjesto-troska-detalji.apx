@@ -1,0 +1,566 @@
+page 131 (
+    name: Mjesto troska / Detalji
+    alias: MJESTO-TROSKA-DETALJI
+    title: Mjesto troska / Detalji
+    pageGroup: @konfiguracija
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region mjesta-troška-detalji (
+        name: Mjesta troška / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P131_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @mjesta-troška-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P131_NAD_ID (
+        type: popupLov
+        label {
+            label: Nadređeno mjesto troška
+            alignment: left
+        }
+        settings {
+            displayAs: modalDialog
+            popupWidth: 800
+            popupHeight: 400
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-mjesta-troska-hij
+            displayExtraValues: false
+            nullDisplayValue: " "
+        }
+        cascadingLov {
+            parentItems: P131_ID
+        }
+        layout {
+            sequence: 40
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P131_NAZIV (
+        type: textField
+        label {
+            label: Naziv
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 60
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 255
+        }
+    )
+
+    pageItem P131_OJ_ID (
+        type: popupLov
+        label {
+            label: Organizaciona jedinica
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @oj
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 70
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P131_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @mjesta-troška-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P131_RADNIK_ID (
+        type: popupLov
+        label {
+            label: Odgovorna osoba
+            alignment: left
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-radnici
+            displayExtraValues: false
+        }
+        layout {
+            sequence: 90
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        help {
+            helpText: Odgovorna osoba za mjesto troška.
+        }
+    )
+
+    pageItem P131_SIFRA (
+        type: textField
+        label {
+            label: Šifra
+            alignment: left
+        }
+        settings {
+            trimSpaces: none
+        }
+        layout {
+            sequence: 50
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 32
+        }
+        validation {
+            maxLength: 32
+        }
+    )
+
+    pageItem P131_VALID (
+        type: radioGroup
+        label {
+            label: Aktivno
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 100
+            region: @mjesta-troška-detalji
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+            newColumn: false
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P131_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Kreiraj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-plus-circle-o
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P131_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P131_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Ažuriraj
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P131_ID
+        }
+    )
+
+    dynamicAction close-dialog (
+        name: Close dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: ready
+        }
+
+        action native-javascript-code (
+            action: executeJsCode
+            settings {
+                jsCode:
+                    ```javascript-browser
+                    function zameniX() {
+                        var topWin = window.top;
+                        var $ = topWin.apex.jQuery;
+                        var btn = $('.ui-dialog-titlebar-close', topWin.document);
+                    
+                        if (btn.length) {
+                            btn.off('click').on('click', function(e) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                    
+                                apex.page.cancelWarnOnUnsavedChanges();
+                                topWin.apex.navigation.dialog.close(true);
+                            });
+                        }
+                    }
+                    
+                    var observer = new MutationObserver(zameniX);
+                    observer.observe(window.top.document.documentElement, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                    
+                    zameniX();
+                    ```
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation naziv-not-null (
+        name: Naziv NOT NULL
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P131_NAZIV
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P131_NAZIV
+        }
+    )
+
+    validation šifra-not-null (
+        name: Šifra NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P131_SIFRA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P131_SIFRA
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 282665858726491008
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.delete_acc_mjesta_troska (
+                        p_id              => :P131_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        successMessage {
+            successMessage: Mjesto troška obrisano.
+        }
+        advanced {
+            executionMappingIdentifier: 282667491203491015
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process get-data (
+        name: Get data
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.get_acc_mjesta_troska (
+                    p_id              => :P131_ID,
+                    p_ooj_id          => :P131_OOJ_ID,
+                    p_sifra           => :P131_SIFRA,
+                    p_naziv           => :P131_NAZIV,
+                    p_nad_id          => :P131_NAD_ID,
+                    p_oj_id           => :P131_OJ_ID,
+                    p_valid           => :P131_VALID,
+                    p_radnik_id       => :P131_RADNIK_ID
+                   
+                );
+                
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 282666259768491009
+        }
+    )
+
+    process insert (
+        name: Insert
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                    sif.acc_pkg.insert_acc_mjesta_troska (
+                        p_ooj_id          => :APP_OOJ_ID,
+                        p_sifra           => :P131_SIFRA,
+                        p_naziv           => :P131_NAZIV,
+                        p_nad_id          => :P131_NAD_ID,
+                        p_oj_id           => :P131_OJ_ID,
+                        p_valid           => 'Y',
+                        p_radnik_id       => :P131_RADNIK_ID,
+                        p_id              => :P131_ID
+                       
+                    );
+                
+                
+                
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Kreirano novo mjesto troška.
+        }
+        advanced {
+            executionMappingIdentifier: 282666669226491013
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process update (
+        name: Update
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.update_acc_mjesta_troska (
+                        p_id              => :P131_ID, 
+                        p_ooj_id          => :APP_OOJ_ID,
+                        p_sifra           => :P131_SIFRA,
+                        p_naziv           => :P131_NAZIV,
+                        p_nad_id          => :P131_NAD_ID,
+                        p_oj_id           => :P131_OJ_ID,
+                        p_valid           => :P131_VALID,
+                        p_radnik_id       => :P131_RADNIK_ID
+                       
+                    );
+                
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Izmjene sačuvane.
+        }
+        advanced {
+            executionMappingIdentifier: 282667061906491014
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+)
+

@@ -1,0 +1,720 @@
+page 25 (
+    name: Cjenovnik
+    alias: CJENOVNIK
+    title: Cjenovnik
+    pageGroup: @stavke
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @fakture-stavke
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+    advanced {
+        enableDuplicatePageSubmissions: false
+    }
+
+    region cjenovnik (
+        name: Cijene
+        title: Cijene
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    cs.id,
+                    cs.cjenovnik_id,
+                    cs.cjenovnik_sifra,
+                    cs.cjenovnik_naziv,
+                    c.tip AS cjenovnik_tip,
+                    CASE c.tip WHEN 'M' THEN 'Maloprodajni' WHEN 'V' THEN 'Veleprodajni' END AS cjenovnik_tip_naziv,
+                    cs.stavka_id,
+                    cs.stavka_sifra,
+                    cs.stavka_naziv,
+                    cs.stavka_tip_id,
+                    cs.stavka_tip_naziv,
+                    cs.grupa_id,
+                    cs.klasa_id,
+                    cs.klasa_naziv,
+                    cs.datum,
+                    cs.nabavna_cijena,
+                    cs.vpc,
+                    cs.mpc,
+                    cs.valid,
+                    CASE WHEN cs.valid = 'Y' THEN 'paid' ELSE 'na' END AS status_klasa,
+                    CASE WHEN cs.valid = 'Y' THEN 'Aktivna' ELSE 'Istorija' END AS status_naziv,
+                    CASE WHEN cs.nabavna_cijena > 0 AND cs.vpc < cs.nabavna_cijena THEN 'Y' ELSE 'N' END AS ispod_nabavne
+                FROM
+                    vw_cjenovnik_stavke cs
+                    JOIN cjenovnici c ON c.id = cs.cjenovnik_id
+                WHERE
+                    cs.ooj_id = :APP_OOJ_ID
+                    AND (cs.valid = 'Y' OR :P25_ISTORIJA = 'Y')
+                ORDER BY
+                    cs.stavka_sifra, cs.cjenovnik_sifra, cs.valid DESC, cs.datum DESC
+                ```
+            pageItemsToSubmit: P25_ISTORIJA
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 10000
+        }
+        messages {
+            whenNoDataFound: Nema cijena za izabrane filtere.
+        }
+
+        column CJENOVNIK_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 200
+            }
+        )
+
+        column CJENOVNIK_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Cjenovnik
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #CJENOVNIK_NAZIV#<span class="fin-sub">#CJENOVNIK_TIP_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CJENOVNIK_SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 210
+            }
+        )
+
+        column CJENOVNIK_TIP (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 220
+            }
+        )
+
+        column CJENOVNIK_TIP_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 230
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 30
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column GRUPA_ID (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 290
+            }
+        )
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Stavka
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    page: 26
+                    items: {
+                        P26_ID: #ID#
+                    }
+                    clearCache: 26
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#STAVKA_NAZIV#</span><span class="fin-sub">#STAVKA_SIFRA#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ISPOD_NABAVNE (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column KLASA_ID (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column KLASA_NAZIV (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column MPC (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            heading {
+                heading: MPC (sa PDV)
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        serverSideCondition {
+            type: item=value
+            item: P25_PDV_SISTEM
+            value: Y
+        }
+        )
+
+        column NABAVNA_CIJENA (
+            reportColumnQueryId: 16
+            derivedColumn: N
+            heading {
+                heading: Nabavna
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STATUS_KLASA (
+            reportColumnQueryId: 20
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column STATUS_NAZIV (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-badge fin-badge--#STATUS_KLASA#">#STATUS_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_ID (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 240
+            }
+        )
+
+        column STAVKA_NAZIV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 260
+            }
+        )
+
+        column STAVKA_SIFRA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 250
+            }
+        )
+
+        column STAVKA_TIP_ID (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 270
+            }
+        )
+
+        column STAVKA_TIP_NAZIV (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 280
+            }
+        )
+
+        column VALID (
+            reportColumnQueryId: 19
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column VPC (
+            reportColumnQueryId: 17
+            derivedColumn: N
+            heading {
+                heading: &P25_LBL_VPC.
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G999G990D00
+            }
+            columnFormatting {
+                cssClasses: fin-num fin-num--strong
+                htmlExpression:
+                    ```html
+                    #VPC#{if ISPOD_NABAVNE/}<span class="fin-sub fin-due">ispod nabavne</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region cjenovnik-2 (
+        name: Cjenovnik
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region pretraga (
+        name: Pretraga
+        type: smartFilters
+        source {
+            filteredRegion: @cjenovnik
+        }
+        layout {
+            sequence: 5
+            slot: body
+            columnSpan: 9
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P25_SEARCH (
+            type: search
+            label {
+                label: Pretraga
+            }
+            layout {
+                sequence: 1
+            }
+            appearance {
+                valuePlaceholder: Pretraga po šifri ili nazivu...
+            }
+        )
+
+        filter P25_F_CJENOVNIK (
+            type: checkboxGroup
+            label {
+                label: Cjenovnik
+            }
+            lov {
+                type: sharedComponent
+                lov: @cjenovnici
+            }
+            layout {
+                sequence: 10
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: CJENOVNIK_ID
+                dataType: number
+            }
+        )
+
+        filter P25_F_TIP (
+            type: checkboxGroup
+            label {
+                label: Tip stavke
+            }
+            lov {
+                type: sharedComponent
+                lov: @sif-tip-stavki
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: STAVKA_TIP_ID
+                dataType: number
+            }
+        )
+
+        filter P25_F_KLASA (
+            type: checkboxGroup
+            label {
+                label: Klasa
+            }
+            lov {
+                type: sharedComponent
+                lov: @sec-klase-stavki-naziv
+            }
+            layout {
+                sequence: 30
+            }
+            listEntries {
+                clientSideFiltering: true
+            }
+            source {
+                databaseColumn: KLASA_ID
+                dataType: number
+            }
+        )
+
+        filter P25_F_ISPOD (
+            type: radioGroup
+            label {
+                label: Ispod nabavne
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Da;Y,Ne;N
+            }
+            layout {
+                sequence: 40
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: ISPOD_NABAVNE
+            }
+        )
+
+    )
+
+    region prikaz (
+        name: Prikaz
+        type: staticContent
+        layout {
+            sequence: 6
+            slot: body
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-sort
+        }
+    )
+
+    pageItem P25_ISTORIJA (
+        type: switch
+        label {
+            label: Prikaži istoriju cijena
+            alignment: left
+        }
+        settings {
+            useDefaults: false
+            onValue: Y
+            onLabel: Da
+            offValue: N
+            offLabel: Ne
+        }
+        layout {
+            sequence: 10
+            region: @prikaz
+            slot: regionBody
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        default {
+            type: static
+            staticValue: N
+        }
+    )
+
+    pageItem P25_LBL_VPC (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+    )
+
+    pageItem P25_PDV_SISTEM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi unos
+        layout {
+            sequence: 10
+            region: @cjenovnik-2
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 26
+                clearCache: 26
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Dialog Closed - Refresh 2
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: button
+            button: @create
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @cjenovnik
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction dialog-closed-refresh-2 (
+        name: Dialog Closed - Refresh 1
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @cjenovnik
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @cjenovnik
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+
+    dynamicAction istorija (
+        name: Istorija cijena
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P25_ISTORIJA
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @cjenovnik
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process pdv-sistem (
+        name: PDV sistem
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P25_PDV_SISTEM := nvl(core.ooj_pkg.get_ooj_pdv_sistem(:APP_OOJ_ID), 'N');
+                :P25_LBL_VPC := CASE WHEN :P25_PDV_SISTEM = 'Y' THEN 'VPC (bez PDV)' ELSE 'Prodajna cijena' END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+)

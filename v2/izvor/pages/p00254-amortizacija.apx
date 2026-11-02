@@ -1,0 +1,598 @@
+page 254 (
+    name: Amortizacija
+    alias: AMORTIZACIJA
+    title: Amortizacija
+    pageGroup: @osnovna-sredstva
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        height: 400
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region poreske-informacije (
+        name: Poreske informacije
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wizard-progress (
+        name: Wizard Progress
+        type: list
+        source {
+            list: @wizard-osnovna-sredstva
+        }
+        layout {
+            sequence: 10
+            slot: dialogHeader
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            listTemplate: @wizard-progress
+        }
+    )
+
+    pageItem P254_AMORTIZACIONA_STOPA (
+        type: numberField
+        label {
+            label: Amortizaciona stopa ( % )
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P254_DONACIJA (
+        type: radioGroup
+        label {
+            label: Donacija
+            alignment: left
+        }
+        settings {
+            noOfCols: 2
+        }
+        lov {
+            type: sharedComponent
+            lov: @da-ne
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+                t-Form-fieldContainer--large
+                t-Form-fieldContainer--radioButtonGroup
+            ]
+        }
+    )
+
+    pageItem P254_GRAD_ID (
+        type: selectOne
+        label {
+            label: Grad
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-gradovi-bih
+        }
+        layout {
+            sequence: 70
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P254_PORESKA_AMORTIZACIONA_STOPA (
+        type: numberField
+        label {
+            label: Poreska amortizaciona stopa
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P254_PROCIJENJENI_VIJEK_TRAJANJA (
+        type: numberField
+        label {
+            label: Procijenjeni vijek trajanja
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    pageItem P254_REZIDUALNA_VRIJEDNOST (
+        type: numberField
+        label {
+            label: Rezidualna vrijednost
+            alignment: left
+        }
+        layout {
+            sequence: 90
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            formatMask: 999G999G999G999G990D00
+            width: 30
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P254_VIJEK_TRAJANJA (
+        type: numberField
+        label {
+            label: Vijek trajanja
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @poreske-informacije
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @required-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-box-arrow-in-west
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button next (
+        buttonName: NEXT
+        label: Dalje
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconRight
+            ]
+            icon: fa-chevron-right
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button previous (
+        buttonName: PREVIOUS
+        label: Nazad
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--large
+                t-Button--iconLeft
+            ]
+            icon: fa-chevron-left
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction calculate-amortizaciona-stopa (
+        name: Calculate Amortizaciona stopa
+        execution {
+            sequence: 30
+        }
+        when {
+            selectionType: items
+            items: P254_VIJEK_TRAJANJA
+        }
+        clientSideCondition {
+            type: item>value
+            item: P254_VIJEK_TRAJANJA
+            value: 0
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P254_AMORTIZACIONA_STOPA := round(100 / :P254_VIJEK_TRAJANJA, 2);
+                itemsToSubmit: [
+                    P254_AMORTIZACIONA_STOPA
+                    P254_VIJEK_TRAJANJA
+                ]
+                itemsToReturn: P254_AMORTIZACIONA_STOPA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction calculate-poreska-amortizaciona-stopa (
+        name: Calculate poreska amortizaciona stopa
+        execution {
+            sequence: 40
+        }
+        when {
+            selectionType: items
+            items: P254_PROCIJENJENI_VIJEK_TRAJANJA
+        }
+        clientSideCondition {
+            type: item>value
+            item: P254_PROCIJENJENI_VIJEK_TRAJANJA
+            value: 0
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode: :P254_PORESKA_AMORTIZACIONA_STOPA := round(100 / :P254_PROCIJENJENI_VIJEK_TRAJANJA, 2);
+                itemsToSubmit: [
+                    P254_PROCIJENJENI_VIJEK_TRAJANJA
+                    P254_PORESKA_AMORTIZACIONA_STOPA
+                ]
+                itemsToReturn: P254_PORESKA_AMORTIZACIONA_STOPA
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction change-grupa (
+        name: Change GRUPA
+        execution {
+            sequence: 20
+        }
+        when {
+            event: ready
+        }
+        serverSideCondition {
+            type: item=value
+            item: P252_PRIPREMA
+            value: Y
+        }
+
+        action native-execute-plsql-code (
+            action: executeServerSideCode
+            settings {
+                plsqlCode:
+                    ```plsql
+                    sif.acc_pkg.get_klasa_os (
+                        p_id             => :P252_KLASA_ID,
+                        p_procenat       => :P254_AMORTIZACIONA_STOPA,
+                        p_vijek_trajanja => :P254_VIJEK_TRAJANJA
+                    );
+                    ```
+                itemsToSubmit: [
+                    P252_KLASA_ID
+                    P254_VIJEK_TRAJANJA
+                    P254_AMORTIZACIONA_STOPA
+                ]
+                itemsToReturn: [
+                    P254_VIJEK_TRAJANJA
+                    P254_AMORTIZACIONA_STOPA
+                ]
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    validation amortizaciona-stopa-not-null (
+        name: Amortizaciona stopa NOT NULL
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_AMORTIZACIONA_STOPA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_AMORTIZACIONA_STOPA
+        }
+    )
+
+    validation donacija-not-null (
+        name: Donacija NOT NULL
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_DONACIJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_DONACIJA
+        }
+    )
+
+    validation grad-not-null (
+        name: Grad NOT NULL
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_GRAD_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_GRAD_ID
+        }
+    )
+
+    validation poreska-am-stopa-not-null (
+        name: Poreska am stopa NOT NULL
+        execution {
+            sequence: 50
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_PORESKA_AMORTIZACIONA_STOPA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_PORESKA_AMORTIZACIONA_STOPA
+        }
+    )
+
+    validation procijenjen-vt-not-null (
+        name: Procijenjen VT NOT NULL
+        execution {
+            sequence: 40
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_PROCIJENJENI_VIJEK_TRAJANJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_PROCIJENJENI_VIJEK_TRAJANJA
+        }
+    )
+
+    validation rezidualna-vr-not-null (
+        name: Rezidualna vr NOT NULL
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_REZIDUALNA_VRIJEDNOST
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_REZIDUALNA_VRIJEDNOST
+        }
+    )
+
+    validation vijek-trajanja-not-null (
+        name: Vijek trajanja NOT NULL
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P254_VIJEK_TRAJANJA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P254_VIJEK_TRAJANJA
+        }
+    )
+
+    process get-klasa (
+        name: Get klasa
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sif.acc_pkg.get_klasa_os (
+                    p_id             => :P252_KLASA_ID,
+                    p_procenat       => :P254_AMORTIZACIONA_STOPA,
+                    p_vijek_trajanja => :P254_VIJEK_TRAJANJA
+                );
+                
+                :P254_PROCIJENJENI_VIJEK_TRAJANJA := :P254_VIJEK_TRAJANJA;
+                :P254_PORESKA_AMORTIZACIONA_STOPA := :P254_AMORTIZACIONA_STOPA;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 240049647492044830
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P252_ID
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 10
+            point: validating
+        }
+        behavior {
+            target: {
+                page: 253
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @previous
+        }
+    )
+
+    branch (
+        execution {
+            sequence: 20
+        }
+        behavior {
+            target: {
+                page: 255
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @next
+        }
+    )
+
+)
+
