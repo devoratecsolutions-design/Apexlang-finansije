@@ -458,3 +458,4 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
 - KUF_PKG: faktura vezana za kalkulaciju kao zavisni trošak ne može se obrisati (provjera dinamičkim SQL-om, da 10 ne zavisi od 15).
 - JS `finansije-ui.js` (finRmKalk) i `.min.js`, verzija u application.apx.
 - **SQL ponovo:** `15_rm_kalkulacija.sql`, zatim `10_kuf_pkg.sql` (samo paket). Zatim import aplikacije.
+- **Git:** `v2/izvor` u Git-u je bio stariji od službenog `v2/import/finansije-v2.zip` (01.11.2026) – stranice 0, 1, 311, 312, 330, 340, app-items, app-processes, breadcrumbs, ikone. Na ovoj grani izvor je usklađen sa zip-om (zip je osnova), pa su na to dodate R10 izmjene. Dorade se ubuduće rade na sadržaju službenog zip-a.
