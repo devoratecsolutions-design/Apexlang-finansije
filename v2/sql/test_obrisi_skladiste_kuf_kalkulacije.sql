@@ -12,7 +12,10 @@
   Stavke naloga glavne knjige se NE brišu - samo im se uklanja veza na fakturu
   (KUF_ID = null), da nalozi ostanu u ravnoteži. Dokumenti skladišta koji imaju
   nalog (GLAVNA_KNJIGA_ID) se brišu, a nalog ostaje.
-  Brojači (CORE.PROTOKOLI) se ne vraćaju.
+  4) brojači (CORE.PROTOKOLI) za te vrste dokumenata se vraćaju na početak -
+     sljedeći dokument dobija broj 1 (sve godine 2020 - tekuća):
+       skladište: PRI, IZD, IIN, IOS, ISI, MPR, MPP, REV, REVP, RSV, RSVP, KALK
+       ulazni dokumenti: UF, UAV, UAVZ, UKO, UKZ
   1. dio samo prikazuje šta će biti obrisano; 2. dio briše, BEZ commit-a:
   pogledati ispis pa ručno COMMIT ili ROLLBACK.
 ================================================================================
@@ -105,6 +108,41 @@ begin
         delete /*+ noparallel(kuf) */ from kuf where ooj_id = c_ooj;
         dbms_output.put_line('KUF: ' || sql%rowcount);
     end if;
+
+    ------------------------------------------------------------------ 4) brojači na 1
+    -- get_brojac vraća sljedeći broj (broj + 1); update_brojac dodaje vrijednost na broj
+    declare
+        l_sifre sys.odcivarchar2list := sys.odcivarchar2list(
+            'pri', 'izd', 'iin', 'ios', 'isi', 'mpr', 'mpp', 'rev', 'revp', 'rsv', 'rsvp', 'kalk',
+            'uf', 'uav', 'uavz', 'uko', 'ukz');
+        l_sljedeci number;
+        l_naziv    varchar2(255);
+        l_n        number := 0;
+    begin
+        for i in 1 .. l_sifre.count loop
+            for g in 2020 .. extract(year from sysdate) loop
+                if core.protokoli_pkg.check_brojac(c_ooj, l_sifre(i), g) then
+                    l_sljedeci := null;
+                    core.protokoli_pkg.get_brojac(
+                        p_ooj_id             => c_ooj,
+                        p_vrsta_naloga_sifra => l_sifre(i),
+                        p_godina             => g,
+                        p_broj               => l_sljedeci,
+                        p_naziv              => l_naziv);
+                    if nvl(l_sljedeci, 1) <> 1 then
+                        core.protokoli_pkg.update_brojac(
+                            p_ooj_id             => c_ooj,
+                            p_vrsta_naloga_sifra => l_sifre(i),
+                            p_godina             => g,
+                            p_value              => 1 - l_sljedeci);
+                        dbms_output.put_line('Brojač ' || upper(l_sifre(i)) || ' ' || g || ': ' || (l_sljedeci - 1) || ' -> 0');
+                        l_n := l_n + 1;
+                    end if;
+                end if;
+            end loop;
+        end loop;
+        dbms_output.put_line('Vraćeno brojača: ' || l_n);
+    end;
 
     dbms_output.put_line('Gotovo. Provjerite ispis pa COMMIT ili ROLLBACK.');
 end;
