@@ -1813,9 +1813,6 @@ page 331 (
             label: Serijski broj (barkod / QR)
             alignment: left
         }
-        settings {
-            sendOnPageSubmit: false
-        }
         layout {
             sequence: 10
             region: @sb-unos
