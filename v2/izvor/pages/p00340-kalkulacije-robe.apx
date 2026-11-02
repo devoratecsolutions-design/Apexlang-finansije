@@ -197,7 +197,7 @@ page 340 (
                     type: url
                     url: #URL#
                 }
-                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span>{if OPIS/}<span class="fin-sub">#OPIS#</span>{endif/}</span>
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#OPIS#</span></span>
             }
             sorting {
                 sortable: false

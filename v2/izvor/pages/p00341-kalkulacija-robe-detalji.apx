@@ -780,6 +780,10 @@ page 341 (
                 databaseColumn: SA_PDV
                 dataType: varchar2
             }
+            default {
+                type: static
+                staticValue: N
+            }
             serverSideCondition {
                 type: expression
                 plsqlExpression: :APP_PDV_SISTEM = 'Y'
@@ -836,6 +840,10 @@ page 341 (
             source {
                 databaseColumn: NACIN_RASPODJELE
                 dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: V
             }
         )
 
@@ -1117,6 +1125,10 @@ page 341 (
                 databaseColumn: SA_PDV
                 dataType: varchar2
             }
+            default {
+                type: static
+                staticValue: N
+            }
             serverSideCondition {
                 type: expression
                 plsqlExpression: :APP_PDV_SISTEM = 'Y'
@@ -1190,6 +1202,10 @@ page 341 (
             source {
                 databaseColumn: NACIN_RASPODJELE
                 dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: V
             }
         )
 

@@ -890,9 +890,11 @@ window.finRmKalk = (function ($) {
                 sa = model.getFieldMetadata("SA_PDV") ? I.val(model.getValue(rec, "SA_PDV")) : "Y";
                 apex.server.process("KUF_INFO", { x01: kuf, x02: sa || "N", x03: trosak ? "" : red, x04: trosak ? red : "" },
                     { dataType: "json" }).done(function (d) {
-                        var rasp = Number(d.rasp || 0), izn = I.num(model.getValue(rec, "IZNOS"));
+                        var rasp = Number(d.rasp || 0);
                         I.postavi(model, rec, "RASPOLOZIVO", f2(rasp));
-                        if (!izn || izn > rasp) { I.postavi(model, rec, "IZNOS", f2(rasp)); }
+                        /* nova faktura ili promjena sa / bez PDV-a: prijedlog je cijeli raspoloživi iznos
+                           (korisnik ga poslije može smanjiti) */
+                        I.postavi(model, rec, "IZNOS", f2(rasp));
                         if (trosak && d.naziv && !I.val(model.getValue(rec, "OPIS"))) { I.postavi(model, rec, "OPIS", d.naziv); }
                     });
             }

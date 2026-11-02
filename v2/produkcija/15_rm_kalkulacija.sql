@@ -571,13 +571,12 @@ create or replace package body rm_kalkulacija_pkg as
             greska('Nepoznat način raspodjele.');
         end if;
         if l_nacin = 'J' then
-            -- iznos se preračunava iz unesenih jediničnih cijena (tab Raspodjela)
-            l_iznos := null;
-            if p_red_id is not null then
-                select max(case when kuf_id = p_kuf_id and sa_pdv = l_sa_pdv and nacin_raspodjele = 'J' then iznos end)
-                  into l_iznos from kalkulacija_kuf where id = p_red_id;
-            end if;
+            -- jedinična cijena: upisani iznos je početni (može i prazno); poslije unosa cijena na tabu
+            -- Raspodjela iznos se preračunava (zbir cijena x količina)
             l_iznos := nvl(l_iznos, 0);
+            if l_iznos < 0 then
+                greska('Iznos za raspodjelu ne može biti negativan.');
+            end if;
         elsif l_iznos is null or l_iznos <= 0 then
             greska('Iznos za raspodjelu mora biti veći od nule.');
         end if;
@@ -645,13 +644,10 @@ create or replace package body rm_kalkulacija_pkg as
             greska('Unesite opis zavisnog troška ili izaberite ulaznu fakturu.');
         end if;
         if l_nacin = 'J' then
-            l_iznos := null;
-            if p_red_id is not null then
-                select max(case when nvl(kuf_id, -1) = nvl(p_kuf_id, -1) and nvl(sa_pdv, '-') = nvl(l_sa_pdv, '-')
-                                 and nacin_raspodjele = 'J' then iznos end)
-                  into l_iznos from kalkulacija_troskovi where id = p_red_id;
+            l_iznos := nvl(l_iznos, 0);                  -- početni iznos, preračunava se iz jediničnih cijena
+            if l_iznos < 0 then
+                greska('Iznos zavisnog troška ne može biti negativan.');
             end if;
-            l_iznos := nvl(l_iznos, 0);
         elsif l_iznos is null or l_iznos <= 0 then
             greska('Iznos zavisnog troška mora biti veći od nule.');
         end if;
