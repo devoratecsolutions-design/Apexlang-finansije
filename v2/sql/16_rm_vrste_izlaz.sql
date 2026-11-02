@@ -12,6 +12,11 @@
       ISI  Izlaz na sitni inventar        (samo materijalna skladišta)
       MPR  Međuskladišni prenos           (izlaz na drugo skladište)
       MPP  Međuskladišni prijem           (ulaz; nastaje preuzimanjem prenosa)
+    R13:
+      REV  Revers                         (izlaz; zaduženi radnik)
+      REVP Revers - povrat                (ulaz; zaduženi radnik, do dostupnog sa reversa)
+      RSV  Revers servis                  (izlaz; komitent)
+      RSVP Revers servis - povrat         (ulaz; komitent, do dostupnog sa reversa servisa)
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
   sa istom aplikacijom (app_id). Postojeće vrste sa istom šifrom se ne mijenjaju.
   Skripta se može pokrenuti više puta.
@@ -50,6 +55,10 @@ begin
     dodaj('ISI', 'Izlaz na sitni inventar', 'Izlaz materijala sa skladišta na sitni inventar, uz zaduženog radnika (v2)');
     dodaj('MPR', 'Međuskladišni prenos', 'Prenos robe na drugo skladište firme (v2)');
     dodaj('MPP', 'Međuskladišni prijem', 'Prijem robe sa drugog skladišta - nastaje preuzimanjem prenosa (v2)', 'U');
+    dodaj('REV', 'Revers', 'Zaduženje radnika robom / opremom (v2)');
+    dodaj('REVP', 'Revers - povrat', 'Povrat robe / opreme od zaduženog radnika (v2)', 'U');
+    dodaj('RSV', 'Revers servis', 'Izdavanje robe / opreme komitentu na servis (v2)');
+    dodaj('RSVP', 'Revers servis - povrat', 'Povrat robe / opreme od komitenta sa servisa (v2)', 'U');
     commit;
     dbms_output.put_line('Nove vrste dokumenata: ' || l_novih);
 end;
@@ -59,5 +68,5 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP')
  order by vd.ooj_id, vd.sifra;

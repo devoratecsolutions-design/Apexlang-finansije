@@ -23,6 +23,7 @@ page 331 (
         executeWhenPageLoads:
             ```javascript-browser
             finRmStavke.init('rm_stavke', 'P331');
+            finRmSbUnos.init('P331');
             /* međuskladišni prijem: preuzimanje prenosa na čekanju */
             apex.jQuery(document).on("click", ".fin-preuzmi", function () {
                 var b$ = apex.jQuery(this);
@@ -407,7 +408,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y' or rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y' or rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y' or rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -445,7 +446,9 @@ page 331 (
                     s.redni_broj,
                     s.stavka_id,
                     s.jm_naziv,
-                    rtrim(to_char(CASE WHEN :P331_TIP_KRETANJA = 'I'
+                    rtrim(to_char(CASE WHEN :P331_POVRAT = 'Y'
+                         THEN rm_dokument_pkg.dostupno_za_povrat_dok(s.operacija_id, s.stavka_id)
+                         WHEN :P331_TIP_KRETANJA = 'I'
                          THEN rm_dokument_pkg.raspolozivo(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id)
                          ELSE rm_dokument_pkg.stanje(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id) END,
                          'FM999G999G999G990D999999'), '.,') AS raspolozivo,
@@ -462,6 +465,7 @@ page 331 (
                 P331_ID
                 P331_TIP_KRETANJA
                 P331_SKLADISTE_ID
+                P331_POVRAT
             ]
         }
         layout {
@@ -654,6 +658,9 @@ page 331 (
                     WHERE ooj_id = :APP_OOJ_ID
                       AND valid = 'Y'
                       AND nvl(tip_stavke_id, 0) <> 3
+                      AND (nvl(:P331_POVRAT, 'N') <> 'Y' OR :P331_ID IS NULL
+                           OR rm_dokument_pkg.dostupno_za_povrat_dok(:P331_ID, id) > 0
+                           OR id IN (SELECT os.stavka_id FROM operacija_stavke os WHERE os.operacija_id = :P331_ID))
                     ORDER BY sifra
                     ```
                 displayExtraValues: true
@@ -690,7 +697,7 @@ page 331 (
         column RASPOLOZIVO (
             type: textField
             heading {
-                heading: Na skladištu
+                heading: Raspoloživo
                 alignment: end
             }
             layout {
@@ -776,6 +783,28 @@ page 331 (
             }
         )
 
+    )
+
+    region sb-unos (
+        name: Unos po serijskom broju
+        type: staticContent
+        source {
+            htmlCode: <div class="fin-sb-unos__dugme"><button type="button" class="t-Button t-Button--iconLeft fin-sb-dodaj"><span class="t-Icon t-Icon--left fa fa-barcode" aria-hidden="true"></span>Dodaj</button></div>
+        }
+        layout {
+            sequence: 10
+            parentRegion: @stavke-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-sb-unos
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_TIP_KRETANJA = 'I' and :P331_IZMJENJIVA = 'Y'
+        }
     )
 
     region zbir (
@@ -1367,6 +1396,83 @@ page 331 (
         }
     )
 
+    pageItem P331_KOMITENT_ID (
+        type: selectOne
+        label {
+            label: Komitent
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT k.naziv AS d, k.id AS r
+                FROM sec_klijenti k
+                WHERE k.ooj_id = :APP_OOJ_ID
+                ORDER BY k.naziv
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @mjesto-troska
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Komitent kome se roba / oprema daje na servis (kod povrata - od koga se vraća).
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y'
+        }
+    )
+
+    pageItem P331_POVRAT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 17
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_SB_UNOS (
+        type: textField
+        label {
+            label: Serijski broj (barkod / QR)
+            alignment: left
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        layout {
+            sequence: 10
+            region: @sb-unos
+            slot: regionBody
+            columnSpan: 8
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Skenirajte barkod ili QR kod (ili upišite serijski broj i pritisnite Enter). Artikal se prepoznaje po serijskom broju raspoloživom na skladištu; ako stavka postoji količina se povećava, inače se dodaje nova. QR kod može sadržati više brojeva (razdjelnici: razmak, novi red, ; , : /).
+        }
+    )
+
     pageItem P331_SKLADISTE_PRENOS_ID (
         type: selectOne
         label {
@@ -1617,7 +1723,33 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and :P331_TIP_KRETANJA = 'I' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y') and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button povrat-dostupno (
+        buttonName: POVRAT
+        label: Preuzmi dostupno za povrat
+        layout {
+            sequence: 35
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-undo
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_POVRAT = 'Y' and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1669,7 +1801,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1688,7 +1820,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
         }
     )
 
@@ -1707,7 +1839,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y'
         }
     )
 
@@ -1726,7 +1858,26 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y'
+        }
+    )
+
+    validation komitent-obavezno (
+        name: P331_KOMITENT_ID obavezno
+        execution {
+            sequence: 33
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_KOMITENT_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_KOMITENT_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -1745,7 +1896,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'MPR'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'MPR'
         }
     )
 
@@ -1765,7 +1916,7 @@ page 331 (
                     p_vrsta_dokumenta_id => :P331_VRSTA_DOKUMENTA_ID,
                     p_skladiste_id       => :P331_SKLADISTE_ID,
                     p_datum              => :P331_DATUM,
-                    p_klijent_id         => :P331_KLIJENT_ID,
+                    p_klijent_id         => case when rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y' then :P331_KOMITENT_ID else :P331_KLIJENT_ID end,
                     p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
                     p_ugovor_id          => :P331_UGOVOR_ID,
                     p_mjesto_troska_id   => :P331_MJESTO_TROSKA_ID,
@@ -1777,7 +1928,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1879,6 +2030,8 @@ page 331 (
                     :P331_UGOVOR_ID          := d.ugovor_id;
                     :P331_MJESTO_TROSKA_ID   := d.mjesto_troska_id;
                     :P331_ZADUZENI_RADNIK_ID := d.zaduzeni_radnik_id;
+                    :P331_KOMITENT_ID        := d.klijent_id;
+                    :P331_POVRAT             := rm_dokument_pkg.je_povrat(d.vrsta_sifra);
                     :P331_SKLADISTE_PRENOS_ID := d.skladiste_prenos_id;
                     :P331_SKLADISTE_PRENOS   := d.skladiste_prenos_naziv;
                     :P331_VEZA_INFO          := case when d.vrsta_sifra = 'MPP' then 'Preuzet prenos ' || d.veza_naziv
@@ -1941,6 +2094,7 @@ page 331 (
                 for v in (select vd.sifra, vd.naziv from sif.vrste_dokumenata vd where vd.id = :P331_VRSTA_DOKUMENTA_ID) loop
                     :P331_VRSTA_SIFRA := upper(v.sifra);
                     :P331_TIP_KRETANJA := rm_dokument_pkg.tip_kretanja(v.sifra);
+                    :P331_POVRAT := rm_dokument_pkg.je_povrat(v.sifra);
                     :P331_ZBIR := '0,00';
                     :P331_VRSTA_NAZIV := v.naziv;
                     :P331_NAZIV       := case when upper(v.sifra) = 'PRI' then 'Nova prijemnica' when upper(v.sifra) = 'IZD' then 'Nova izdatnica' else 'Novi dokument: ' || v.naziv end;
@@ -1970,7 +2124,7 @@ page 331 (
                     p_vrsta_dokumenta_id => :P331_VRSTA_DOKUMENTA_ID,
                     p_skladiste_id       => :P331_SKLADISTE_ID,
                     p_datum              => :P331_DATUM,
-                    p_klijent_id         => :P331_KLIJENT_ID,
+                    p_klijent_id         => case when rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y' then :P331_KOMITENT_ID else :P331_KLIJENT_ID end,
                     p_otpremnica_broj    => :P331_OTPREMNICA_BROJ,
                     p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
                     p_opis               => :P331_OPIS,
@@ -1987,7 +2141,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -2037,7 +2191,50 @@ page 331 (
         serverSideCondition {
             executionScope: allSubmittedRows
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process povrat-dostupno (
+        name: Povrat - preuzmi dostupne količine
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_application.g_print_success_message := rm_dokument_pkg.dodaj_dostupno_za_povrat(:P331_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 25
+        }
+        serverSideCondition {
+            whenButtonPressed: @povrat-dostupno
+        }
+    )
+
+    process ajax-po-sb (
+        name: DODAJ_PO_SB
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                apex_util.prn(rm_dokument_pkg.dodaj_po_sb_json(kuf_pkg.broj(:P331_ID), apex_application.g_x01), false);
+                ```
+        }
+        execution {
+            sequence: 31
+            point: ajaxCallback
         }
     )
 
@@ -2084,7 +2281,18 @@ page 331 (
         source {
             plsqlCode:
                 ```plsql
-                rm_dokument_pkg.zakljucaj(p_id => :P331_ID, p_tip_preduzetnika => :APP_TIP_PREDUZETNIKA_SIFRA);
+                begin
+                    rm_dokument_pkg.zakljucaj(p_id => :P331_ID, p_tip_preduzetnika => :APP_TIP_PREDUZETNIKA_SIFRA);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
                 ```
         }
         execution {
@@ -2104,8 +2312,19 @@ page 331 (
         source {
             plsqlCode:
                 ```plsql
-                rm_dokument_pkg.otkljucaj(p_id    => :P331_ID,
-                                          p_admin => case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end);
+                begin
+                    rm_dokument_pkg.otkljucaj(p_id    => :P331_ID,
+                                              p_admin => case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
                 ```
         }
         execution {
@@ -2129,7 +2348,10 @@ page 331 (
                     p_stavka_id    => apex_application.g_x01,
                     p_dokument_id  => :P331_ID,
                     p_skladiste_id => :P331_SKLADISTE_ID,
-                    p_datum        => :P331_DATUM
+                    p_datum        => :P331_DATUM,
+                    p_vrsta_sifra  => :P331_VRSTA_SIFRA,
+                    p_radnik_id    => kuf_pkg.broj(:P331_ZADUZENI_RADNIK_ID),
+                    p_klijent_id   => kuf_pkg.broj(:P331_KOMITENT_ID)
                 ));
                 ```
         }
@@ -2145,7 +2367,18 @@ page 331 (
         source {
             plsqlCode:
                 ```plsql
-                rm_dokument_pkg.obrisi(p_id => :P331_ID);
+                begin
+                    rm_dokument_pkg.obrisi(p_id => :P331_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
                 ```
         }
         execution {
@@ -2186,7 +2419,7 @@ page 331 (
         }
         serverSideCondition {
             type: requestIsContainedInValue
-            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,PREUZMI
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,PREUZMI,POVRAT
         }
     )
 

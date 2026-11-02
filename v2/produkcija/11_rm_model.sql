@@ -16,6 +16,7 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R13 (02.11.2026): brojači REV, REVP, RSV, RSVP.
   R12 (02.11.2026): OPERACIJE.ZADUZENI_RADNIK_ID; brojači IOS, ISI, MPR, MPP.
   R11 (02.11.2026): OPERACIJE.MJESTO_TROSKA_ID (izdatnica, izlaz na investiciju u
   toku; SIF.ACC_MJESTA_TROSKA) i brojači IZD / IIN za firme koje imaju te vrste
@@ -103,7 +104,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop
@@ -123,7 +124,7 @@ begin
         end loop;
     end loop;
     commit;
-    dbms_output.put_line('Novi brojači IZD / IIN / IOS / ISI / MPR / MPP: ' || l_novih);
+    dbms_output.put_line('Novi brojači izlaznih, međuskladišnih i reversa: ' || l_novih);
 end;
 /
 

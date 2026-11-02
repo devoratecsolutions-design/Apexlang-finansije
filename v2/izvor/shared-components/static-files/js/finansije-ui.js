@@ -593,7 +593,8 @@ window.finRmStavke = (function ($) {
         return bez(x, "FM999G999G999G990D999999").replace(/0+$/, "");
     }
     function init(regionId, p) {
-        var g = I.grid(regionId), model, izlaz = ($v(p + "_TIP_KRETANJA") === "I"), ro, formatira = false;
+        /* izlaz i povrat reversa: cijenu računa baza, količina najviše do raspoloživog / dostupnog */
+        var g = I.grid(regionId), model, izlaz = ($v(p + "_TIP_KRETANJA") === "I" || $v(p + "_POVRAT") === "Y"), ro, formatira = false;
         if (!g) { return; }
         model = g.model;
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
@@ -622,7 +623,8 @@ window.finRmStavke = (function ($) {
                         art = I.val(model.getValue(rec, "STAVKA_ID"));
                         if (!art) { return; }
                         apex.server.process("ARTIKL_INFO",
-                            { x01: art, pageItems: "#" + p + "_ID,#" + p + "_SKLADISTE_ID,#" + p + "_DATUM" },
+                            { x01: art, pageItems: "#" + p + "_ID,#" + p + "_SKLADISTE_ID,#" + p + "_DATUM,#" + p + "_VRSTA_SIFRA,#" +
+                                                   p + "_ZADUZENI_RADNIK_ID,#" + p + "_KOMITENT_ID" },
                             { dataType: "json" })
                             .done(function (d) {
                                 I.postavi(model, rec, "JM_NAZIV", d.jm || "");
@@ -650,13 +652,70 @@ window.finRmStavke = (function ($) {
                         if (izlaz && change.field === "KOLICINA") {
                             k = I.num(model.getValue(rec, "KOLICINA"));
                             r = I.num(model.getValue(rec, "RASPOLOZIVO"));
-                            if (k > r) { I.greska("Na skladištu je raspoloživo " + fq(r) + " - količina ne može biti veća."); }
+                            if (k > r) { I.greska("Raspoloživo je " + fq(r) + " - količina ne može biti veća."); }
                         }
                     }
                 }
                 if (type === "set" || type === "delete" || type === "insert" || type === "revert") { zbir(); }
             }
         });
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Dokument skladišta (str. 331): unos izlaza po serijskom broju
+   (barkod / QR čitač kuca broj i Enter). Artikal se prepoznaje u bazi,
+   stavka se dodaje ili joj se povećava količina (DODAJ_PO_SB).
+   Poziv: finRmSbUnos.init('P331')
+   ===================================================================== */
+window.finRmSbUnos = (function ($) {
+    "use strict";
+    var P = "P331", u_toku = false;
+    function izmijenjena() {
+        var g = window.finIg.grid("rm_stavke");
+        try { return !!(g && g.model && g.model.isChanged()); } catch (e) { return false; }
+    }
+    function dodaj() {
+        var $f = $("#" + P + "_SB_UNOS"), tekst = String($f.val() || "").trim();
+        if (!tekst || u_toku) { return; }
+        if (izmijenjena()) {
+            window.finIg.greska("Stavke imaju nesnimljene izmjene - prvo kliknite Snimi, pa unosite serijske brojeve.");
+            return;
+        }
+        u_toku = true;
+        apex.server.process("DODAJ_PO_SB", { x01: tekst }, { dataType: "json" })
+            .done(function (d) {
+                apex.message.clearErrors();
+                if (d.n > 0) {
+                    /* ponovno učitavanje: stavke, količine, zbir i serijski brojevi su osvježeni */
+                    try { sessionStorage.setItem("finSbPoruka", d.poruka || ""); } catch (e) { /* ništa */ }
+                    window.location.reload();
+                } else {
+                    window.finIg.greska(d.poruka || "Serijski broj nije dodat.");
+                    $f.trigger("select");
+                    u_toku = false;
+                }
+            })
+            .fail(function () { u_toku = false; });
+    }
+    function init(p) {
+        var $f, poruka = null;
+        P = p || "P331";
+        $f = $("#" + P + "_SB_UNOS");
+        if (!$f.length) { return; }
+        $f.on("keydown", function (e) {
+            if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); dodaj(); }
+        });
+        $(document).on("click", ".fin-sb-dodaj", function (e) { e.preventDefault(); dodaj(); });
+        try {
+            poruka = sessionStorage.getItem("finSbPoruka");
+            sessionStorage.removeItem("finSbPoruka");
+        } catch (e) { poruka = null; }
+        if (poruka !== null) {
+            if (poruka.indexOf(": ") >= 0) { window.finIg.greska(poruka); } else if (poruka) { apex.message.showPageSuccess(poruka); }
+            setTimeout(function () { $f.trigger("focus"); }, 200);
+        }
     }
     return { init: init };
 })(apex.jQuery);
