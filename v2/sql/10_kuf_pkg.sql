@@ -824,6 +824,16 @@ create or replace package body kuf_pkg as
         if l_count > 0 then
             return 'Faktura je vezana za kalkulaciju.';
         end if;
+        -- zavisni trošak kalkulacije kroz fakturu (kolona iz 15_rm_kalkulacija.sql - dinamički, da paket ne zavisi od redoslijeda skripti)
+        begin
+            execute immediate 'select count(*) from kalkulacija_troskovi where kuf_id = :1' into l_count using p_id;
+        exception
+            when others then
+                l_count := 0;
+        end;
+        if l_count > 0 then
+            return 'Faktura je vezana za kalkulaciju kao zavisni trošak.';
+        end if;
         select count(*) into l_count from kuf where veza_kuf_id = p_id;
         if l_count > 0 then
             return 'Na fakturu se poziva drugi dokument (knjižno odobrenje, zaduženje ili zatvaranje avansa).';

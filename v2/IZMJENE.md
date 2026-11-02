@@ -446,3 +446,15 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
 **Napomene (nije greška):** filteri liste dokumenata se pojavljuju kao prijedlozi pri kucanju u pretragu (isto kao ostale liste); izbor modula i skladišta je vezan za sesiju – dva taba iste prijave dijele izabrani modul.
 
 **SQL ponovo:** `14_rm_skladista.sql` (view VW_RM_SKLADISTA – nadređeno), `03_dashboard_pkg.sql` (poslije 14, kao i ranije), `15_rm_kalkulacija.sql` (zaokruživanje marže/VPC). Zatim import aplikacije.
+
+## Kalkulacija – korak R10: prijemnice, načini raspodjele, zavisni troškovi kroz fakturu (02.11.2026)
+- **Lista prijemnica** (izbor u tabeli prijemnica): šifra skladišta · broj · datum · dobavljač (bez broja stavki i vrijednosti). Kolona „Stavki“ uklonjena iz tabele.
+- **Izbor prijemnice odmah popunjava red** (datum, dobavljač, vrijednost) – ranije su polja ostajala prazna do snimanja (AJAX `PRI_INFO`, `RM_KALKULACIJA_PKG.prijemnica_info`).
+- **Načini raspodjele:** Ručno – ukupan iznos (R, kao do sada), **Ručno – jedinična cijena (J, novo)**, Automatski – po vrijednosti / po količini / linearno.
+  - Jedinična cijena: na tabu Raspodjela unosi se cijena po artiklu, iznos reda = cijena × količina, a ukupan iznos izvora (fakture / troška) se sam preračunava i upisuje u izvor (ne može preći raspoloživo fakture). Iznos u tabeli fakture / troška kod ovog načina nije obavezan. Unesena cijena se čuva (KALKULACIJA_RASPODJELA.cijena).
+- **Automatski po vrijednosti** raspoređuje srazmjerno vrijednosti stavke do tada raspoređenoj iz ostalih izvora (ručni, po količini, linearno), a ne vrijednosti prijemnice (koja je najčešće 0). Ako ništa nije raspoređeno – po vrijednosti prijemnice, pa po količini. „Raspodijeli sve automatske“ ide redom: po količini / linearno, pa po vrijednosti; poslije snimanja ručne raspodjele izvori po vrijednosti se automatski preračunavaju. U panelu raspodjele kolona „Do sada raspoređeno“ (umjesto „Vrijednost prijemnica“).
+- Dodavanje novog izvora više ne briše ručno upisane raspodjele drugih izvora – poništava se samo raspodjela izvora po vrijednosti (njihov ključ se mijenja). Dodavanje/uklanjanje prijemnice i dalje poništava sve.
+- **Zavisni troškovi kroz fakturu:** sekcija „Zavisni troškovi“ ima kolonu „Ulazna faktura (opciono)“ – izabrana zaključena UF (prevoz, carina...) sa raspoloživim iznosom, sa/bez PDV-a, kao kod faktura; bez fakture ostaje ručni unos (opis + iznos). Opis se popunjava brojem fakture i dobavljačem ako se ne upiše. Raspoloživo fakture uzima u obzir i fakture i zavisne troškove svih kalkulacija; ista faktura ne može dva puta u istu kalkulaciju. Nove kolone KALKULACIJA_TROSKOVI.kuf_id (FK na KUF), sa_pdv.
+- KUF_PKG: faktura vezana za kalkulaciju kao zavisni trošak ne može se obrisati (provjera dinamičkim SQL-om, da 10 ne zavisi od 15).
+- JS `finansije-ui.js` (finRmKalk) i `.min.js`, verzija u application.apx.
+- **SQL ponovo:** `15_rm_kalkulacija.sql`, zatim `10_kuf_pkg.sql` (samo paket). Zatim import aplikacije.

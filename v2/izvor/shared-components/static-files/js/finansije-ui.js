@@ -841,7 +841,11 @@ apex.jQuery(function ($) {
 
 /* =====================================================================
    Kalkulacija (str. 341)
-   - fakture: izbor fakture / sa-bez PDV-a -> raspoloživo i predlog iznosa (KUF_INFO)
+   - prijemnice: izbor prijemnice odmah popunjava datum, dobavljača i vrijednost (PRI_INFO)
+   - fakture i zavisni troškovi kroz fakturu: izbor fakture / sa-bez PDV-a -> raspoloživo
+     i predlog iznosa (KUF_INFO)
+   - načini raspodjele: ručno - ukupan iznos (R), ručno - jedinična cijena (J: unose se
+     cijene, iznos se preračunava), automatski po vrijednosti / količini / linearno
    - raspodjela: izbor fakture / troška učitava samo panel raspodjele (RASP_IZVOR);
      raspodjela po artiklima (zbirno iz svih prijemnica), čuvanje bez ponovnog
      učitavanja stranice (RASP_SNIMI), automatski svi izvori (RASP_SVE)
@@ -864,8 +868,8 @@ window.finRmKalk = (function ($) {
         apex.message.showErrors([{ type: "error", location: "page", message: poruka, unsafe: false }]);
     }
 
-    /* ---------- fakture */
-    function initKuf(regionId) {
+    /* ---------- fakture i zavisni troškovi (trošak = true: red KALKULACIJA_TROSKOVI, faktura nije obavezna) */
+    function initKuf(regionId, trosak) {
         var g = I.grid(regionId), model;
         if (!g) { return; }
         model = g.model;
@@ -873,18 +877,23 @@ window.finRmKalk = (function ($) {
         I.samoCitanje(regionId, ["RASPOLOZIVO", "STANJE"]);
         model.subscribe({
             onChange: function (type, ch) {
-                var rec, kuf, id, sa;
+                var rec, kuf, id, sa, red;
                 if (type !== "set" || !ch || (ch.field !== "KUF_ID" && ch.field !== "SA_PDV")) { return; }
                 rec = ch.record;
                 kuf = I.val(model.getValue(rec, "KUF_ID"));
-                if (!kuf) { return; }
+                if (!kuf) {
+                    if (trosak) { I.postavi(model, rec, "RASPOLOZIVO", ""); }
+                    return;
+                }
                 id = model.getRecordId(rec);
+                red = /^[0-9]+$/.test(String(id)) ? id : "";
                 sa = model.getFieldMetadata("SA_PDV") ? I.val(model.getValue(rec, "SA_PDV")) : "Y";
-                apex.server.process("KUF_INFO", { x01: kuf, x02: sa || "N", x03: /^[0-9]+$/.test(String(id)) ? id : "" },
+                apex.server.process("KUF_INFO", { x01: kuf, x02: sa || "N", x03: trosak ? "" : red, x04: trosak ? red : "" },
                     { dataType: "json" }).done(function (d) {
                         var rasp = Number(d.rasp || 0), izn = I.num(model.getValue(rec, "IZNOS"));
                         I.postavi(model, rec, "RASPOLOZIVO", f2(rasp));
                         if (!izn || izn > rasp) { I.postavi(model, rec, "IZNOS", f2(rasp)); }
+                        if (trosak && d.naziv && !I.val(model.getValue(rec, "OPIS"))) { I.postavi(model, rec, "OPIS", d.naziv); }
                     });
             }
         });
@@ -899,6 +908,7 @@ window.finRmKalk = (function ($) {
             var $a = $('.fin-kalk-izvor[data-izvor="' + x.izvor + '"]');
             $a.attr("data-r", x.r).find(".fin-kalk-dot").removeClass("fin-kalk-dot--Y fin-kalk-dot--N").addClass("fin-kalk-dot--" + x.r);
             $a.find("[data-ras]").text("raspoređeno " + x.ras);
+            if (x.iz !== undefined) { $a.find(".fin-kalk-izvor__iznos b").text(x.iz); }
         });
         if (sveNaPocetku !== "Y" && d.sve === "Y") {
             /* sve je raspoređeno: tab cijena se otključava ponovnim učitavanjem */
@@ -909,46 +919,90 @@ window.finRmKalk = (function ($) {
 
     /* ---------- panel raspodjele */
     function zbirPanela($p) {
-        var s = 0, cilj = Number($p.data("iznos")) || 0, raz;
+        var s = 0, cilj = Number($p.data("iznos")) || 0, raz, rasp = $p.data("rasp");
         $p.find("[data-iznos-red]").each(function () {
             s += I.num($(this).is("input") ? $(this).val() : $(this).text());
         });
         s = I.r2(s);
-        raz = I.r2(cilj - s);
         $p.find(".fin-kalk-rasp__suma").text(f2(s));
+        if ($p.data("nacin") === "J") {
+            /* jedinična cijena: ukupan iznos se preračunava; granica je raspoloživo fakture */
+            $p.find(".fin-kalk-rasp__ukupno").text(f2(s));
+            if (rasp !== undefined && rasp !== null && rasp !== "") {
+                raz = I.r2(Number(rasp) - s);
+                $p.find(".fin-kalk-rasp__razlika").text("raspoloživo " + f2(Number(rasp))).toggleClass("is-greska", raz < 0);
+            } else {
+                $p.find(".fin-kalk-rasp__razlika").text("").removeClass("is-greska");
+            }
+            return;
+        }
+        raz = I.r2(cilj - s);
         $p.find(".fin-kalk-rasp__razlika").text(f2(raz)).toggleClass("is-greska", Math.abs(raz) >= 0.005);
     }
     function crtaj(d) {
-        var $p = $("#finKalkRasp"), rucno = d.nacin === "R" && d.izmjenjiva === "Y", html, redovi = "";
+        var $p = $("#finKalkRasp"), izm = d.izmjenjiva === "Y", jed = d.nacin === "J", rucno = d.nacin === "R" && izm,
+            html, redovi = "", uputa;
         (d.stavke || []).forEach(function (s) {
-            var izn = s.iznos ? f2(I.num(s.iznos)) : "";
+            var izn = s.iznos ? f2(I.num(s.iznos)) : "", cij = s.cijena ? f4(I.num(s.cijena)) : "";
             redovi += '<tr data-artikal="' + esc(s.id) + '"><td><span class="fin-doc"><span class="fin-doc__no">' + esc(s.sifra) +
                 '</span><span class="fin-sub">' + esc(s.naziv) + '</span></span></td><td>' + esc(s.jm || "") +
-                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.osn) + '</td><td class="u-tR">' +
-                (rucno ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-iznos-red value="' + esc(izn) + '">'
-                       : '<span data-iznos-red>' + esc(izn) + "</span>") +
-                '</td><td class="u-tR fin-kalk-rasp__jed" data-kol="' + esc(s.kol) + '"></td></tr>';
+                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.pret || s.osn) + '</td>';
+            if (jed) {
+                /* ručno - jedinična cijena: unosi se cijena, iznos = cijena x količina */
+                redovi += '<td class="u-tR">' + (izm ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-cijena-red value="' +
+                    esc(cij) + '">' : esc(cij)) + '</td><td class="u-tR"><span data-iznos-red data-kol="' + esc(s.kol) + '">' +
+                    esc(izn) + '</span></td></tr>';
+            } else {
+                redovi += '<td class="u-tR">' +
+                    (rucno ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-iznos-red value="' + esc(izn) + '">'
+                           : '<span data-iznos-red>' + esc(izn) + "</span>") +
+                    '</td><td class="u-tR fin-kalk-rasp__jed" data-kol="' + esc(s.kol) + '"></td></tr>';
+            }
         });
+        if (jed) {
+            uputa = "Upišite jediničnu cijenu po artiklu; iznos i ukupan iznos se preračunavaju (cijena × količina)." +
+                (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
+        } else if (d.nacin === "R") {
+            uputa = "Upišite iznos po artiklu; zbir mora biti jednak iznosu.";
+        } else {
+            uputa = "Iznosi su izračunati " + d.nacinNaziv + (d.nacin === "V" ? " - srazmjerno do sada raspoređenoj vrijednosti " +
+                "artikla (ručne raspodjele, po količini, linearno); kad je nema, srazmjerno vrijednosti prijemnice" : "") +
+                ". Za ručni unos promijenite način raspodjele na prvom tabu.";
+        }
         html = '<div class="fin-kalk-rasp__zaglavlje"><div><div class="fin-kalk-rasp__naziv">' + esc(d.naziv) + '</div>' +
             '<div class="fin-kalk-rasp__meta"><span class="fin-chip fin-chip--info"><span class="fa fa-random" aria-hidden="true"></span> raspodjela: ' +
             esc(d.nacinNaziv) + '</span><span class="fin-chip fin-kalk-stanje fin-kalk-stanje--' + esc(d.rasporedjen) + '"></span>' +
-            (d.sacuvano === "N" && d.nacin !== "R" ? '<span class="fin-sub">prijedlog - nije sačuvano</span>' : "") +
-            '</div></div><div class="fin-kalk-rasp__iznos"><span>Iznos</span><b>' + esc(d.iznos) + ' KM</b></div></div>' +
-            (d.nacin !== "R" ? '<p class="fin-kalk-uputa">Iznosi su izračunati ' + esc(d.nacinNaziv) +
-                '. Za ručni unos promijenite način raspodjele na prvom tabu.</p>' : '<p class="fin-kalk-uputa">Upišite iznos po artiklu; zbir mora biti jednak iznosu.</p>') +
+            (d.sacuvano === "N" && d.nacin !== "R" && d.nacin !== "J" ? '<span class="fin-sub">prijedlog - nije sačuvano</span>' : "") +
+            '</div></div><div class="fin-kalk-rasp__iznos"><span>' + (jed ? "Ukupan iznos" : "Iznos") + '</span><b>' +
+            (jed ? '<span class="fin-kalk-rasp__ukupno">' + esc(d.iznos) + '</span>' : esc(d.iznos)) + ' KM</b></div></div>' +
+            '<p class="fin-kalk-uputa">' + esc(uputa) + '</p>' +
             '<table class="fin-kalk-rasp__tabela"><thead><tr><th>Artikal</th><th>JM</th><th class="u-tR">Količina</th>' +
-            '<th class="u-tR">Vrijednost prijemnica</th><th class="u-tR">Raspoređeno (KM)</th><th class="u-tR">Po jedinici</th></tr></thead><tbody>' +
-            redovi + '</tbody><tfoot><tr><td colspan="4">Ukupno / razlika</td><td class="u-tR"><b class="fin-kalk-rasp__suma"></b></td>' +
-            '<td class="u-tR"><span class="fin-kalk-rasp__razlika"></span></td></tr></tfoot></table>' +
+            '<th class="u-tR">Do sada raspoređeno</th>' +
+            (jed ? '<th class="u-tR">Jedinična cijena</th><th class="u-tR">Iznos (KM)</th>'
+                 : '<th class="u-tR">Raspoređeno (KM)</th><th class="u-tR">Po jedinici</th>') + '</tr></thead><tbody>' +
+            redovi + '</tbody><tfoot><tr><td colspan="4">' + (jed ? "Ukupno" : "Ukupno / razlika") + '</td>' +
+            (jed ? '<td></td><td class="u-tR"><b class="fin-kalk-rasp__suma"></b><br><span class="fin-kalk-rasp__razlika"></span></td>'
+                 : '<td class="u-tR"><b class="fin-kalk-rasp__suma"></b></td><td class="u-tR"><span class="fin-kalk-rasp__razlika"></span></td>') +
+            '</tr></tfoot></table>' +
             (d.izmjenjiva === "Y" ? '<div class="fin-kalk-rasp__dugmad"><button type="button" class="t-Button t-Button--hot t-Button--iconLeft fin-kalk-sacuvaj">' +
                 '<span class="t-Icon t-Icon--left fa fa-save" aria-hidden="true"></span>Sačuvaj raspodjelu</button>' +
                 '<button type="button" class="t-Button t-Button--simple t-Button--iconLeft fin-kalk-sve">' +
                 '<span class="t-Icon t-Icon--left fa fa-random" aria-hidden="true"></span>Raspodijeli sve automatske</button></div>' : "");
-        $p.html(html).data("iznos", d.iznosBroj).data("izvor", d.izvor);
+        $p.html(html).data("iznos", d.iznosBroj).data("izvor", d.izvor).data("nacin", d.nacin)
+            .data("rasp", d.raspolozivoBroj === undefined ? "" : d.raspolozivoBroj);
         osvjeziJedinicno($p);
         zbirPanela($p);
     }
     function osvjeziJedinicno($p) {
+        if ($p.data("nacin") === "J") {
+            /* iznos = jedinična cijena x količina (kao u bazi: zaokruženo na 2 decimale) */
+            $p.find("tbody tr").each(function () {
+                var $r = $(this), $c = $r.find("[data-cijena-red]"), $i = $r.find("[data-iznos-red]");
+                if (!$c.length) { return; }
+                $i.text($c.val() === "" ? "" : f2(I.num($c.val()) * I.num($i.data("kol"))));
+            });
+            return;
+        }
         $p.find("tbody tr").each(function () {
             var $r = $(this), $i = $r.find("[data-iznos-red]"), izn = I.num($i.is("input") ? $i.val() : $i.text()),
                 kol = I.num($r.find(".fin-kalk-rasp__jed").data("kol"));
@@ -970,9 +1024,10 @@ window.finRmKalk = (function ($) {
     function sacuvaj() {
         var $p = $("#finKalkRasp"), ids = [], izn = [];
         $p.find("tbody tr").each(function () {
-            var $i = $(this).find("[data-iznos-red]");
+            var $i = $(this).find("[data-iznos-red]"), $c = $(this).find("[data-cijena-red]");
             ids.push(String($(this).data("artikal")));
-            izn.push($i.is("input") ? $i.val() : $i.text());
+            /* kod jedinične cijene šalju se cijene (iznos računa baza) */
+            izn.push($c.length ? $c.val() : ($i.is("input") ? $i.val() : $i.text()));
         });
         apex.server.process("RASP_SNIMI", { x01: $p.data("izvor"), f01: ids, f02: izn }, { dataType: "json" })
             .done(function (d) {
@@ -981,7 +1036,14 @@ window.finRmKalk = (function ($) {
                 apex.message.showPageSuccess("Raspodjela je sačuvana.");
                 stanje(d);
                 ucitaj(trenutni);
+                osvjeziTabele();
             });
+    }
+    /* iznosi izvora se mijenjaju (jedinična cijena) - osvježiti tabele prvog taba */
+    function osvjeziTabele() {
+        ["kalk_kuf", "kalk_troskovi"].forEach(function (r) {
+            try { if (apex.region(r)) { apex.region(r).refresh(); } } catch (e) { /* ništa */ }
+        });
     }
     function rasporediSve() {
         apex.server.process("RASP_SVE", {}, { dataType: "json" }).done(function (d) {
@@ -1013,7 +1075,25 @@ window.finRmKalk = (function ($) {
         var g = I.grid(regionId);
         if (!g) { return; }
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
-        I.samoCitanje(regionId, ["DATUM", "DOBAVLJAC", "STAVKI", "VRIJEDNOST"]);
+        I.samoCitanje(regionId, ["DATUM", "DOBAVLJAC", "VRIJEDNOST"]);
+        /* izbor prijemnice odmah popunjava ostala polja reda (ranije tek poslije snimanja) */
+        g.model.subscribe({
+            onChange: function (type, ch) {
+                var rec, op;
+                if (type !== "set" || !ch || ch.field !== "OPERACIJA_ID") { return; }
+                rec = ch.record;
+                op = I.val(g.model.getValue(rec, "OPERACIJA_ID"));
+                if (!op) {
+                    ["DATUM", "DOBAVLJAC", "VRIJEDNOST"].forEach(function (f) { I.postavi(g.model, rec, f, ""); });
+                    return;
+                }
+                apex.server.process("PRI_INFO", { x01: op }, { dataType: "json" }).done(function (d) {
+                    I.postavi(g.model, rec, "DATUM", d.datum || "");
+                    I.postavi(g.model, rec, "DOBAVLJAC", d.dobavljac || "");
+                    I.postavi(g.model, rec, "VRIJEDNOST", d.vrijednost || "");
+                });
+            }
+        });
     }
 
     /* ---------- cijene po artiklu i sastav nabavne cijene */
@@ -1068,7 +1148,8 @@ window.finRmKalk = (function ($) {
     function init(p) {
         P = p || "P341";
         sveNaPocetku = $v(P + "_SVE_RASP");
-        initKuf("kalk_kuf");
+        initKuf("kalk_kuf", false);
+        initKuf("kalk_troskovi", true);
         initPrijemnice("kalk_prijemnice");
         initCijene("kalk_cijene");
         initRaspodjela();

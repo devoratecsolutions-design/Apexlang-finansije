@@ -48,7 +48,7 @@ app FINANSIJE (
         fileUrls: [
             #WORKSPACE_FILES#highlight_required#MIN#.js
             #APP_FILES#js/success-autohide.js
-            #APP_FILES#js/finansije-ui#MIN#.js?v=08956c39
+            #APP_FILES#js/finansije-ui#MIN#.js?v=1d93c711
         ]
     }
     css {

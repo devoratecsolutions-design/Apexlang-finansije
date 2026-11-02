@@ -24,6 +24,15 @@
                KALKULACIJA_KUF (iznos, sa_pdv),
                KALKULACIJA_STAVKE (operacija_id, stavka_id, ulazna_cijena, osnovica, ...)
   Nova tabela: KALKULACIJA_TROSKOVI (zavisni troškovi bez fakture)
+  R10 (02.11.2026):
+    - način J = ručno - jedinična cijena (unose se cijene po artiklu, iznos izvora se
+      preračunava), R = ručno - ukupan iznos; ostali načini su automatski
+    - automatski po vrijednosti (V): ključ je do tada raspoređena vrijednost stavke (iz
+      ostalih izvora), a ne vrijednost prijemnice; redoslijed: ručni, po količini /
+      linearno, pa po vrijednosti
+    - zavisni trošak može biti i kroz ulaznu fakturu (KALKULACIJA_TROSKOVI.kuf_id, sa_pdv)
+    - novi izvor ili izmjena izvora poništava samo raspodjelu tog izvora i izvora po
+      vrijednosti (ručno upisani iznosi i cijene ostaju)
   Skripta se može pokrenuti više puta.
 ================================================================================
 */
@@ -84,6 +93,14 @@ begin
     end if;
 
     kolona('KALKULACIJA_TROSKOVI', 'nacin_raspodjele', 'varchar2(1 char)');
+    -- R10: zavisni trošak može biti i kroz ulaznu fakturu (dio iznosa fakture)
+    kolona('KALKULACIJA_TROSKOVI', 'kuf_id', 'number');
+    kolona('KALKULACIJA_TROSKOVI', 'sa_pdv', 'varchar2(1 char)');
+    indeks('KALKULACIJA_TROSKOVI_I_KUF', 'create index kalkulacija_troskovi_i_kuf on kalkulacija_troskovi (kuf_id)');
+    select count(*) into l_n from user_constraints where constraint_name = 'KALKULACIJA_TROSKOVI_KUF_FK';
+    if l_n = 0 then
+        execute immediate 'alter table kalkulacija_troskovi add constraint kalkulacija_troskovi_kuf_fk foreign key (kuf_id) references kuf (id)';
+    end if;
 
     select count(*) into l_n from user_tables where table_name = 'KALKULACIJA_RASPODJELA';
     if l_n = 0 then
@@ -103,6 +120,8 @@ begin
             )]';
         dbms_output.put_line('Napravljena tabela KALKULACIJA_RASPODJELA');
     end if;
+    -- R10: jedinična cijena koju je korisnik upisao (način "Ručno - jedinična cijena")
+    kolona('KALKULACIJA_RASPODJELA', 'cijena', 'number');
     indeks('KALKULACIJA_RASPODJELA_I1', 'create index kalkulacija_raspodjela_i1 on kalkulacija_raspodjela (kalkulacija_id)');
     indeks('KALKULACIJA_RASPODJELA_I2', 'create index kalkulacija_raspodjela_i2 on kalkulacija_raspodjela (kalkulacija_stavka_id)');
 
@@ -127,12 +146,15 @@ begin
 end;
 /
 
-comment on table kalkulacija_troskovi is 'Zavisni troškovi kalkulacije bez ulazne fakture (vlastiti prevoz, carina...) (v2)';
+comment on table kalkulacija_troskovi is 'Zavisni troškovi kalkulacije: ručno uneseni (vlastiti prevoz...) ili kroz ulaznu fakturu (prevoz, carina...) (v2)';
 comment on column kalkulacije.status is 'P = u pripremi, Z = zaključena (v2)';
-comment on column kalkulacije.nacin_raspodjele is 'V = po vrijednosti, K = po količini, L = linearno, R = ručno (v2)';
+comment on column kalkulacije.nacin_raspodjele is 'V = po vrijednosti, K = po količini, L = linearno, R = ručno - ukupan iznos, J = ručno - jedinična cijena (v2)';
 comment on column kalkulacija_kuf.iznos is 'Iznos fakture koji se raspoređuje u ovoj kalkulaciji (KM) (v2)';
 comment on column kalkulacija_kuf.sa_pdv is 'Y = iznos sa PDV-om, N = bez PDV-a (v2)';
-comment on column kalkulacija_kuf.nacin_raspodjele is 'V = po vrijednosti, K = po količini, L = linearno, R = ručno (v2)';
+comment on column kalkulacija_kuf.nacin_raspodjele is 'V = automatski po vrijednosti (do tada raspoređenoj), K = po količini, L = linearno, R = ručno - ukupan iznos, J = ručno - jedinična cijena (v2)';
+comment on column kalkulacija_troskovi.kuf_id is 'Ulazna faktura zavisnog troška (prazno = ručno unesen trošak bez fakture) (v2)';
+comment on column kalkulacija_troskovi.sa_pdv is 'Y = iznos fakture sa PDV-om, N = bez PDV-a (samo trošak kroz fakturu) (v2)';
+comment on column kalkulacija_raspodjela.cijena is 'Jedinična cijena koju je korisnik upisao kod načina J (ručno - jedinična cijena) (v2)';
 comment on table kalkulacija_raspodjela is 'Raspodjela iznosa fakture / zavisnog troška na stavke prijemnica u kalkulaciji (v2)';
 
 -- brojač KALK (tekuća godina) za firme koje imaju vrstu dokumenta KALK
@@ -178,13 +200,18 @@ create or replace package rm_kalkulacija_pkg as
     procedure obrisi_prijemnicu_red (p_red_id in number);
 
     -- ulazne fakture i zavisni troškovi
-    function kuf_raspolozivo (p_kuf_id in number, p_sa_pdv in varchar2, p_bez_reda in number default null) return number;
-    function kuf_info (p_kuf_id in number, p_sa_pdv in varchar2, p_red_id in number) return varchar2;    -- JSON
+    -- p_bez_reda = red KALKULACIJA_KUF, p_bez_troska = red KALKULACIJA_TROSKOVI koji se ne računa kao iskorišten
+    function kuf_raspolozivo (p_kuf_id in number, p_sa_pdv in varchar2, p_bez_reda in number default null,
+                              p_bez_troska in number default null) return number;
+    function kuf_info (p_kuf_id in number, p_sa_pdv in varchar2, p_red_id in number,
+                       p_trosak_id in number default null) return varchar2;    -- JSON
+    function prijemnica_info (p_operacija_id in number) return varchar2;   -- JSON (datum, dobavljač, vrijednost)
     procedure snimi_kuf (p_red_id in out number, p_id in number, p_kuf_id in number, p_sa_pdv in varchar2,
                          p_iznos in number, p_pdv_sistem in varchar2, p_nacin in varchar2 default 'V');
     procedure obrisi_kuf (p_red_id in number);
     procedure snimi_trosak (p_red_id in out number, p_id in number, p_opis in varchar2, p_iznos in number,
-                            p_nacin in varchar2 default 'V');
+                            p_nacin in varchar2 default 'V', p_kuf_id in number default null,
+                            p_sa_pdv in varchar2 default null, p_pdv_sistem in varchar2 default null);
     procedure obrisi_trosak (p_red_id in number);
 
     -- raspodjela po izvorima (faktura / trošak)
@@ -220,9 +247,11 @@ end rm_kalkulacija_pkg;
 create or replace package body rm_kalkulacija_pkg as
 
     type t_artikal is record (stavka_id number, sifra varchar2(255), naziv varchar2(255), jm varchar2(255),
-                              kol number, osn number, iznos number, sacuvano number);
+                              kol number, osn number, iznos number, sacuvano number, pret number, cijena number);
     type t_artikli is table of t_artikal index by pls_integer;
 
+
+    procedure ponisti_vrijednosne (p_id in number);       -- definisana niže
 
     procedure greska (p_tekst in varchar2) is
     begin
@@ -311,7 +340,7 @@ create or replace package body rm_kalkulacija_pkg as
         if l_zak is not null and trunc(p_datum) < trunc(l_zak) then
             greska('Datum kalkulacije je u zaključanom periodu.');
         end if;
-        if nvl(p_nacin_raspodjele, 'V') not in ('V', 'K', 'L', 'R') then
+        if nvl(p_nacin_raspodjele, 'V') not in ('V', 'K', 'L', 'R', 'J') then
             greska('Nepoznat način raspodjele.');
         end if;
 
@@ -426,50 +455,73 @@ create or replace package body rm_kalkulacija_pkg as
     end ukloni_prijemnicu;
 
     --------------------------------------------------------------------- fakture i troškovi
-    -- iskorišteni dio fakture je udio (iznos / osnova reda), pa se miješanje "sa" i "bez PDV-a" računa ispravno
-    function kuf_raspolozivo (p_kuf_id in number, p_sa_pdv in varchar2, p_bez_reda in number default null) return number is
+    -- iskorišteni dio fakture je udio (iznos / osnova reda), pa se miješanje "sa" i "bez PDV-a" računa ispravno;
+    -- računaju se fakture kalkulacija (KALKULACIJA_KUF) i zavisni troškovi kroz fakturu (KALKULACIJA_TROSKOVI)
+    function kuf_raspolozivo (p_kuf_id in number, p_sa_pdv in varchar2, p_bez_reda in number default null,
+                              p_bez_troska in number default null) return number is
         l_sa  number;
         l_bez number;
         l_udio number;
     begin
         select nvl(iznos_sa_pdv, 0), nvl(iznos_bez_pdv, 0) into l_sa, l_bez from kuf where id = p_kuf_id;
-        select nvl(sum(case when kk.sa_pdv = 'Y' then case when l_sa = 0 then 0 else kk.iznos / l_sa end
-                            else case when l_bez = 0 then 0 else kk.iznos / l_bez end end), 0)
+        select nvl(sum(case when x.sa_pdv = 'Y' then case when l_sa = 0 then 0 else x.iznos / l_sa end
+                            else case when l_bez = 0 then 0 else x.iznos / l_bez end end), 0)
           into l_udio
-          from kalkulacija_kuf kk
-         where kk.kuf_id = p_kuf_id
-           and kk.iznos is not null
-           and kk.id <> nvl(p_bez_reda, -1);
+          from (select kk.sa_pdv, kk.iznos
+                  from kalkulacija_kuf kk
+                 where kk.kuf_id = p_kuf_id
+                   and kk.iznos is not null
+                   and kk.id <> nvl(p_bez_reda, -1)
+                union all
+                select nvl(kt.sa_pdv, 'N'), kt.iznos
+                  from kalkulacija_troskovi kt
+                 where kt.kuf_id = p_kuf_id
+                   and kt.iznos is not null
+                   and kt.id <> nvl(p_bez_troska, -1)) x;
         return greatest(round((1 - l_udio) * case when p_sa_pdv = 'Y' then l_sa else l_bez end, 2), 0);
     exception
         when no_data_found then
             return 0;
     end kuf_raspolozivo;
 
-    function kuf_info (p_kuf_id in number, p_sa_pdv in varchar2, p_red_id in number) return varchar2 is
+    function kuf_info (p_kuf_id in number, p_sa_pdv in varchar2, p_red_id in number,
+                       p_trosak_id in number default null) return varchar2 is
         l_json varchar2(1000);
     begin
-        select json_object('osnova' value case when p_sa_pdv = 'Y' then iznos_sa_pdv else iznos_bez_pdv end,
-                           'rasp' value kuf_raspolozivo(p_kuf_id, p_sa_pdv, p_red_id))
+        select json_object('osnova' value case when p_sa_pdv = 'Y' then k.iznos_sa_pdv else k.iznos_bez_pdv end,
+                           'rasp' value kuf_raspolozivo(p_kuf_id, p_sa_pdv, p_red_id, p_trosak_id),
+                           'naziv' value k.naziv || nvl2(kl.naziv, ' · ' || kl.naziv, ''))
           into l_json
-          from kuf where id = p_kuf_id;
+          from kuf k
+          left join sec_klijenti kl on kl.id = k.klijent_id
+         where k.id = p_kuf_id;
         return l_json;
     exception
         when no_data_found then
             return '{}';
     end kuf_info;
 
-    procedure snimi_kuf (p_red_id in out number, p_id in number, p_kuf_id in number, p_sa_pdv in varchar2,
-                         p_iznos in number, p_pdv_sistem in varchar2, p_nacin in varchar2 default 'V') is
-        l_nacin  varchar2(1) := nvl(p_nacin, 'V');
-        l_ok     number;
-        l_sa_pdv varchar2(1) := case when nvl(p_pdv_sistem, 'N') = 'Y' then nvl(p_sa_pdv, 'N') else 'Y' end;
-        l_rasp   number;
+    -- podaci prijemnice za tabelu prijemnica (popunjavanje reda odmah po izboru)
+    function prijemnica_info (p_operacija_id in number) return varchar2 is
+        l_json varchar2(2000);
     begin
-        provjeri_izmjenu(p_id);
-        if p_kuf_id is null then
-            greska('Izaberite ulaznu fakturu.');
-        end if;
+        select json_object('datum'      value to_char(o.datum, 'DD.MM.YYYY'),
+                           'dobavljac'  value o.klijent_naziv,
+                           'skladiste'  value o.skladiste_sifra,
+                           'vrijednost' value to_char(o.iznos, 'FM999G999G999G990D00'))
+          into l_json
+          from vw_rm_dokumenti o
+         where o.id = p_operacija_id;
+        return l_json;
+    exception
+        when no_data_found then
+            return '{}';
+    end prijemnica_info;
+
+    -- zaključena ulazna faktura firme kalkulacije (UF, nije stornirana)
+    procedure provjeri_fakturu (p_id in number, p_kuf_id in number) is
+        l_ok number;
+    begin
         select count(*) into l_ok
           from kuf k
           join kalkulacije kl on kl.id = p_id and kl.ooj_id = k.ooj_id
@@ -482,32 +534,70 @@ create or replace package body rm_kalkulacija_pkg as
         if l_ok = 0 then
             greska('U kalkulaciju se uključuju samo zaključene ulazne fakture firme.');
         end if;
-        if p_iznos is null or p_iznos <= 0 then
+    end provjeri_fakturu;
+
+    -- ista faktura ne smije biti dva puta u istoj kalkulaciji (ni kao faktura ni kao zavisni trošak)
+    procedure provjeri_duplikat_fakture (p_id in number, p_kuf_id in number, p_kuf_red in number, p_trosak_red in number) is
+        l_n number;
+    begin
+        select count(*) into l_n from (
+            select id from kalkulacija_kuf where kalkulacija_id = p_id and kuf_id = p_kuf_id and id <> nvl(p_kuf_red, -1)
+            union all
+            select id from kalkulacija_troskovi where kalkulacija_id = p_id and kuf_id = p_kuf_id and id <> nvl(p_trosak_red, -1));
+        if l_n > 0 then
+            greska('Faktura je već dodata u ovu kalkulaciju (kao faktura ili zavisni trošak) - promijenite iznos na postojećem redu.');
+        end if;
+    end provjeri_duplikat_fakture;
+
+    function rucni_nacin (p_nacin in varchar2) return boolean is
+    begin
+        return p_nacin in ('R', 'J');
+    end rucni_nacin;
+
+    procedure snimi_kuf (p_red_id in out number, p_id in number, p_kuf_id in number, p_sa_pdv in varchar2,
+                         p_iznos in number, p_pdv_sistem in varchar2, p_nacin in varchar2 default 'V') is
+        l_nacin  varchar2(1) := nvl(p_nacin, 'V');
+        l_ok     number;
+        l_sa_pdv varchar2(1) := case when nvl(p_pdv_sistem, 'N') = 'Y' then nvl(p_sa_pdv, 'N') else 'Y' end;
+        l_rasp   number;
+        l_iznos  number := round(p_iznos, 2);
+    begin
+        provjeri_izmjenu(p_id);
+        if p_kuf_id is null then
+            greska('Izaberite ulaznu fakturu.');
+        end if;
+        provjeri_fakturu(p_id, p_kuf_id);
+        if l_nacin not in ('V', 'K', 'L', 'R', 'J') then
+            greska('Nepoznat način raspodjele.');
+        end if;
+        if l_nacin = 'J' then
+            -- iznos se preračunava iz unesenih jediničnih cijena (tab Raspodjela)
+            l_iznos := null;
+            if p_red_id is not null then
+                select max(case when kuf_id = p_kuf_id and sa_pdv = l_sa_pdv and nacin_raspodjele = 'J' then iznos end)
+                  into l_iznos from kalkulacija_kuf where id = p_red_id;
+            end if;
+            l_iznos := nvl(l_iznos, 0);
+        elsif l_iznos is null or l_iznos <= 0 then
             greska('Iznos za raspodjelu mora biti veći od nule.');
         end if;
         l_rasp := kuf_raspolozivo(p_kuf_id, l_sa_pdv, p_red_id);
-        if p_iznos > l_rasp then
+        if l_iznos > l_rasp then
             greska('Iznos za raspodjelu je veći od raspoloživog iznosa fakture (' || to_char(l_rasp, 'FM999G999G999G990D00') || ').');
         end if;
-        select count(*) into l_ok from kalkulacija_kuf where kalkulacija_id = p_id and kuf_id = p_kuf_id and id <> nvl(p_red_id, -1);
-        if l_ok > 0 then
-            greska('Faktura je već dodata u ovu kalkulaciju - promijenite iznos na postojećem redu.');
-        end if;
-        if l_nacin not in ('V', 'K', 'L', 'R') then
-            greska('Nepoznat način raspodjele.');
-        end if;
+        provjeri_duplikat_fakture(p_id, p_kuf_id, p_red_id, null);
         if p_red_id is null then
             insert into kalkulacija_kuf (kalkulacija_id, kuf_id, iznos, sa_pdv, tip_kalkulacije, nacin_raspodjele)
-            values (p_id, p_kuf_id, round(p_iznos, 2), l_sa_pdv, 'U', l_nacin)
+            values (p_id, p_kuf_id, l_iznos, l_sa_pdv, 'U', l_nacin)
             returning id into p_red_id;
-            ponisti_raspodjelu(p_id);                    -- nova faktura: dotadašnja raspodjela se poništava
+            ponisti_vrijednosne(p_id);                   -- novi izvor mijenja ključ raspodjele po vrijednosti
         else
             select count(*) into l_ok from kalkulacija_kuf
-             where id = p_red_id and kuf_id = p_kuf_id and iznos = round(p_iznos, 2) and sa_pdv = l_sa_pdv
+             where id = p_red_id and kuf_id = p_kuf_id and iznos = l_iznos and sa_pdv = l_sa_pdv
                and nvl(nacin_raspodjele, 'V') = l_nacin;
             if l_ok = 0 then
                 update kalkulacija_kuf
-                   set kuf_id = p_kuf_id, iznos = round(p_iznos, 2), sa_pdv = l_sa_pdv, nacin_raspodjele = l_nacin
+                   set kuf_id = p_kuf_id, iznos = l_iznos, sa_pdv = l_sa_pdv, nacin_raspodjele = l_nacin
                  where id = p_red_id and kalkulacija_id = p_id;
                 ponisti_raspodjelu(p_id, p_kuf_red_id => p_red_id);
             end if;
@@ -521,35 +611,67 @@ create or replace package body rm_kalkulacija_pkg as
         provjeri_izmjenu(l_id);
         delete from kalkulacija_raspodjela where kalkulacija_kuf_id = p_red_id;
         delete from kalkulacija_kuf where id = p_red_id;
+        ponisti_vrijednosne(l_id);
     exception
         when no_data_found then
             null;
     end obrisi_kuf;
 
+    -- zavisni trošak: ručno unesen (opis, iznos) ili kroz ulaznu fakturu (dio raspoloživog iznosa fakture)
     procedure snimi_trosak (p_red_id in out number, p_id in number, p_opis in varchar2, p_iznos in number,
-                            p_nacin in varchar2 default 'V') is
-        l_nacin varchar2(1) := nvl(p_nacin, 'V');
-        l_ok    number;
+                            p_nacin in varchar2 default 'V', p_kuf_id in number default null,
+                            p_sa_pdv in varchar2 default null, p_pdv_sistem in varchar2 default null) is
+        l_nacin  varchar2(1) := nvl(p_nacin, 'V');
+        l_ok     number;
+        l_opis   varchar2(500 char) := trim(p_opis);
+        l_sa_pdv varchar2(1);
+        l_iznos  number := round(p_iznos, 2);
+        l_rasp   number;
     begin
         provjeri_izmjenu(p_id);
-        if trim(p_opis) is null then
-            greska('Unesite opis zavisnog troška.');
-        end if;
-        if p_iznos is null or p_iznos <= 0 then
-            greska('Iznos zavisnog troška mora biti veći od nule.');
-        end if;
-        if l_nacin not in ('V', 'K', 'L', 'R') then
+        if l_nacin not in ('V', 'K', 'L', 'R', 'J') then
             greska('Nepoznat način raspodjele.');
         end if;
+        if p_kuf_id is not null then
+            provjeri_fakturu(p_id, p_kuf_id);
+            provjeri_duplikat_fakture(p_id, p_kuf_id, null, p_red_id);
+            l_sa_pdv := case when nvl(p_pdv_sistem, 'N') = 'Y' then nvl(p_sa_pdv, 'N') else 'Y' end;
+            if l_opis is null then
+                select substr(k.naziv || nvl2(kl.naziv, ' · ' || kl.naziv, ''), 1, 500) into l_opis
+                  from kuf k left join sec_klijenti kl on kl.id = k.klijent_id where k.id = p_kuf_id;
+            end if;
+        end if;
+        if l_opis is null then
+            greska('Unesite opis zavisnog troška ili izaberite ulaznu fakturu.');
+        end if;
+        if l_nacin = 'J' then
+            l_iznos := null;
+            if p_red_id is not null then
+                select max(case when nvl(kuf_id, -1) = nvl(p_kuf_id, -1) and nvl(sa_pdv, '-') = nvl(l_sa_pdv, '-')
+                                 and nacin_raspodjele = 'J' then iznos end)
+                  into l_iznos from kalkulacija_troskovi where id = p_red_id;
+            end if;
+            l_iznos := nvl(l_iznos, 0);
+        elsif l_iznos is null or l_iznos <= 0 then
+            greska('Iznos zavisnog troška mora biti veći od nule.');
+        end if;
+        if p_kuf_id is not null then
+            l_rasp := kuf_raspolozivo(p_kuf_id, l_sa_pdv, null, p_red_id);
+            if l_iznos > l_rasp then
+                greska('Iznos troška je veći od raspoloživog iznosa fakture (' || to_char(l_rasp, 'FM999G999G999G990D00') || ').');
+            end if;
+        end if;
         if p_red_id is null then
-            insert into kalkulacija_troskovi (kalkulacija_id, opis, iznos, nacin_raspodjele)
-            values (p_id, trim(p_opis), round(p_iznos, 2), l_nacin)
+            insert into kalkulacija_troskovi (kalkulacija_id, opis, iznos, nacin_raspodjele, kuf_id, sa_pdv)
+            values (p_id, l_opis, l_iznos, l_nacin, p_kuf_id, l_sa_pdv)
             returning id into p_red_id;
-            ponisti_raspodjelu(p_id);                    -- novi trošak: dotadašnja raspodjela se poništava
+            ponisti_vrijednosne(p_id);                   -- novi izvor mijenja ključ raspodjele po vrijednosti
         else
             select count(*) into l_ok from kalkulacija_troskovi
-             where id = p_red_id and iznos = round(p_iznos, 2) and nvl(nacin_raspodjele, 'V') = l_nacin;
-            update kalkulacija_troskovi set opis = trim(p_opis), iznos = round(p_iznos, 2), nacin_raspodjele = l_nacin
+             where id = p_red_id and iznos = l_iznos and nvl(nacin_raspodjele, 'V') = l_nacin
+               and nvl(kuf_id, -1) = nvl(p_kuf_id, -1) and nvl(sa_pdv, '-') = nvl(l_sa_pdv, '-');
+            update kalkulacija_troskovi
+               set opis = l_opis, iznos = l_iznos, nacin_raspodjele = l_nacin, kuf_id = p_kuf_id, sa_pdv = l_sa_pdv
              where id = p_red_id and kalkulacija_id = p_id;
             if l_ok = 0 then
                 ponisti_raspodjelu(p_id, p_trosak_id => p_red_id);
@@ -564,6 +686,7 @@ create or replace package body rm_kalkulacija_pkg as
         provjeri_izmjenu(l_id);
         delete from kalkulacija_raspodjela where kalkulacija_trosak_id = p_red_id;
         delete from kalkulacija_troskovi where id = p_red_id;
+        ponisti_vrijednosne(l_id);
     exception
         when no_data_found then
             null;
@@ -579,52 +702,102 @@ create or replace package body rm_kalkulacija_pkg as
              where kalkulacija_id = p_id
                and ((p_kuf_red_id is not null and kalkulacija_kuf_id = p_kuf_red_id)
                     or (p_trosak_id is not null and kalkulacija_trosak_id = p_trosak_id));
+            ponisti_vrijednosne(p_id);                   -- izvori po vrijednosti zavise od ostalih raspodjela
         end if;
         update kalkulacija_stavke set nabavna_vrijednost = null, nabavna_cijena = null, cijena = null, iznos = null,
                                       marza_iznos = null
          where kalkulacija_id = p_id;
     end ponisti_raspodjelu;
 
+    -- vrijednost stavke raspoređena iz izvora koji nisu "automatski po vrijednosti" (ključ za način V)
+    function pret_rasporedjeno (p_stavka_red_id in number) return number is
+        l_s number;
+    begin
+        select nvl(sum(r.iznos), 0) into l_s
+          from kalkulacija_raspodjela r
+          left join kalkulacija_kuf kk on kk.id = r.kalkulacija_kuf_id
+          left join kalkulacija_troskovi kt on kt.id = r.kalkulacija_trosak_id
+         where r.kalkulacija_stavka_id = p_stavka_red_id
+           and coalesce(kk.nacin_raspodjele, kt.nacin_raspodjele, 'V') <> 'V';
+        return l_s;
+    end pret_rasporedjeno;
+
+    -- raspodjela izvora "automatski po vrijednosti" zavisi od do tada raspoređenih iznosa ostalih izvora
+    procedure ponisti_vrijednosne (p_id in number) is
+    begin
+        delete from kalkulacija_raspodjela r
+         where r.kalkulacija_id = p_id
+           and (r.kalkulacija_kuf_id in (select id from kalkulacija_kuf where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') = 'V')
+                or r.kalkulacija_trosak_id in (select id from kalkulacija_troskovi where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') = 'V'));
+    end ponisti_vrijednosne;
+
     -- automatska raspodjela jednog izvora: V = po vrijednosti, K = po količini, L = linearno
+    -- V: ključ je vrijednost stavke do tada raspoređena iz izvora koji nisu po vrijednosti (ručni, po količini,
+    --    linearno); kad je nema - vrijednost prijemnice; kad ni nje nema - po količini. Izvori po vrijednosti
+    --    ne zavise jedan od drugog (redoslijed nije bitan).
     procedure rasporedi_izvor (p_id in number, p_kuf_red_id in number, p_trosak_id in number, p_iznos in number, p_nacin in varchar2) is
         l_nacin varchar2(1) := p_nacin;
         l_kljuc number;
         l_suma  number;
         l_max   number;
+        type t_kljuc is table of number index by pls_integer;
+        l_kl    t_kljuc;
+        l_i     pls_integer;
     begin
         delete from kalkulacija_raspodjela
          where kalkulacija_id = p_id
            and ((p_kuf_red_id is not null and kalkulacija_kuf_id = p_kuf_red_id)
                 or (p_trosak_id is not null and kalkulacija_trosak_id = p_trosak_id));
-        if l_nacin = 'R' then
-            -- ručno: red po stavci, iznos upisuje korisnik
+        if rucni_nacin(l_nacin) then
+            -- ručno: red po stavci, iznos (ili jediničnu cijenu) upisuje korisnik
             insert into kalkulacija_raspodjela (kalkulacija_id, kalkulacija_kuf_id, kalkulacija_trosak_id, kalkulacija_stavka_id, iznos)
             select p_id, p_kuf_red_id, p_trosak_id, ks.id, null from kalkulacija_stavke ks where ks.kalkulacija_id = p_id;
             return;
         end if;
-        select case l_nacin when 'V' then sum(nvl(osnovica, 0)) when 'K' then sum(nvl(kolicina, 0)) else count(*) end
-          into l_kljuc from kalkulacija_stavke where kalkulacija_id = p_id;
-        if l_nacin = 'V' and nvl(l_kljuc, 0) = 0 then
-            l_nacin := 'K';                              -- prijemnica bez cijena: po količini
-            select sum(nvl(kolicina, 0)) into l_kljuc from kalkulacija_stavke where kalkulacija_id = p_id;
+        -- ključ po stavci
+        for s in (select ks.id, nvl(ks.kolicina, 0) as kol
+                    from kalkulacija_stavke ks where ks.kalkulacija_id = p_id) loop
+            l_kl(s.id) := case l_nacin when 'V' then pret_rasporedjeno(s.id) when 'K' then s.kol else 1 end;
+        end loop;
+        l_kljuc := 0;
+        l_i := l_kl.first;
+        while l_i is not null loop
+            l_kljuc := l_kljuc + l_kl(l_i);
+            l_i := l_kl.next(l_i);
+        end loop;
+        if l_nacin = 'V' and l_kljuc = 0 then
+            -- još ništa nije raspoređeno: vrijednost prijemnice, pa količina
+            l_kljuc := 0;
+            l_kl.delete;
+            for s in (select id, nvl(osnovica, 0) as osn from kalkulacija_stavke where kalkulacija_id = p_id) loop
+                l_kl(s.id) := s.osn; l_kljuc := l_kljuc + s.osn;
+            end loop;
+            if l_kljuc = 0 then
+                l_kl.delete;
+                for s in (select id, nvl(kolicina, 0) as kol from kalkulacija_stavke where kalkulacija_id = p_id) loop
+                    l_kl(s.id) := s.kol; l_kljuc := l_kljuc + s.kol;
+                end loop;
+            end if;
         end if;
         if nvl(l_kljuc, 0) = 0 then
             return;
         end if;
-        insert into kalkulacija_raspodjela (kalkulacija_id, kalkulacija_kuf_id, kalkulacija_trosak_id, kalkulacija_stavka_id, iznos)
-        select p_id, p_kuf_red_id, p_trosak_id, ks.id,
-               round(p_iznos * case l_nacin when 'V' then nvl(ks.osnovica, 0) when 'K' then nvl(ks.kolicina, 0) else 1 end / l_kljuc, 2)
-          from kalkulacija_stavke ks
-         where ks.kalkulacija_id = p_id;
-        -- razlika zaokruživanja na stavku najveće vrijednosti
+        l_i := l_kl.first;
+        while l_i is not null loop
+            insert into kalkulacija_raspodjela (kalkulacija_id, kalkulacija_kuf_id, kalkulacija_trosak_id, kalkulacija_stavka_id, iznos)
+            values (p_id, p_kuf_red_id, p_trosak_id, l_i, round(p_iznos * l_kl(l_i) / l_kljuc, 2));
+            if l_max is null or l_kl(l_i) > l_kl(l_max) then
+                l_max := l_i;
+            end if;
+            l_i := l_kl.next(l_i);
+        end loop;
+        -- razlika zaokruživanja na stavku najvećeg ključa
         select nvl(sum(r.iznos), 0) into l_suma
           from kalkulacija_raspodjela r
          where r.kalkulacija_id = p_id
            and ((p_kuf_red_id is not null and r.kalkulacija_kuf_id = p_kuf_red_id)
                 or (p_trosak_id is not null and r.kalkulacija_trosak_id = p_trosak_id));
-        if l_suma <> p_iznos then
-            select max(id) keep (dense_rank first order by nvl(osnovica, 0) desc, nvl(kolicina, 0) desc, id)
-              into l_max from kalkulacija_stavke where kalkulacija_id = p_id;
+        if l_suma <> p_iznos and l_max is not null then
             update kalkulacija_raspodjela r
                set r.iznos = r.iznos + (p_iznos - l_suma)
              where r.kalkulacija_stavka_id = l_max
@@ -633,6 +806,7 @@ create or replace package body rm_kalkulacija_pkg as
         end if;
     end rasporedi_izvor;
 
+    -- redoslijed: ručni izvori, po količini / linearno, pa po vrijednosti (koristi do tada raspoređeno)
     procedure rasporedi (p_id in number) is
         l_n number;
     begin
@@ -642,16 +816,15 @@ create or replace package body rm_kalkulacija_pkg as
             greska('Dodajte prijemnice prije raspodjele.');
         end if;
         -- automatski izvori se raspoređuju ponovo; ručni samo ako još nemaju redove (upisani iznosi ostaju)
-        for f in (select id, iznos, nvl(nacin_raspodjele, 'V') as nacin from kalkulacija_kuf where kalkulacija_id = p_id) loop
-            select count(*) into l_n from kalkulacija_raspodjela where kalkulacija_kuf_id = f.id;
-            if f.nacin <> 'R' or l_n = 0 then
-                rasporedi_izvor(p_id, f.id, null, f.iznos, f.nacin);
-            end if;
-        end loop;
-        for tr in (select id, iznos, nvl(nacin_raspodjele, 'V') as nacin from kalkulacija_troskovi where kalkulacija_id = p_id) loop
-            select count(*) into l_n from kalkulacija_raspodjela where kalkulacija_trosak_id = tr.id;
-            if tr.nacin <> 'R' or l_n = 0 then
-                rasporedi_izvor(p_id, null, tr.id, tr.iznos, tr.nacin);
+        for f in (select kalkulacija_kuf_id, kalkulacija_trosak_id, iznos, nacin
+                    from vw_rm_kalkulacija_izvori
+                   where kalkulacija_id = p_id
+                   order by case when nacin in ('R', 'J') then 0 when nacin = 'V' then 2 else 1 end, redoslijed) loop
+            select count(*) into l_n from kalkulacija_raspodjela
+             where (f.kalkulacija_kuf_id is not null and kalkulacija_kuf_id = f.kalkulacija_kuf_id)
+                or (f.kalkulacija_trosak_id is not null and kalkulacija_trosak_id = f.kalkulacija_trosak_id);
+            if not rucni_nacin(f.nacin) or l_n = 0 then
+                rasporedi_izvor(p_id, f.kalkulacija_kuf_id, f.kalkulacija_trosak_id, f.iznos, f.nacin);
             end if;
         end loop;
         preracunaj(p_id);
@@ -669,7 +842,7 @@ create or replace package body rm_kalkulacija_pkg as
          where r.id = p_red_id;
         provjeri_izmjenu(l_id);
         if l_nacin <> 'R' then
-            greska('Iznos se upisuje samo kod ručne raspodjele. Promijenite način raspodjele izvora u "Ručno".');
+            greska('Iznos se upisuje samo kod načina "Ručno - ukupan iznos".');
         end if;
         if nvl(p_iznos, 0) < 0 then
             greska('Iznos raspodjele ne može biti negativan.');
@@ -798,6 +971,12 @@ create or replace package body rm_kalkulacija_pkg as
                    where kk.kalkulacija_id = p_id) loop
             if f.iznos > kuf_raspolozivo(f.kuf_id, f.sa_pdv, f.id) then
                 return 'Iznos fakture ' || f.naziv || ' je veći od raspoloživog.';
+            end if;
+        end loop;
+        for f in (select kt.id, kt.kuf_id, kt.sa_pdv, kt.iznos, k.naziv from kalkulacija_troskovi kt join kuf k on k.id = kt.kuf_id
+                   where kt.kalkulacija_id = p_id) loop
+            if f.iznos > kuf_raspolozivo(f.kuf_id, f.sa_pdv, null, f.id) then
+                return 'Iznos zavisnog troška (faktura ' || f.naziv || ') je veći od raspoloživog iznosa fakture.';
             end if;
         end loop;
         for f in (select kk.id, k.naziv from kalkulacija_kuf kk join kuf k on k.id = kk.kuf_id where kk.kalkulacija_id = p_id) loop
@@ -952,6 +1131,7 @@ create or replace package body rm_kalkulacija_pkg as
     end izvor_dekod;
 
     -- artikli kalkulacije sa sačuvanim iznosom izvora ili prijedlogom po načinu raspodjele
+    -- pret = vrijednost artikla do tada raspoređena iz izvora koji nisu po vrijednosti (ključ za V)
     function artikli_izvora (p_id in number, p_kuf in number, p_tr in number, p_iznos in number, p_nacin in varchar2,
                              p_prijedlog in boolean) return t_artikli is
         l_a     t_artikli;
@@ -961,9 +1141,21 @@ create or replace package body rm_kalkulacija_pkg as
         l_k     number;
         l_nacin varchar2(1) := p_nacin;
         l_ima   boolean := false;
+        function kljuc (i in pls_integer) return number is
+        begin
+            return case l_nacin when 'V' then l_a(i).pret when 'O' then l_a(i).osn when 'K' then l_a(i).kol else 1 end;
+        end kljuc;
     begin
         select ks.stavka_id, st.sifra, st.naziv, jm.naziv, sum(ks.kolicina), sum(nvl(ks.osnovica, 0)), null,
                (select sum(r.iznos) from kalkulacija_raspodjela r join kalkulacija_stavke k2 on k2.id = r.kalkulacija_stavka_id
+                 where k2.kalkulacija_id = p_id and k2.stavka_id = ks.stavka_id
+                   and ((p_kuf is not null and r.kalkulacija_kuf_id = p_kuf) or (p_tr is not null and r.kalkulacija_trosak_id = p_tr))),
+               (select nvl(sum(r.iznos), 0) from kalkulacija_raspodjela r join kalkulacija_stavke k2 on k2.id = r.kalkulacija_stavka_id
+                  left join kalkulacija_kuf kk on kk.id = r.kalkulacija_kuf_id
+                  left join kalkulacija_troskovi kt on kt.id = r.kalkulacija_trosak_id
+                 where k2.kalkulacija_id = p_id and k2.stavka_id = ks.stavka_id
+                   and coalesce(kk.nacin_raspodjele, kt.nacin_raspodjele, 'V') <> 'V'),
+               (select max(r.cijena) from kalkulacija_raspodjela r join kalkulacija_stavke k2 on k2.id = r.kalkulacija_stavka_id
                  where k2.kalkulacija_id = p_id and k2.stavka_id = ks.stavka_id
                    and ((p_kuf is not null and r.kalkulacija_kuf_id = p_kuf) or (p_tr is not null and r.kalkulacija_trosak_id = p_tr)))
           bulk collect into l_a
@@ -976,30 +1168,36 @@ create or replace package body rm_kalkulacija_pkg as
         for i in 1 .. l_a.count loop
             l_ima := l_ima or l_a(i).sacuvano is not null;
         end loop;
-        if l_ima or not p_prijedlog or l_nacin = 'R' then
+        if l_ima or not p_prijedlog or p_nacin in ('R', 'J') then
             for i in 1 .. l_a.count loop
                 l_a(i).iznos := l_a(i).sacuvano;
             end loop;
             return l_a;
         end if;
-        -- prijedlog: srazmjerno ključu, razlika zaokruživanja na artikal najveće vrijednosti
+        -- prijedlog: srazmjerno ključu, razlika zaokruživanja na artikal najvećeg ključa
         for i in 1 .. l_a.count loop
-            l_kljuc := l_kljuc + case l_nacin when 'V' then l_a(i).osn when 'K' then l_a(i).kol else 1 end;
+            l_kljuc := l_kljuc + kljuc(i);
         end loop;
         if l_nacin = 'V' and l_kljuc = 0 then
-            l_nacin := 'K';
+            l_nacin := 'O';                              -- ništa raspoređeno: vrijednost prijemnice
             for i in 1 .. l_a.count loop
-                l_kljuc := l_kljuc + l_a(i).kol;
+                l_kljuc := l_kljuc + kljuc(i);
+            end loop;
+        end if;
+        if l_nacin = 'O' and l_kljuc = 0 then
+            l_nacin := 'K';                              -- prijemnica bez cijena: po količini
+            for i in 1 .. l_a.count loop
+                l_kljuc := l_kljuc + kljuc(i);
             end loop;
         end if;
         if l_kljuc = 0 then
             return l_a;
         end if;
         for i in 1 .. l_a.count loop
-            l_k := case l_nacin when 'V' then l_a(i).osn when 'K' then l_a(i).kol else 1 end;
+            l_k := kljuc(i);
             l_a(i).iznos := round(p_iznos * l_k / l_kljuc, 2);
             l_suma := l_suma + l_a(i).iznos;
-            if l_max is null or l_a(i).osn > l_a(l_max).osn then
+            if l_max is null or l_k > kljuc(l_max) then
                 l_max := i;
             end if;
         end loop;
@@ -1008,6 +1206,13 @@ create or replace package body rm_kalkulacija_pkg as
         end if;
         return l_a;
     end artikli_izvora;
+
+    function naziv_nacina (p_nacin in varchar2) return varchar2 is
+    begin
+        return case p_nacin when 'V' then 'automatski - po vrijednosti' when 'K' then 'automatski - po količini'
+                            when 'L' then 'automatski - linearno' when 'J' then 'ručno - jedinična cijena'
+                            else 'ručno - ukupan iznos' end;
+    end naziv_nacina;
 
     function stanje_json (p_id in number) return clob is
         l_json clob;
@@ -1028,7 +1233,8 @@ create or replace package body rm_kalkulacija_pkg as
                    'fak'    value to_char(l_fak, 'FM999G999G999G990D00'),
                    'tr'     value to_char(l_tr, 'FM999G999G999G990D00'),
                    'izvori' value (select json_arrayagg(json_object('izvor' value izvor, 'r' value rasporedjen,
-                                                                    'ras' value to_char(rasporedjeno, 'FM999G999G999G990D00'))
+                                                                    'ras' value to_char(rasporedjeno, 'FM999G999G999G990D00'),
+                                                                    'iz' value to_char(iznos, 'FM999G999G999G990D00'))
                                                         order by redoslijed returning clob)
                                      from vw_rm_kalkulacija_izvori where kalkulacija_id = p_id) format json
                    returning clob)
@@ -1043,10 +1249,10 @@ create or replace package body rm_kalkulacija_pkg as
         l_nacin varchar2(1);
         l_naziv varchar2(1000);
         l_a     t_artikli;
-        l_json  clob;
         l_arr   json_array_t := json_array_t();
         l_o     json_object_t;
         l_sac   boolean := false;
+        l_rasp  number;
     begin
         izvor_dekod(p_izvor, l_kuf, l_tr, l_iznos, l_nacin, l_naziv);
         l_a := artikli_izvora(p_id, l_kuf, l_tr, l_iznos, l_nacin, true);
@@ -1059,17 +1265,32 @@ create or replace package body rm_kalkulacija_pkg as
             l_o.put('jm', l_a(i).jm);
             l_o.put('kol', rtrim(to_char(l_a(i).kol, 'FM999G999G999G990D999999'), '.,'));
             l_o.put('osn', to_char(l_a(i).osn, 'FM999G999G999G990D00'));
+            l_o.put('pret', to_char(l_a(i).pret, 'FM999G999G999G990D00'));
             l_o.put('iznos', to_char(l_a(i).iznos, 'FM999999999990D00'));
+            l_o.put('cijena', rtrim(rtrim(to_char(l_a(i).cijena, 'FM999999999990D000000'), '0'), '.,'));
             l_arr.append(l_o);
         end loop;
+        -- raspoloživo fakture (gornja granica za "ručno - jedinična cijena")
+        if l_kuf is not null then
+            for f in (select kuf_id, sa_pdv from kalkulacija_kuf where id = l_kuf) loop
+                l_rasp := kuf_raspolozivo(f.kuf_id, f.sa_pdv, l_kuf);
+            end loop;
+        else
+            for f in (select kuf_id, sa_pdv from kalkulacija_troskovi where id = l_tr and kuf_id is not null) loop
+                l_rasp := kuf_raspolozivo(f.kuf_id, f.sa_pdv, null, l_tr);
+            end loop;
+        end if;
         l_o := json_object_t();
         l_o.put('izvor', p_izvor);
         l_o.put('naziv', l_naziv);
         l_o.put('nacin', l_nacin);
-        l_o.put('nacinNaziv', case l_nacin when 'V' then 'po vrijednosti' when 'K' then 'po količini'
-                                           when 'L' then 'linearno' else 'ručno' end);
+        l_o.put('nacinNaziv', naziv_nacina(l_nacin));
         l_o.put('iznos', to_char(l_iznos, 'FM999G999G999G990D00'));
         l_o.put('iznosBroj', l_iznos);
+        if l_rasp is not null then
+            l_o.put('raspolozivo', to_char(l_rasp, 'FM999G999G999G990D00'));
+            l_o.put('raspolozivoBroj', l_rasp);
+        end if;
         l_o.put('sacuvano', case when l_sac then 'Y' else 'N' end);
         l_o.put('rasporedjen', izvor_rasporedjen(l_kuf, l_tr));
         l_o.put('izmjenjiva', izmjenjiva(p_id));
@@ -1077,25 +1298,48 @@ create or replace package body rm_kalkulacija_pkg as
         return l_o.to_clob;
     end izvor_json;
 
-    -- iznos artikla se dijeli na redove prijemnica srazmjerno količini (ista nabavna cijena po jedinici)
-    procedure upisi_artikal (p_id in number, p_kuf in number, p_tr in number, p_stavka_id in number, p_iznos in number) is
+    -- iznos artikla se dijeli na redove prijemnica srazmjerno količini (ista nabavna cijena po jedinici);
+    -- kod jedinične cijene (p_cijena) iznos reda je cijena x količina reda
+    procedure upisi_artikal (p_id in number, p_kuf in number, p_tr in number, p_stavka_id in number, p_iznos in number,
+                             p_cijena in number default null) is
         l_kol   number;
         l_suma  number := 0;
         l_zadnji number;
+        l_v     number;
     begin
         select sum(kolicina) into l_kol from kalkulacija_stavke where kalkulacija_id = p_id and stavka_id = p_stavka_id;
         for s in (select id, kolicina from kalkulacija_stavke where kalkulacija_id = p_id and stavka_id = p_stavka_id order by id) loop
-            insert into kalkulacija_raspodjela (kalkulacija_id, kalkulacija_kuf_id, kalkulacija_trosak_id, kalkulacija_stavka_id, iznos)
-            values (p_id, p_kuf, p_tr, s.id,
-                    case when nvl(l_kol, 0) = 0 then 0 else round(p_iznos * s.kolicina / l_kol, 2) end)
+            l_v := case when p_cijena is not null then round(p_cijena * nvl(s.kolicina, 0), 2)
+                        when nvl(l_kol, 0) = 0 then 0
+                        else round(p_iznos * s.kolicina / l_kol, 2) end;
+            insert into kalkulacija_raspodjela (kalkulacija_id, kalkulacija_kuf_id, kalkulacija_trosak_id, kalkulacija_stavka_id, iznos, cijena)
+            values (p_id, p_kuf, p_tr, s.id, l_v, p_cijena)
             returning id into l_zadnji;
-            l_suma := l_suma + case when nvl(l_kol, 0) = 0 then 0 else round(p_iznos * s.kolicina / l_kol, 2) end;
+            l_suma := l_suma + l_v;
         end loop;
-        if l_zadnji is not null and l_suma <> p_iznos then
+        if p_cijena is null and l_zadnji is not null and l_suma <> p_iznos then
             update kalkulacija_raspodjela set iznos = iznos + (p_iznos - l_suma) where id = l_zadnji;
         end if;
     end upisi_artikal;
 
+    -- automatski izvori po vrijednosti ponovo (poslije izmjene ručnih / ostalih raspodjela)
+    procedure rasporedi_vrijednosne (p_id in number) is
+        l_a t_artikli;
+    begin
+        for f in (select kalkulacija_kuf_id, kalkulacija_trosak_id, iznos, nacin from vw_rm_kalkulacija_izvori
+                   where kalkulacija_id = p_id and nacin = 'V' order by redoslijed) loop
+            delete from kalkulacija_raspodjela
+             where kalkulacija_id = p_id
+               and ((f.kalkulacija_kuf_id is not null and kalkulacija_kuf_id = f.kalkulacija_kuf_id)
+                    or (f.kalkulacija_trosak_id is not null and kalkulacija_trosak_id = f.kalkulacija_trosak_id));
+            l_a := artikli_izvora(p_id, f.kalkulacija_kuf_id, f.kalkulacija_trosak_id, f.iznos, f.nacin, true);
+            for i in 1 .. l_a.count loop
+                upisi_artikal(p_id, f.kalkulacija_kuf_id, f.kalkulacija_trosak_id, l_a(i).stavka_id, nvl(l_a(i).iznos, 0));
+            end loop;
+        end loop;
+    end rasporedi_vrijednosne;
+
+    -- p_iznosi: kod "ručno - ukupan iznos" iznosi po artiklu, kod "ručno - jedinična cijena" jedinične cijene
     function snimi_raspodjelu_izvora (p_id in number, p_izvor in varchar2, p_artikli in apex_t_varchar2,
                                       p_iznosi in apex_t_varchar2) return clob is
         l_kuf   number;
@@ -1106,6 +1350,7 @@ create or replace package body rm_kalkulacija_pkg as
         l_a     t_artikli;
         l_suma  number := 0;
         l_v     number;
+        l_rasp  number;
     begin
         provjeri_izmjenu(p_id);
         izvor_dekod(p_izvor, l_kuf, l_tr, l_iznos, l_nacin, l_naziv);
@@ -1125,24 +1370,60 @@ create or replace package body rm_kalkulacija_pkg as
                 greska('Zbir raspodjele (' || to_char(l_suma, 'FM999G999G999G990D00') || ') mora biti jednak iznosu izvora ('
                        || to_char(l_iznos, 'FM999G999G999G990D00') || ').');
             end if;
+            rasporedi_vrijednosne(p_id);
+        elsif l_nacin = 'J' then
+            -- jedinične cijene: iznos izvora = zbir (cijena x količina)
+            for i in 1 .. p_artikli.count loop
+                l_v := kuf_pkg.broj(p_iznosi(i));
+                if nvl(l_v, 0) < 0 then
+                    greska('Jedinična cijena ne može biti negativna.');
+                end if;
+                upisi_artikal(p_id, l_kuf, l_tr, to_number(p_artikli(i)), null, nvl(l_v, 0));
+            end loop;
+            select nvl(sum(iznos), 0) into l_suma from kalkulacija_raspodjela
+             where kalkulacija_id = p_id
+               and ((l_kuf is not null and kalkulacija_kuf_id = l_kuf) or (l_tr is not null and kalkulacija_trosak_id = l_tr));
+            if l_suma <= 0 then
+                greska('Unesite jedinične cijene artikala.');
+            end if;
+            if l_kuf is not null then
+                for f in (select kuf_id, sa_pdv from kalkulacija_kuf where id = l_kuf) loop
+                    l_rasp := kuf_raspolozivo(f.kuf_id, f.sa_pdv, l_kuf);
+                end loop;
+                update kalkulacija_kuf set iznos = l_suma where id = l_kuf;
+            else
+                for f in (select kuf_id, sa_pdv from kalkulacija_troskovi where id = l_tr and kuf_id is not null) loop
+                    l_rasp := kuf_raspolozivo(f.kuf_id, f.sa_pdv, null, l_tr);
+                end loop;
+                update kalkulacija_troskovi set iznos = l_suma where id = l_tr;
+            end if;
+            if l_rasp is not null and l_suma > l_rasp then
+                greska('Ukupan iznos (' || to_char(l_suma, 'FM999G999G999G990D00') || ') je veći od raspoloživog iznosa fakture ('
+                       || to_char(l_rasp, 'FM999G999G999G990D00') || ').');
+            end if;
+            rasporedi_vrijednosne(p_id);
         else
             -- automatski načini: iznosi se računaju u bazi (iznosi iz forme se ne koriste)
             l_a := artikli_izvora(p_id, l_kuf, l_tr, l_iznos, l_nacin, true);
             for i in 1 .. l_a.count loop
                 upisi_artikal(p_id, l_kuf, l_tr, l_a(i).stavka_id, nvl(l_a(i).iznos, 0));
             end loop;
+            if l_nacin <> 'V' then
+                rasporedi_vrijednosne(p_id);
+            end if;
         end if;
         preracunaj(p_id);
         return stanje_json(p_id);
     end snimi_raspodjelu_izvora;
 
+    -- svi automatski izvori: prvo po količini / linearno, pa po vrijednosti
     function rasporedi_json (p_id in number) return clob is
         l_a     t_artikli;
-        l_n     number;
     begin
         provjeri_izmjenu(p_id);
         for f in (select izvor, kalkulacija_kuf_id, kalkulacija_trosak_id, iznos, nacin from vw_rm_kalkulacija_izvori
-                   where kalkulacija_id = p_id and nacin <> 'R') loop
+                   where kalkulacija_id = p_id and nacin not in ('R', 'J')
+                   order by case when nacin = 'V' then 2 else 1 end, redoslijed) loop
             delete from kalkulacija_raspodjela
              where kalkulacija_id = p_id
                and ((f.kalkulacija_kuf_id is not null and kalkulacija_kuf_id = f.kalkulacija_kuf_id)
@@ -1194,9 +1475,12 @@ select k.id,
           from kalkulacija_operacije ko join operacije o on o.id = ko.operacija_id
          where ko.kalkulacija_id = k.id)                                 as prijemnice,
        (select count(*) from kalkulacija_operacije ko where ko.kalkulacija_id = k.id) as broj_prijemnica,
-       (select listagg(kf.naziv, ', ') within group (order by kf.id)
-          from kalkulacija_kuf kk join kuf kf on kf.id = kk.kuf_id
-         where kk.kalkulacija_id = k.id)                                 as fakture,
+       (select listagg(x.naziv, ', ') within group (order by x.red)
+          from (select kf.naziv, kk.id as red from kalkulacija_kuf kk join kuf kf on kf.id = kk.kuf_id
+                 where kk.kalkulacija_id = k.id
+                union all
+                select kf.naziv, 1000000000 + kt.id from kalkulacija_troskovi kt join kuf kf on kf.id = kt.kuf_id
+                 where kt.kalkulacija_id = k.id) x)                     as fakture,
        (select nvl(sum(kk.iznos), 0) from kalkulacija_kuf kk where kk.kalkulacija_id = k.id)            as iznos_faktura,
        (select nvl(sum(t.iznos), 0) from kalkulacija_troskovi t where t.kalkulacija_id = k.id)          as iznos_troskova,
        (select nvl(sum(ks.nabavna_vrijednost), 0) from kalkulacija_stavke ks where ks.kalkulacija_id = k.id) as nabavna_vrijednost,
@@ -1274,14 +1558,15 @@ select 'T:' || t.id,
        t.kalkulacija_id,
        null,
        t.id,
-       'Zavisni trošak',
+       case when t.kuf_id is not null then 'Zavisni trošak · faktura ' || tk.naziv else 'Zavisni trošak' end,
        t.opis,
        t.iznos,
        nvl(t.nacin_raspodjele, 'V'),
        (select nvl(sum(r.iznos), 0) from kalkulacija_raspodjela r where r.kalkulacija_trosak_id = t.id),
        rm_kalkulacija_pkg.izvor_rasporedjen(null, t.id),
        1000000000 + t.id
-  from kalkulacija_troskovi t;
+  from kalkulacija_troskovi t
+  left join kuf tk on tk.id = t.kuf_id;
 
 -- raspodjela po stavkama sa nazivom izvora
 create or replace force view vw_rm_kalkulacija_raspodjela as
