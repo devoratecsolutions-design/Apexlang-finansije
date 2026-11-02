@@ -168,6 +168,36 @@ page 331 (
             ]
             cssClasses: fin-section
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:P331_TIP_KRETANJA, 'U') = 'U'
+        }
+    )
+
+    region mjesto-troska (
+        name: Mjesto troška
+        title: Mjesto troška
+        type: staticContent
+        layout {
+            sequence: 25
+            parentRegion: @dokument-detalji
+            slot: subRegions
+            startNewRow: false
+            columnSpan: 7
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA) = 'Y'
+        }
     )
 
     region stavke-sekcija (
@@ -246,7 +276,7 @@ page 331 (
             ]
         }
         messages {
-            whenNoDataFound: Dodajte artikle koji se primaju.
+            whenNoDataFound: Dodajte artikle dokumenta.
         }
         enableUsersTo {
             flashback: false
@@ -900,7 +930,7 @@ page 331 (
     pageItem P331_DATUM (
         type: datePicker
         label {
-            label: Datum prijema
+            label: Datum dokumenta
             alignment: left
         }
         layout {
@@ -914,7 +944,7 @@ page 331 (
             templateOptions: #DEFAULT#
         }
         help {
-            helpText: Datum kada je roba primljena u skladište. Ne može biti u budućnosti niti u zaključanom periodu.
+            helpText: Datum prijema ili izdavanja robe. Ne može biti u budućnosti niti u zaključanom periodu. Kod izlaza cijena stavke je prosječna cijena skladišta na ovaj datum.
         }
     )
 
@@ -1048,6 +1078,49 @@ page 331 (
         }
     )
 
+    pageItem P331_MJESTO_TROSKA_ID (
+        type: selectOne
+        label {
+            label: Mjesto troška
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        messages {
+            noDataFoundMessage: Nema pronađenih podataka.
+        }
+        lov {
+            type: sharedComponent
+            lov: @acc-mjesta-troska-ooj
+        }
+        layout {
+            sequence: 10
+            region: @mjesto-troska
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Mjesto troška na koje se knjiži izlaz materijala (obavezno za dvojno knjigovodstvo).
+        }
+    )
+
+    pageItem P331_ADMIN (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 16
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
     pageItem P331_ZBIR (
         type: displayOnly
         label {
@@ -1154,6 +1227,70 @@ page 331 (
         }
     )
 
+    button zakljucaj (
+        buttonName: ZAKLJUCAJ
+        label: Zaključaj
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Zaključati dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a roba se skida sa stanja.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_TIP_KRETANJA = 'I' and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button otkljucaj (
+        buttonName: OTKLJUCAJ
+        label: Otključaj
+        layout {
+            sequence: 15
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-unlock
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Otključati dokument? Roba se vraća na stanje dok se dokument ponovo ne zaključi.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and rm_dokument_pkg.razlog_zabrane_otkljucavanja(:P331_ID, :P331_ADMIN) is null
+        }
+    )
+
     validation datum-obavezno (
         name: P331_DATUM obavezno
         execution {
@@ -1169,7 +1306,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1188,7 +1325,26 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_TIP_KRETANJA, 'U') = 'U'
+        }
+    )
+
+    validation mjesto-troska-obavezno (
+        name: P331_MJESTO_TROSKA_ID obavezno
+        execution {
+            sequence: 30
+        }
+        validation {
+            type: itemIsNotNull
+            item: P331_MJESTO_TROSKA_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P331_MJESTO_TROSKA_ID
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA) = 'Y'
         }
     )
 
@@ -1210,13 +1366,15 @@ page 331 (
                     p_datum              => :P331_DATUM,
                     p_klijent_id         => :P331_KLIJENT_ID,
                     p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
-                    p_ugovor_id          => :P331_UGOVOR_ID
+                    p_ugovor_id          => :P331_UGOVOR_ID,
+                    p_mjesto_troska_id   => :P331_MJESTO_TROSKA_ID,
+                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA
                 );
                 ```
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1316,6 +1474,7 @@ page 331 (
                     :P331_OTPREMNICA_BROJ    := d.otpremnica_broj;
                     :P331_OTPREMNICA_DATUM   := d.otpremnica_datum;
                     :P331_UGOVOR_ID          := d.ugovor_id;
+                    :P331_MJESTO_TROSKA_ID   := d.mjesto_troska_id;
                     :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv end;
                     :P331_STATUS_KLASA       := case when d.stornirano = 'Y' then 'storno'
                                                      when d.glavna_knjiga_id is not null then 'proknjizena'
@@ -1333,6 +1492,7 @@ page 331 (
                 end loop;
                 :P331_RAZLOG := rm_dokument_pkg.razlog_zabrane(:P331_ID);
                 :P331_IZMJENJIVA := rm_dokument_pkg.izmjenjiv(:P331_ID);
+                :P331_ADMIN := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
                 ```
         }
         execution {
@@ -1404,7 +1564,9 @@ page 331 (
                     p_otpremnica_broj    => :P331_OTPREMNICA_BROJ,
                     p_otpremnica_datum   => :P331_OTPREMNICA_DATUM,
                     p_opis               => :P331_OPIS,
-                    p_ugovor_id          => :P331_UGOVOR_ID
+                    p_ugovor_id          => :P331_UGOVOR_ID,
+                    p_mjesto_troska_id   => :P331_MJESTO_TROSKA_ID,
+                    p_tip_preduzetnika   => :APP_TIP_PREDUZETNIKA_SIFRA
                 );
                 ```
         }
@@ -1413,7 +1575,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1463,7 +1625,48 @@ page 331 (
         serverSideCondition {
             executionScope: allSubmittedRows
             type: expression
-            plsqlExpression: :REQUEST = 'SAVE' and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ') and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    process zakljucaj (
+        name: Zaključaj izlazni dokument
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_dokument_pkg.zakljucaj(p_id => :P331_ID, p_tip_preduzetnika => :APP_TIP_PREDUZETNIKA_SIFRA);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Dokument je zaključen.
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj
+        }
+    )
+
+    process otkljucaj (
+        name: Otključaj izlazni dokument
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_dokument_pkg.otkljucaj(p_id    => :P331_ID,
+                                          p_admin => case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end);
+                ```
+        }
+        execution {
+            sequence: 45
+        }
+        successMessage {
+            successMessage: Dokument je otključan.
+        }
+        serverSideCondition {
+            whenButtonPressed: @otkljucaj
         }
     )
 
@@ -1534,7 +1737,7 @@ page 331 (
         }
         serverSideCondition {
             type: requestIsContainedInValue
-            value: SAVE
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ
         }
     )
 

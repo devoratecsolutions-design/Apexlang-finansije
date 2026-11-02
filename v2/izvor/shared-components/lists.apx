@@ -197,7 +197,9 @@ list menu-dokumenti-ulaz (
                 vd.ooj_id = :APP_OOJ_ID
                 AND vd.valid = 'Y'
                 AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
             ORDER BY
+                CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END,
                 vd.naziv
             ```
     }

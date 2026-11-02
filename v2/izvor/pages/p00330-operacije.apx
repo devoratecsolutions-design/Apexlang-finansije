@@ -269,7 +269,8 @@ page 330 (
                     CASE
                         WHEN v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => id, p_clear_cache => 331)
                         ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => id)
-                    END AS url
+                    END AS url,
+                    mjesto_troska_naziv
                 FROM
                     vw_rm_dokumenti
                 WHERE
@@ -384,7 +385,7 @@ page 330 (
             reportColumnQueryId: 5
             derivedColumn: N
             heading {
-                heading: Dobavljač / veza
+                heading: Dobavljač / mjesto troška
             }
             layout {
                 sequence: 30
@@ -392,7 +393,7 @@ page 330 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}
+                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}{if MJESTO_TROSKA_NAZIV/}<span class="fin-sub">mjesto troška #MJESTO_TROSKA_NAZIV#</span>{endif/}
                     ```
             }
             sorting {
@@ -580,6 +581,15 @@ page 330 (
             type: hidden
             layout {
                 sequence: 520
+            }
+        )
+
+        column MJESTO_TROSKA_NAZIV (
+            reportColumnQueryId: 23
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 530
             }
         )
 

@@ -16,6 +16,9 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R11 (02.11.2026): OPERACIJE.MJESTO_TROSKA_ID (izdatnica, izlaz na investiciju u
+  toku; SIF.ACC_MJESTA_TROSKA) i brojači IZD / IIN za firme koje imaju te vrste
+  (vrste dodaje 16_rm_vrste_izlaz.sql, kao SIF - pokrenuti prije ove skripte).
   Skripta se može pokrenuti više puta (ono što postoji se preskače).
 ================================================================================
 */
@@ -64,6 +67,7 @@ begin
     kolona('OPERACIJE', 'otpremnica_broj', 'varchar2(100 char)');
     kolona('OPERACIJE', 'otpremnica_datum', 'date');
     kolona('OPERACIJA_STAVKE', 'redni_broj', 'number');
+    kolona('OPERACIJE', 'mjesto_troska_id', 'number');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -71,6 +75,7 @@ begin
     indeks('OPERACIJE_SKL_DATUM_I', 'create index operacije_skl_datum_i on operacije (skladiste_id, datum)');
     indeks('OPERACIJE_VRSTA_I', 'create index operacije_vrsta_i on operacije (vrsta_dokumenta_id)');
     indeks('OPERACIJE_KLIJENT_I', 'create index operacije_klijent_i on operacije (klijent_id)');
+    indeks('OPERACIJE_MT_I', 'create index operacije_mt_i on operacije (mjesto_troska_id)');
     indeks('OPERACIJA_STAVKE_SB_SB_I', 'create index operacija_stavke_sb_sb_i on operacija_stavke_sb (serijski_broj)');
     indeks('OPERACIJA_STAVKE_SB_UK',
         'create unique index operacija_stavke_sb_uk on operacija_stavke_sb (operacija_stavka_id, serijski_broj)');
@@ -82,6 +87,40 @@ comment on column operacije.status is 'P = u pripremi, Z = zaključen (v2; prije
 comment on column operacije.otpremnica_broj is 'Broj otpremnice / dokumenta dobavljača (v2)';
 comment on column operacije.otpremnica_datum is 'Datum otpremnice / dokumenta dobavljača (v2)';
 comment on column operacija_stavke.redni_broj is 'Redni broj stavke u dokumentu (v2)';
+comment on column operacije.mjesto_troska_id is 'Mjesto troška (SIF.ACC_MJESTA_TROSKA) - izdatnica, izlaz na investiciju u toku (v2)';
+
+-- 2a) brojači IZD (Izdatnica) i IIN (Izlaz na investiciju u toku) -------------------------
+declare
+    l_modul number;
+    l_novih number := 0;
+begin
+    select id into l_modul from sif.acc_moduli where upper(sifra) = 'MAT';
+    for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
+                from sif.vrste_dokumenata vd
+               where vd.acc_modul_id = l_modul
+                 and upper(vd.sifra) in ('IZD', 'IIN')
+                 and vd.ooj_id is not null
+                 and vd.valid = 'Y') loop
+        for g in 2024 .. extract(year from sysdate) loop
+            if not core.protokoli_pkg.check_brojac(v.ooj_id, lower(v.sifra), g) then
+                core.protokoli_pkg.insert_protokol(
+                    p_ooj_id          => v.ooj_id,
+                    p_vrsta_naloga_id => v.id,
+                    p_godina          => g,
+                    p_prefix          => v.sifra || '-',
+                    p_broj            => 0,
+                    p_sufix           => null,
+                    p_duzina          => 6,
+                    p_auto_restart    => 'Y'
+                );
+                l_novih := l_novih + 1;
+            end if;
+        end loop;
+    end loop;
+    commit;
+    dbms_output.put_line('Novi brojači IZD / IIN: ' || l_novih);
+end;
+/
 
 -- 2) brojač PRI za svaku firmu sa vrstom dokumenta PRI ---------------------------------
 declare

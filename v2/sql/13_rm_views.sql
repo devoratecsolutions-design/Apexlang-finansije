@@ -53,6 +53,8 @@ select o.id,
        o.otpremnica_datum,
        o.ugovor_id,
        ug.broj || nvl2(nvl(ug.predmet, ug.naziv), ' - ' || nvl(ug.predmet, ug.naziv), null) as ugovor_naziv,
+       o.mjesto_troska_id,
+       nvl2(mt.id, mt.sifra || ' - ' || mt.naziv, null)                 as mjesto_troska_naziv,
        o.opis,
        nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
        o.zakljucano,
@@ -77,6 +79,7 @@ select o.id,
   left join sif.acc_tipovi_skladista ts on ts.id = sk.tip_skladista_id
   left join sec_klijenti kl on kl.id = o.klijent_id
   left join ugovori ug on ug.id = o.ugovor_id
+  left join sif.acc_mjesta_troska mt on mt.id = o.mjesto_troska_id
   outer apply (select max(ko.kalkulacija_id) as kalkulacija_id
                  from kalkulacija_operacije ko
                 where ko.operacija_id = o.id) kk

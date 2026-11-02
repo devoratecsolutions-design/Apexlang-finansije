@@ -459,3 +459,17 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
 - JS `finansije-ui.js` (finRmKalk) i `.min.js`, verzija u application.apx.
 - **SQL ponovo:** `15_rm_kalkulacija.sql`, zatim `10_kuf_pkg.sql` (samo paket). Zatim import aplikacije.
 - **Git:** `v2/izvor` u Git-u je bio stariji od službenog `v2/import/finansije-v2.zip` (01.11.2026) – stranice 0, 1, 311, 312, 330, 340, app-items, app-processes, breadcrumbs, ikone. Na ovoj grani izvor je usklađen sa zip-om (zip je osnova), pa su na to dodate R10 izmjene. Dorade se ubuduće rade na sadržaju službenog zip-a.
+
+## Kalkulacija – ispravke poslije testa R10 i izlazni dokumenti – korak R11 (02.11.2026)
+**Kalkulacija (ispravke)**
+- Promjena „Iznos“ (sa / bez PDV-a) ili fakture odmah upisuje raspoloživi iznos u kolonu „Raspoređuje se“ (ranije se mijenjalo samo raspoloživo).
+- Ručno upisan iznos se više ne snima kao 0: kod načina „Ručno – jedinična cijena“ upisani iznos ostaje (početni), a preračunava se tek kad se unesu cijene na tabu Raspodjela. Podrazumijevani način raspodjele novog reda je „Automatski – po vrijednosti“, a iznos „Bez PDV-a“.
+- Lista kalkulacija (340): ispod broja je prikazivan tekst „{if OPIS/}“ umjesto opisa – ispravljeno.
+
+**Izlazni dokumenti materijalnog skladišta (R11)**
+- Nove vrste dokumenata (modul MAT): **IZD – Izdatnica** i **IIN – Izlaz na investiciju u toku** (`16_rm_vrste_izlaz.sql`, kao SIF: dodaje vrste svakoj firmi koja ima vrstu PRI), brojači IZD- / IIN- (`11_rm_model.sql`).
+- Samo u materijalnom modulu: meni „Novi dokument“ ih prikazuje samo u modulu Materijal i oprema, a paket odbija dokument na robnom skladištu.
+- **Mjesto troška** (SIF.ACC_MJESTA_TROSKA, nova kolona OPERACIJE.MJESTO_TROSKA_ID): za firme sa dvojnim knjigovodstvom (doo, a.d., SP dvojno) obavezno polje; ostalima se ne prikazuje. Na listi dokumenata se vidi u koloni „Dobavljač / mjesto troška“.
+- Cijena stavke je prosječna cijena skladišta na datum dokumenta i ne može se mijenjati (računa paket; ponovo se računa pri izmjeni datuma i pri zaključavanju). Količina najviše do raspoloživog.
+- Forma dokumenta (331): kod izlaza nema sekcije „Dobavljač i ugovor“ (ni obaveznog dobavljača); „Datum prijema“ → „Datum dokumenta“. Novo dugme **Zaključaj** za izlazne dokumente (provjera stavki i serijskih brojeva, mjesta troška i obrađenog stanja na datum dokumenta; cijene po prosjeku na datum) i **Otključaj** (samo administrator, dok dokument nije proknjižen). Prijemnicu i dalje zaključava kalkulacija.
+- **SQL (redoslijed):** `16_rm_vrste_izlaz.sql` (SIF) → `11_rm_model.sql` → `12_rm_pkg.sql` → `13_rm_views.sql` → `15_rm_kalkulacija.sql` (ACCOUNTING). Zatim import aplikacije.
