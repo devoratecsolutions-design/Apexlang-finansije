@@ -786,36 +786,61 @@ window.finSkl = (function ($) {
 /* =====================================================================
    Lista dokumenata skladišta (str. 330): izbor vrste dokumenta pored
    izbora skladišta; "Novi dokument" otvara izabranu vrstu.
-   Vrijednost stavke je URL forme dokumenta (apex_page.get_url).
-   Poziv: finRmVrsta.init('P330_NOVA_VRSTA')
+   Promjena vrste osvježava listu (samo dokumenti te vrste); URL forme
+   (sa kontrolnom sumom) daje proces NOVI_DOKUMENT_URL.
+   Poziv: finRmVrsta.init('P330_NOVA_VRSTA', 'dokumenti_report')
    ===================================================================== */
 window.finRmVrsta = (function ($) {
     "use strict";
-    var KLJUC = "finRmVrsta";
+    var KLJUC = "finRmVrstaId";
     function otvori(url) {
+        url = String(url || "").trim();
         if (!url) { return; }
         if (/^javascript:/i.test(url)) { window.location.href = url; } else { apex.navigation.redirect(url); }
     }
-    function init(item) {
-        var $r = $("#fin_vrsta_izbor"), $s = $("#" + item), $cilj, $skl, zapamceno = null;
+    function init(item, regionId) {
+        var $r = $("#fin_vrsta_izbor"), $s = $("#" + item), $skl, $cilj, zapamceno = null;
         if (!$r.length || !$s.length) { return; }
         $skl = $("#finSkl");
         $cilj = $(".t-Body-title .t-BreadcrumbRegion-buttons").first();
         if ($skl.length && $skl.parent().length) { $r.insertAfter($skl); } else if ($cilj.length) { $cilj.prepend($r); }
         $r.addClass("is-ready");
-        /* zapamćena vrsta (po nazivu) */
-        try { zapamceno = localStorage.getItem(KLJUC); } catch (e) { zapamceno = null; }
-        if (zapamceno) {
-            $s.find("option").each(function () {
-                if ($(this).text() === zapamceno) { $s.val($(this).val()); }
-            });
+        function osvjezi() {
+            try { localStorage.setItem(KLJUC, $s.val()); } catch (e) { /* ništa */ }
+            if (regionId && apex.region(regionId)) { apex.region(regionId).refresh(); }
         }
-        $s.on("change", function () {
-            try { localStorage.setItem(KLJUC, $s.find("option:selected").text()); } catch (e) { /* ništa */ }
-        });
+        $s.on("change", osvjezi);
+        /* zapamćena vrsta: ako postoji u listi i razlikuje se od trenutne - izaberi i osvježi */
+        try { zapamceno = localStorage.getItem(KLJUC); } catch (e) { zapamceno = null; }
+        if (zapamceno && zapamceno !== $s.val() && $s.find('option[value="' + zapamceno + '"]').length) {
+            apex.item(item).setValue(zapamceno, null, true);
+            osvjezi();
+        }
         $(document).on("click", "[data-novi-dokument]", function (e) {
             e.preventDefault();
-            otvori($s.val());
+            if (!$s.val()) { return; }
+            apex.server.process("NOVI_DOKUMENT_URL", { x01: $s.val() }, { dataType: "text" }).done(function (url) { otvori(url); });
+        });
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Izvještaji materijalnog / robnog modula (str. 371): katalog kartica.
+   Klik na karticu bira izvještaj (P371_IZV) i ponovo učitava stranicu.
+   Poziv: finRmIzvjestaji.init('P371')
+   ===================================================================== */
+window.finRmIzvjestaji = (function ($) {
+    "use strict";
+    function init(p) {
+        var izv = $v(p + "_IZV");
+        $(".fin-izv-kartica").each(function () {
+            $(this).toggleClass("is-active", String($(this).data("izv")) === String(izv));
+        });
+        $(document).on("click", ".fin-izv-kartica", function () {
+            var kod = String($(this).data("izv")), set = {};
+            set[p + "_IZV"] = kod;
+            apex.page.submit({ request: "IZV", set: set, showWait: true });
         });
     }
     return { init: init };

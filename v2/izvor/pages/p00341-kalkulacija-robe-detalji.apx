@@ -447,21 +447,8 @@ page 341 (
                 popupWidth: 720
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT o.skladiste_sifra || ' · ' || o.naziv || ' · ' || to_char(o.datum, 'DD.MM.YYYY')
-                           || nvl2(o.klijent_naziv, ' · ' || o.klijent_naziv, '') AS d,
-                           o.id AS r
-                    FROM vw_rm_dokumenti o
-                    WHERE o.ooj_id = :APP_OOJ_ID
-                      AND o.skladiste_id = nvl(:P341_SKLADISTE_ID, :A_SKLADISTE_ID)
-                      AND o.vrsta_sifra = 'PRI'
-                      AND o.stornirano = 'N'
-                      AND ((o.status = 'P' AND NOT EXISTS (SELECT 1 FROM kalkulacija_operacije ko WHERE ko.operacija_id = o.id))
-                           OR o.id IN (SELECT ko.operacija_id FROM kalkulacija_operacije ko WHERE ko.kalkulacija_id = :P341_ID))
-                    ORDER BY o.datum DESC, o.id DESC
-                    ```
+                type: sharedComponent
+                lov: @rm-kalk-prijemnice
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - izaberite prijemnicu -
@@ -734,18 +721,8 @@ page 341 (
                 popupWidth: 720
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT f.naziv || ' · ' || f.klijent_naziv || nvl2(f.naziv_fakture, ' · ' || f.naziv_fakture, '')
-                           || ' · raspoloživo ' || to_char(CASE WHEN :APP_PDV_SISTEM = 'Y' THEN f.raspolozivo_bez_pdv ELSE f.raspolozivo_sa_pdv END, 'FM999G999G999G990D00') AS d,
-                           f.id AS r
-                    FROM vw_rm_kalk_fakture f
-                    WHERE f.ooj_id = :APP_OOJ_ID
-                      AND (f.raspolozivo_sa_pdv > 0
-                           OR f.id IN (SELECT kk.kuf_id FROM kalkulacija_kuf kk WHERE kk.kalkulacija_id = :P341_ID))
-                    ORDER BY f.datum_fakture DESC
-                    ```
+                type: sharedComponent
+                lov: @rm-kalk-fakture
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - izaberite ulaznu fakturu -
@@ -1082,18 +1059,8 @@ page 341 (
                 popupWidth: 720
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT f.naziv || ' · ' || f.klijent_naziv || nvl2(f.naziv_fakture, ' · ' || f.naziv_fakture, '')
-                           || ' · raspoloživo ' || to_char(CASE WHEN :APP_PDV_SISTEM = 'Y' THEN f.raspolozivo_bez_pdv ELSE f.raspolozivo_sa_pdv END, 'FM999G999G999G990D00') AS d,
-                           f.id AS r
-                    FROM vw_rm_kalk_fakture f
-                    WHERE f.ooj_id = :APP_OOJ_ID
-                      AND (f.raspolozivo_sa_pdv > 0
-                           OR f.id IN (SELECT kt.kuf_id FROM kalkulacija_troskovi kt WHERE kt.kalkulacija_id = :P341_ID))
-                    ORDER BY f.datum_fakture DESC
-                    ```
+                type: sharedComponent
+                lov: @rm-kalk-fakture
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - bez fakture (ručni unos) -

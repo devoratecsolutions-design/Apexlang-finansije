@@ -1007,20 +1007,8 @@ page 331 (
                 popupWidth: 640
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT sifra || ' - ' || naziv || CASE WHEN prati_sb = 'Y' THEN ' (SB)' END AS d,
-                           id AS r
-                    FROM vw_rm_artikli
-                    WHERE ooj_id = :APP_OOJ_ID
-                      AND valid = 'Y'
-                      AND nvl(tip_stavke_id, 0) <> 3
-                      AND (nvl(:P331_POVRAT, 'N') <> 'Y' OR :P331_ID IS NULL
-                           OR rm_dokument_pkg.dostupno_za_povrat_dok(:P331_ID, id) > 0
-                           OR id IN (SELECT os.stavka_id FROM operacija_stavke os WHERE os.operacija_id = :P331_ID))
-                    ORDER BY sifra
-                    ```
+                type: sharedComponent
+                lov: @rm-dokument-artikli
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - izaberite artikal -
@@ -1572,20 +1560,18 @@ page 331 (
     )
 
     pageItem P331_KLIJENT_ID (
-        type: selectOne
+        type: popupLov
         label {
             label: Dobavljač
             alignment: left
         }
         settings {
-            infiniteScroll: false
-        }
-        messages {
-            noDataFoundMessage: Nema pronađenih podataka.
+            popupWidth: 720
         }
         lov {
             type: sharedComponent
-            lov: @sec-klijenti-dobavljaci
+            lov: @rm-dobavljaci
+            displayExtraValues: false
         }
         layout {
             sequence: 10
@@ -1677,20 +1663,18 @@ page 331 (
     )
 
     pageItem P331_MJESTO_TROSKA_ID (
-        type: selectOne
+        type: popupLov
         label {
             label: Mjesto troška
             alignment: left
         }
         settings {
-            infiniteScroll: false
-        }
-        messages {
-            noDataFoundMessage: Nema pronađenih podataka.
+            popupWidth: 720
         }
         lov {
             type: sharedComponent
-            lov: @acc-mjesta-troska-ooj
+            lov: @rm-mjesta-troska
+            displayExtraValues: false
         }
         layout {
             sequence: 10
@@ -1712,28 +1696,18 @@ page 331 (
     )
 
     pageItem P331_ZADUZENI_RADNIK_ID (
-        type: selectOne
+        type: popupLov
         label {
             label: Zaduženi radnik
             alignment: left
         }
         settings {
-            infiniteScroll: false
-        }
-        messages {
-            noDataFoundMessage: Nema pronađenih podataka.
+            popupWidth: 720
         }
         lov {
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT r.ime || ' ' || r.prezime || nvl2(r.interni_broj, ' (' || r.interni_broj || ')', '') AS d,
-                       r.id AS r
-                FROM sif.acc_radnici r
-                WHERE r.ooj_id = :APP_OOJ_ID
-                  AND (r.valid = 'Y' OR r.id = :P331_ZADUZENI_RADNIK_ID)
-                ORDER BY r.prezime, r.ime
-                ```
+            type: sharedComponent
+            lov: @rm-radnici
+            displayExtraValues: false
         }
         layout {
             sequence: 20
@@ -1755,26 +1729,18 @@ page 331 (
     )
 
     pageItem P331_KOMITENT_ID (
-        type: selectOne
+        type: popupLov
         label {
             label: Komitent
             alignment: left
         }
         settings {
-            infiniteScroll: false
-        }
-        messages {
-            noDataFoundMessage: Nema pronađenih podataka.
+            popupWidth: 720
         }
         lov {
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT k.naziv AS d, k.id AS r
-                FROM sec_klijenti k
-                WHERE k.ooj_id = :APP_OOJ_ID
-                ORDER BY k.naziv
-                ```
+            type: sharedComponent
+            lov: @rm-komitenti
+            displayExtraValues: false
         }
         layout {
             sequence: 30
@@ -1829,28 +1795,18 @@ page 331 (
     )
 
     pageItem P331_SKLADISTE_PRENOS_ID (
-        type: selectOne
+        type: popupLov
         label {
             label: Na skladište
             alignment: left
         }
         settings {
-            infiniteScroll: false
-        }
-        messages {
-            noDataFoundMessage: Nema pronađenih podataka.
+            popupWidth: 720
         }
         lov {
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT s.sifra || ' - ' || s.naziv AS d, s.id AS r
-                FROM skladista s
-                WHERE s.ooj_id = :APP_OOJ_ID
-                  AND (s.valid = 'Y' OR s.id = :P331_SKLADISTE_PRENOS_ID)
-                  AND s.id <> nvl(:P331_SKLADISTE_ID, -1)
-                ORDER BY s.sifra
-                ```
+            type: sharedComponent
+            lov: @rm-skladista-prenos
+            displayExtraValues: false
         }
         layout {
             sequence: 10

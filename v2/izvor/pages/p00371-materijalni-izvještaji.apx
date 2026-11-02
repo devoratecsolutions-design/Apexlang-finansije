@@ -1,7 +1,7 @@
 page 371 (
-    name: Materijalni izvještaji
+    name: Izvještaji
     alias: MATERIJALNI-IZVJEŠTAJI
-    title: Materijalni izvještaji
+    title: Izvještaji
     pageGroup: @robno-materijalno
     appearance {
         pageTemplate: @standard
@@ -12,7 +12,10 @@ page 371 (
         warnOnUnsavedChanges: false
     }
     javaScript {
-        fileUrls: #WORKSPACE_FILES#jasper-server#MIN#.js
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmIzvjestaji.init('P371');
+            ```
     }
     security {
         authorizationScheme: @glavna-knjiga-izvještaji
@@ -22,887 +25,15 @@ page 371 (
     help {
         helpText:
             ```html
-            Stranica <b><em>"Izvještaji"</em></b> kreirana je tako da povlači 
-            sve izvještaje iz <b><em>"Glavne knjige."</em></b> 
-            Izvještaji su grupisani po tabovima i klikom na određeni tab otvara se željeni izvještaj. </br>
-            Za svaki izvještaj potrebno je unijeti određene parametre kako bi se prikazali rezultati.</br>
-            </br>
-            Najčešće se unose period od, period do, klasa konta, konto, organizaciona jedinica, klijenti, 
-            vrsta naloga, PDV indikator i vrsta klijenta, ali se parametri razlikuju zavisno od izvještaja. </br>
-            Nakon unosa podataka, izborom opcije <b><em>"Generiši"</em></b> izvještaj dobijate traženi prikaz.
+            Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola),
+            podesite parametre (skladište, period, artikal...) i kliknite <b>Prikaži</b>.
+            Izvještaji koriste zaključene dokumente skladišta (knjigovodstveno stanje); <b>Dokumenti na čekanju</b>
+            prikazuju ono što još nije zaključeno.
             ```
     }
 
-    region dokumenti-na-čekanju-dc (
-        name: Dokumenti na čekanju - dc
-        type: classicReport
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT
-                    id,
-                    naziv,
-                    skladiste_id,
-                    tip_kretanja,
-                    tip_kretanja_id,
-                    datum,
-                    status_naziv,
-                    status_color_code,
-                    status_id
-                FROM
-                    vw_trebovanja t
-                WHERE
-                    ooj_id = :APP_OOJ_ID
-                    AND godina = :APP_GODINA
-                ORDER BY
-                    broj DESC
-                ```
-        }
-        layout {
-            sequence: 110
-            slot: body
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
-            ]
-            cssClasses: fin-list
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: dc
-        }
-        reportLayout {
-            numberOfRows: 50
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-                t-Report--hideNoPagination
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 500
-        }
-        messages {
-            whenNoDataFound: Nema pronađenih podataka.
-        }
-
-        column DATUM (
-            reportColumnQueryId: 6
-            derivedColumn: N
-            heading {
-                heading: Datum
-            }
-            layout {
-                sequence: 50
-            }
-            appearance {
-                formatMask: DD.MM.YYYY HH24:MI:SS
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
-            type: link
-            layout {
-                sequence: 0
-            }
-            link {
-                target: {
-                    page: 322
-                    items: {
-                        P322_ID: #ID#
-                    }
-                    clearCache: 322
-                }
-                linkText: <span class="fin-act" title="Uredi" aria-label="Uredi"><span class="fa fa-pencil" aria-hidden="true"></span></span>
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
-            heading {
-                heading: Naziv
-            }
-            layout {
-                sequence: 10
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column SKLADISTE_ID (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 20
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column STATUS_COLOR_CODE (
-            reportColumnQueryId: 8
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 70
-            }
-        )
-
-        column STATUS_ID (
-            reportColumnQueryId: 9
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 80
-            }
-        )
-
-        column STATUS_NAZIV (
-            reportColumnQueryId: 7
-            derivedColumn: N
-            heading {
-                heading: Status
-            }
-            layout {
-                sequence: 60
-            }
-            columnFormatting {
-                htmlExpression:
-                    ```html
-                    {if STATUS_ID/}
-                    <span class="t-Button #STATUS_COLOR_CODE# t-Button--small">
-                        <span class="t-Button-label">#STATUS_NAZIV#</span>
-                    </span>
-                    {endif/}
-                    ```
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA (
-            reportColumnQueryId: 4
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Tip kretanja
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 30
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA_ID (
-            reportColumnQueryId: 5
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe
-            }
-            layout {
-                sequence: 40
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-    )
-
-    region finansijski-izvještaji-prometa-po-kontima-i-mjestu-troška-fin (
-        name: Finansijski izvještaji prometa po kontima i mjestu troška - fin
-        title: Finansijski izvještaji prometa po kontima i mjestu troška
-        type: classicReport
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT
-                    operacija_id,
-                    operacija_naziv,
-                    oj_id,
-                    oj_naziv,
-                    skladiste_id,
-                    skladiste_naziv,
-                    stavka_id,
-                    stavka_sifra,
-                    stavka_naziv,
-                    kolicina,
-                    iznos,
-                    tip_kretanja_id,
-                    tip_kretanja,
-                    tip_kretanja_naziv,
-                    datum_knjizenja,
-                    glavna_knjiga_id,
-                    lpad(glavna_knjiga_broj, 6, '0') as glavna_knjiga_broj,
-                    vrsta_naloga_naziv
-                
-                
-                
-                FROM
-                    vw_operacija_stavke
-                WHERE
-                    ooj_id = :APP_OOJ_ID
-                    AND godina = :APP_GODINA
-                    AND tip_stavke_id = 4
-                    AND (datum_knjizenja = coalesce(to_date(:P371_DATUM, 'DD.MM.YYYY'), datum_knjizenja))
-                ```
-            pageItemsToSubmit: P371_DATUM
-        }
-        layout {
-            sequence: 160
-            slot: body
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--noPadding
-                t-Region--removeHeader js-removeLandmark
-                t-Region--scrollBody
-            ]
-            cssClasses: fin-list
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: fin
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-            showNullValuesAs: -
-        }
-        pagination {
-            type: nextAndPreviousLinks
-        }
-        messages {
-            whenNoDataFound: Nema pronađenih podataka.
-        }
-
-        column DATUM_KNJIZENJA (
-            reportColumnQueryId: 15
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 160
-            }
-        )
-
-        column GLAVNA_KNJIGA_BROJ (
-            reportColumnQueryId: 17
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 180
-            }
-        )
-
-        column GLAVNA_KNJIGA_ID (
-            reportColumnQueryId: 16
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 150
-            }
-        )
-
-        column IZNOS (
-            reportColumnQueryId: 11
-            derivedColumn: N
-            heading {
-                heading: Iznos
-                alignment: end
-            }
-            layout {
-                sequence: 140
-                columnAlignment: end
-            }
-            appearance {
-                formatMask: 999G999G999G999G990D00
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column KOLICINA (
-            reportColumnQueryId: 10
-            derivedColumn: N
-            heading {
-                heading: Količina
-                alignment: end
-            }
-            layout {
-                sequence: 130
-                columnAlignment: end
-            }
-            appearance {
-                formatMask: 999G999G999G999G990D00
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column OJ_ID (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 30
-            }
-        )
-
-        column OJ_NAZIV (
-            reportColumnQueryId: 4
-            derivedColumn: N
-            heading {
-                heading: Organizaciona jedinica
-            }
-            layout {
-                sequence: 40
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column OPERACIJA_ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 10
-            }
-        )
-
-        column OPERACIJA_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
-            heading {
-                heading: Dokument
-            }
-            layout {
-                sequence: 20
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column SKLADISTE_ID (
-            reportColumnQueryId: 5
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 50
-            }
-        )
-
-        column SKLADISTE_NAZIV (
-            reportColumnQueryId: 6
-            derivedColumn: N
-            heading {
-                heading: Skladište
-            }
-            layout {
-                sequence: 60
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column STAVKA_ID (
-            reportColumnQueryId: 7
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 70
-            }
-        )
-
-        column STAVKA_NAZIV (
-            reportColumnQueryId: 9
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 90
-            }
-        )
-
-        column STAVKA_SIFRA (
-            reportColumnQueryId: 8
-            derivedColumn: N
-            heading {
-                heading: Stavka
-            }
-            layout {
-                sequence: 80
-            }
-            columnFormatting {
-                htmlExpression: #STAVKA_SIFRA# - #STAVKA_NAZIV#
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA (
-            reportColumnQueryId: 13
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 110
-            }
-        )
-
-        column TIP_KRETANJA_ID (
-            reportColumnQueryId: 12
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 100
-            }
-        )
-
-        column TIP_KRETANJA_NAZIV (
-            reportColumnQueryId: 14
-            derivedColumn: N
-            heading {
-                heading: Tip kretanja
-            }
-            layout {
-                sequence: 120
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column VRSTA_NALOGA_NAZIV (
-            reportColumnQueryId: 18
-            derivedColumn: N
-            heading {
-                heading: Glavna knjiga
-            }
-            layout {
-                sequence: 170
-            }
-            columnFormatting {
-                htmlExpression:
-                    ```html
-                    {if GLAVNA_KNJIGA_ID/}
-                    #VRSTA_NALOGA_NAZIV# / #GLAVNA_KNJIGA_BROJ#
-                    <br>
-                    #DATUM_KNJIZENJA#
-                    {else/}
-                    -
-                    {endif/}
-                    ```
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-    )
-
-    region kartica-materijala-na-nivou-skladišta-km (
-        name: Kartica materijala na nivou skladišta - km
-        type: classicReport
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT
-                    stavka_id,
-                    skladiste_id,
-                    tip_kretanja,
-                    tip_kretanja_id,
-                    operacija_naziv,
-                    operacija_datum,
-                    datum_knjizenja,
-                    kolicina,
-                    opis,
-                    iznos, 
-                    
-                    (
-                        SELECT
-                            listagg(kk.kuf_naziv_fakture, '~')
-                        FROM
-                            vw_kalkulacija_kuf kk
-                        WHERE
-                            kk.kalkulacija_id = (
-                                SELECT
-                                    kalkulacija_id
-                                FROM
-                                    kalkulacija_operacije ko
-                                WHERE
-                                    ko.operacija_id = os.operacija_id
-                            )
-                    ) AS kuf_list,
-                
-                    (
-                        SELECT
-                            kalkulacija_id
-                        FROM
-                            kalkulacija_operacije ko
-                        WHERE
-                            ko.operacija_id = os.operacija_id
-                    ) AS kalkulacija_id
-                FROM
-                    vw_operacija_stavke os
-                WHERE
-                    ooj_id = :APP_OOJ_ID
-                    AND godina = :APP_GODINA
-                    AND tip_stavke_id = 4
-                ORDER BY
-                    operacija_datum DESC
-                ```
-        }
-        layout {
-            sequence: 80
-            slot: body
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--noPadding
-                t-Region--removeHeader js-removeLandmark
-                t-Region--scrollBody
-            ]
-            cssClasses: fin-list
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: km
-        }
-        reportLayout {
-            numberOfRows: 50
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-                t-Report--hideNoPagination
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        messages {
-            whenNoDataFound: Nema pronađenih podataka.
-        }
-        breakFormatting {
-            reportSumLabel: Ukupno
-        }
-
-        column DATUM_KNJIZENJA (
-            reportColumnQueryId: 7
-            derivedColumn: N
-            heading {
-                heading: Datum knjiženja
-            }
-            layout {
-                sequence: 70
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column IZNOS (
-            reportColumnQueryId: 10
-            derivedColumn: N
-            heading {
-                heading: Iznos
-                alignment: end
-            }
-            layout {
-                sequence: 100
-                columnAlignment: end
-            }
-            appearance {
-                formatMask: 999G999G999G999G990D00
-            }
-            sorting {
-                sortable: false
-            }
-            advanced {
-                computeSum: true
-            }
-        )
-
-        column KALKULACIJA_ID (
-            reportColumnQueryId: 12
-            derivedColumn: N
-            type: link
-            heading {
-                heading: Kalkulacija
-            }
-            layout {
-                sequence: 130
-            }
-            link {
-                target: {
-                    page: 345
-                    items: {
-                        P345_ID: #KALKULACIJA_ID#
-                    }
-                    clearCache: 345
-                }
-                linkText: <span role="img" aria-label="Edit" class="fa fa-calculator" title="Edit"></span>
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column KOLICINA (
-            reportColumnQueryId: 8
-            derivedColumn: N
-            heading {
-                heading: Količina
-                alignment: end
-            }
-            layout {
-                sequence: 80
-                columnAlignment: end
-            }
-            appearance {
-                formatMask: 999G999G999G999G990D00
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column KUF_LIST (
-            reportColumnQueryId: 11
-            derivedColumn: N
-            heading {
-                heading: Lista ulaznih faktura
-            }
-            layout {
-                sequence: 110
-            }
-            columnFormatting {
-                htmlExpression:
-                    ```html
-                    {loop "~" KUF_LIST/}
-                        - &APEX$ITEM.<br>
-                    {endloop/}
-                    
-                    ```
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column OPERACIJA_DATUM (
-            reportColumnQueryId: 6
-            derivedColumn: N
-            heading {
-                heading: Datum
-            }
-            layout {
-                sequence: 60
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column OPERACIJA_NAZIV (
-            reportColumnQueryId: 5
-            derivedColumn: N
-            heading {
-                heading: Dokument
-            }
-            layout {
-                sequence: 50
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column OPIS (
-            reportColumnQueryId: 9
-            derivedColumn: N
-            heading {
-                heading: Opis
-            }
-            layout {
-                sequence: 90
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column SKLADISTE_ID (
-            reportColumnQueryId: 2
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @sec-skladista
-            }
-            layout {
-                sequence: 20
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column STAVKA_ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Stavka
-            }
-            lov {
-                type: sharedComponent
-                lov: @sec-stavke-robe
-            }
-            layout {
-                sequence: 10
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Tip kretanja
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 30
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA_ID (
-            reportColumnQueryId: 4
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe-ooj
-            }
-            layout {
-                sequence: 40
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-    )
-
-    region niste-izabrali-izvještaj (
-        name: Niste izabrali izvještaj
-        type: staticContent
-        layout {
-            sequence: 170
-            slot: body
-        }
-        appearance {
-            template: @alert
-            templateOptions: [
-                #DEFAULT#
-                t-Alert--colorBG
-                t-Alert--wizard
-                t-Alert--defaultIcons
-                t-Alert--info
-            ]
-        }
-        serverSideCondition {
-            type: itemIsNull
-            item: P371_IZVJESTAJ_ID
-        }
-    )
-
-    region p371-title (
-        name: &P371_TITLE.
+    region izvjestaji-naslov (
+        name: Izvještaji
         type: breadcrumb
         source {
             breadcrumb: @breadcrumb
@@ -926,77 +57,140 @@ page 371 (
         }
     )
 
-    region popisne-liste (
-        name: Popisne liste
+    region katalog (
+        name: Katalog izvještaja
+        type: staticContent
+        source {
+            htmlCode: <div class="fin-izv-katalog"><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-cubes" aria-hidden="true"></span>Stanje i vrijednost</div><button type="button" class="fin-izv-kartica" data-izv="sd"><span class="fin-izv-kartica__naziv">Stanje zaliha na dan</span><span class="fin-izv-kartica__opis">Količina, prosječna cijena i vrijednost po artiklu</span></button><button type="button" class="fin-izv-kartica" data-izv="pl"><span class="fin-izv-kartica__naziv">Popisna lista</span><span class="fin-izv-kartica__opis">Knjigovodstveno stanje sa poljima za popis</span></button><button type="button" class="fin-izv-kartica" data-izv="sz"><span class="fin-izv-kartica__naziv">Starost zaliha</span><span class="fin-izv-kartica__opis">Artikli na stanju bez izlaza duže od N dana</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-exchange" aria-hidden="true"></span>Promet</div><button type="button" class="fin-izv-kartica" data-izv="km"><span class="fin-izv-kartica__naziv">Kartica artikla</span><span class="fin-izv-kartica__opis">Hronološki ulazi, izlazi i stanje jednog artikla</span></button><button type="button" class="fin-izv-kartica" data-izv="pp"><span class="fin-izv-kartica__naziv">Promet po artiklima</span><span class="fin-izv-kartica__opis">Početno, ulaz, izlaz i krajnje stanje za period</span></button><button type="button" class="fin-izv-kartica" data-izv="dok"><span class="fin-izv-kartica__naziv">Pregled dokumenata</span><span class="fin-izv-kartica__opis">Svi dokumenti skladišta za period</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-users" aria-hidden="true"></span>Potrošnja i zaduženja</div><button type="button" class="fin-izv-kartica" data-izv="pmt"><span class="fin-izv-kartica__naziv">Potrošnja po mjestu troška</span><span class="fin-izv-kartica__opis">Izdatnice i izlazi na investiciju, OS i sitni inventar</span></button><button type="button" class="fin-izv-kartica" data-izv="zad"><span class="fin-izv-kartica__naziv">Zaduženja</span><span class="fin-izv-kartica__opis">Otvoreni reversi i zaduženja radnika / komitenata</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-bell-o" aria-hidden="true"></span>Kontrola</div><button type="button" class="fin-izv-kartica" data-izv="dc"><span class="fin-izv-kartica__naziv">Dokumenti na čekanju</span><span class="fin-izv-kartica__opis">Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema</span></button></div></div>
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        advanced {
+            htmlDomId: fin_izv_katalog
+        }
+    )
+
+    region izvjestaj (
+        name: &P371_NAZIV.
+        title: &P371_NAZIV.
         type: staticContent
         layout {
-            sequence: 150
+            sequence: 20
             slot: body
         }
         appearance {
             template: @standard
             templateOptions: [
                 #DEFAULT#
-                t-Region--scrollBody
+                t-Region--noUI
             ]
+            cssClasses: fin-section fin-izv
         }
         serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: pl
+            type: itemIsNotNull
+            item: P371_IZV
         }
     )
 
-    region pregled-dokumenata-u-određenom-periodu-na-nivou-skladišta-dok (
-        name: Pregled dokumenata u određenom periodu na nivou skladišta - dok
+    region parametri (
+        name: Parametri
+        type: staticContent
+        layout {
+            sequence: 5
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-toolbar fin-izv-parametri
+        }
+    )
+
+    region izaberite (
+        name: Izaberite izvještaj
+        type: staticContent
+        source {
+            htmlCode: Izaberite izvještaj u katalogu iznad.
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P371_IZV
+        }
+    )
+
+    region izv-stanje (
+        name: Stanje zaliha na dan
+        title: Stanje zaliha na dan
         type: classicReport
         source {
             location: localDatabase
             type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT
-                    tip_kretanja_id,
-                    tip_kretanja_naziv,
-                    tip_kretanja,
-                    skladiste_id,
-                    skladiste_naziv,
-                    naziv,
-                    datum,
-                    proknjizeno,
-                    zakljucano
-                
-                
-                FROM
-                    vw_operacije
-                WHERE
-                    ooj_id = :APP_OOJ_ID
-                    AND godina = :APP_GODINA
-                ORDER BY
-                    datum DESC
+                SELECT p.artikal_sifra,
+                       p.artikal_naziv,
+                       p.jm_naziv,
+                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
+                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 'FM999G999G999G990D0000') AS cijena,
+                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost
+                FROM vw_rm_promet p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
+                  AND p.status = 'Z'
+                  AND p.datum <= nvl(to_date(:P371_DATUM, 'DD.MM.YYYY'), trunc(sysdate))
+                GROUP BY p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv
+                HAVING sum(p.ulaz_kolicina - p.izlaz_kolicina) <> 0 OR sum(p.ulaz_vrijednost - p.izlaz_vrijednost) <> 0
+                ORDER BY p.artikal_sifra
                 ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_DATUM
+            ]
         }
         layout {
-            sequence: 90
-            slot: body
+            sequence: 10
+            parentRegion: @izvjestaj
+            slot: subRegions
         }
         appearance {
             template: @standard
             templateOptions: [
                 #DEFAULT#
                 t-Region--noPadding
-                t-Region--removeHeader js-removeLandmark
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
                 t-Region--scrollBody
             ]
-            cssClasses: fin-list
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: dok
+            cssClasses: fin-list fin-izv-tabela
         }
         reportLayout {
-            numberOfRows: 50
+            numberOfRows: 100
         }
         componentAppearance {
             template: @standard
@@ -1004,38 +198,30 @@ page 371 (
                 #DEFAULT#
                 t-Report--stretch
                 t-Report--rowHighlight
-                t-Report--hideNoPagination
             ]
         }
         pagination {
             type: rowRangesXToYOfZWithPagination
         }
+        performance {
+            maxRowsToProcess: 5000
+        }
         messages {
-            whenNoDataFound: Nema pronađenih podataka.
+            whenNoDataFound: Nema zaliha na izabrani dan.
+        }
+        advanced {
+            htmlDomId: izv_sd
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',sd,', ',' || :P371_IZV || ',') > 0
         }
 
-        column DATUM (
-            reportColumnQueryId: 7
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 1
             derivedColumn: N
             heading {
-                heading: Datum
-            }
-            layout {
-                sequence: 50
-            }
-            appearance {
-                formatMask: DD.MM.YYYY HH24:MI
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column NAZIV (
-            reportColumnQueryId: 6
-            derivedColumn: N
-            heading {
-                heading: Naziv
+                heading: Šifra
             }
             layout {
                 sequence: 10
@@ -1045,27 +231,284 @@ page 371 (
             }
         )
 
-        column PROKNJIZENO (
-            reportColumnQueryId: 8
+        column ARTIKAL_NAZIV (
+            reportColumnQueryId: 2
             derivedColumn: N
             heading {
-                heading: Proknjiženo
+                heading: Artikal
             }
             layout {
-                sequence: 90
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Prosječna cijena
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-popis (
+        name: Popisna lista
+        title: Popisna lista
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT p.artikal_sifra,
+                       p.artikal_naziv,
+                       p.jm_naziv,
+                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
+                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 'FM999G999G999G990D0000') AS cijena,
+                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost,
+                       NULL AS popisano,
+                       NULL AS razlika
+                FROM vw_rm_promet p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
+                  AND p.status = 'Z'
+                  AND p.datum <= nvl(to_date(:P371_DATUM, 'DD.MM.YYYY'), trunc(sysdate))
+                GROUP BY p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv
+                HAVING sum(p.ulaz_kolicina - p.izlaz_kolicina) <> 0 OR sum(p.ulaz_vrijednost - p.izlaz_vrijednost) <> 0
+                ORDER BY p.artikal_sifra
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_DATUM
+            ]
+        }
+        layout {
+            sequence: 20
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema zaliha na izabrani dan.
+        }
+        advanced {
+            htmlDomId: izv_pl
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',pl,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Knjigovodstveno
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column CIJENA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Cijena
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column POPISANO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Popisano
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
             }
             columnFormatting {
                 htmlExpression:
                     ```html
-                    {if PROKNJIZENO/}
-                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
-                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
-                    </span>
-                    {else/}
-                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
-                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
-                    </span>
-                    {endif/}
+                    <span class="fin-izv-upis">&nbsp;</span>
                     ```
             }
             sorting {
@@ -1073,816 +516,440 @@ page 371 (
             }
         )
 
-        column SKLADISTE_ID (
-            reportColumnQueryId: 4
+        column RAZLIKA (
+            reportColumnQueryId: 8
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Razlika
+                alignment: end
+            }
             layout {
-                sequence: 60
+                sequence: 80
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-izv-upis">&nbsp;</span>
+                    ```
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column SKLADISTE_NAZIV (
+    )
+
+    region izv-starost (
+        name: Starost zaliha (bez izlaza)
+        title: Starost zaliha (bez izlaza)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT x.artikal_sifra,
+                       x.artikal_naziv,
+                       x.jm_naziv,
+                       rtrim(to_char(x.kolicina, 'FM999G999G999G990D999'), '.,') AS kolicina,
+                       to_char(x.vrijednost, 'FM999G999G999G990D00') AS vrijednost,
+                       to_char(x.zadnji_ulaz, 'DD.MM.YYYY') AS zadnji_ulaz,
+                       to_char(x.zadnji_izlaz, 'DD.MM.YYYY') AS zadnji_izlaz,
+                       trunc(sysdate) - trunc(nvl(x.zadnji_izlaz, x.zadnji_ulaz)) AS dana
+                FROM (SELECT p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv,
+                             sum(p.ulaz_kolicina - p.izlaz_kolicina) AS kolicina,
+                             sum(p.ulaz_vrijednost - p.izlaz_vrijednost) AS vrijednost,
+                             max(CASE WHEN p.tip_kretanja = 'U' THEN p.datum END) AS zadnji_ulaz,
+                             max(CASE WHEN p.tip_kretanja = 'I' THEN p.datum END) AS zadnji_izlaz
+                        FROM vw_rm_promet p
+                       WHERE p.ooj_id = :APP_OOJ_ID
+                         AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                         AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
+                         AND p.status = 'Z'
+                       GROUP BY p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv) x
+                WHERE x.kolicina > 0
+                  AND trunc(sysdate) - trunc(nvl(x.zadnji_izlaz, x.zadnji_ulaz)) >= nvl(to_number(:P371_DANA), 0)
+                ORDER BY dana DESC, x.vrijednost DESC
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_DANA
+            ]
+        }
+        layout {
+            sequence: 30
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema artikala na stanju bez izlaza duže od zadatog broja dana.
+        }
+        advanced {
+            htmlDomId: izv_sz
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',sz,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZADNJI_ULAZ (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Zadnji ulaz
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZADNJI_IZLAZ (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Zadnji izlaz
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DANA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Dana bez izlaza
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-kartica (
+        name: Kartica artikla
+        title: Kartica artikla
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH p AS (
+                    SELECT p.*
+                      FROM vw_rm_promet p
+                     WHERE p.ooj_id = :APP_OOJ_ID
+                       AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                      AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                       AND p.stavka_id = to_number(:P371_ARTIKL)
+                       AND p.status = 'Z'
+                ), x AS (
+                    SELECT 0 AS red, to_date(:P371_OD, 'DD.MM.YYYY') AS datum, 0 AS operacija_id, 0 AS stavka_dok_id, 'Početno stanje' AS dokument,
+                           NULL AS vrsta_naziv, NULL AS partner, NULL AS skladiste,
+                           to_number(NULL) AS ulaz_kolicina, to_number(NULL) AS izlaz_kolicina, to_number(NULL) AS cijena,
+                           to_number(NULL) AS ulaz_vrijednost, to_number(NULL) AS izlaz_vrijednost,
+                           nvl(sum(ulaz_kolicina - izlaz_kolicina), 0) AS d_kol, nvl(sum(ulaz_vrijednost - izlaz_vrijednost), 0) AS d_vr
+                      FROM p WHERE p.datum < to_date(:P371_OD, 'DD.MM.YYYY')
+                    UNION ALL
+                    SELECT 1, p.datum, p.operacija_id, p.stavka_dok_id, p.dokument, p.vrsta_naziv,
+                           coalesce(p.klijent_naziv, p.mjesto_troska_naziv, p.radnik_naziv), p.skladiste_sifra,
+                           p.ulaz_kolicina, p.izlaz_kolicina, p.cijena, p.ulaz_vrijednost, p.izlaz_vrijednost,
+                           p.ulaz_kolicina - p.izlaz_kolicina, p.ulaz_vrijednost - p.izlaz_vrijednost
+                      FROM p WHERE p.datum BETWEEN to_date(:P371_OD, 'DD.MM.YYYY') AND to_date(:P371_DO, 'DD.MM.YYYY')
+                )
+                SELECT to_char(x.datum, 'DD.MM.YYYY') AS datum,
+                       x.dokument,
+                       x.vrsta_naziv,
+                       x.partner,
+                       x.skladiste,
+                       rtrim(to_char(nullif(x.ulaz_kolicina, 0), 'FM999G999G999G990D999'), '.,') AS ulaz,
+                       rtrim(to_char(nullif(x.izlaz_kolicina, 0), 'FM999G999G999G990D999'), '.,') AS izlaz,
+                       rtrim(to_char(sum(x.d_kol) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id), 'FM999G999G999G990D999'), '.,') AS saldo,
+                       to_char(x.cijena, 'FM999G999G999G990D0000') AS cijena,
+                       to_char(nullif(x.ulaz_vrijednost, 0), 'FM999G999G999G990D00') AS ulaz_vrijednost,
+                       to_char(nullif(x.izlaz_vrijednost, 0), 'FM999G999G999G990D00') AS izlaz_vrijednost,
+                       to_char(sum(x.d_vr) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id), 'FM999G999G999G990D00') AS saldo_vrijednost
+                FROM x
+                WHERE :P371_ARTIKL IS NOT NULL
+                ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_OD
+                P371_DO
+            ]
+        }
+        layout {
+            sequence: 40
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Izaberite artikal (kartica se prikazuje za jedan artikal).
+        }
+        advanced {
+            htmlDomId: izv_km
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',km,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column DATUM (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENT (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Vrsta
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PARTNER (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Partner / MT / radnik
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SKLADISTE (
             reportColumnQueryId: 5
             derivedColumn: N
             heading {
                 heading: Skladište
             }
             layout {
-                sequence: 40
+                sequence: 50
             }
             sorting {
                 sortable: false
             }
         )
 
-        column TIP_KRETANJA (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            type: plainTextBasedOnLov
-            heading {
-                heading: Tip kretanja
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 20
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column TIP_KRETANJA_ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 70
-            }
-        )
-
-        column TIP_KRETANJA_NAZIV (
-            reportColumnQueryId: 2
+        column ULAZ (
+            reportColumnQueryId: 6
             derivedColumn: N
             heading {
-                heading: Tip kretanja robe
+                heading: Ulaz
+                alignment: end
             }
             layout {
-                sequence: 30
-            }
-            sorting {
-                sortable: false
-            }
-        )
-
-        column ZAKLJUCANO (
-            reportColumnQueryId: 9
-            derivedColumn: N
-            heading {
-                heading: Zaključano
-            }
-            layout {
-                sequence: 100
+                sequence: 60
+                columnAlignment: end
             }
             columnFormatting {
-                htmlExpression:
-                    ```html
-                    {if ZAKLJUCANO/}
-                    <span class="t-Button t-Button--noLabel u-color-5 t-Button--iconLeft t-Button--small">
-                        <span class="t-Icon t-Icon--left fa fa-check-circle-o"></span>
-                    </span>
-                    {else/}
-                    <span class="t-Button t-Button--noLabel u-color-9 t-Button--iconLeft t-Button--small">
-                        <span class="t-Icon t-Icon--left fa fa-circle-o"></span>
-                    </span>
-                    {endif/}
-                    ```
+                cssClasses: fin-num
             }
             sorting {
                 sortable: false
             }
         )
 
-    )
-
-    region pregled-zaduženja-sitnog-inventara-po-radniku (
-        name: Pregled zaduženja sitnog inventara po radniku
-        type: staticContent
-        layout {
-            sequence: 130
-            slot: body
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--scrollBody
-            ]
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: si
-        }
-    )
-
-    region search-dokumenti-na-čekanju-dc (
-        name: Search - Dokumenti na čekanju - dc
-        type: smartFilters
-        source {
-            filteredRegion: @dokumenti-na-čekanju-dc
-        }
-        layout {
-            sequence: 109
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: [
-                #DEFAULT#
-                margin-bottom-sm
-            ]
-            cssClasses: fin-filters
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: dc
-        }
-        settings {
-            compactNosThreshold: 10000
-        }
-
-        filter P371_SEARCH_DC (
-            type: search
-            label {
-                label: Pretraga...
-            }
-            layout {
-                sequence: 10
-            }
-            appearance {
-                valuePlaceholder: Pretraga...
-            }
-        )
-
-        filter P371_SKLADISTE_ID_DC (
-            type: checkboxGroup
-            label {
-                label: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 40
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: SKLADISTE_ID
-            }
-        )
-
-        filter P371_STATUS_ID_DC (
-            type: checkboxGroup
-            label {
-                label: Status
-            }
-            lov {
-                type: sharedComponent
-                lov: @acc-statusi-naziv
-            }
-            layout {
-                sequence: 50
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: STATUS_ID
-            }
-        )
-
-        filter P371_TIP_KRETANJA_DC (
-            type: checkboxGroup
-            label {
-                label: Kretanje
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 20
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: TIP_KRETANJA
-            }
-        )
-
-        filter P371_TIP_KRETANJA_ID_DC (
-            type: checkboxGroup
-            label {
-                label: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe-ooj
-            }
-            layout {
-                sequence: 30
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: TIP_KRETANJA_ID
-                dataType: number
-            }
-        )
-
-    )
-
-    region search-finansijski-izvještaji-fin (
-        name: Search - Finansijski izvještaji - fin
-        type: smartFilters
-        source {
-            filteredRegion: @finansijski-izvještaji-prometa-po-kontima-i-mjestu-troška-fin
-        }
-        layout {
-            sequence: 159
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: [
-                #DEFAULT#
-                margin-bottom-sm
-            ]
-            cssClasses: fin-filters
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: fin
-        }
-        settings {
-            compactNosThreshold: 10000
-        }
-
-        filter P371_OJ_ID (
-            type: checkboxGroup
-            label {
-                label: Organizaciona jedinica
-            }
-            lov {
-                type: sharedComponent
-                lov: @oj
+        column IZLAZ (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Izlaz
+                alignment: end
             }
             layout {
                 sequence: 70
+                columnAlignment: end
             }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: OJ_ID
-            }
-        )
-
-        filter P371_SEARCH_FIN (
-            type: search
-            label {
-                label: Pretraga...
-            }
-            layout {
-                sequence: 10
-            }
-            appearance {
-                valuePlaceholder: Pretraga...
-            }
-        )
-
-        filter P371_SKLADISTE_ID_FIN (
-            type: checkboxGroup
-            label {
-                label: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 60
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: SKLADISTE_ID
-            }
-        )
-
-        filter P371_STAVKA_ID (
-            type: checkboxGroup
-            label {
-                label: Stavka
-            }
-            lov {
-                type: sharedComponent
-                lov: @sec-stavke
-            }
-            layout {
-                sequence: 50
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: STAVKA_ID
-            }
-        )
-
-        filter P371_TIP_KRETANJA_FIN (
-            type: checkboxGroup
-            label {
-                label: Kretanje
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 30
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: TIP_KRETANJA
-            }
-        )
-
-        filter P371_TIP_KRETANJA_ID_FIN (
-            type: checkboxGroup
-            label {
-                label: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe-ooj
-            }
-            layout {
-                sequence: 40
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: TIP_KRETANJA_ID
-                dataType: number
-            }
-        )
-
-    )
-
-    region search-kartica-materijala-na-nivou-skladišta-km (
-        name: Search - Kartica materijala na nivou skladišta - km
-        type: smartFilters
-        source {
-            filteredRegion: @kartica-materijala-na-nivou-skladišta-km
-        }
-        layout {
-            sequence: 79
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: [
-                #DEFAULT#
-                margin-bottom-sm
-            ]
-            cssClasses: fin-filters
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: km
-        }
-        settings {
-            compactNosThreshold: 10000
-        }
-
-        filter P371_SEARCH_KM (
-            type: search
-            label {
-                label: Pretraga...
-            }
-            layout {
-                sequence: 10
-            }
-            appearance {
-                valuePlaceholder: Pretraga...
-            }
-        )
-
-        filter P371_SKLADISTE_ID_KM (
-            type: checkboxGroup
-            label {
-                label: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 40
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: SKLADISTE_ID
-            }
-        )
-
-        filter P371_TIP_KRETANJA_ID_KM (
-            type: checkboxGroup
-            label {
-                label: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe-ooj
-            }
-            layout {
-                sequence: 30
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: TIP_KRETANJA_ID
-                dataType: number
-            }
-        )
-
-        filter P371_TIP_KRETANJA_KM (
-            type: checkboxGroup
-            label {
-                label: Kretanje
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 20
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: TIP_KRETANJA
-            }
-        )
-
-    )
-
-    region search-pregled-dokumenata-u-određenom-periodu-dok (
-        name: Search - Pregled dokumenata u određenom periodu - dok
-        type: smartFilters
-        source {
-            filteredRegion: @pregled-dokumenata-u-određenom-periodu-na-nivou-skladišta-dok
-        }
-        layout {
-            sequence: 89
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: [
-                #DEFAULT#
-                margin-bottom-sm
-            ]
-            cssClasses: fin-filters
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: dok
-        }
-        settings {
-            compactNosThreshold: 10000
-        }
-
-        filter P371_PROKNJIZENO_DOK (
-            type: radioGroup
-            label {
-                label: Proknjiženo
-            }
-            lov {
-                type: sharedComponent
-                lov: @da-ne
-            }
-            layout {
-                sequence: 50
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: PROKNJIZENO
-            }
-        )
-
-        filter P371_SEARCH_DOK (
-            type: search
-            label {
-                label: Pretraga...
-            }
-            layout {
-                sequence: 10
-            }
-            appearance {
-                valuePlaceholder: Pretraga...
-            }
-        )
-
-        filter P371_SKLADISTE_ID_DOK (
-            type: checkboxGroup
-            label {
-                label: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 40
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: SKLADISTE_ID
-            }
-        )
-
-        filter P371_TIP_KRETANJA_DOK (
-            type: checkboxGroup
-            label {
-                label: Kretanje
-            }
-            lov {
-                type: sharedComponent
-                lov: @tipovi-kretanja
-            }
-            layout {
-                sequence: 20
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: TIP_KRETANJA
-            }
-        )
-
-        filter P371_TIP_KRETANJA_ID_DOK (
-            type: checkboxGroup
-            label {
-                label: Tip kretanja robe
-            }
-            lov {
-                type: sharedComponent
-                lov: @sif-tipovi-kretanja-robe-ooj
-            }
-            layout {
-                sequence: 30
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: TIP_KRETANJA_ID
-                dataType: number
-            }
-        )
-
-        filter P371_ZAKLJUCANO_DOK (
-            type: radioGroup
-            label {
-                label: Zaključano
-            }
-            lov {
-                type: sharedComponent
-                lov: @da-ne
-            }
-            layout {
-                sequence: 60
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: ZAKLJUCANO
-            }
-        )
-
-    )
-
-    region search-stanje-skladišta-na-dan-sd (
-        name: Search - Stanje skladišta na dan - sd
-        type: smartFilters
-        source {
-            filteredRegion: @stanje-skladišta-na-dan-sd
-        }
-        layout {
-            sequence: 69
-            slot: body
-        }
-        appearance {
-            template: @blank-with-attributes
-            templateOptions: [
-                #DEFAULT#
-                margin-bottom-sm
-            ]
-            cssClasses: fin-filters
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: sd
-        }
-        settings {
-            compactNosThreshold: 10000
-        }
-
-        filter P371_GRUPA_ID_SD (
-            type: checkboxGroup
-            label {
-                label: Grupa
-            }
-            lov {
-                type: sharedComponent
-                lov: @acc-grupe-stavki
-            }
-            layout {
-                sequence: 30
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: GRUPA_ID
-            }
-        )
-
-        filter P371_SEARCH_SD (
-            type: search
-            label {
-                label: Pretraga...
-            }
-            layout {
-                sequence: 10
-            }
-            appearance {
-                valuePlaceholder: Pretraga...
-            }
-        )
-
-        filter P371_SKLADISTE_ID_SD (
-            type: checkboxGroup
-            label {
-                label: Skladište
-            }
-            lov {
-                type: sharedComponent
-                lov: @skladista
-            }
-            layout {
-                sequence: 20
-            }
-            listEntries {
-                zeroCountEntries: disable
-            }
-            source {
-                databaseColumn: SKLADISTE_ID
-            }
-        )
-
-        filter P371_STAVKA_ID_SD (
-            type: checkboxGroup
-            label {
-                label: Stavka
-            }
-            lov {
-                type: sharedComponent
-                lov: @sec-stavke-robe
-            }
-            layout {
-                sequence: 40
-            }
-            listEntries {
-                clientSideFiltering: true
-            }
-            source {
-                databaseColumn: STAVKA_ID
-            }
-        )
-
-    )
-
-    region stanje-skladišta-na-dan-sd (
-        name: Stanje skladišta na dan - sd
-        type: classicReport
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT
-                    skladiste_id,
-                    skladiste_naziv,
-                    grupa_id,
-                    grupa_naziv,
-                    stavka_id,
-                    stavka_naziv,
-                    stanje_kolicina,
-                    saldo
-                
-                FROM
-                    vw_skladiste_stavke
-                WHERE
-                    tip_stavke_id = 4
-                    AND ooj_id = :APP_OOJ_ID
-                ```
-        }
-        layout {
-            sequence: 70
-            slot: body
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--noPadding
-                t-Region--removeHeader js-removeLandmark
-                t-Region--scrollBody
-            ]
-            cssClasses: fin-list
-        }
-        serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: sd
-        }
-        reportLayout {
-            numberOfRows: 50
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-                t-Report--hideNoPagination
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        messages {
-            whenNoDataFound: Nema pronađenih podataka.
-        }
-
-        column GRUPA_ID (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 30
-            }
-        )
-
-        column GRUPA_NAZIV (
-            reportColumnQueryId: 4
-            derivedColumn: N
-            heading {
-                heading: Grupa stavke
-            }
-            layout {
-                sequence: 40
+            columnFormatting {
+                cssClasses: fin-num
             }
             sorting {
                 sortable: false
@@ -1893,35 +960,200 @@ page 371 (
             reportColumnQueryId: 8
             derivedColumn: N
             heading {
-                heading: Saldo
+                heading: Stanje
                 alignment: end
             }
             layout {
                 sequence: 80
                 columnAlignment: end
             }
-            appearance {
-                formatMask: 999G999G999G999G990D00
+            columnFormatting {
+                cssClasses: fin-num
             }
             sorting {
                 sortable: false
             }
         )
 
-        column SKLADISTE_ID (
-            reportColumnQueryId: 1
+        column CIJENA (
+            reportColumnQueryId: 9
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Cijena
+                alignment: end
+            }
             layout {
-                sequence: 10
+                sequence: 90
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column SKLADISTE_NAZIV (
+        column ULAZ_VRIJEDNOST (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Ulaz (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZLAZ_VRIJEDNOST (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Izlaz (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SALDO_VRIJEDNOST (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Vrijednost stanja
+                alignment: end
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-promet (
+        name: Promet po artiklima
+        title: Promet po artiklima
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT p.artikal_sifra,
+                       p.artikal_naziv,
+                       p.jm_naziv,
+                       rtrim(to_char(sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina - p.izlaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS pocetno,
+                       rtrim(to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS ulaz,
+                       rtrim(to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS izlaz,
+                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS krajnje,
+                       to_char(sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost - p.izlaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS pocetno_vr,
+                       to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS ulaz_vr,
+                       to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS izlaz_vr,
+                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS krajnje_vr
+                FROM vw_rm_promet p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
+                  AND p.status = 'Z'
+                  AND p.datum <= to_date(:P371_DO, 'DD.MM.YYYY')
+                GROUP BY p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv
+                HAVING sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina + p.izlaz_kolicina ELSE 0 END) <> 0
+                    OR sum(p.ulaz_kolicina - p.izlaz_kolicina) <> 0
+                ORDER BY p.artikal_sifra
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_OD
+                P371_DO
+            ]
+        }
+        layout {
+            sequence: 50
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema prometa u izabranom periodu.
+        }
+        advanced {
+            htmlDomId: izv_pp
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',pp,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_NAZIV (
             reportColumnQueryId: 2
             derivedColumn: N
             heading {
-                heading: Skladište
+                heading: Artikal
             }
             layout {
                 sequence: 20
@@ -1931,39 +1163,326 @@ page 371 (
             }
         )
 
-        column STANJE_KOLICINA (
-            reportColumnQueryId: 7
+        column JM_NAZIV (
+            reportColumnQueryId: 3
             derivedColumn: N
             heading {
-                heading: Stanje količina
-                alignment: end
+                heading: JM
             }
             layout {
-                sequence: 70
-                columnAlignment: end
-            }
-            appearance {
-                formatMask: 999G999G999G999G990D00
+                sequence: 30
             }
             sorting {
                 sortable: false
             }
         )
 
-        column STAVKA_ID (
-            reportColumnQueryId: 5
+        column POCETNO (
+            reportColumnQueryId: 4
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Početno
+                alignment: end
+            }
             layout {
-                sequence: 50
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column STAVKA_NAZIV (
+        column ULAZ (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Ulaz
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZLAZ (
             reportColumnQueryId: 6
             derivedColumn: N
             heading {
-                heading: Stavka
+                heading: Izlaz
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KRAJNJE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Krajnje
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column POCETNO_VR (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Početno (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ULAZ_VR (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Ulaz (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZLAZ_VR (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Izlaz (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KRAJNJE_VR (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Krajnje (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-dokumenti (
+        name: Pregled dokumenata
+        title: Pregled dokumenata
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT d.id,
+                       d.naziv,
+                       d.vrsta_naziv,
+                       to_char(d.datum, 'DD.MM.YYYY') AS datum,
+                       d.skladiste_sifra AS skladiste,
+                       coalesce(d.klijent_naziv, d.mjesto_troska_naziv, d.zaduzeni_radnik_naziv, d.skladiste_prenos_naziv) AS partner,
+                       CASE WHEN d.stornirano = 'Y' THEN 'Storniran' WHEN d.glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
+                            WHEN d.status = 'Z' THEN 'Zaključen' ELSE 'U pripremi' END AS status,
+                       d.stavki,
+                       to_char(d.iznos, 'FM999G999G999G990D00') AS iznos,
+                       CASE WHEN d.v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => d.id, p_clear_cache => 331)
+                            ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => d.id) END AS url
+                FROM vw_rm_dokumenti d
+                WHERE d.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR d.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(d.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND d.datum BETWEEN to_date(:P371_OD, 'DD.MM.YYYY') AND to_date(:P371_DO, 'DD.MM.YYYY')
+                  AND (:P371_VRSTA IS NULL OR d.vrsta_sifra = :P371_VRSTA)
+                ORDER BY d.datum DESC, d.id DESC
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_OD
+                P371_DO
+                P371_VRSTA
+            ]
+        }
+        layout {
+            sequence: 60
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema dokumenata u izabranom periodu.
+        }
+        advanced {
+            htmlDomId: izv_dok
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',dok,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SKLADISTE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Skladište
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column PARTNER (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Partner / MT / radnik / skladište
             }
             layout {
                 sequence: 60
@@ -1973,125 +1492,912 @@ page 371 (
             }
         )
 
+        column STATUS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKI (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Stavki
+                alignment: center
+            }
+            layout {
+                sequence: 80
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 400
+            }
+        )
+
     )
 
-    region izbor-izvjestaja (
-        name: Izbor izvještaja
-        type: staticContent
+    region izv-potrosnja (
+        name: Potrošnja po mjestu troška
+        title: Potrošnja po mjestu troška
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT nvl(p.mjesto_troska_naziv, '(bez mjesta troška)') AS mjesto_troska,
+                       p.vrsta_naziv,
+                       p.artikal_sifra,
+                       p.artikal_naziv,
+                       p.jm_naziv,
+                       rtrim(to_char(sum(p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
+                       to_char(sum(p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost
+                FROM vw_rm_promet p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
+                  AND p.status = 'Z'
+                  AND p.vrsta_sifra IN ('IZD', 'IIN', 'IOS', 'ISI')
+                  AND p.datum BETWEEN to_date(:P371_OD, 'DD.MM.YYYY') AND to_date(:P371_DO, 'DD.MM.YYYY')
+                  AND (:P371_MT IS NULL OR p.mjesto_troska_id = to_number(:P371_MT))
+                GROUP BY p.mjesto_troska_naziv, p.vrsta_naziv, p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv
+                ORDER BY 1, 2, p.artikal_sifra
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+                P371_OD
+                P371_DO
+                P371_MT
+            ]
+        }
         layout {
-            sequence: 5
-            slot: body
+            sequence: 70
+            parentRegion: @izvjestaj
+            slot: subRegions
         }
         appearance {
-            template: @blank-with-attributes
-            templateOptions: #DEFAULT#
-            cssClasses: fin-toolbar
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema izlaza u potrošnju u izabranom periodu.
+        }
+        advanced {
+            htmlDomId: izv_pmt
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',pmt,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column MJESTO_TROSKA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Mjesto troška
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Vrsta izlaza
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_NAZIV (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-zaduzenja (
+        name: Zaduženja po radniku i komitentu
+        title: Zaduženja po radniku i komitentu
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT z.partner_naziv,
+                       z.vrsta,
+                       z.dokument,
+                       to_char(z.datum, 'DD.MM.YYYY') AS datum,
+                       z.artikal_sifra,
+                       z.artikal_naziv,
+                       z.jm_naziv,
+                       rtrim(to_char(z.zaduzeno, 'FM999G999G999G990D999'), '.,') AS zaduzeno,
+                       to_char(z.vrijednost, 'FM999G999G999G990D00') AS vrijednost
+                FROM vw_rm_zaduzenja z
+                WHERE z.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR z.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_ARTIKL IS NULL OR z.stavka_id = to_number(:P371_ARTIKL))
+                ORDER BY z.partner_naziv, z.datum, z.dokument
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+                P371_ARTIKL
+            ]
+        }
+        layout {
+            sequence: 80
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema otvorenih zaduženja.
+        }
+        advanced {
+            htmlDomId: izv_zad
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',zad,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column PARTNER_NAZIV (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Radnik / komitent
+            }
+            layout {
+                sequence: 10
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRSTA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Vrsta
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOKUMENT (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_SIFRA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 50
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKAL_NAZIV (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column JM_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 70
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ZADUZENO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Zaduženo
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Vrijednost
+                alignment: end
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+    )
+
+    region izv-cekanje (
+        name: Dokumenti na čekanju
+        title: Dokumenti na čekanju
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT c.operacija_id AS id,
+                       c.dokument AS naziv,
+                       c.vrsta_naziv,
+                       to_char(c.datum, 'DD.MM.YYYY') AS datum,
+                       c.dana,
+                       c.razlog,
+                       to_char(c.iznos, 'FM999G999G999G990D00') AS iznos,
+                       apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => c.operacija_id, p_clear_cache => 331) AS url
+                FROM vw_rm_na_cekanju c
+                WHERE c.ooj_id = :APP_OOJ_ID
+                  AND (:P371_SKLADISTE_ID IS NULL OR c.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(c.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                ORDER BY c.dana DESC, c.datum
+                ```
+            pageItemsToSubmit: [
+                P371_SKLADISTE_ID
+            ]
+        }
+        layout {
+            sequence: 90
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-izv-tabela
+        }
+        reportLayout {
+            numberOfRows: 100
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+        }
+        performance {
+            maxRowsToProcess: 5000
+        }
+        messages {
+            whenNoDataFound: Nema dokumenata koji čekaju.
+        }
+        advanced {
+            htmlDomId: izv_dc
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',dc,', ',' || :P371_IZV || ',') > 0
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DANA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Dana
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column RAZLOG (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Šta čeka
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 380
+            }
+        )
+
+    )
+
+    pageItem P371_IZV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 1
+            slot: body
         }
     )
 
-    pageItem P371_DATUM (
-        type: datePicker
-        label {
-            label: Datum
-            alignment: left
+    pageItem P371_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
         }
         layout {
-            sequence: 20
-            region: @izbor-izvjestaja
+            sequence: 2
+            slot: body
+        }
+    )
+
+    pageItem P371_SKLADISTE_ID (
+        type: selectList
+        label {
+            label: Skladište
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT s.sifra || ' - ' || s.naziv AS d, s.id AS r
+                FROM skladista s
+                WHERE s.ooj_id = :APP_OOJ_ID
+                  AND s.valid = 'Y'
+                  AND nvl(rm_skladiste_pkg.modul(s.id), 'MAT') = nvl(:A_RM_MODUL, 'MAT')
+                ORDER BY s.sifra
+                ```
+            displayExtraValues: false
+            displayNullValue: true
+            nullDisplayValue: - sva skladišta modula -
+        }
+        layout {
+            sequence: 10
+            region: @parametri
             slot: regionBody
             startNewRow: false
             columnSpan: 3
         }
         appearance {
             template: @optional-floating
-            templateOptions: [
-                #DEFAULT#
-                t-Form-fieldContainer--stretchInputs
-            ]
+            templateOptions: #DEFAULT#
         }
         serverSideCondition {
-            type: item=value
-            item: P371_IZVJESTAJ_SIFRA
-            value: fin
+            type: expression
+            plsqlExpression: instr(',sd,pl,sz,km,pp,dok,pmt,zad,dc,', ',' || :P371_IZV || ',') > 0
         }
     )
 
-    pageItem P371_ID (
-        type: hidden
-        settings {
-            valueProtected: false
+    pageItem P371_DATUM (
+        type: datePicker
+        label {
+            label: Na dan
+            alignment: left
         }
         layout {
             sequence: 20
-            slot: body
-        }
-    )
-
-    pageItem P371_IZVJESTAJ_ID (
-        type: selectOne
-        label {
-            label: Izvještaj
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @izvjestaji-materijalno
-        }
-        layout {
-            sequence: 10
-            region: @izbor-izvjestaja
+            region: @parametri
             slot: regionBody
-            columnSpan: 5
+            startNewRow: false
+            columnSpan: 2
         }
         appearance {
             template: @optional-floating
             templateOptions: #DEFAULT#
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',sd,pl,', ',' || :P371_IZV || ',') > 0
+        }
     )
 
-    pageItem P371_IZVJESTAJ_NAZIV (
-        type: hidden
-        settings {
-            valueProtected: false
+    pageItem P371_OD (
+        type: datePicker
+        label {
+            label: Od
+            alignment: left
         }
         layout {
-            sequence: 50
-            slot: body
+            sequence: 30
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',km,pp,dok,pmt,', ',' || :P371_IZV || ',') > 0
         }
     )
 
-    pageItem P371_IZVJESTAJ_SIFRA (
-        type: hidden
-        settings {
-            valueProtected: false
+    pageItem P371_DO (
+        type: datePicker
+        label {
+            label: Do
+            alignment: left
         }
         layout {
             sequence: 40
-            slot: body
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',km,pp,dok,pmt,', ',' || :P371_IZV || ',') > 0
         }
     )
 
-    pageItem P371_TITLE (
-        type: hidden
+    pageItem P371_ARTIKL (
+        type: popupLov
+        label {
+            label: Artikal
+            alignment: left
+        }
         settings {
-            valueProtected: false
+            popupWidth: 720
+        }
+        lov {
+            type: sharedComponent
+            lov: @rm-dokument-artikli
+            displayExtraValues: false
+        }
+        layout {
+            sequence: 50
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',sd,pl,sz,km,pp,pmt,zad,', ',' || :P371_IZV || ',') > 0
+        }
+    )
+
+    pageItem P371_MT (
+        type: popupLov
+        label {
+            label: Mjesto troška
+            alignment: left
+        }
+        settings {
+            popupWidth: 720
+        }
+        lov {
+            type: sharedComponent
+            lov: @rm-mjesta-troska
+            displayExtraValues: false
         }
         layout {
             sequence: 60
-            slot: body
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',pmt,', ',' || :P371_IZV || ',') > 0
         }
     )
 
-    button print (
-        buttonName: PRINT
-        label: Štampaj
+    pageItem P371_VRSTA (
+        type: selectList
+        label {
+            label: Vrsta dokumenta
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT vd.naziv AS d, upper(vd.sifra) AS r
+                FROM sif.vrste_dokumenata vd
+                JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
+                WHERE vd.ooj_id = :APP_OOJ_ID
+                  AND vd.valid = 'Y'
+                  AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'MAT')) = 'Y'
+                ORDER BY vd.naziv
+                ```
+            displayExtraValues: false
+            displayNullValue: true
+            nullDisplayValue: - sve vrste -
+        }
         layout {
-            sequence: 20
-            region: @p371-title
-            slot: next
+            sequence: 60
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',dok,', ',' || :P371_IZV || ',') > 0
+        }
+    )
+
+    pageItem P371_DANA (
+        type: numberField
+        label {
+            label: Dana bez izlaza (najmanje)
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+        }
+        appearance {
+            template: @optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',sz,', ',' || :P371_IZV || ',') > 0
+        }
+    )
+
+    button prikazi (
+        buttonName: PRIKAZI
+        label: Prikaži
+        layout {
+            sequence: 90
+            region: @parametri
+            slot: regionBody
         }
         appearance {
             buttonTemplate: @text-with-icon
@@ -2100,458 +2406,46 @@ page 371 (
                 #DEFAULT#
                 t-Button--iconLeft
             ]
-            icon: fa-print
+            icon: fa-play
         }
         behavior {
-            action: definedByDynamicAction
-        }
-        config {
-            buildOption: @feature-printing
+            warnOnUnsavedChanges: doNotCheck
         }
     )
 
-    dynamicAction print-izvjestaj (
-        name: Print - Izvjestaj
-        execution {
-            sequence: 170
-        }
-        when {
-            event: click
-            selectionType: button
-            button: @print
-        }
-        config {
-            buildOption: @feature-printing
-        }
-
-        action kp-print (
-            name: KP - Print
-            action: executeJsCode
-            settings {
-                jsCode:
-                    ```javascript-browser
-                    var app_ooj_id = '&APP_OOJ_ID.';
-                    generate_report(
-                      
-                        filename = 'KP '+$v("P371_PORESKA_GODINA"), 
-                        report_path = '/reports/ACCOUNTING/izvjestaji/knjiga_prometa', 
-                        report_parameters = {
-                            OOJ_ID: app_ooj_id,
-                            GODINA: $v("P371_PORESKA_GODINA")
-                        },
-                        new_tab = false
-                    );
-                    ```
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-            clientSideCondition {
-                type: item=value
-                item: P371_IZVJESTAJ_SIFRA
-                value: kp
-            }
-            config {
-                buildOption: @feature-printing
-            }
-        )
-
-    )
-
-    dynamicAction refresh-fin (
-        name: Refresh - fin
-        execution {
-            sequence: 200
-        }
-        when {
-            selectionType: items
-            items: P371_DATUM
-        }
-
-        action native-refresh (
-            action: refresh
-            affectedElements {
-                selectionType: region
-                region: @finansijski-izvještaji-prometa-po-kontima-i-mjestu-troška-fin
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
-
-    )
-
-    dynamicAction submit (
-        name: Submit
-        execution {
-            sequence: 190
-        }
-        when {
-            selectionType: items
-            items: P371_IZVJESTAJ_ID
-        }
-
-        action native-submit-page (
-            action: submitPage
-            settings {
-                showProcessing: false
-            }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
-
-    )
-
-    process generate (
-        name: Generate
-        type: executionChain
-        execution {
-            sequence: 10
-        }
-        advanced {
-            executionMappingIdentifier: 192088983381549947
-        }
-        serverSideCondition {
-            type: requestIsContainedInValue
-            value: GENERATE_STANJE,GENERATE_USPJEH
-        }
-    )
-
-    process get-data (
-        name: Get data
+    process podrazumijevano (
+        name: Podrazumijevane vrijednosti
         type: executeCode
         source {
             plsqlCode:
                 ```plsql
-                sif.acc_pkg.get_izvjestaj (
-                    p_id    => :P371_IZVJESTAJ_ID,
-                    p_sifra => :P371_IZVJESTAJ_SIFRA,
-                    p_naziv => :P371_IZVJESTAJ_NAZIV
-                );
+                -- period: radna godina do danas; skladište: izabrano skladište modula
+                :P371_OD    := nvl(:P371_OD, to_char(to_date('01.01.' || :APP_GODINA, 'DD.MM.YYYY'), 'DD.MM.YYYY'));
+                :P371_DO    := nvl(:P371_DO, to_char(least(trunc(sysdate), to_date('31.12.' || :APP_GODINA, 'DD.MM.YYYY')), 'DD.MM.YYYY'));
+                :P371_DATUM := nvl(:P371_DATUM, :P371_DO);
+                :P371_DANA  := nvl(:P371_DANA, '90');
+                if :P371_SKLADISTE_ID is null and :REQUEST is null then
+                    :P371_SKLADISTE_ID := :A_SKLADISTE_ID;
+                end if;
+                :P371_NAZIV := case :P371_IZV when 'sd' then 'Stanje zaliha na dan' when 'pl' then 'Popisna lista' when 'sz' then 'Starost zaliha' when 'km' then 'Kartica artikla' when 'pp' then 'Promet po artiklima' when 'dok' then 'Pregled dokumenata' when 'pmt' then 'Potrošnja po mjestu troška' when 'zad' then 'Zaduženja' when 'dc' then 'Dokumenti na čekanju' end;
                 ```
         }
         execution {
             sequence: 10
             point: beforeHeader
         }
-        advanced {
-            executionMappingIdentifier: 192088100308549946
-        }
     )
 
-    process grupa (
-        name: Grupa
-        type: executeCode
-        executionChain: @generate
-        source {
-            plsqlCode:
-                ```plsql
-                DECLARE
-                    l_count NUMBER;
-                BEGIN
-                    l_count := izvjestaji_pkg.generate_izvjestaj (
-                        p_tip_izvjestaja_id => :P371_IZVJESTAJ_ID,
-                        p_izvjestaj_id      => :P371_ID
-                    );
-                END;
-                ```
-        }
-        execution {
-            sequence: 40
-        }
-        advanced {
-            executionMappingIdentifier: 192090566865549948
-        }
-        serverSideCondition {
-            type: requestIsContainedInValue
-            value: GENERATE_USPJEH,GENERATE_STANJE
-        }
-    )
-
-    process insert-izvjestaj (
-        name: Insert izvjestaj
-        type: executeCode
-        executionChain: @generate
-        source {
-            plsqlCode:
-                ```plsql
-                :P371_ID := izvjestaji_pkg.insert_izvjestaj (
-                    p_ooj_id       => :APP_OOJ_ID,
-                    p_izvjestaj_id => :P371_IZVJESTAJ_ID,
-                    p_datum_od     => :P371_PERIOD_OD,
-                    p_datum_do     => :P371_PERIOD_DO
-                );
-                ```
-        }
+    branch (
+        name: Ostani na izvještaju
         execution {
             sequence: 10
         }
-        advanced {
-            executionMappingIdentifier: 192089385278549947
-        }
-    )
-
-    process konto-stanje (
-        name: Konto - Stanje
-        type: executeCode
-        executionChain: @generate
-        source {
-            plsqlCode:
-                ```plsql
-                DECLARE
-                    CURSOR c_aop IS 
-                        WITH
-                        -- Fetch relevant acc_izvjestaji_aop rows for the given IZVJESTAJ_ID
-                        relevant_aop AS (
-                            SELECT 
-                                id, 
-                                naziv, 
-                                aop, 
-                                tip
-                            FROM 
-                                sif.acc_izvjestaji_aop
-                            WHERE
-                                izvjestaj_id = :P371_IZVJESTAJ_ID
-                                AND tip = 'K'
-                        ),
-                        -- Aggregate ledger entries with filters
-                        ledger_entries AS (
-                            SELECT
-                                kontna_klasa_code,
-                                SUM(CASE 
-                                    WHEN glavna_knjiga_datum_knjizenja <= TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY') THEN 
-                                        iznos
-                                    ELSE 
-                                        0 
-                                END) AS current_year,
-                                SUM(CASE 
-                                    WHEN glavna_knjiga_datum_knjizenja <= ADD_MONTHS(TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY'), -12) THEN 
-                                        iznos
-                                    ELSE 
-                                        0 
-                                END) AS previous_year
-                            FROM 
-                                vw_glavna_knjiga_stavke
-                            WHERE 
-                                glavna_knjiga_datum_knjizenja <= TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY')
-                                AND ooj_id = :APP_OOJ_ID
-                                AND lower(vrsta_naloga_sifra) != 'pdv'
-                                AND proknjizeno = 'Y'
-                            GROUP BY 
-                                kontna_klasa_code
-                        ),
-                
-                        -- Process calculations for 'konto'
-                        konto_calculations AS (
-                            SELECT
-                                ak.aop_id,
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' AND ak.polje = 'B' and ak.tip = 'I' THEN abs(le.current_year)
-                                    WHEN ak.sum_tip = 'M' AND ak.polje = 'B' and ak.tip = 'I' THEN -(abs(le.current_year))
-                                    ELSE 0
-                                END) AS bruto,
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' AND ak.polje = 'I' and ak.tip = 'I' THEN abs(le.current_year)
-                                    WHEN ak.sum_tip = 'M' AND ak.polje = 'I' and ak.tip = 'I' THEN -(abs(le.current_year))
-                                END) AS ispravka,
-                                
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' AND ak.polje = 'B' and ak.tip = 'I' THEN abs(le.previous_year)
-                                    WHEN ak.sum_tip = 'M' AND ak.polje = 'B' and ak.tip = 'I' THEN -(abs(le.previous_year))
-                                    ELSE 0
-                                END) 
-                                -
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' AND ak.polje = 'I' and ak.tip = 'I' THEN abs(le.previous_year)
-                                    WHEN ak.sum_tip = 'M' AND ak.polje = 'I' and ak.tip = 'I' THEN -(abs(le.previous_year))
-                                    ELSE 0
-                                END) as prethodna_godina 
-                                
-                                
-                            FROM 
-                                sif.acc_aop_konta ak
-                                LEFT JOIN sif.acc_kontni_okvir_klase k ON ak.kontna_klasa_id = k.id
-                                LEFT JOIN ledger_entries le ON le.kontna_klasa_code LIKE k.code || '%'
-                            GROUP BY aop_id
-                        ),
-                        final_calculations AS (
-                            SELECT
-                                ra.id as aop_id,
-                                ra.aop,
-                                coalesce(kc.bruto, 0) as bruto,
-                                coalesce(kc.ispravka, 0) as ispravka,
-                                coalesce(kc.prethodna_godina, 0) as prethodna_godina
-                            FROM 
-                                relevant_aop ra
-                                LEFT JOIN konto_calculations kc ON ra.id = kc.aop_id
-                        )
-                        SELECT
-                            aop_id,
-                            bruto,
-                            ispravka,
-                            prethodna_godina
-                        FROM
-                            final_calculations;
-                
-                BEGIN
-                    FOR c1 IN c_aop LOOP
-                        izvjestaji_pkg.insert_izvjestaj_aop (
-                            p_izvjestaj_id     => :P371_ID,
-                            p_aop_id           => c1.aop_id,
-                            p_bruto            => c1.bruto,
-                            p_ispravka         => c1.ispravka,
-                            p_prethodna_godina => c1.prethodna_godina
-                        );
-                
-                    END LOOP;
-                
-                END;
-                ```
-        }
-        execution {
-            sequence: 30
-        }
-        advanced {
-            executionMappingIdentifier: 192090121718549948
-        }
-    )
-
-    process konto-uspjeh (
-        name: Konto - Uspjeh
-        type: executeCode
-        executionChain: @generate
-        source {
-            plsqlCode:
-                ```plsql
-                DECLARE
-                    CURSOR c_aop IS 
-                        WITH
-                        -- Fetch relevant acc_izvjestaji_aop rows for the given IZVJESTAJ_ID
-                        relevant_aop AS (
-                            SELECT 
-                                id, 
-                                naziv, 
-                                aop, 
-                                tip
-                            FROM 
-                                sif.acc_izvjestaji_aop
-                            WHERE
-                                izvjestaj_id = :P371_IZVJESTAJ_ID
-                                AND tip = 'K'
-                        ),
-                        -- Aggregate ledger entries with filters
-                        ledger_entries AS (
-                            SELECT
-                                kontna_klasa_code,
-                                SUM(CASE 
-                                    WHEN glavna_knjiga_datum_knjizenja BETWEEN TO_DATE(:P371_PERIOD_OD, 'DD.MM.YYYY') AND TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY') THEN 
-                                        iznos
-                                    ELSE 
-                                        0 
-                                END) AS current_year,
-                                SUM(CASE 
-                                    WHEN glavna_knjiga_datum_knjizenja BETWEEN ADD_MONTHS(TO_DATE(:P371_PERIOD_OD, 'DD.MM.YYYY'), -12) AND ADD_MONTHS(TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY'), -12) THEN 
-                                        iznos
-                                    ELSE 
-                                        0 
-                                END) AS previous_year
-                            FROM 
-                                vw_glavna_knjiga_stavke
-                            WHERE 
-                                glavna_knjiga_datum_knjizenja <= TO_DATE(:P371_PERIOD_DO, 'DD.MM.YYYY')
-                                AND ooj_id = :APP_OOJ_ID
-                                AND lower(vrsta_naloga_sifra) != 'pdv'
-                                AND proknjizeno = 'Y'
-                            GROUP BY 
-                                kontna_klasa_code
-                        ),
-                
-                        -- Process calculations for 'konto'
-                        konto_calculations AS (
-                            SELECT
-                                ak.aop_id,
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' THEN abs(le.current_year)
-                                    WHEN ak.sum_tip = 'M' THEN -(abs(le.current_year))
-                                END) AS bruto,
-                                
-                                SUM(CASE
-                                    WHEN ak.sum_tip = 'P' THEN abs(le.previous_year)
-                                    WHEN ak.sum_tip = 'M' THEN -(abs(le.previous_year))
-                                END) AS prethodna_godina
-                                
-                            FROM 
-                                sif.acc_aop_konta ak
-                                LEFT JOIN sif.acc_kontni_okvir_klase k ON ak.kontna_klasa_id = k.id
-                                LEFT JOIN ledger_entries le ON le.kontna_klasa_code LIKE k.code || '%'
-                            GROUP BY aop_id
-                        ),
-                        final_calculations AS (
-                            SELECT
-                                ra.id as aop_id,
-                                ra.aop,
-                                coalesce(kc.bruto, 0) AS bruto,
-                                coalesce(kc.prethodna_godina, 0) AS prethodna_godina
-                            FROM 
-                                relevant_aop ra
-                                LEFT JOIN konto_calculations kc ON ra.id = kc.aop_id
-                        )
-                        SELECT
-                            aop_id,
-                            bruto,
-                            prethodna_godina
-                        FROM
-                            final_calculations;
-                
-                BEGIN
-                    FOR c1 IN c_aop LOOP
-                        izvjestaji_pkg.insert_izvjestaj_aop (
-                            p_izvjestaj_id     => :P371_ID,
-                            p_aop_id           => c1.aop_id,
-                            p_bruto            => greatest(c1.bruto, 0),
-                            p_ispravka         => null,
-                            p_prethodna_godina => greatest(c1.prethodna_godina, 0)
-                        );
-                
-                    END LOOP;
-                
-                END;
-                ```
-        }
-        execution {
-            sequence: 20
-        }
-        advanced {
-            executionMappingIdentifier: 192089725645549947
-        }
-    )
-
-    process setup-title (
-        name: Setup Title
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                IF :P371_IZVJESTAJ_ID IS null THEN
-                    :P371_TITLE := 'Izvještaji';
-                ELSE
-                    :P371_TITLE := 'Izvještaj [' || :P371_IZVJESTAJ_NAZIV || ']';
-                END IF;
-                
-                ```
-        }
-        execution {
-            sequence: 20
-            point: beforeHeader
-        }
-        advanced {
-            executionMappingIdentifier: 192088596848549946
+        behavior {
+            target: {
+                page: 371
+            }
         }
     )
 
 )
-

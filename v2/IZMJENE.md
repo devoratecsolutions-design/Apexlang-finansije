@@ -497,3 +497,16 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
 - **Lista dokumenata (330):** pored izbora skladišta je izbor vrste dokumenta; „Novi dokument“ odmah otvara izabranu vrstu (bez menija sa svim vrstama; izbor se pamti u pregledaču). Kolona „Opis“ je odmah iza kolone „Dobavljač / veza“.
 - **Izbor skladišta:** meni se otvara udesno (ranije se dio sa šiframa skrivao ispod raširenog navigacionog menija), šire polje, šifra se ne lomi.
 - **SQL:** `12_rm_pkg.sql`, `13_rm_views.sql` (ACCOUNTING). Zatim import aplikacije.
+
+## Dokumenti i izvještaji skladišta – korak R15 (02.11.2026)
+- **Lista dokumenata (330):** promjena vrste dokumenta odmah osvježava listu i prikazuje samo dokumente te vrste; „Novi dokument“ otvara izabranu vrstu (URL sa kontrolnom sumom daje proces NOVI_DOKUMENT_URL). Podrazumijevana vrsta je prva po redu (ulazi, pa izlazi), izbor se pamti u pregledaču.
+- **Tabelarne popup liste** (novi dijeljeni LOV-ovi `rm-*` u lovs.apx): prijemnice u kalkulaciji (skladište, broj, datum, dobavljač), fakture u kalkulaciji i zavisnim troškovima (broj, dobavljač, broj fakture, datum, raspoloživo), artikli na dokumentu (artikal, JM, serijski broj), dobavljač, mjesto troška (šifra, naziv, OJ), zaduženi radnik (ime, interni broj, email), komitent (naziv, JIB, PIB, grad), skladište prenosa (šifra, naziv, vrsta).
+- **Međuskladišni prenos:** lista skladišta na koja se prenosi više ne sadrži skladište sa kog se prenosi (i za novi dokument).
+- **Izvještaji (371) – nova stranica.** Ranije: izbor iz liste (zavisila od tipa firme iz glavne aplikacije, pa je u 1290 bila prazna), stari pogledi bez novih vrsta dokumenata, dva prazna izvještaja (popisne liste, zaduženja sitnog inventara). Sada katalog po grupama (po uzoru na Odoo / Business Central: stanje, kretanje, vrednovanje, starost zaliha) i zajednički parametri (skladište ili sva skladišta modula, datum / period, artikal, mjesto troška, vrsta):
+  - Stanje i vrijednost: **Stanje zaliha na dan** (količina, prosječna cijena, vrijednost), **Popisna lista** (umjesto praznog izvještaja; polja Popisano / Razlika za štampu), **Starost zaliha** (novo: artikli na stanju bez izlaza duže od N dana).
+  - Promet: **Kartica artikla** (početno stanje, hronološki ulazi / izlazi sa stanjem količine i vrijednosti), **Promet po artiklima** (novo: početno, ulaz, izlaz, krajnje – količina i vrijednost), **Pregled dokumenata** (sve vrste v2, status, partner / MT / radnik, otvaranje dokumenta).
+  - Potrošnja i zaduženja: **Potrošnja po mjestu troška** (izdatnice, investicija, OS, sitni inventar – zamjenjuje stari „finansijski promet po kontima i mjestu troška“), **Zaduženja** (otvoreni reversi po radniku / komitentu i zaduženja OS / sitnog inventara – zamjenjuje prazan „Pregled zaduženja sitnog inventara“).
+  - Kontrola: **Dokumenti na čekanju** (dokumenti u pripremi, prijemnice bez kalkulacije ili sa nezaključenom kalkulacijom, prenosi koji čekaju prijem – zamjenjuje stari pregled trebovanja).
+  - Izvještaji koriste zaključene dokumente (knjigovodstveno stanje). Štampa preko Jasper servera (dugme sa stare stranice, radila samo za KP) nije prenesena.
+- Novi view-ovi (`17_rm_izvjestaji.sql`): VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU.
+- **SQL:** `17_rm_izvjestaji.sql` (ACCOUNTING, poslije 12 i 13). Zatim import aplikacije.

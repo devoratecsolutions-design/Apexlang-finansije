@@ -4046,3 +4046,644 @@ lov vrste-ugovora (
     }
 )
 
+lov rm-kalk-prijemnice (
+    name: RM_KALK_PRIJEMNICE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT o.id,
+                   o.skladiste_sifra AS skladiste,
+                   o.naziv AS broj,
+                   to_char(o.datum, 'DD.MM.YYYY') AS datum,
+                   o.klijent_naziv AS dobavljac
+            FROM vw_rm_dokumenti o
+            WHERE o.ooj_id = :APP_OOJ_ID
+              AND o.skladiste_id = nvl(:P341_SKLADISTE_ID, :A_SKLADISTE_ID)
+              AND o.vrsta_sifra = 'PRI'
+              AND o.stornirano = 'N'
+              AND ((o.status = 'P' AND NOT EXISTS (SELECT 1 FROM kalkulacija_operacije ko WHERE ko.operacija_id = o.id))
+                   OR o.id IN (SELECT ko.operacija_id FROM kalkulacija_operacije ko WHERE ko.kalkulacija_id = :P341_ID))
+            ORDER BY o.datum DESC, o.id DESC
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: BROJ
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column SKLADISTE (
+        heading {
+            heading: Skladište
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column BROJ (
+        heading {
+            heading: Broj
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column DATUM (
+        heading {
+            heading: Datum
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column DOBAVLJAC (
+        heading {
+            heading: Dobavljač
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-kalk-fakture (
+    name: RM_KALK_FAKTURE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT f.id,
+                   f.naziv AS broj,
+                   f.klijent_naziv AS dobavljac,
+                   f.naziv_fakture AS broj_fakture,
+                   to_char(f.datum_fakture, 'DD.MM.YYYY') AS datum,
+                   to_char(CASE WHEN :APP_PDV_SISTEM = 'Y' THEN f.raspolozivo_bez_pdv ELSE f.raspolozivo_sa_pdv END, 'FM999G999G999G990D00') AS raspolozivo
+            FROM vw_rm_kalk_fakture f
+            WHERE f.ooj_id = :APP_OOJ_ID
+              AND (f.raspolozivo_sa_pdv > 0
+                   OR f.id IN (SELECT kk.kuf_id FROM kalkulacija_kuf kk WHERE kk.kalkulacija_id = :P341_ID)
+                   OR f.id IN (SELECT kt.kuf_id FROM kalkulacija_troskovi kt WHERE kt.kalkulacija_id = :P341_ID))
+            ORDER BY f.datum_fakture DESC
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: BROJ
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column BROJ (
+        heading {
+            heading: Broj
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column DOBAVLJAC (
+        heading {
+            heading: Dobavljač
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column BROJ_FAKTURE (
+        heading {
+            heading: Broj fakture dobavljača
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column DATUM (
+        heading {
+            heading: Datum
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column RASPOLOZIVO (
+        heading {
+            heading: Raspoloživo
+        }
+        layout {
+            sequence: 60
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+
+lov rm-radnici (
+    name: RM_RADNICI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT r.id,
+                   r.ime || ' ' || r.prezime AS radnik,
+                   r.interni_broj,
+                   r.email
+            FROM sif.acc_radnici r
+            WHERE r.ooj_id = :APP_OOJ_ID
+              AND (r.valid = 'Y' OR r.id = :P331_ZADUZENI_RADNIK_ID)
+            ORDER BY r.prezime, r.ime
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: RADNIK
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column RADNIK (
+        heading {
+            heading: Radnik
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column INTERNI_BROJ (
+        heading {
+            heading: Interni broj
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column EMAIL (
+        heading {
+            heading: Email
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-komitenti (
+    name: RM_KOMITENTI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT k.id,
+                   k.naziv,
+                   k.jib,
+                   k.pib,
+                   k.grad
+            FROM sec_klijenti k
+            WHERE k.ooj_id = :APP_OOJ_ID
+              AND (k.valid = 'Y' OR k.id IN (:P331_KOMITENT_ID, :P331_KLIJENT_ID))
+            ORDER BY k.naziv
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column JIB (
+        heading {
+            heading: JIB
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column PIB (
+        heading {
+            heading: PIB
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column GRAD (
+        heading {
+            heading: Grad
+        }
+        layout {
+            sequence: 50
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-dobavljaci (
+    name: RM_DOBAVLJACI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT k.id,
+                   k.naziv,
+                   k.jib,
+                   k.grad
+            FROM sec_klijenti k
+            WHERE k.ooj_id = :APP_OOJ_ID
+              AND ((k.valid = 'Y' AND k.vrsta_klijenta IN ('D', 'O')) OR k.id = :P331_KLIJENT_ID)
+            ORDER BY k.naziv
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column JIB (
+        heading {
+            heading: JIB
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column GRAD (
+        heading {
+            heading: Grad
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-mjesta-troska (
+    name: RM_MJESTA_TROSKA
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT mt.id,
+                   mt.sifra,
+                   mt.naziv,
+                   oj.naziv AS organizaciona_jedinica
+            FROM sif.acc_mjesta_troska mt
+            LEFT JOIN core.oj oj ON oj.id = mt.oj_id
+            WHERE mt.ooj_id = :APP_OOJ_ID
+              AND (mt.valid = 'Y' OR mt.id = :P331_MJESTO_TROSKA_ID)
+            ORDER BY mt.sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column ORGANIZACIONA_JEDINICA (
+        heading {
+            heading: Organizaciona jedinica
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-dokument-artikli (
+    name: RM_DOKUMENT_ARTIKLI
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT a.id,
+                   a.sifra || ' - ' || a.naziv AS artikal,
+                   a.jm_naziv AS jm,
+                   CASE WHEN a.prati_sb = 'Y' THEN 'da' END AS sb
+            FROM vw_rm_artikli a
+            WHERE a.ooj_id = :APP_OOJ_ID
+              AND a.valid = 'Y'
+              AND nvl(a.tip_stavke_id, 0) <> 3
+              AND (nvl(:P331_POVRAT, 'N') <> 'Y' OR :P331_ID IS NULL
+                   OR rm_dokument_pkg.dostupno_za_povrat_dok(:P331_ID, a.id) > 0
+                   OR a.id IN (SELECT os.stavka_id FROM operacija_stavke os WHERE os.operacija_id = :P331_ID))
+            ORDER BY a.sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: ARTIKAL
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column ARTIKAL (
+        heading {
+            heading: Artikal (šifra - naziv)
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column JM (
+        heading {
+            heading: JM
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column SB (
+        heading {
+            heading: Serijski br.
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)
+
+lov rm-skladista-prenos (
+    name: RM_SKLADISTA_PRENOS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT s.id,
+                   s.sifra,
+                   s.naziv,
+                   CASE WHEN rm_skladiste_pkg.modul(s.id) = 'ROB' THEN 'Robno' ELSE 'Materijalno' END AS vrsta
+            FROM skladista s
+            WHERE s.ooj_id = :APP_OOJ_ID
+              AND (s.valid = 'Y' OR s.id = :P331_SKLADISTE_PRENOS_ID)
+              AND s.id <> coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID), -1)
+              AND s.id <> nvl(to_number(:A_SKLADISTE_ID), -1)
+            ORDER BY s.sifra
+            ```
+    }
+    columnMapping {
+        return: ID
+        display: NAZIV
+    }
+
+    column ID (
+        show: false
+        layout {
+            sequence: 10
+        }
+        source {
+            dataType: number
+        }
+        advanced {
+            searchable: false
+        }
+    )
+
+    column SIFRA (
+        heading {
+            heading: Šifra
+        }
+        layout {
+            sequence: 20
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column NAZIV (
+        heading {
+            heading: Naziv
+        }
+        layout {
+            sequence: 30
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+    column VRSTA (
+        heading {
+            heading: Vrsta
+        }
+        layout {
+            sequence: 40
+        }
+        source {
+            dataType: varchar2
+        }
+    )
+
+)

@@ -14,7 +14,7 @@ page 330 (
     javaScript {
         executeWhenPageLoads:
             ```javascript-browser
-            finRmVrsta.init('P330_NOVA_VRSTA');
+            finRmVrsta.init('P330_NOVA_VRSTA', 'dokumenti_report');
             ```
     }
     security {
@@ -284,9 +284,11 @@ page 330 (
                     ooj_id = :APP_OOJ_ID
                     AND godina = :APP_GODINA
                     AND skladiste_id = :A_SKLADISTE_ID
+                    AND (:P330_NOVA_VRSTA IS NULL OR vrsta_dokumenta_id = to_number(:P330_NOVA_VRSTA))
                 ORDER BY
                     datum DESC, id DESC
                 ```
+            pageItemsToSubmit: P330_NOVA_VRSTA
         }
         layout {
             sequence: 10
@@ -321,7 +323,10 @@ page 330 (
             maxRowsToProcess: 1000
         }
         messages {
-            whenNoDataFound: Nema dokumenata za izabrane filtere.
+            whenNoDataFound: Nema dokumenata izabrane vrste za izabrane filtere.
+        }
+        advanced {
+            htmlDomId: dokumenti_report
         }
 
         column ID (
@@ -631,10 +636,7 @@ page 330 (
             sqlQuery:
                 ```sql
                 SELECT vd.naziv AS d,
-                       apex_page.get_url(p_page        => 331,
-                                         p_items       => 'P331_VRSTA_DOKUMENTA_ID',
-                                         p_values      => vd.id,
-                                         p_clear_cache => 331) AS r
+                       vd.id AS r
                 FROM sif.vrste_dokumenata vd
                 JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
                 WHERE vd.ooj_id = :APP_OOJ_ID
@@ -772,6 +774,54 @@ page 330 (
                 ```sql
                 SELECT sifra || ' - ' || naziv FROM skladista WHERE id = :A_SKLADISTE_ID
                 ```
+        }
+    )
+
+    process vrsta-podrazumijevana (
+        name: Vrsta dokumenta - podrazumijevana
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- izabrana vrsta mora pripadati firmi i modulu; inače prva po redu (ulazi pa izlazi)
+                if :P330_NOVA_VRSTA is not null then
+                    for v in (select 1 from sif.vrste_dokumenata vd
+                               where vd.id = to_number(:P330_NOVA_VRSTA) and vd.ooj_id = :APP_OOJ_ID and vd.valid = 'Y'
+                                 and rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y') loop
+                        return;
+                    end loop;
+                end if;
+                select max(id) keep (dense_rank first order by case when rm_dokument_pkg.tip_kretanja(sifra) = 'U' then 1 else 2 end, naziv)
+                  into :P330_NOVA_VRSTA
+                  from sif.vrste_dokumenata vd
+                 where vd.ooj_id = :APP_OOJ_ID
+                   and vd.valid = 'Y'
+                   and vd.acc_modul_id = (select id from sif.acc_moduli where upper(sifra) = 'MAT')
+                   and rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                   and rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y';
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process ajax-novi-url (
+        name: NOVI_DOKUMENT_URL
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(apex_page.get_url(p_page        => 331,
+                                            p_items       => 'P331_VRSTA_DOKUMENTA_ID',
+                                            p_values      => to_number(apex_application.g_x01),
+                                            p_clear_cache => 331));
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
         }
     )
 
