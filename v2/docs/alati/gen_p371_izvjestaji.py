@@ -688,13 +688,17 @@ page = f"""page 371 (
                 :P371_SKLADISTE_ID := nvl(:P371_SKLADISTE_ID, :A_SKLADISTE_ID);
                 :P371_NAZIV := {case_naziv};
                 -- opis parametara (zaglavlje pri štampi)
-                :P371_PARAMETRI :=
-                    case when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
-                         else (select max('skladište ' || sifra || ' - ' || naziv) from skladista where id = to_number(:P371_SKLADISTE_ID)) end
-                    || case when :P371_IZV in ('sd', 'pl') then ' · na dan ' || :P371_DATUM
-                            when :P371_IZV in ('km', 'pp', 'dok', 'pmt') then ' · period ' || :P371_OD || ' - ' || :P371_DO end
-                    || case when :P371_ARTIKL is not null and :P371_IZV <> 'dok' and :P371_IZV <> 'dc' then
-                                (select ' · artikal ' || sifra || ' ' || naziv from sec_stavke where id = to_number(:P371_ARTIKL)) end;
+                -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
+                select case when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
+                            else (select max('skladište ' || s.sifra || ' - ' || s.naziv) from skladista s
+                                   where s.id = to_number(:P371_SKLADISTE_ID)) end
+                       || case when :P371_IZV in ('sd', 'pl') then ' · na dan ' || :P371_DATUM
+                               when :P371_IZV in ('km', 'pp', 'dok', 'pmt') then ' · period ' || :P371_OD || ' - ' || :P371_DO end
+                       || case when :P371_ARTIKL is not null and :P371_IZV not in ('dok', 'dc') then
+                                   (select max(' · artikal ' || a.sifra || ' ' || a.naziv) from sec_stavke a
+                                     where a.id = to_number(:P371_ARTIKL)) end
+                  into :P371_PARAMETRI
+                  from dual;
                 ```
         }}
         execution {{
