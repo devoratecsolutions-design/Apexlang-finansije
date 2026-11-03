@@ -353,15 +353,13 @@ create or replace package body rm_kalkulacija_pkg as
             if not core.protokoli_pkg.check_brojac(p_ooj_id, 'kalk', p_godina) then
                 greska('Nije definisan brojač za kalkulacije (KALK) u ' || p_godina || '. godini. Podesite numeraciju dokumenata.');
             end if;
-            core.protokoli_pkg.get_brojac(p_ooj_id => p_ooj_id, p_godina => p_godina, p_vrsta_naloga_sifra => 'kalk',
-                                          p_broj => l_broj, p_naziv => l_naziv);
+            -- R17: broj po skladištu i godini (format iz brojača KALK)
+            rm_dokument_pkg.novi_broj(p_ooj_id, p_godina, 'kalk', p_skladiste_id, l_broj, l_naziv);
             insert into kalkulacije (ooj_id, godina, broj, naziv, datum, opis, skladiste_id, status, zakljucano,
                                      nacin_raspodjele, valid)
             values (p_ooj_id, p_godina, l_broj, l_naziv, trunc(p_datum), p_opis, p_skladiste_id, 'P', 'N',
                     nvl(p_nacin_raspodjele, 'V'), 'Y')
             returning id into l_id;
-            core.protokoli_pkg.update_brojac(p_ooj_id => p_ooj_id, p_vrsta_naloga_sifra => 'kalk', p_godina => p_godina,
-                                             p_value => 1);
         else
             select max(o.datum) into l_max
               from kalkulacija_operacije ko join operacije o on o.id = ko.operacija_id

@@ -47,13 +47,31 @@ page 366 (
         }
     )
 
-    region parametri (
-        name: Popis
-        title: Datum popisa
+    region forma (
+        name: Novi popis / Forma
         type: staticContent
         layout {
             sequence: 10
             slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region parametri (
+        name: Popis
+        title: Popis
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @forma
+            slot: subRegions
         }
         appearance {
             template: @standard
@@ -76,13 +94,34 @@ page 366 (
                 ```
         }
         layout {
-            sequence: 15
-            slot: contentBody
+            sequence: 10
+            parentRegion: @skladista-sekcija
+            slot: subRegions
         }
         appearance {
             template: @blank-with-attributes
             templateOptions: #DEFAULT#
             cssClasses: fin-popis-sva-bar
+        }
+    )
+
+    region skladista-sekcija (
+        name: Skladišta - sekcija
+        title: Skladišta za popis
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @forma
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
         }
     )
 
@@ -121,13 +160,15 @@ page 366 (
         }
         layout {
             sequence: 20
-            slot: contentBody
+            parentRegion: @skladista-sekcija
+            slot: subRegions
         }
         appearance {
             template: @standard
             templateOptions: [
                 #DEFAULT#
                 t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
                 t-Region--scrollBody
             ]
             cssClasses: fin-list fin-popis-skl
@@ -253,7 +294,7 @@ page 366 (
             sequence: 10
             region: @parametri
             slot: regionBody
-            columnSpan: 6
+            columnSpan: 4
         }
         appearance {
             template: @required-above
@@ -278,7 +319,7 @@ page 366 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 6
+            columnSpan: 8
         }
         appearance {
             template: @optional-above

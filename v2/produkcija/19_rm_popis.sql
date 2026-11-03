@@ -263,7 +263,6 @@ create or replace package body rm_popis_pkg as
         l_naziv  varchar2(255);
         l_n      number := 0;
         l_sva    boolean := upper(trim(p_skladista)) = 'SVA';
-        l_brojac boolean;
         type t_ids is table of number;
         l_ids    t_ids := t_ids();
     begin
@@ -323,33 +322,13 @@ create or replace package body rm_popis_pkg as
             greska('Popis nije otvoren. ' || l_greske);
         end if;
 
-        l_brojac := core.protokoli_pkg.check_brojac(p_ooj_id, 'pop', p_godina);
         for i in 1 .. l_lista.count loop
             l_skl := to_number(trim(l_lista(i)));
-            if l_brojac then
-                core.protokoli_pkg.get_brojac(
-                    p_ooj_id             => p_ooj_id,
-                    p_godina             => p_godina,
-                    p_vrsta_naloga_sifra => 'pop',
-                    p_broj               => l_broj,
-                    p_naziv              => l_naziv
-                );
-            else
-                -- firma nema brojač popisa: POP-000001 po firmi i godini
-                select nvl(max(broj), 0) + 1 into l_broj from popisi where ooj_id = p_ooj_id and godina = p_godina;
-                l_naziv := 'POP-' || lpad(l_broj, 6, '0');
-            end if;
+            -- broj po skladištu i godini (format iz brojača POP, ako postoji; inače POP-000001)
+            rm_dokument_pkg.novi_broj(p_ooj_id, p_godina, 'pop', l_skl, l_broj, l_naziv);
             insert into popisi (ooj_id, godina, datum, opis, valid, skladiste_id, zakljucano, naziv, broj)
             values (p_ooj_id, p_godina, l_datum, substr(trim(p_opis), 1, 255), 'Y', l_skl, 'N', l_naziv, l_broj)
             returning id into l_id;
-            if l_brojac then
-                core.protokoli_pkg.update_brojac(
-                    p_ooj_id             => p_ooj_id,
-                    p_vrsta_naloga_sifra => 'pop',
-                    p_godina             => p_godina,
-                    p_value              => 1
-                );
-            end if;
             l_n := upisi_stanje(l_id);
             l_ids.extend;
             l_ids(l_ids.count) := l_id;
@@ -628,13 +607,8 @@ create or replace package body rm_popis_pkg as
         l_vrsta number := vrsta_id(p_popis.ooj_id, p_sifra);   -- privatna funkcija: ne može se zvati u SQL-u
     begin
         select oj_id into l_oj from skladista where id = p_popis.skladiste_id;
-        core.protokoli_pkg.get_brojac(
-            p_ooj_id             => p_popis.ooj_id,
-            p_godina             => p_popis.godina,
-            p_vrsta_naloga_sifra => lower(p_sifra),
-            p_broj               => l_broj,
-            p_naziv              => l_naziv
-        );
+        -- broj po skladištu (format iz brojača vrste)
+        rm_dokument_pkg.novi_broj(p_popis.ooj_id, p_popis.godina, lower(p_sifra), p_popis.skladiste_id, l_broj, l_naziv);
         insert into operacije (
             ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
             status, zakljucano, stornirano, popis_id
@@ -644,12 +618,6 @@ create or replace package body rm_popis_pkg as
             l_broj, l_naziv,
             case p_sifra when 'RIM' then 'Z' else 'P' end, case p_sifra when 'RIM' then 'Y' else 'N' end, 'N', p_popis.id
         ) returning id into l_id;
-        core.protokoli_pkg.update_brojac(
-            p_ooj_id             => p_popis.ooj_id,
-            p_vrsta_naloga_sifra => lower(p_sifra),
-            p_godina             => p_popis.godina,
-            p_value              => 1
-        );
         for s in (select ps.stavka_id,
                          case when p_sifra = 'RIV' then ps.popis_kolicina - nvl(ps.prethodna_kolicina, 0)
                               else nvl(ps.prethodna_kolicina, 0) - ps.popis_kolicina end as kol

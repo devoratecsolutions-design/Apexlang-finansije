@@ -368,7 +368,6 @@ page 365 (
                   <span class="fin-chip fin-chip--warning"><b data-s="np">0</b> nepopisano</span>
                   <span class="fin-chip fin-chip--success"><b data-s="v">0</b> višak</span>
                   <span class="fin-chip fin-chip--danger"><b data-s="m">0</b> manjak</span>
-                  <span class="fin-chip">vrijednost manjka <b data-s="vm">0.00</b></span>
                 </div>
                 ```
         }
@@ -403,7 +402,12 @@ page 365 (
                     CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
                          ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
                     s.vrijednost_razlike,
-                    s.opis
+                    s.opis,
+                    CASE WHEN s.popisano IS NULL THEN 'fin-raz'
+                         WHEN s.razlika > 0 THEN 'fin-raz fin-raz--visak'
+                         WHEN s.razlika < 0 THEN 'fin-raz fin-raz--manjak'
+                         ELSE 'fin-raz fin-raz--ok' END AS razlika_klasa,
+                    'fin-unos' AS unos_klasa
                 FROM vw_rm_popis_stavke s
                 WHERE s.popis_id = :P365_ID
                 ORDER BY s.redni_broj, s.id
@@ -729,6 +733,30 @@ page 365 (
             source {
                 databaseColumn: OPIS
                 dataType: varchar2
+            }
+        )
+
+        column RAZLIKA_KLASA (
+            type: hidden
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: RAZLIKA_KLASA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column UNOS_KLASA (
+            type: hidden
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: UNOS_KLASA
+                dataType: varchar2
+                queryOnly: true
             }
         )
 

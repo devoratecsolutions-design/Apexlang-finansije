@@ -1348,7 +1348,8 @@ window.finRmKalk = (function ($) {
    Popis skladišta (str. 365): stavke u Interactive Grid-u.
    - knjigovodstveno stanje, cijena i razlika su samo za čitanje; unosi se popisana količina
    - razlika = popisano - knjigovodstveno; vrijednost razlike = razlika x prosječna cijena
-   - sažetak iznad tabele: artikala, nepopisano, višak, manjak, vrijednost manjka
+   - sažetak iznad tabele: artikala, nepopisano, višak, manjak
+   - ćelija Razlika: zelena (jednako), plava (višak), crvena (manjak); ćelije za unos bijele
    - novi red (artikal koji nije na stanju): knjigovodstveno i cijena iz baze (ARTIKL_POPIS)
    Poziv: finRmPopis.init('rm_popis_stavke', 'P365')
    ===================================================================== */
@@ -1372,21 +1373,33 @@ window.finRmPopis = (function ($) {
         model = g.model;
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
         I.samoCitanje(regionId, ["JM_NAZIV", "KNJIGOVODSTVENO", "RAZLIKA", "CIJENA", "VRIJEDNOST_RAZLIKE"]);
+        /* boja ćelije Razlika (jednako / višak / manjak) i bijele ćelije za unos (Popisano, Napomena) */
+        var unos = $v(p + "_IZMJENJIV") === "Y";
+        try {
+            g.view$.grid("getColumns").forEach(function (c) {
+                if (c.property === "RAZLIKA") { c.cellCssClassesColumn = "RAZLIKA_KLASA"; }
+                if (unos && (c.property === "POPISANO" || c.property === "OPIS")) { c.cellCssClassesColumn = "UNOS_KLASA"; }
+            });
+            g.view$.grid("refreshColumns");
+            g.view$.grid("refresh");
+        } catch (e) { /* bez boja */ }
 
         function racun(rec) {
             var pop = model.getValue(rec, "POPISANO"), raz;
             if (prazno(pop)) {
                 I.postavi(model, rec, "RAZLIKA", "");
                 I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", "");
+                I.postavi(model, rec, "RAZLIKA_KLASA", "fin-raz");
                 return;
             }
             raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
             raz = Math.round(raz * 1000000) / 1000000;
+            I.postavi(model, rec, "RAZLIKA_KLASA", "fin-raz " + (raz > 0 ? "fin-raz--visak" : (raz < 0 ? "fin-raz--manjak" : "fin-raz--ok")));
             I.postavi(model, rec, "RAZLIKA", fq(raz));
             I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", I.fmt(I.r2(raz * I.num(model.getValue(rec, "CIJENA")))));
         }
         function sazetak() {
-            var n = 0, np = 0, v = 0, m = 0, vm = 0;
+            var n = 0, np = 0, v = 0, m = 0;
             model.forEach(function (rec, idx, id) {
                 var meta = model.getRecordMetadata(id), pop, raz;
                 if (meta && meta.deleted) { return; }
@@ -1395,18 +1408,21 @@ window.finRmPopis = (function ($) {
                 if (prazno(pop)) { np++; return; }
                 raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
                 if (raz > 0.0000001) { v++; }
-                if (raz < -0.0000001) { m++; vm += I.r2(-raz * I.num(model.getValue(rec, "CIJENA"))); }
+                if (raz < -0.0000001) { m++; }
             });
             $z.find("[data-s=n]").text(n);
             $z.find("[data-s=np]").text(np);
             $z.find("[data-s=v]").text(v);
             $z.find("[data-s=m]").text(m);
-            $z.find("[data-s=vm]").text(I.fmt(I.r2(vm)));
             $z.find("[data-s=np]").closest(".fin-chip").toggleClass("is-nula", np === 0);
         }
         model.subscribe({
             onChange: function (type, change) {
                 var rec, art;
+                if (type === "insert" && change && change.record) {
+                    I.postavi(model, change.record, "UNOS_KLASA", "fin-unos");
+                    I.postavi(model, change.record, "RAZLIKA_KLASA", "fin-raz");
+                }
                 if (type === "set" && change) {
                     rec = change.record;
                     if (change.field === "STAVKA_ID") {

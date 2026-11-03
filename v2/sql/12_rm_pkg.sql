@@ -16,7 +16,7 @@
   reversa; unos izlaza po serijskom broju (artikal se prepoznaje, količina raste);
   zaključavanje povrata; ispravka ORA-04091 pri zaključavanju izlaza;
   R14: reversi samo u materijalnom modulu;
-  R17: rashod RAS (izlaz, kao izdatnica), razlika inventure - višak RIV (ulaz) i manjak RIM (izlaz)
+  R17: broj dokumenta po skladištu (novi_broj); rashod RAS (izlaz, kao izdatnica), razlika inventure - višak RIV (ulaz) i manjak RIM (izlaz)
   nastaju samo zaključavanjem popisa skladišta (RM_POPIS_PKG): količine se ne mijenjaju ručno,
   na RIV se unosi samo cijena; knjigovodstveno stanje (svi ulazi - zaključani izlazi);
   popis "zaključava" datume: dokument ne može imati datum prije posljednjeg popisa skladišta,
@@ -162,6 +162,12 @@ create or replace package rm_dokument_pkg as
     function storniraj (p_id in number, p_ooj_id in number, p_godina in number) return number;   -- id storno dokumenta
     -- datum dokumenta: prijemnica ga bira korisnik, svi ostali dokumenti imaju današnji datum (ne mijenja se)
     function datum_slobodan (p_vrsta_sifra in varchar2) return varchar2;    -- Y / N
+
+    -- R17: broj dokumenta po skladištu i godini (ranije po firmi): broj = najveći broj iste vrste na skladištu + 1;
+    -- naziv = prefiks + broj (dužina iz brojača vrste u CORE.PROTOKOLI) + sufiks + '/' + šifra skladišta.
+    -- p_sifra 'pop' = popis skladišta (tabela POPISI), 'kalk' = kalkulacija (tabela KALKULACIJE)
+    procedure novi_broj (p_ooj_id in number, p_godina in number, p_sifra in varchar2, p_skladiste_id in number,
+                         p_broj out number, p_naziv out varchar2);
 
     -- R17: popis skladišta
     --   knjigovodstveno stanje = svi ulazi (zaključani ili ne) - zaključani izlazi, do datuma (uključivo)
@@ -446,6 +452,46 @@ create or replace package body rm_dokument_pkg as
         return kolicina_vrsta(p_skladiste_id, p_stavka_id, p_datum, p_bez_dok, 'Y', 'N');
     end raspolozivo;
 
+    procedure novi_broj (p_ooj_id in number, p_godina in number, p_sifra in varchar2, p_skladiste_id in number,
+                         p_broj out number, p_naziv out varchar2) is
+        l_skl    varchar2(64);
+        l_prefix varchar2(100);
+        l_sufix  varchar2(100);
+        l_duzina number;
+    begin
+        -- zaključavanje reda skladišta: dva korisnika ne dobijaju isti broj na istom skladištu
+        select sifra into l_skl from skladista where id = p_skladiste_id for update;
+        if core.protokoli_pkg.check_brojac(p_ooj_id, lower(p_sifra), p_godina) then
+            core.protokoli_pkg.get_brojac(
+                p_ooj_id             => p_ooj_id,
+                p_vrsta_naloga_sifra => lower(p_sifra),
+                p_godina             => p_godina,
+                p_prefix             => l_prefix,
+                p_duzina             => l_duzina,
+                p_sufix              => l_sufix
+            );
+        else
+            l_prefix := upper(p_sifra) || '-';
+        end if;
+        if lower(p_sifra) = 'kalk' then
+            select nvl(max(broj), 0) + 1 into p_broj
+              from kalkulacije
+             where ooj_id = p_ooj_id and godina = p_godina and skladiste_id = p_skladiste_id;
+        elsif lower(p_sifra) = 'pop' then
+            select nvl(max(broj), 0) + 1 into p_broj
+              from popisi
+             where ooj_id = p_ooj_id and godina = p_godina and skladiste_id = p_skladiste_id;
+        else
+            select nvl(max(o.broj), 0) + 1 into p_broj
+              from operacije o
+              join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+             where o.ooj_id = p_ooj_id and o.godina = p_godina and o.skladiste_id = p_skladiste_id
+               and upper(vd.sifra) = upper(p_sifra);
+        end if;
+        p_naziv := l_prefix || lpad(to_char(p_broj), greatest(nvl(l_duzina, 6), length(to_char(p_broj))), '0') || l_sufix
+                   || nvl2(l_skl, '/' || l_skl, '');
+    end novi_broj;
+
     function knjigovodstveno (p_skladiste_id in number, p_stavka_id in number, p_datum in date default null, p_bez_dok in number default null) return number is
     begin
         return kolicina_vrsta(p_skladiste_id, p_stavka_id, p_datum, p_bez_dok, 'N', 'Y');
@@ -728,13 +774,8 @@ create or replace package body rm_dokument_pkg as
                 greska('Nije definisan brojač za vrstu dokumenta ' || upper(l_sifra) || ' u ' || p_godina
                        || '. godini. Podesite numeraciju dokumenata.');
             end if;
-            core.protokoli_pkg.get_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_godina             => p_godina,
-                p_vrsta_naloga_sifra => l_sifra,
-                p_broj               => l_broj,
-                p_naziv              => l_naziv
-            );
+            -- broj po skladištu (format iz brojača vrste)
+            novi_broj(p_ooj_id, p_godina, l_sifra, p_skladiste_id, l_broj, l_naziv);
             insert into operacije (
                 ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, klijent_id,
                 otpremnica_broj, otpremnica_datum, opis, broj, naziv, status, zakljucano, stornirano, ugovor_id,
@@ -744,12 +785,6 @@ create or replace package body rm_dokument_pkg as
                 trim(p_otpremnica_broj), p_otpremnica_datum, p_opis, l_broj, l_naziv, 'P', 'N', 'N', p_ugovor_id,
                 l_mt, l_rad, l_skp
             ) returning id into l_id;
-            core.protokoli_pkg.update_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_vrsta_naloga_sifra => l_sifra,
-                p_godina             => p_godina,
-                p_value              => 1
-            );
         else
             update operacije
                set skladiste_id     = p_skladiste_id,
@@ -1716,13 +1751,8 @@ create or replace package body rm_dokument_pkg as
                 greska('Nije definisan brojač za vrstu dokumenta MPP u ' || p_godina || '. godini. Podesite numeraciju dokumenata.');
             end if;
             select oj_id into l_oj from skladista where id = p_skladiste_id;
-            core.protokoli_pkg.get_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_godina             => p_godina,
-                p_vrsta_naloga_sifra => 'mpp',
-                p_broj               => l_broj,
-                p_naziv              => l_naziv
-            );
+            -- broj po skladištu (format iz brojača vrste)
+            novi_broj(p_ooj_id, p_godina, 'mpp', p_skladiste_id, l_broj, l_naziv);
             insert into operacije (
                 ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
                 status, zakljucano, stornirano, skladiste_prenos_id, veza_id
@@ -1730,12 +1760,6 @@ create or replace package body rm_dokument_pkg as
                 p_ooj_id, p_godina, l_vrsta, p_skladiste_id, l_oj, l_datum, 'Prijem po prenosu ' || pr.naziv, l_broj, l_naziv,
                 'Z', 'Y', 'N', pr.skladiste_id, pr.id
             ) returning id into l_id;
-            core.protokoli_pkg.update_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_vrsta_naloga_sifra => 'mpp',
-                p_godina             => p_godina,
-                p_value              => 1
-            );
             -- stavke sa količinama i cijenama iz prenosa, serijski brojevi
             for s in (select id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj
                         from operacija_stavke where operacija_id = pr.id order by redni_broj, id) loop
@@ -1822,13 +1846,8 @@ create or replace package body rm_dokument_pkg as
             if not core.protokoli_pkg.check_brojac(p_ooj_id, l_sifra, p_godina) then
                 greska('Nije definisan brojač za vrstu dokumenta ' || upper(l_sifra) || ' u ' || p_godina || '. godini.');
             end if;
-            core.protokoli_pkg.get_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_godina             => p_godina,
-                p_vrsta_naloga_sifra => l_sifra,
-                p_broj               => l_broj,
-                p_naziv              => l_naziv
-            );
+            -- broj po skladištu (format iz brojača vrste)
+            novi_broj(p_ooj_id, p_godina, l_sifra, o.skladiste_id, l_broj, l_naziv);
             insert into operacije (
                 ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, klijent_id, opis, broj, naziv,
                 status, zakljucano, stornirano, storniran_id, mjesto_troska_id, zaduzeni_radnik_id, skladiste_prenos_id
@@ -1837,12 +1856,6 @@ create or replace package body rm_dokument_pkg as
                 substr('Storno dokumenta ' || o.naziv || nvl2(o.opis, ' (' || o.opis || ')', ''), 1, 1000), l_broj, l_naziv,
                 'Z', 'Y', 'N', o.id, o.mjesto_troska_id, o.zaduzeni_radnik_id, o.skladiste_prenos_id
             ) returning id into l_id;
-            core.protokoli_pkg.update_brojac(
-                p_ooj_id             => p_ooj_id,
-                p_vrsta_naloga_sifra => l_sifra,
-                p_godina             => p_godina,
-                p_value              => 1
-            );
             -- stavke sa suprotnim predznakom količine (ista cijena), serijski brojevi radi evidencije
             for s in (select id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj
                         from operacija_stavke where operacija_id = o.id order by redni_broj, id) loop

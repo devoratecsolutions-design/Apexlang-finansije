@@ -11,6 +11,16 @@ page 364 (
         cursorFocus: doNotFocusCursor
         warnOnUnsavedChanges: false
     }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            /* zatvoren popis / novi popis (i Esc): osvježi listu. Dijalog otvoren linkom iz izvještaja
+               javlja zatvaranje na window, pa se sluša i tu. */
+            apex.jQuery(window).on("apexafterclosedialog apexafterclosecanceldialog", function () {
+                apex.region("rm_popisi").refresh();
+            });
+            ```
+    }
     security {
         authorizationScheme: @robno-materijalno-popis
         pageAccessProtection: argumentsMustHaveChecksum

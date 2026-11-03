@@ -563,4 +563,9 @@ Po testu iz R15 i odgovorima korisnika (K = kritično, V = važno, S = sitnije, 
   - **Otključavanje popisa** (administrator): dok dokument viška nije zaključen, nije proknjižen i nema kasnijeg / otvorenog popisa; dokumenti razlike se brišu.
   - **Datum prije popisa:** kad na skladištu postoji popis, nijedan dokument (novi, promjena datuma prijemnice, međuskladišni prijem) ne može imati datum prije datuma posljednjeg popisa. Ulazi sa datumom prije popisa ne mijenjaju količine / stavke i ne brišu se (cijena da); izlazi sa datumom prije popisa se ne zaključavaju, ne otključavaju i ne storniraju.
 - **Rashod (RAS):** nova izlazna vrsta u materijalnom modulu – ponaša se kao izdatnica (mjesto troška, prosječna cijena, raspoloživo, zaključavanje, storno); uključen u izvještaj „Potrošnja po mjestu troška“.
-- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
+- **R17 – dorade poslije prvog pregleda (03.11.2026):**
+  - **Broj dokumenta po skladištu:** dokumenti skladišta (robno i materijalno), kalkulacije i popisi se numerišu po skladištu i godini (ranije po firmi): broj = najveći broj iste vrste na skladištu + 1, naziv = prefiks i dužina iz brojača vrste + `/šifra skladišta` (npr. `IZD-000001/MAG1`). `RM_DOKUMENT_PKG.novi_broj` (koriste ga snimanje dokumenta, storno, međuskladišni prijem, kalkulacija, popis i dokumenti razlike); brojač u CORE.PROTOKOLI se više ne uvećava, služi samo za format.
+  - **Novi popis (366):** polja u istom rasporedu i stilu kao ostale forme (sekcije „Popis“ i „Skladišta za popis“).
+  - **Popis (365):** uklonjena „vrijednost manjka“ iz sažetka; veći sažetak i tekst tabele; ćelija Razlika obojena – zelena (jednako), plava (višak), crvena (manjak); ćelije za unos (Popisano, Napomena) bijele, ostale sive.
+  - **Lista popisa (364)** se osvježava kad se zatvori popis ili novi popis (i tasterom Esc).
