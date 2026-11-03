@@ -68,3 +68,18 @@ Na produkciji moraju postojati sa **istim parametrima** (imena i redoslijed).
 2. Izmjene iz `*_izmjene.diff` prenosim na verziju sa produkcije, pa za produkciju dobijate posebnu skriptu (npr. `04_stavke_prod.sql`).
 3. Na produkciji pokrenite `00_provjera_prije.sql`. Skripta poredi otisak paketa i prava, a provjerava i da postoje tabele i kolone koje novi objekti koriste.
 4. Aplikacija: ako je aplikacija 290 na produkciji mijenjana poslije exporta koji smo koristili, pošaljite i njen export. Te izmjene treba prenijeti u v2 prije importa, jer import zamjenjuje cijelu aplikaciju.
+
+## 5. Materijal i oprema / zalihe (koraci R10–R16, skripte 11–18)
+
+| Skripta | Objekat | Vrsta izmjene |
+|---|---|---|
+| 11_rm_model.sql | OPERACIJE (MJESTO_TROSKA_ID, ZADUZENI_RADNIK_ID), indeksi, brojači novih vrsta u CORE.PROTOKOLI | nove kolone / indeksi / podaci brojača |
+| 12_rm_pkg.sql | paket RM_DOKUMENT_PKG | novi objekat (v2) |
+| 13_rm_views.sql | VW_RM_ARTIKLI, VW_RM_DOKUMENTI, VW_RM_DOKUMENT_STAVKE, VW_RM_SB, VW_RM_SB_STANJE, VW_RM_PRENOSI_CEKANJE, VW_RM_REVERS_PREOSTALO | novi objekti |
+| 14_rm_skladista.sql | paket RM_SKLADISTE_PKG, VW_RM_SKLADISTE_STANJE, VW_RM_KORISNIK_SKLADISTA, VW_RM_SKLADISTA | novi objekti |
+| 15_rm_kalkulacija.sql | kolone KALKULACIJA_RASPODJELA.CIJENA, KALKULACIJA_TROSKOVI.KUF_ID / SA_PDV; paket RM_KALKULACIJA_PKG, VW_RM_KALKULACIJE, VW_RM_KALK_FAKTURE, VW_RM_KALKULACIJA_STAVKE, VW_RM_KALKULACIJA_IZVORI, VW_RM_KALKULACIJA_RASPODJELA | novi objekti |
+| 16_rm_vrste_izlaz.sql (SIF) | SIF.VRSTE_DOKUMENATA | podaci: 10 novih vrsta po firmi |
+| 17_rm_izvjestaji.sql | VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU | novi objekti |
+| 18_core_error_manager.sql (CORE) | **CORE.ERROR_MANAGER – tijelo paketa (F_APEX_ERROR_HANDLER)** | **izmijenjen postojeći objekat** – spojiti sa verzijom sa produkcije |
+
+Storniranje dokumenata skladišta (R16) koristi postojeće kolone OPERACIJE.STORNIRANO i STORNIRAN_ID (kao stari FINANSIJE_PKG.storniraj_operacija): storniran dokument i storno dokument se ne računaju u stanje.

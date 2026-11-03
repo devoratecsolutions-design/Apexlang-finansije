@@ -246,20 +246,21 @@ page 330 (
                     status,
                     klijent_id,
                     CASE
-                        WHEN stornirano = 'Y' THEN 'storno'
+                        WHEN stornirano = 'Y' OR storniran_id IS NOT NULL THEN 'storno'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'proknjizena'
                         WHEN status = 'Z' THEN 'zakljucena'
                         ELSE 'priprema'
                     END AS dok_status,
                     CASE
                         WHEN stornirano = 'Y' THEN 'Storniran'
+                        WHEN storniran_id IS NOT NULL THEN 'Storno'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
                         WHEN status = 'Z' THEN 'Zaključen'
                         WHEN u_kalkulaciji_id IS NOT NULL THEN 'U kalkulaciji'
                         ELSE 'U pripremi'
                     END AS dok_status_naziv,
                     CASE
-                        WHEN stornirano = 'Y' THEN 'fa-ban'
+                        WHEN stornirano = 'Y' OR storniran_id IS NOT NULL THEN 'fa-ban'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'fa-book'
                         WHEN status = 'Z' THEN 'fa-lock'
                         WHEN u_kalkulaciji_id IS NOT NULL THEN 'fa-calculator'
@@ -271,20 +272,26 @@ page 330 (
                         ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => id)
                     END AS url,
                     mjesto_troska_naziv,
-                    CASE vrsta_sifra
+                    TRIM(CASE vrsta_sifra
                         WHEN 'MPR' THEN 'na skladište ' || skladiste_prenos_naziv
                                         || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
                                                 WHEN status = 'Z' THEN ' · čeka prijem' END
                         WHEN 'MPP' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
-                    END AS prenos_info,
-                    zaduzeni_radnik_naziv
+                    END
+                    || CASE WHEN storniran_id IS NOT NULL THEN ' storno dokumenta ' || storniran_naziv
+                            WHEN storno_naziv IS NOT NULL THEN ' storniran dokumentom ' || storno_naziv END) AS prenos_info,
+                    zaduzeni_radnik_naziv,
+                    -- gramatika: 1 stavka, 2-4 stavke, 5+ stavki (21 stavka, 22 stavke, 11-14 stavki)
+                    CASE WHEN mod(stavki, 10) = 1 AND mod(stavki, 100) <> 11 THEN 'stavka'
+                         WHEN mod(stavki, 10) BETWEEN 2 AND 4 AND mod(stavki, 100) NOT BETWEEN 12 AND 14 THEN 'stavke'
+                         ELSE 'stavki' END AS stavki_rijec
                 FROM
                     vw_rm_dokumenti
                 WHERE
                     ooj_id = :APP_OOJ_ID
                     AND godina = :APP_GODINA
                     AND skladiste_id = :A_SKLADISTE_ID
-                    AND (:P330_NOVA_VRSTA IS NULL OR vrsta_dokumenta_id = to_number(:P330_NOVA_VRSTA))
+                    AND (nvl(:P330_NOVA_VRSTA, '0') = '0' OR vrsta_dokumenta_id = to_number(:P330_NOVA_VRSTA))
                 ORDER BY
                     datum DESC, id DESC
                 ```
@@ -464,7 +471,7 @@ page 330 (
                 cssClasses: fin-num fin-num--strong
                 htmlExpression:
                     ```html
-                    #IZNOS#<span class="fin-num-sub">#STAVKI# stavki · kol. #KOLICINA#</span>
+                    #IZNOS#<span class="fin-num-sub">#STAVKI# #STAVKI_RIJEC# · kol. #KOLICINA#</span>
                     ```
             }
             sorting {
@@ -623,6 +630,15 @@ page 330 (
             }
         )
 
+        column STAVKI_RIJEC (
+            reportColumnQueryId: 26
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 560
+            }
+        )
+
     )
 
     pageItem P330_NOVA_VRSTA (
@@ -635,15 +651,19 @@ page 330 (
             type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT vd.naziv AS d,
-                       vd.id AS r
-                FROM sif.vrste_dokumenata vd
-                JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
-                WHERE vd.ooj_id = :APP_OOJ_ID
-                  AND vd.valid = 'Y'
-                  AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
-                  AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
-                ORDER BY CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END, vd.naziv
+                SELECT d, r
+                FROM (
+                    SELECT '— sve vrste —' AS d, 0 AS r, 0 AS red, null AS naziv FROM dual
+                    UNION ALL
+                    SELECT vd.naziv, vd.id,
+                           CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END, vd.naziv
+                    FROM sif.vrste_dokumenata vd
+                    JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
+                    WHERE vd.ooj_id = :APP_OOJ_ID
+                      AND vd.valid = 'Y'
+                      AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                      AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y')
+                ORDER BY red, naziv
                 ```
             displayExtraValues: false
             displayNullValue: false
@@ -784,6 +804,9 @@ page 330 (
             plsqlCode:
                 ```plsql
                 -- izabrana vrsta mora pripadati firmi i modulu; inače prva po redu (ulazi pa izlazi)
+                if :P330_NOVA_VRSTA = '0' then
+                    return;                                   -- sve vrste
+                end if;
                 if :P330_NOVA_VRSTA is not null then
                     for v in (select 1 from sif.vrste_dokumenata vd
                                where vd.id = to_number(:P330_NOVA_VRSTA) and vd.ooj_id = :APP_OOJ_ID and vd.valid = 'Y'

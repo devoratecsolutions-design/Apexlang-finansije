@@ -180,6 +180,7 @@ select o.ooj_id,
                       nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                  from dual) k
  where nvl(o.stornirano, 'N') = 'N'
+   and o.storniran_id is null
  group by o.ooj_id, o.skladiste_id, os.stavka_id, s.sifra, s.naziv, jm.naziv, g.naziv, ts.naziv, s.serijski_broj;
 
 -- skladišta kojima korisnik ima pristup, sa modulom (ROB = Zalihe robe, MAT = Materijal i oprema)

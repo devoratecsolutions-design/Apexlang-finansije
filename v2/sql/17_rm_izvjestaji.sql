@@ -36,6 +36,8 @@ select o.id                                                             as opera
        nvl2(mt.id, mt.sifra || ' - ' || mt.naziv, null)                 as mjesto_troska_naziv,
        o.zaduzeni_radnik_id,
        nvl2(rad.id, rad.ime || ' ' || rad.prezime, null)               as radnik_naziv,
+       o.skladiste_prenos_id,
+       nvl2(skp.id, skp.sifra || ' - ' || skp.naziv, null)             as skladiste_prenos_naziv,
        os.id                                                            as stavka_dok_id,
        os.stavka_id,
        st.sifra                                                         as artikal_sifra,
@@ -57,6 +59,7 @@ select o.id                                                             as opera
   left join sec_klijenti kl on kl.id = o.klijent_id
   left join sif.acc_mjesta_troska mt on mt.id = o.mjesto_troska_id
   left join sif.acc_radnici rad on rad.id = o.zaduzeni_radnik_id
+  left join skladista skp on skp.id = o.skladiste_prenos_id
  cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                      nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                 from dual) k

@@ -317,7 +317,6 @@ list menu-robno-materijalno-izvještaji (
         }
         layout {
             sequence: 10
-            subentriesList: @navigation-menu-materijalno-izvještaji
         }
         link {
             target: {
@@ -3128,7 +3127,6 @@ list navigation-menu-materijal-oprema (
         }
         layout {
             sequence: 60
-            subentriesList: @navigation-menu-materijalno-izvještaji
         }
         isCurrent {
             type: pages

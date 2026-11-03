@@ -590,7 +590,7 @@ window.finRmStavke = (function ($) {
     function fc(n) {
         var x = Number(n) || 0;
         if (Math.round(x * 100) / 100 === x) { return bez(x, "FM999G999G999G990D00"); }
-        return bez(x, "FM999G999G999G990D999999").replace(/0+$/, "");
+        return bez(x, "FM999G999G999G990D9999").replace(/0+$/, "");
     }
     function init(regionId, p) {
         /* izlaz i povrat reversa: cijenu računa baza, količina najviše do raspoloživog / dostupnog */
@@ -656,9 +656,16 @@ window.finRmStavke = (function ($) {
                         }
                     }
                 }
-                if (type === "set" || type === "delete" || type === "insert" || type === "revert") { zbir(); }
+                if (type === "set" || type === "delete" || type === "insert" || type === "revert" ||
+                    type === "refresh" || type === "addData") { zbir(); }
             }
         });
+        /* tabela u modalnom dijalogu: širine kolona se računaju tek kad je dijalog otvoren
+           (inače su kolone prazne tabele skupljene) */
+        function sirine() { try { g.view$.grid("resize"); } catch (e) { /* ništa */ } }
+        setTimeout(sirine, 150);
+        setTimeout(sirine, 600);
+        $(window).on("load apexwindowresized", sirine);
     }
     return { init: init };
 })(apex.jQuery);
@@ -676,6 +683,12 @@ window.finRmSbUnos = (function ($) {
         var g = window.finIg.grid("rm_stavke");
         try { return !!(g && g.model && g.model.isChanged()); } catch (e) { return false; }
     }
+    /* stavke, serijski brojevi i zbir se osvježavaju bez ponovnog učitavanja stranice */
+    function osvjezi() {
+        ["rm_stavke", "rm_sb"].forEach(function (r) {
+            try { if (apex.region(r)) { apex.region(r).refresh(); } } catch (e) { /* ništa */ }
+        });
+    }
     function dodaj() {
         var $f = $("#" + P + "_SB_UNOS"), tekst = String($f.val() || "").trim();
         if (!tekst || u_toku) { return; }
@@ -688,34 +701,30 @@ window.finRmSbUnos = (function ($) {
             .done(function (d) {
                 apex.message.clearErrors();
                 if (d.n > 0) {
-                    /* ponovno učitavanje: stavke, količine, zbir i serijski brojevi su osvježeni */
-                    try { sessionStorage.setItem("finSbPoruka", d.poruka || ""); } catch (e) { /* ništa */ }
-                    window.location.reload();
+                    osvjezi();
+                    if (d.poruka && d.poruka.indexOf(": ") >= 0) { window.finIg.greska(d.poruka); }
+                    else { apex.message.showPageSuccess(d.poruka || "Serijski broj je dodat."); }
+                    $f.val("");
                 } else {
                     window.finIg.greska(d.poruka || "Serijski broj nije dodat.");
                     $f.trigger("select");
-                    u_toku = false;
                 }
             })
-            .fail(function () { u_toku = false; });
+            .always(function () {
+                u_toku = false;
+                setTimeout(function () { $f.trigger("focus"); }, 50);
+            });
     }
     function init(p) {
-        var $f, poruka = null;
+        var $f;
         P = p || "P331";
         $f = $("#" + P + "_SB_UNOS");
         if (!$f.length) { return; }
+        /* čitač barkoda / QR koda šalje Enter poslije broja */
         $f.on("keydown", function (e) {
             if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); dodaj(); }
         });
-        $(document).on("click", ".fin-sb-dodaj", function (e) { e.preventDefault(); dodaj(); });
-        try {
-            poruka = sessionStorage.getItem("finSbPoruka");
-            sessionStorage.removeItem("finSbPoruka");
-        } catch (e) { poruka = null; }
-        if (poruka !== null) {
-            if (poruka.indexOf(": ") >= 0) { window.finIg.greska(poruka); } else if (poruka) { apex.message.showPageSuccess(poruka); }
-            setTimeout(function () { $f.trigger("focus"); }, 200);
-        }
+        try { sessionStorage.removeItem("finSbPoruka"); } catch (e) { /* ništa */ }
     }
     return { init: init };
 })(apex.jQuery);
@@ -818,7 +827,12 @@ window.finRmVrsta = (function ($) {
         }
         $(document).on("click", "[data-novi-dokument]", function (e) {
             e.preventDefault();
-            if (!$s.val()) { return; }
+            if (!$s.val() || $s.val() === "0") {
+                apex.message.clearErrors();
+                apex.message.showErrors([{ type: "error", location: "page", unsafe: false,
+                    message: "Za novi dokument izaberite vrstu dokumenta (pored skladišta)." }]);
+                return;
+            }
             apex.server.process("NOVI_DOKUMENT_URL", { x01: $s.val() }, { dataType: "text" }).done(function (url) { otvori(url); });
         });
     }
@@ -841,6 +855,11 @@ window.finRmIzvjestaji = (function ($) {
             var kod = String($(this).data("izv")), set = {};
             set[p + "_IZV"] = kod;
             apex.page.submit({ request: "IZV", set: set, showWait: true });
+        });
+        /* štampa: samo izvještaj (katalog, meni i parametri se ne štampaju - vidi @media print) */
+        $(document).on("click", "[data-izv-stampaj]", function (e) {
+            e.preventDefault();
+            window.print();
         });
     }
     return { init: init };
@@ -1034,7 +1053,10 @@ window.finRmKalk = (function ($) {
             $a.find("[data-ras]").text("raspoređeno " + x.ras);
             if (x.iz !== undefined) { $a.find(".fin-kalk-izvor__iznos b").text(x.iz); }
         });
-        if (sveNaPocetku !== "Y" && d.sve === "Y") {
+        if (sveNaPocetku === "Y" && d.sve === "N") {
+            /* poništena raspodjela: tab cijena se zaključava ponovnim učitavanjem */
+            setTimeout(function () { window.location.reload(); }, 900);
+        } else if (sveNaPocetku !== "Y" && d.sve === "Y") {
             /* sve je raspoređeno: tab cijena se otključava ponovnim učitavanjem */
             apex.message.showPageSuccess("Sve fakture i troškovi su raspoređeni - učitavam cijene...");
             setTimeout(function () { window.location.reload(); }, 900);
@@ -1070,7 +1092,7 @@ window.finRmKalk = (function ($) {
             var izn = s.iznos ? f2(I.num(s.iznos)) : "", cij = s.cijena ? f4(I.num(s.cijena)) : "";
             redovi += '<tr data-artikal="' + esc(s.id) + '"><td><span class="fin-doc"><span class="fin-doc__no">' + esc(s.sifra) +
                 '</span><span class="fin-sub">' + esc(s.naziv) + '</span></span></td><td>' + esc(s.jm || "") +
-                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.pret || s.osn) + '</td>';
+                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.pret || "0.00") + '</td>';
             if (jed) {
                 /* ručno - jedinična cijena: unosi se cijena, iznos = cijena x količina */
                 redovi += '<td class="u-tR">' + (izm ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-cijena-red value="' +
@@ -1088,10 +1110,15 @@ window.finRmKalk = (function ($) {
                 (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
         } else if (d.nacin === "R") {
             uputa = "Upišite iznos po artiklu; zbir mora biti jednak iznosu.";
+        } else if (d.nacin === "P") {
+            uputa = "Iznos po artiklu je vrijednost sa prijemnice (količina × cijena prijemnice); iznos fakture u kalkulaciji je " +
+                "zbir tih vrijednosti" + (d.raspolozivo ? " i ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)" : "") + ".";
         } else {
-            uputa = "Iznosi su izračunati " + d.nacinNaziv + (d.nacin === "V" ? " - srazmjerno do sada raspoređenoj vrijednosti " +
-                "artikla (ručne raspodjele, po količini, linearno); kad je nema, srazmjerno vrijednosti prijemnice" : "") +
-                ". Za ručni unos promijenite način raspodjele na prvom tabu.";
+            uputa = "Iznosi su izračunati " + d.nacinNaziv + (d.nacin === "V"
+                ? (String(d.izvor).indexOf("F:") === 0
+                    ? " - srazmjerno vrijednosti prijemnice (količina × cijena prijemnice)"
+                    : " - srazmjerno vrijednosti artikla raspoređenoj iz faktura robe; dok fakture nisu raspoređene, srazmjerno vrijednosti prijemnice")
+                : "") + ". Za ručni unos promijenite način raspodjele na prvom tabu.";
         }
         html = '<div class="fin-kalk-rasp__zaglavlje"><div><div class="fin-kalk-rasp__naziv">' + esc(d.naziv) + '</div>' +
             '<div class="fin-kalk-rasp__meta"><span class="fin-chip fin-chip--info"><span class="fa fa-random" aria-hidden="true"></span> raspodjela: ' +
@@ -1101,7 +1128,7 @@ window.finRmKalk = (function ($) {
             (jed ? '<span class="fin-kalk-rasp__ukupno">' + esc(d.iznos) + '</span>' : esc(d.iznos)) + ' KM</b></div></div>' +
             '<p class="fin-kalk-uputa">' + esc(uputa) + '</p>' +
             '<table class="fin-kalk-rasp__tabela"><thead><tr><th>Artikal</th><th>JM</th><th class="u-tR">Količina</th>' +
-            '<th class="u-tR">Do sada raspoređeno</th>' +
+            '<th class="u-tR">Raspoređeno iz ostalih izvora</th>' +
             (jed ? '<th class="u-tR">Jedinična cijena</th><th class="u-tR">Iznos (KM)</th>'
                  : '<th class="u-tR">Raspoređeno (KM)</th><th class="u-tR">Po jedinici</th>') + '</tr></thead><tbody>' +
             redovi + '</tbody><tfoot><tr><td colspan="4">' + (jed ? "Ukupno" : "Ukupno / razlika") + '</td>' +
@@ -1111,7 +1138,11 @@ window.finRmKalk = (function ($) {
             (d.izmjenjiva === "Y" ? '<div class="fin-kalk-rasp__dugmad"><button type="button" class="t-Button t-Button--hot t-Button--iconLeft fin-kalk-sacuvaj">' +
                 '<span class="t-Icon t-Icon--left fa fa-save" aria-hidden="true"></span>Sačuvaj raspodjelu</button>' +
                 '<button type="button" class="t-Button t-Button--simple t-Button--iconLeft fin-kalk-sve">' +
-                '<span class="t-Icon t-Icon--left fa fa-random" aria-hidden="true"></span>Raspodijeli sve automatske</button></div>' : "");
+                '<span class="t-Icon t-Icon--left fa fa-random" aria-hidden="true"></span>Raspodijeli sve automatske</button>' +
+                (d.sacuvano === "Y" ? '<button type="button" class="t-Button t-Button--simple t-Button--danger t-Button--iconLeft fin-kalk-ponisti">' +
+                    '<span class="t-Icon t-Icon--left fa fa-undo" aria-hidden="true"></span>Poništi raspodjelu</button>' : "") +
+                '<button type="button" class="t-Button t-Button--simple t-Button--danger t-Button--iconLeft fin-kalk-ponisti-sve">' +
+                '<span class="t-Icon t-Icon--left fa fa-trash-o" aria-hidden="true"></span>Poništi sve raspodjele</button></div>' : "");
         $p.html(html).data("iznos", d.iznosBroj).data("izvor", d.izvor).data("nacin", d.nacin)
             .data("rasp", d.raspolozivoBroj === undefined ? "" : d.raspolozivoBroj);
         osvjeziJedinicno($p);
@@ -1178,6 +1209,23 @@ window.finRmKalk = (function ($) {
             if (trenutni) { ucitaj(trenutni); }
         });
     }
+    /* poništavanje raspodjele izvora ili svih; ručni izvor / faktura robe poništava i automatske */
+    function ponisti(sve) {
+        var $p = $("#finKalkRasp"), izvor = sve ? "SVE" : $p.data("izvor"),
+            pitanje = sve ? "Poništiti raspodjele svih faktura i troškova?"
+                : "Poništiti raspodjelu izvora?" + ($p.data("nacin") === "R" || $p.data("nacin") === "J" || String(izvor).indexOf("F:") === 0
+                    ? " Poništiće se i automatske raspodjele koje od nje zavise." : "");
+        apex.message.confirm(pitanje, function (ok) {
+            if (!ok) { return; }
+            apex.server.process("RASP_PONISTI", { x01: izvor }, { dataType: "json" }).done(function (d) {
+                if (d.greska) { greska(d.greska); return; }
+                apex.message.clearErrors();
+                apex.message.showPageSuccess(sve ? "Sve raspodjele su poništene." : "Raspodjela je poništena.");
+                stanje(d);
+                if (trenutni) { ucitaj(trenutni); }
+            });
+        });
+    }
     function initRaspodjela() {
         var $prvi;
         if (!$("#finKalkRasp").length) { return; }
@@ -1189,6 +1237,8 @@ window.finRmKalk = (function ($) {
         });
         $(document).on("click", "#finKalkRasp .fin-kalk-sacuvaj", sacuvaj);
         $(document).on("click", "#finKalkRasp .fin-kalk-sve", rasporediSve);
+        $(document).on("click", "#finKalkRasp .fin-kalk-ponisti", function () { ponisti(false); });
+        $(document).on("click", "#finKalkRasp .fin-kalk-ponisti-sve", function () { ponisti(true); });
         $prvi = $('.fin-kalk-izvor[data-r="N"]').first();
         if (!$prvi.length) { $prvi = $(".fin-kalk-izvor").first(); }
         if ($prvi.length) { ucitaj($prvi.data("izvor")); }

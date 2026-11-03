@@ -1297,3 +1297,16 @@ body .t-TreeNav .a-TreeView-node--topLevel.is-collapsible > .a-TreeView-row:not(
 .fin-izv-parametri { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-bottom: 12px; }
 .fin-izv-upis { display: inline-block; min-width: 90px; border-bottom: 1px solid #9aa5b1; }
 
+/* R16: izvještaji (str. 371) - zaglavlje i štampa */
+.fin-izv-stampa { display: none; }
+@media print {
+    .t-Header, .t-Body-nav, .t-Body-title, .t-Footer, #apexDevToolbar, .fin-izv-bez-stampe,
+    .a-IRR-toolbar, .a-IRR-controlsContainer, .a-IRR-paginationWrap--top, .a-IRR-buttons, .t-Body-actions { display: none !important; }
+    .t-Body, .t-Body-main, .t-Body-content, .t-Body-contentInner { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    .fin-izv-stampa { display: block; font-size: 12pt; margin: 0 0 8px; }
+    .a-IRR-table { width: 100% !important; font-size: 9pt; }
+    .a-IRR-table th, .a-IRR-table td { padding: 2px 4px !important; }
+    .a-IRR-tableContainer, .t-fht-wrapper, .t-fht-tbody { overflow: visible !important; max-height: none !important; height: auto !important; }
+    tr { page-break-inside: avoid; }
+}
+

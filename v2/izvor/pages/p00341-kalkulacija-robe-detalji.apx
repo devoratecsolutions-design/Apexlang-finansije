@@ -234,7 +234,7 @@ page 341 (
 
     region tab-cijene (
         name: Nabavne i prodajne cijene
-        title: Nabavne i prodajne cijene
+        title: &P341_TAB_CIJENE.
         type: staticContent
         layout {
             sequence: 30
@@ -807,7 +807,7 @@ page 341 (
             }
             lov {
                 type: staticValues
-                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
+                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Automatski – cijene sa prijemnice;P,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
                 displayExtraValues: false
                 displayNullValue: false
             }
@@ -2026,6 +2026,18 @@ page 341 (
         }
     )
 
+    pageItem P341_TAB_CIJENE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
     pageItem P341_ADMIN (
         type: hidden
         settings {
@@ -2386,10 +2398,16 @@ page 341 (
                     :P341_RAZLIKA_KLASA    := case when abs(k.iznos_faktura + k.iznos_troskova - k.nabavna_vrijednost) > 0.005 then 'greska' else 'ok' end;
                 end loop;
                 :P341_ADMIN := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
+                -- materijalno skladište nema prodajnih cijena
+                :P341_TAB_CIJENE := case when :P341_ROBNO = 'Y' then 'Nabavne i prodajne cijene' else 'Nabavne cijene' end;
                 :P341_RAZLOG := rm_kalkulacija_pkg.razlog_zabrane(:P341_ID);
                 :P341_IZMJENJIVA := rm_kalkulacija_pkg.izmjenjiva(:P341_ID);
                 :P341_RAZLOG_OTKLJ := rm_kalkulacija_pkg.razlog_zabrane_otkljucavanja(:P341_ID, :P341_ADMIN);
                 :P341_SVE_RASP := rm_kalkulacija_pkg.sve_rasporedjeno(:P341_ID);
+                -- zaključena kalkulacija: korisnik vidi i zašto se ne može otključati
+                if :P341_STATUS = 'Z' and :P341_RAZLOG_OTKLJ is not null then
+                    :P341_RAZLOG := :P341_RAZLOG || ' Otključavanje nije moguće: ' || :P341_RAZLOG_OTKLJ;
+                end if;
                 ```
         }
         execution {
@@ -2797,6 +2815,26 @@ page 341 (
         }
         execution {
             sequence: 63
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-rasp-ponisti (
+        name: RASP_PONISTI
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_util.prn(rm_kalkulacija_pkg.ponisti_json(:P341_ID, apex_application.g_x01), false);
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 64
             point: ajaxCallback
         }
     )

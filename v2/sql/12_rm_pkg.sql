@@ -150,6 +150,14 @@ create or replace package rm_dokument_pkg as
     function razlog_zabrane_otkljucavanja (p_id in number, p_admin in varchar2) return varchar2;
     procedure otkljucaj (p_id in number, p_admin in varchar2);
 
+    -- storniranje zaključenog izlaznog dokumenta bez veznog dokumenta: storno dokument iste vrste
+    -- sa današnjim datumom (količine sa suprotnim predznakom, zaključen); original se označava storniranim.
+    -- Storniran dokument i storno dokument se ne računaju u stanje / promet.
+    function razlog_zabrane_storna (p_id in number) return varchar2;        -- null = može se stornirati
+    function storniraj (p_id in number, p_ooj_id in number, p_godina in number) return number;   -- id storno dokumenta
+    -- datum dokumenta: prijemnica ga bira korisnik, svi ostali dokumenti imaju današnji datum (ne mijenja se)
+    function datum_slobodan (p_vrsta_sifra in varchar2) return varchar2;    -- Y / N
+
     -- međuskladišni prijem: preuzimanje zaključenog prenosa na skladište p_skladiste_id; vraća id prijema
     function prenos_preuzet (p_prenos_id in number) return varchar2;        -- naziv prijema ili null
     function preuzmi_prenos (p_prenos_id in number, p_ooj_id in number, p_godina in number,
@@ -168,6 +176,17 @@ create or replace package body rm_dokument_pkg as
     begin
         raise_application_error(-20201, 'Greška CORP-RM: ' || p_tekst);
     end greska;
+
+    -- količina za poruku: 12, 12.5 (bez prateće decimalne tačke)
+    function fkol (p_n in number) return varchar2 is
+    begin
+        return rtrim(rtrim(to_char(nvl(p_n, 0), 'FM999G999G990D999'), '0'), '.,');
+    end fkol;
+
+    function datum_slobodan (p_vrsta_sifra in varchar2) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) = 'PRI' then 'Y' else 'N' end;
+    end datum_slobodan;
 
     --------------------------------------------------------------------- vrste dokumenata
     function tip_kretanja (p_vrsta_sifra in varchar2) return varchar2 is
@@ -375,6 +394,7 @@ create or replace package body rm_dokument_pkg as
          where os.stavka_id = p_stavka_id
            and o.skladiste_id = p_skladiste_id
            and nvl(o.stornirano, 'N') = 'N'
+           and o.storniran_id is null
            and (p_datum is null or o.datum <= p_datum)
            and (p_bez_dok is null or o.id <> p_bez_dok);
         return l_n;
@@ -412,12 +432,13 @@ create or replace package body rm_dokument_pkg as
          where os.stavka_id = p_stavka_id
            and o.skladiste_id = p_skladiste_id
            and nvl(o.stornirano, 'N') = 'N'
+           and o.storniran_id is null
            and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
            and (p_datum is null or o.datum <= p_datum);
         if nvl(l_kol, 0) <= 0 then
             return 0;
         end if;
-        return round(l_vr / l_kol, 6);
+        return round(l_vr / l_kol, 4);
     end prosjecna_cijena;
 
     function tip_dokumenta (p_dokument_id in number) return varchar2 is
@@ -536,6 +557,9 @@ create or replace package body rm_dokument_pkg as
             if l_n = 0 then
                 return 'Skladište na koje se roba prenosi ne pripada firmi ili nije aktivno.';
             end if;
+            if nvl(modul_skladista(p_skladiste_prenos_id), '-') <> nvl(modul_skladista(p_skladiste_id), '-') then
+                return 'Međuskladišni prenos je moguć samo na skladište istog modula (materijalno - materijalno).';
+            end if;
         end if;
         if l_vrs = 'PRI' then
             if p_klijent_id is null then
@@ -596,12 +620,21 @@ create or replace package body rm_dokument_pkg as
         l_broj   number;
         l_naziv  varchar2(255);
         l_oj     number;
+        l_datum  date := trunc(p_datum);
     begin
         if l_id is not null then
             provjeri_izmjenu(l_id);
         end if;
+        -- datum bira korisnik samo na prijemnici; ostali dokumenti imaju datum unosa (današnji) koji se ne mijenja
+        if datum_slobodan(l_sifra) = 'N' then
+            if l_id is null then
+                l_datum := trunc(sysdate);
+            else
+                select trunc(datum) into l_datum from operacije where id = l_id;
+            end if;
+        end if;
         l_poruka := provjeri_zaglavlje(l_id, p_ooj_id, p_godina, p_vrsta_dokumenta_id, p_skladiste_id,
-                                       p_datum, p_klijent_id, p_otpremnica_datum, p_ugovor_id,
+                                       l_datum, p_klijent_id, p_otpremnica_datum, p_ugovor_id,
                                        p_mjesto_troska_id, p_tip_preduzetnika, p_radnik_id, p_skladiste_prenos_id);
         if l_poruka is not null then
             greska(l_poruka);
@@ -625,7 +658,7 @@ create or replace package body rm_dokument_pkg as
                 otpremnica_broj, otpremnica_datum, opis, broj, naziv, status, zakljucano, stornirano, ugovor_id,
                 mjesto_troska_id, zaduzeni_radnik_id, skladiste_prenos_id
             ) values (
-                p_ooj_id, p_godina, p_vrsta_dokumenta_id, p_skladiste_id, l_oj, trunc(p_datum), p_klijent_id,
+                p_ooj_id, p_godina, p_vrsta_dokumenta_id, p_skladiste_id, l_oj, l_datum, p_klijent_id,
                 trim(p_otpremnica_broj), p_otpremnica_datum, p_opis, l_broj, l_naziv, 'P', 'N', 'N', p_ugovor_id,
                 l_mt, l_rad, l_skp
             ) returning id into l_id;
@@ -639,7 +672,7 @@ create or replace package body rm_dokument_pkg as
             update operacije
                set skladiste_id     = p_skladiste_id,
                    oj_id            = l_oj,
-                   datum            = trunc(p_datum),
+                   datum            = l_datum,
                    klijent_id       = p_klijent_id,
                    otpremnica_broj  = trim(p_otpremnica_broj),
                    otpremnica_datum = p_otpremnica_datum,
@@ -653,7 +686,7 @@ create or replace package body rm_dokument_pkg as
             -- (petlja: funkcija koja čita OPERACIJA_STAVKE ne smije se zvati iz UPDATE iste tabele - ORA-04091)
             if tip_kretanja(l_sifra) = 'I' then
                 for st in (select id, stavka_id from operacija_stavke where operacija_id = l_id) loop
-                    l_cij := round(prosjecna_cijena(p_skladiste_id, st.stavka_id, trunc(p_datum)), 6);
+                    l_cij := round(prosjecna_cijena(p_skladiste_id, st.stavka_id, l_datum), 4);
                     update operacija_stavke set nabavna_cijena = l_cij where id = st.id;
                 end loop;
             end if;
@@ -731,7 +764,7 @@ create or replace package body rm_dokument_pkg as
                 l_cijena := cijena_povrata(o.ooj_id, vrsta_sifra(o.vrsta_dokumenta_id), o.zaduzeni_radnik_id, o.klijent_id, p_stavka_id);
             end loop;
             if p_kolicina > nvl(l_rasp, 0) then
-                greska('Za povrat je dostupno ' || to_char(nvl(l_rasp, 0), 'FM999G999G990D999') || ' - količina ne može biti veća.');
+                greska('Za povrat je dostupno ' || fkol(l_rasp) || ' - količina ne može biti veća.');
             end if;
         elsif l_tk = 'U' then
             if l_cijena is null or l_cijena < 0 then
@@ -739,16 +772,26 @@ create or replace package body rm_dokument_pkg as
             end if;
         elsif l_tk = 'I' then
             -- izlaz: prosječna cijena na datum dokumenta, količina najviše do raspoloživog
+            -- raspoloživo i na datum dokumenta (ne može se izdati roba koja tog dana nije bila na stanju)
+            -- i ukupno (izlaz ne smije ugroziti kasnije izlaze)
             l_cijena := prosjecna_cijena(l_skl, p_stavka_id, l_datum);
+            l_rasp := raspolozivo(l_skl, p_stavka_id, l_datum, p_dokument_id);
+            if p_kolicina > l_rasp then
+                greska('Na datum dokumenta (' || to_char(l_datum, 'DD.MM.YYYY') || ') raspoloživo je ' || fkol(l_rasp)
+                       || ' - količina ne može biti veća.');
+            end if;
             l_rasp := raspolozivo(l_skl, p_stavka_id, null, p_dokument_id);
             if p_kolicina > l_rasp then
-                greska('Na skladištu je raspoloživo ' || to_char(l_rasp, 'FM999G999G990D999') || ' - količina ne može biti veća.');
+                greska('Na skladištu je raspoloživo ' || fkol(l_rasp) || ' - količina ne može biti veća.');
+            end if;
+            if nvl(l_cijena, 0) <= 0 then
+                greska('Artikal nema nabavnu cijenu na skladištu na datum dokumenta (nema zaključenog prijema sa cijenom) - izlaz nije moguć.');
             end if;
         end if;
 
         if p_id is null then
             insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj)
-            values (p_dokument_id, p_stavka_id, p_kolicina, round(l_cijena, 6), p_opis,
+            values (p_dokument_id, p_stavka_id, p_kolicina, round(l_cijena, 4), p_opis,
                     (select nvl(max(redni_broj), 0) + 1 from operacija_stavke where operacija_id = p_dokument_id))
             returning id into p_id;
         else
@@ -763,7 +806,7 @@ create or replace package body rm_dokument_pkg as
             update operacija_stavke
                set stavka_id      = p_stavka_id,
                    kolicina       = p_kolicina,
-                   nabavna_cijena = round(l_cijena, 6),
+                   nabavna_cijena = round(l_cijena, 4),
                    opis           = p_opis
              where id = p_id;
         end if;
@@ -1124,7 +1167,7 @@ create or replace package body rm_dokument_pkg as
                     l_obr := dostupno_za_povrat(o.ooj_id, l_vrs, o.zaduzeni_radnik_id, o.klijent_id, s.stavka_id, p_id);
                     if s.kol > l_obr then
                         return 'Artikal ' || s.sifra || ' ' || s.naziv || ': za povrat je dostupno '
-                               || to_char(l_obr, 'FM999G999G990D999') || '.';
+                               || fkol(l_obr) || '.';
                     end if;
                 end loop;
                 return null;
@@ -1137,7 +1180,10 @@ create or replace package body rm_dokument_pkg as
                 l_obr := obradjeno(o.skladiste_id, s.stavka_id, o.datum, p_id);
                 if s.kol > l_obr then
                     return 'Artikal ' || s.sifra || ' ' || s.naziv || ': na datum dokumenta obrađeno (zaključeno) stanje je '
-                           || to_char(l_obr, 'FM999G999G990D999') || ' - prvo zaključite prijem (kalkulaciju).';
+                           || fkol(l_obr) || ' - prvo zaključite prijem (kalkulaciju).';
+                end if;
+                if nvl(prosjecna_cijena(o.skladiste_id, s.stavka_id, o.datum), 0) <= 0 then
+                    return 'Artikal ' || s.sifra || ' ' || s.naziv || ': nema nabavne cijene na datum dokumenta - izlaz nije moguć.';
                 end if;
             end loop;
         end loop;
@@ -1161,7 +1207,7 @@ create or replace package body rm_dokument_pkg as
                 else
                     l_cij := prosjecna_cijena(o.skladiste_id, st.stavka_id, o.datum);
                 end if;
-                update operacija_stavke set nabavna_cijena = round(l_cij, 6) where id = st.id;
+                update operacija_stavke set nabavna_cijena = round(l_cij, 4) where id = st.id;
             end loop;
         end loop;
         update operacije set status = 'Z', zakljucano = 'Y' where id = p_id;
@@ -1279,7 +1325,7 @@ create or replace package body rm_dokument_pkg as
         if nvl(l_kol, 0) <= 0 then
             return 0;
         end if;
-        return round(l_vr / l_kol, 6);
+        return round(l_vr / l_kol, 4);
     end cijena_povrata;
 
     function dostupno_za_povrat_dok (p_dokument_id in number, p_stavka_id in number) return number is
@@ -1384,19 +1430,24 @@ create or replace package body rm_dokument_pkg as
                 -- artikal: serijski broj raspoloživ na skladištu (zaključeni ulazi - svi izlazi)
                 l_stavka := null;
                 l_kand := 0;
+                l_n := 0;
                 for a in (select distinct os.stavka_id
                             from operacija_stavke_sb sb
                             join operacija_stavke os on os.id = sb.operacija_stavka_id
                             join operacije o on o.id = os.operacija_id
                            where sb.serijski_broj = l_sb
                              and o.skladiste_id = l_skl) loop
+                    l_n := l_n + 1;
                     if sb_raspoloziv(l_skl, a.stavka_id, l_sb, p_dokument_id) > 0 then
                         l_stavka := a.stavka_id;
                         l_kand := l_kand + 1;
                     end if;
                 end loop;
-                if l_kand = 0 then
-                    dodaj_gresku(l_sb || ': nije raspoloživ na skladištu.');
+                if l_n = 0 then
+                    dodaj_gresku(l_sb || ': ne postoji na skladištu.');
+                    continue;
+                elsif l_kand = 0 then
+                    dodaj_gresku(l_sb || ': nije raspoloživ na skladištu (već je izdat ili prijem nije zaključen).');
                     continue;
                 elsif l_kand > 1 then
                     dodaj_gresku(l_sb || ': isti serijski broj ima više artikala - unesite ga na stavci.');
@@ -1438,8 +1489,8 @@ create or replace package body rm_dokument_pkg as
                 raise;
         end;
         return '{"ok":' || case when l_dod > 0 then 'true' else 'false' end || ',"n":' || l_dod || ',"poruka":"'
-               || apex_escape.json(case when l_dod > 0 then 'Dodato serijskih brojeva: ' || l_dod || '.' end
-                                   || case when l_greske is not null then ' ' || l_greske end) || '"}';
+               || apex_escape.json(trim(case when l_dod > 0 then 'Dodato serijskih brojeva: ' || l_dod || '.' end
+                                        || case when l_greske is not null then ' ' || l_greske end)) || '"}';
     end dodaj_po_sb_json;
 
     --------------------------------------------------------------------- međuskladišni prijem
@@ -1536,6 +1587,108 @@ create or replace package body rm_dokument_pkg as
         greska('Prenos ne postoji.');
         return null;
     end preuzmi_prenos;
+
+    --------------------------------------------------------------------- storniranje
+    function razlog_zabrane_storna (p_id in number) return varchar2 is
+        l_n   number;
+        l_zak date;
+        l_vez varchar2(255);
+    begin
+        for o in (select o.status, o.zakljucano, o.stornirano, o.storniran_id, o.glavna_knjiga_id, o.ooj_id,
+                         o.vrsta_dokumenta_id
+                    from operacije o where o.id = p_id) loop
+            if nvl(o.stornirano, 'N') = 'Y' then
+                return 'Dokument je već storniran.';
+            end if;
+            if o.storniran_id is not null then
+                return 'Storno dokument se ne može stornirati.';
+            end if;
+            if nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) <> 'Z' then
+                return 'Stornira se samo zaključen dokument (dokument u pripremi se može obrisati).';
+            end if;
+            if podrzana(vrsta_sifra(o.vrsta_dokumenta_id)) = 'N' or tip_dokumenta(p_id) <> 'I' then
+                return 'Stornirati se mogu samo izlazni dokumenti.';
+            end if;
+            if o.glavna_knjiga_id is not null then
+                return 'Dokument je proknjižen - prvo stornirajte nalog za knjiženje.';
+            end if;
+            -- vezni dokumenti: prijem po prenosu, povrat po reversu, ostali dokumenti vezani na ovaj
+            if prenos_preuzet(p_id) is not null then
+                return 'Prenos je preuzet (' || prenos_preuzet(p_id) || ') - ne može se stornirati.';
+            end if;
+            if revers_ima_povrat(p_id) = 'Y' then
+                return 'Na revers postoji povrat - ne može se stornirati.';
+            end if;
+            select max(v.naziv) into l_vez
+              from operacije v
+             where v.veza_id = p_id and nvl(v.stornirano, 'N') = 'N' and v.storniran_id is null;
+            if l_vez is not null then
+                return 'Na dokument je vezan dokument ' || l_vez || ' - ne može se stornirati.';
+            end if;
+            select max(period_zakljucan_do) into l_zak from core.ooj where id = o.ooj_id;
+            if l_zak is not null and trunc(sysdate) < trunc(l_zak) then
+                return 'Današnji datum je u zaključanom periodu - storno nije moguć.';
+            end if;
+            return null;
+        end loop;
+        return 'Dokument ne postoji.';
+    end razlog_zabrane_storna;
+
+    function storniraj (p_id in number, p_ooj_id in number, p_godina in number) return number is
+        l_r     varchar2(4000) := razlog_zabrane_storna(p_id);
+        l_sifra varchar2(64);
+        l_broj  number;
+        l_naziv varchar2(255);
+        l_id    number;
+        l_st    number;
+    begin
+        if l_r is not null then
+            greska(l_r);
+        end if;
+        if extract(year from sysdate) <> p_godina then
+            greska('Storno se pravi sa današnjim datumom - promijenite radnu godinu na ' || extract(year from sysdate) || '.');
+        end if;
+        for o in (select * from operacije where id = p_id and ooj_id = p_ooj_id) loop
+            l_sifra := lower(vrsta_sifra(o.vrsta_dokumenta_id));
+            if not core.protokoli_pkg.check_brojac(p_ooj_id, l_sifra, p_godina) then
+                greska('Nije definisan brojač za vrstu dokumenta ' || upper(l_sifra) || ' u ' || p_godina || '. godini.');
+            end if;
+            core.protokoli_pkg.get_brojac(
+                p_ooj_id             => p_ooj_id,
+                p_godina             => p_godina,
+                p_vrsta_naloga_sifra => l_sifra,
+                p_broj               => l_broj,
+                p_naziv              => l_naziv
+            );
+            insert into operacije (
+                ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, klijent_id, opis, broj, naziv,
+                status, zakljucano, stornirano, storniran_id, mjesto_troska_id, zaduzeni_radnik_id, skladiste_prenos_id
+            ) values (
+                o.ooj_id, p_godina, o.vrsta_dokumenta_id, o.skladiste_id, o.oj_id, trunc(sysdate), o.klijent_id,
+                substr('Storno dokumenta ' || o.naziv || nvl2(o.opis, ' (' || o.opis || ')', ''), 1, 1000), l_broj, l_naziv,
+                'Z', 'Y', 'N', o.id, o.mjesto_troska_id, o.zaduzeni_radnik_id, o.skladiste_prenos_id
+            ) returning id into l_id;
+            core.protokoli_pkg.update_brojac(
+                p_ooj_id             => p_ooj_id,
+                p_vrsta_naloga_sifra => l_sifra,
+                p_godina             => p_godina,
+                p_value              => 1
+            );
+            -- stavke sa suprotnim predznakom količine (ista cijena), serijski brojevi radi evidencije
+            for s in (select id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj
+                        from operacija_stavke where operacija_id = o.id order by redni_broj, id) loop
+                insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj)
+                values (l_id, s.stavka_id, -s.kolicina, s.nabavna_cijena, s.opis, s.redni_broj)
+                returning id into l_st;
+                insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
+                select l_st, sb.serijski_broj from operacija_stavke_sb sb where sb.operacija_stavka_id = s.id;
+            end loop;
+            update operacije set stornirano = 'Y' where id = o.id;
+            return l_id;
+        end loop;
+        greska('Dokument ne postoji.');
+        return null;
+    end storniraj;
 
 end rm_dokument_pkg;
 /

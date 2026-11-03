@@ -67,6 +67,8 @@ select o.id,
        o.zakljucano,
        nvl(o.stornirano, 'N')                                           as stornirano,
        o.storniran_id,
+       so.naziv                                                         as storniran_naziv,
+       (select max(x.naziv) from operacije x where x.storniran_id = o.id) as storno_naziv,
        o.glavna_knjiga_id,
        o.kalkulacija_id,
        kk.kalkulacija_id                                                as u_kalkulaciji_id,
@@ -90,13 +92,14 @@ select o.id,
   left join sif.acc_radnici rad on rad.id = o.zaduzeni_radnik_id
   left join skladista skp on skp.id = o.skladiste_prenos_id
   left join operacije vz on vz.id = o.veza_id
+  left join operacije so on so.id = o.storniran_id
   outer apply (select max(ko.kalkulacija_id) as kalkulacija_id
                  from kalkulacija_operacije ko
                 where ko.operacija_id = o.id) kk
   left join kalkulacije k on k.id = nvl(o.kalkulacija_id, kk.kalkulacija_id)
   outer apply (select count(*)          as stavki,
                       sum(os.kolicina)  as kolicina,
-                      round(sum(os.kolicina * os.nabavna_cijena), 2) as iznos,
+                      sum(round(os.kolicina * os.nabavna_cijena, 2)) as iznos,
                       sum(case when s.serijski_broj = 'Y'
                                 and nvl(os.kolicina, 0) <> (select count(*) from operacija_stavke_sb sb
                                                              where sb.operacija_stavka_id = os.id)
@@ -168,7 +171,7 @@ select o.id,
        o.skladiste_prenos_id,
        o.opis,
        (select count(*) from operacija_stavke os where os.operacija_id = o.id) as stavki,
-       (select round(sum(os.kolicina * os.nabavna_cijena), 2) from operacija_stavke os where os.operacija_id = o.id) as iznos,
+       (select sum(round(os.kolicina * os.nabavna_cijena, 2)) from operacija_stavke os where os.operacija_id = o.id) as iznos,
        (select listagg(st.sifra || ' ' || st.naziv || ': ' || rtrim(to_char(os.kolicina, 'FM999G999G990D999999'), '.,')
                        || nvl2(jm.naziv, ' ' || jm.naziv, '') || ' × ' || to_char(os.nabavna_cijena, 'FM999G999G990D00'), '; '
                        on overflow truncate '…' with count)
@@ -194,7 +197,7 @@ with rev as (
            case when upper(vd.sifra) = 'REV' then o.zaduzeni_radnik_id else o.klijent_id end as partner_id,
            o.naziv as revers_naziv, o.datum, o.skladiste_id, os.stavka_id,
            sum(os.kolicina) as izdato,
-           round(sum(os.kolicina * nvl(os.nabavna_cijena, 0)) / nullif(sum(os.kolicina), 0), 6) as cijena
+           round(sum(os.kolicina * nvl(os.nabavna_cijena, 0)) / nullif(sum(os.kolicina), 0), 4) as cijena
       from operacije o
       join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
       join operacija_stavke os on os.operacija_id = o.id

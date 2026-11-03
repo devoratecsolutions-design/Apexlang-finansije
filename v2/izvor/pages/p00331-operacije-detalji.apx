@@ -553,7 +553,7 @@ page 331 (
             type: rowRangesXToYNoPagination
         }
         messages {
-            whenNoDataFound: Izaberite radnika / komitenta - prikazuju se zaključeni reversi sa preostalom količinom (povrati se raspoređuju na najstarije reverse).
+            whenNoDataFound: Nema preostalih količina za povrat kod izabranog radnika / komitenta (prikazuju se zaključeni reversi sa preostalom količinom; povrati se raspoređuju na najstarije reverse).
         }
         advanced {
             htmlDomId: rm_revers_preostalo
@@ -746,7 +746,7 @@ page 331 (
 
     region mjesto-troska (
         name: Mjesto troška i zaduženje
-        title: Mjesto troška i zaduženje
+        title: &P331_NASLOV_MT.
         type: staticContent
         layout {
             sequence: 25
@@ -766,7 +766,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y' or rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y' or rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y'
+            plsqlExpression: rm_dokument_pkg.ima_mjesto_troska(:P331_VRSTA_SIFRA) = 'Y' or rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y' or rm_dokument_pkg.ima_komitenta(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -812,7 +812,7 @@ page 331 (
                          'FM999G999G999G990D999999'), '.,') AS raspolozivo,
                     rtrim(to_char(s.kolicina, 'FM999999999990D999999'), '.,') AS kolicina,
                     CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
-                         ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D999999'), '0') END AS cijena,
+                         ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
                     s.iznos,
                     CASE WHEN s.prati_sb = 'Y' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb
                 FROM vw_rm_dokument_stavke s
@@ -1043,7 +1043,7 @@ page 331 (
         column RASPOLOZIVO (
             type: textField
             heading {
-                heading: Raspoloživo
+                heading: &P331_NASLOV_RASP.
                 alignment: end
             }
             layout {
@@ -1054,6 +1054,10 @@ page 331 (
                 databaseColumn: RASPOLOZIVO
                 dataType: varchar2
                 queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: nvl(:P331_IZMJENJIVA, 'Y') = 'Y'
             }
         )
 
@@ -1135,7 +1139,7 @@ page 331 (
         name: Unos po serijskom broju
         type: staticContent
         source {
-            htmlCode: <div class="fin-sb-unos__dugme"><button type="button" class="t-Button t-Button--iconLeft fin-sb-dodaj"><span class="t-Icon t-Icon--left fa fa-barcode" aria-hidden="true"></span>Dodaj</button></div>
+            htmlCode: <span class="fin-sub">Skenirajte ili upišite serijski broj i pritisnite Enter - artikal se prepoznaje, stavka se dodaje ili joj se povećava količina.</span>
         }
         layout {
             sequence: 10
@@ -1218,10 +1222,17 @@ page 331 (
         messages {
             whenNoDataFound: Nema artikala koji se prate po serijskom broju.
         }
+        advanced {
+            htmlDomId: rm_sb
+        }
         serverSideCondition {
             type: functionBody
             plsqlFunctionBody:
                 ```plsql
+                -- izlaz u pripremi: region uvijek postoji (osvježava se poslije unosa po serijskom broju)
+                if :P331_ID is not null and :P331_TIP_KRETANJA = 'I' and :P331_IZMJENJIVA = 'Y' then
+                    return true;
+                end if;
                 for s in (select 1 from vw_rm_dokument_stavke where operacija_id = :P331_ID and prati_sb = 'Y' fetch first 1 row only) loop
                     return true;
                 end loop;
@@ -1530,7 +1541,11 @@ page 331 (
             templateOptions: #DEFAULT#
         }
         help {
-            helpText: Datum prijema ili izdavanja robe. Ne može biti u budućnosti niti u zaključanom periodu. Kod izlaza cijena stavke je prosječna cijena skladišta na ovaj datum.
+            helpText: Datum prijema robe bira se na prijemnici (ne može biti u budućnosti niti u zaključanom periodu). Ostali dokumenti imaju današnji datum (datum unosa) koji se ne mijenja. Kod izlaza cijena stavke je prosječna cijena skladišta na ovaj datum.
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: rm_dokument_pkg.datum_slobodan(:P331_VRSTA_SIFRA) = 'N'
         }
     )
 
@@ -1691,7 +1706,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: rm_dokument_pkg.mjesto_troska_obavezno(:P331_VRSTA_SIFRA, :APP_TIP_PREDUZETNIKA_SIFRA, :APP_OOJ_ID) = 'Y'
+            plsqlExpression: rm_dokument_pkg.ima_mjesto_troska(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -1885,6 +1900,54 @@ page 331 (
         layout {
             sequence: 10
             region: @prenosi-cekanje
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_STORNO_RAZLOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 17
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_NASLOV_MT (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 18
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_NASLOV_RASP (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 19
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P331_PORUKA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 20
+            region: @dokument-detalji
             slot: regionBody
         }
     )
@@ -2094,6 +2157,40 @@ page 331 (
         serverSideCondition {
             type: expression
             plsqlExpression: :P331_ID is not null and rm_dokument_pkg.razlog_zabrane_otkljucavanja(:P331_ID, :P331_ADMIN) is null
+        }
+    )
+
+    button storniraj (
+        buttonName: STORNIRAJ
+        label: Storniraj
+        layout {
+            sequence: 16
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--danger
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-ban
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Stornirati dokument? Pravi se storno dokument sa današnjim datumom, a roba se vraća na stanje. Storno se ne može poništiti.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_STORNO_RAZLOG is null
         }
     )
 
@@ -2350,15 +2447,16 @@ page 331 (
                                                      when d.vrsta_sifra = 'MPR' and d.status = 'Z' then 'Čeka prijem na skladištu ' || d.skladiste_prenos_naziv
                                                 end;
                     :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv end;
-                    :P331_STATUS_KLASA       := case when d.stornirano = 'Y' then 'storno'
+                    :P331_STATUS_KLASA       := case when d.stornirano = 'Y' or d.storniran_id is not null then 'storno'
                                                      when d.glavna_knjiga_id is not null then 'proknjizena'
                                                      when d.status = 'Z' then 'zakljucena' else 'priprema' end;
-                    :P331_STATUS_NAZIV       := case when d.stornirano = 'Y' then 'Storniran'
+                    :P331_STATUS_NAZIV       := case when d.stornirano = 'Y' then 'Storniran' || nvl2(d.storno_naziv, ' (' || d.storno_naziv || ')', '')
+                                                     when d.storniran_id is not null then 'Storno dokumenta ' || d.storniran_naziv
                                                      when d.glavna_knjiga_id is not null then 'Proknjižen'
                                                      when d.status = 'Z' then 'Zaključen'
                                                      when d.u_kalkulaciji_id is not null then 'U kalkulaciji'
                                                      else 'U pripremi' end;
-                    :P331_STATUS_IKONA       := case when d.stornirano = 'Y' then 'fa-ban'
+                    :P331_STATUS_IKONA       := case when d.stornirano = 'Y' or d.storniran_id is not null then 'fa-ban'
                                                      when d.glavna_knjiga_id is not null then 'fa-book'
                                                      when d.status = 'Z' then 'fa-lock'
                                                      when d.u_kalkulaciji_id is not null then 'fa-calculator'
@@ -2367,6 +2465,13 @@ page 331 (
                 :P331_RAZLOG := rm_dokument_pkg.razlog_zabrane(:P331_ID);
                 :P331_IZMJENJIVA := rm_dokument_pkg.izmjenjiv(:P331_ID);
                 :P331_ADMIN := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
+                :P331_STORNO_RAZLOG := rm_dokument_pkg.razlog_zabrane_storna(:P331_ID);
+                -- naslovi: zaduženje / mjesto troška, kolona stanja (ulaz: stanje, izlaz: raspoloživo)
+                :P331_NASLOV_MT := case when rm_dokument_pkg.ima_mjesto_troska(:P331_VRSTA_SIFRA) = 'N' then 'Zaduženje'
+                                        when rm_dokument_pkg.ima_radnika(:P331_VRSTA_SIFRA) = 'Y' then 'Mjesto troška i zaduženje'
+                                        else 'Mjesto troška' end;
+                :P331_NASLOV_RASP := case when :P331_POVRAT = 'Y' then 'Dostupno za povrat'
+                                          when :P331_TIP_KRETANJA = 'I' then 'Raspoloživo' else 'Stanje' end;
                 ```
         }
         execution {
@@ -2391,7 +2496,7 @@ page 331 (
                 :P331_STATUS_NAZIV  := 'U pripremi';
                 :P331_STATUS_IKONA  := 'fa-pencil';
                 :P331_SKLADISTE_ID  := :A_SKLADISTE_ID;
-                :P331_DATUM         := nvl(:P331_DATUM, trunc(sysdate));
+                :P331_DATUM         := trunc(sysdate);
                 for s in (select sifra || ' - ' || naziv as n from skladista where id = :A_SKLADISTE_ID) loop
                     :P331_SKLADISTE := s.n;
                 end loop;
@@ -2406,7 +2511,12 @@ page 331 (
                     :P331_VRSTA_SIFRA := upper(v.sifra);
                     :P331_TIP_KRETANJA := rm_dokument_pkg.tip_kretanja(v.sifra);
                     :P331_POVRAT := rm_dokument_pkg.je_povrat(v.sifra);
-                    :P331_ZBIR := '0,00';
+                    :P331_ZBIR := '0.00';
+                    :P331_NASLOV_MT := case when rm_dokument_pkg.ima_mjesto_troska(v.sifra) = 'N' then 'Zaduženje'
+                                            when rm_dokument_pkg.ima_radnika(v.sifra) = 'Y' then 'Mjesto troška i zaduženje'
+                                            else 'Mjesto troška' end;
+                    :P331_NASLOV_RASP := case when rm_dokument_pkg.je_povrat(v.sifra) = 'Y' then 'Dostupno za povrat'
+                                              when rm_dokument_pkg.tip_kretanja(v.sifra) = 'I' then 'Raspoloživo' else 'Stanje' end;
                     :P331_VRSTA_NAZIV := v.naziv;
                     :P331_NAZIV       := case when upper(v.sifra) = 'PRI' then 'Nova prijemnica' when upper(v.sifra) = 'IZD' then 'Nova izdatnica' else 'Novi dokument: ' || v.naziv end;
                 end loop;
@@ -2646,6 +2756,43 @@ page 331 (
         }
         serverSideCondition {
             whenButtonPressed: @otkljucaj
+        }
+    )
+
+    process storniraj (
+        name: Storniraj izlazni dokument
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_storno number;
+                begin
+                    l_storno := rm_dokument_pkg.storniraj(p_id     => :P331_ID,
+                                                          p_ooj_id => :APP_OOJ_ID,
+                                                          p_godina => :APP_GODINA);
+                    select 'Dokument je storniran - storno dokument ' || naziv || '.' into :P331_PORUKA
+                      from operacije where id = l_storno;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 46
+        }
+        successMessage {
+            successMessage: &P331_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @storniraj
         }
     )
 

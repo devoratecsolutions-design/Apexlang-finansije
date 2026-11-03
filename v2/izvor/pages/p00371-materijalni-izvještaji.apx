@@ -27,8 +27,10 @@ page 371 (
             ```html
             Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola),
             podesite parametre (skladište, period, artikal...) i kliknite <b>Prikaži</b>.
-            Izvještaji koriste zaključene dokumente skladišta (knjigovodstveno stanje); <b>Dokumenti na čekanju</b>
-            prikazuju ono što još nije zaključeno.
+            Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>), preuzeti kao Excel / PDF
+            (<b>Actions &gt; Download</b>) ili odštampati dugmetom <b>Štampaj</b>.
+            Izvještaji koriste zaključene dokumente skladišta (knjigovodstveno stanje); storniran dokument i njegov storno
+            se ne računaju. <b>Dokumenti na čekanju</b> prikazuju ono što još nije zaključeno.
             ```
     }
 
@@ -70,6 +72,7 @@ page 371 (
         appearance {
             template: @blank-with-attributes
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-bez-stampe
         }
         advanced {
             htmlDomId: fin_izv_katalog
@@ -112,7 +115,24 @@ page 371 (
                 #DEFAULT#
                 t-Form--stretchInputs
             ]
-            cssClasses: fin-toolbar fin-izv-parametri
+            cssClasses: fin-toolbar fin-izv-parametri fin-izv-bez-stampe
+        }
+    )
+
+    region stampa-zaglavlje (
+        name: Zaglavlje za štampu
+        type: staticContent
+        source {
+            htmlCode: <div class="fin-izv-stampa"><b>&P371_NAZIV.</b> · &P371_PARAMETRI.</div>
+        }
+        layout {
+            sequence: 6
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
         }
     )
 
@@ -145,7 +165,7 @@ page 371 (
     region izv-stanje (
         name: Stanje zaliha na dan
         title: Stanje zaliha na dan
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -154,13 +174,15 @@ page 371 (
                 SELECT p.artikal_sifra,
                        p.artikal_naziv,
                        p.jm_naziv,
-                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
-                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 'FM999G999G999G990D0000') AS cijena,
-                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost
+                       sum(p.ulaz_kolicina - p.izlaz_kolicina) AS kolicina,
+                       round(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 4) AS cijena,
+                       sum(p.ulaz_vrijednost - p.izlaz_vrijednost) AS vrijednost
                 FROM vw_rm_promet p
                 WHERE p.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
                   AND p.status = 'Z'
                   AND p.datum <= nvl(to_date(:P371_DATUM, 'DD.MM.YYYY'), trunc(sysdate))
@@ -180,88 +202,89 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema zaliha na izabrani dan.
-        }
-        advanced {
-            htmlDomId: izv_sd
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',sd,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema zaliha na izabrani dan.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_sd
+            savedReportMappingIdentifier: 371000000000000001
+        }
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column KOLICINA (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Količina
                 alignment: end
@@ -270,17 +293,19 @@ page 371 (
                 sequence: 40
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column CIJENA (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Prosječna cijena
                 alignment: end
@@ -289,31 +314,68 @@ page 371 (
                 sequence: 50
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D0000
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column VRIJEDNOST (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Vrijednost
+                heading: Vrijednost (KM)
                 alignment: end
             }
             layout {
                 sequence: 60
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
             }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 1
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn KOLICINA (
+                sequence: 4
+            )
+
+            displayColumn CIJENA (
+                sequence: 5
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 6
+            )
+
         )
 
     )
@@ -321,7 +383,7 @@ page 371 (
     region izv-popis (
         name: Popisna lista
         title: Popisna lista
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -330,15 +392,17 @@ page 371 (
                 SELECT p.artikal_sifra,
                        p.artikal_naziv,
                        p.jm_naziv,
-                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
-                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 'FM999G999G999G990D0000') AS cijena,
-                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost,
-                       NULL AS popisano,
-                       NULL AS razlika
+                       sum(p.ulaz_kolicina - p.izlaz_kolicina) AS kolicina,
+                       round(sum(p.ulaz_vrijednost - p.izlaz_vrijednost) / nullif(sum(p.ulaz_kolicina - p.izlaz_kolicina), 0), 4) AS cijena,
+                       sum(p.ulaz_vrijednost - p.izlaz_vrijednost) AS vrijednost,
+                       CAST(NULL AS VARCHAR2(20)) AS popisano,
+                       CAST(NULL AS VARCHAR2(20)) AS razlika
                 FROM vw_rm_promet p
                 WHERE p.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
                   AND p.status = 'Z'
                   AND p.datum <= nvl(to_date(:P371_DATUM, 'DD.MM.YYYY'), trunc(sysdate))
@@ -358,88 +422,89 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema zaliha na izabrani dan.
-        }
-        advanced {
-            htmlDomId: izv_pl
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',pl,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema zaliha na izabrani dan.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_pl
+            savedReportMappingIdentifier: 371000000000000002
+        }
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column KOLICINA (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Knjigovodstveno
                 alignment: end
@@ -448,17 +513,19 @@ page 371 (
                 sequence: 40
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column CIJENA (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Cijena
                 alignment: end
@@ -467,36 +534,40 @@ page 371 (
                 sequence: 50
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D0000
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column VRIJEDNOST (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Vrijednost
+                heading: Vrijednost (KM)
                 alignment: end
             }
             layout {
                 sequence: 60
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column POPISANO (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Popisano
                 alignment: end
@@ -505,20 +576,16 @@ page 371 (
                 sequence: 70
                 columnAlignment: end
             }
-            columnFormatting {
-                htmlExpression:
-                    ```html
-                    <span class="fin-izv-upis">&nbsp;</span>
-                    ```
+            source {
+                dataType: STRING
             }
-            sorting {
-                sortable: false
+            advanced {
+                endUserAlias: G
             }
         )
 
         column RAZLIKA (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Razlika
                 alignment: end
@@ -527,15 +594,52 @@ page 371 (
                 sequence: 80
                 columnAlignment: end
             }
-            columnFormatting {
-                htmlExpression:
-                    ```html
-                    <span class="fin-izv-upis">&nbsp;</span>
-                    ```
+            source {
+                dataType: STRING
             }
-            sorting {
-                sortable: false
+            advanced {
+                endUserAlias: H
             }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 1
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn KOLICINA (
+                sequence: 4
+            )
+
+            displayColumn CIJENA (
+                sequence: 5
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 6
+            )
+
+            displayColumn POPISANO (
+                sequence: 7
+            )
+
+            displayColumn RAZLIKA (
+                sequence: 8
+            )
+
         )
 
     )
@@ -543,7 +647,7 @@ page 371 (
     region izv-starost (
         name: Starost zaliha (bez izlaza)
         title: Starost zaliha (bez izlaza)
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -552,10 +656,10 @@ page 371 (
                 SELECT x.artikal_sifra,
                        x.artikal_naziv,
                        x.jm_naziv,
-                       rtrim(to_char(x.kolicina, 'FM999G999G999G990D999'), '.,') AS kolicina,
-                       to_char(x.vrijednost, 'FM999G999G999G990D00') AS vrijednost,
-                       to_char(x.zadnji_ulaz, 'DD.MM.YYYY') AS zadnji_ulaz,
-                       to_char(x.zadnji_izlaz, 'DD.MM.YYYY') AS zadnji_izlaz,
+                       x.kolicina,
+                       x.vrijednost,
+                       x.zadnji_ulaz,
+                       x.zadnji_izlaz,
                        trunc(sysdate) - trunc(nvl(x.zadnji_izlaz, x.zadnji_ulaz)) AS dana
                 FROM (SELECT p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv,
                              sum(p.ulaz_kolicina - p.izlaz_kolicina) AS kolicina,
@@ -564,8 +668,10 @@ page 371 (
                              max(CASE WHEN p.tip_kretanja = 'I' THEN p.datum END) AS zadnji_izlaz
                         FROM vw_rm_promet p
                        WHERE p.ooj_id = :APP_OOJ_ID
-                         AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                         AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                         AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                                  WHERE k.korisnik_id = :APP_USER_ID
+                                                    AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                          AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
                          AND p.status = 'Z'
                        GROUP BY p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv) x
@@ -585,88 +691,89 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema artikala na stanju bez izlaza duže od zadatog broja dana.
-        }
-        advanced {
-            htmlDomId: izv_sz
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',sz,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema artikala na stanju bez izlaza duže od zadatog broja dana.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_sz
+            savedReportMappingIdentifier: 371000000000000003
+        }
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column KOLICINA (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Količina
                 alignment: end
@@ -675,64 +782,78 @@ page 371 (
                 sequence: 40
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column VRIJEDNOST (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Vrijednost
+                heading: Vrijednost (KM)
                 alignment: end
             }
             layout {
                 sequence: 50
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column ZADNJI_ULAZ (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Zadnji ulaz
             }
             layout {
                 sequence: 60
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column ZADNJI_IZLAZ (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Zadnji izlaz
             }
             layout {
                 sequence: 70
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column DANA (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Dana bez izlaza
                 alignment: end
@@ -741,12 +862,52 @@ page 371 (
                 sequence: 80
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            source {
+                dataType: NUMBER
             }
-            sorting {
-                sortable: false
+            advanced {
+                endUserAlias: H
             }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 1
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn KOLICINA (
+                sequence: 4
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 5
+            )
+
+            displayColumn ZADNJI_ULAZ (
+                sequence: 6
+            )
+
+            displayColumn ZADNJI_IZLAZ (
+                sequence: 7
+            )
+
+            displayColumn DANA (
+                sequence: 8
+            )
+
         )
 
     )
@@ -754,7 +915,7 @@ page 371 (
     region izv-kartica (
         name: Kartica artikla
         title: Kartica artikla
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -764,36 +925,40 @@ page 371 (
                     SELECT p.*
                       FROM vw_rm_promet p
                      WHERE p.ooj_id = :APP_OOJ_ID
-                       AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                      AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                       AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                      AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                               WHERE k.korisnik_id = :APP_USER_ID
+                                                 AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                        AND p.stavka_id = to_number(:P371_ARTIKL)
                        AND p.status = 'Z'
                 ), x AS (
                     SELECT 0 AS red, to_date(:P371_OD, 'DD.MM.YYYY') AS datum, 0 AS operacija_id, 0 AS stavka_dok_id, 'Početno stanje' AS dokument,
-                           NULL AS vrsta_naziv, NULL AS partner, NULL AS skladiste,
+                           CAST(NULL AS VARCHAR2(255)) AS vrsta_naziv, CAST(NULL AS VARCHAR2(500)) AS partner, CAST(NULL AS VARCHAR2(100)) AS skladiste,
                            to_number(NULL) AS ulaz_kolicina, to_number(NULL) AS izlaz_kolicina, to_number(NULL) AS cijena,
                            to_number(NULL) AS ulaz_vrijednost, to_number(NULL) AS izlaz_vrijednost,
                            nvl(sum(ulaz_kolicina - izlaz_kolicina), 0) AS d_kol, nvl(sum(ulaz_vrijednost - izlaz_vrijednost), 0) AS d_vr
                       FROM p WHERE p.datum < to_date(:P371_OD, 'DD.MM.YYYY')
                     UNION ALL
                     SELECT 1, p.datum, p.operacija_id, p.stavka_dok_id, p.dokument, p.vrsta_naziv,
-                           coalesce(p.klijent_naziv, p.mjesto_troska_naziv, p.radnik_naziv), p.skladiste_sifra,
+                           coalesce(p.klijent_naziv, p.mjesto_troska_naziv, p.radnik_naziv,
+                                    nvl2(p.skladiste_prenos_naziv, CASE WHEN p.tip_kretanja = 'U' THEN 'sa skladišta ' ELSE 'na skladište ' END || p.skladiste_prenos_naziv, NULL)),
+                           p.skladiste_sifra,
                            p.ulaz_kolicina, p.izlaz_kolicina, p.cijena, p.ulaz_vrijednost, p.izlaz_vrijednost,
                            p.ulaz_kolicina - p.izlaz_kolicina, p.ulaz_vrijednost - p.izlaz_vrijednost
                       FROM p WHERE p.datum BETWEEN to_date(:P371_OD, 'DD.MM.YYYY') AND to_date(:P371_DO, 'DD.MM.YYYY')
                 )
-                SELECT to_char(x.datum, 'DD.MM.YYYY') AS datum,
+                SELECT x.datum,
                        x.dokument,
                        x.vrsta_naziv,
                        x.partner,
                        x.skladiste,
-                       rtrim(to_char(nullif(x.ulaz_kolicina, 0), 'FM999G999G999G990D999'), '.,') AS ulaz,
-                       rtrim(to_char(nullif(x.izlaz_kolicina, 0), 'FM999G999G999G990D999'), '.,') AS izlaz,
-                       rtrim(to_char(sum(x.d_kol) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id), 'FM999G999G999G990D999'), '.,') AS saldo,
-                       to_char(x.cijena, 'FM999G999G999G990D0000') AS cijena,
-                       to_char(nullif(x.ulaz_vrijednost, 0), 'FM999G999G999G990D00') AS ulaz_vrijednost,
-                       to_char(nullif(x.izlaz_vrijednost, 0), 'FM999G999G999G990D00') AS izlaz_vrijednost,
-                       to_char(sum(x.d_vr) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id), 'FM999G999G999G990D00') AS saldo_vrijednost
+                       nullif(x.ulaz_kolicina, 0) AS ulaz,
+                       nullif(x.izlaz_kolicina, 0) AS izlaz,
+                       sum(x.d_kol) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id) AS saldo,
+                       x.cijena,
+                       nullif(x.ulaz_vrijednost, 0) AS ulaz_vrijednost,
+                       nullif(x.izlaz_vrijednost, 0) AS izlaz_vrijednost,
+                       sum(x.d_vr) OVER (ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id) AS saldo_vrijednost
                 FROM x
                 WHERE :P371_ARTIKL IS NOT NULL
                 ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id
@@ -811,116 +976,124 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Izaberite artikal (kartica se prikazuje za jedan artikal).
-        }
-        advanced {
-            htmlDomId: izv_km
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',km,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Izaberite artikal (kartica se prikazuje za jedan artikal).
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_km
+            savedReportMappingIdentifier: 371000000000000004
+        }
 
         column DATUM (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Datum
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column DOKUMENT (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Dokument
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column VRSTA_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Vrsta
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column PARTNER (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Partner / MT / radnik
+                heading: Partner / MT / radnik / skladište
             }
             layout {
                 sequence: 40
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column SKLADISTE (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Skladište
             }
             layout {
                 sequence: 50
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column ULAZ (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Ulaz
                 alignment: end
@@ -929,17 +1102,19 @@ page 371 (
                 sequence: 60
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column IZLAZ (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Izlaz
                 alignment: end
@@ -948,17 +1123,19 @@ page 371 (
                 sequence: 70
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column SALDO (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Stanje
                 alignment: end
@@ -967,17 +1144,19 @@ page 371 (
                 sequence: 80
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
             }
         )
 
         column CIJENA (
-            reportColumnQueryId: 9
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Cijena
                 alignment: end
@@ -986,17 +1165,19 @@ page 371 (
                 sequence: 90
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D0000
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
             }
         )
 
         column ULAZ_VRIJEDNOST (
-            reportColumnQueryId: 10
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Ulaz (KM)
                 alignment: end
@@ -1005,17 +1186,19 @@ page 371 (
                 sequence: 100
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
             }
         )
 
         column IZLAZ_VRIJEDNOST (
-            reportColumnQueryId: 11
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Izlaz (KM)
                 alignment: end
@@ -1024,17 +1207,19 @@ page 371 (
                 sequence: 110
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: K
             }
         )
 
         column SALDO_VRIJEDNOST (
-            reportColumnQueryId: 12
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Vrijednost stanja
                 alignment: end
@@ -1043,12 +1228,71 @@ page 371 (
                 sequence: 120
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
             }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn DATUM (
+                sequence: 1
+            )
+
+            displayColumn DOKUMENT (
+                sequence: 2
+            )
+
+            displayColumn VRSTA_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn PARTNER (
+                sequence: 4
+            )
+
+            displayColumn SKLADISTE (
+                sequence: 5
+            )
+
+            displayColumn ULAZ (
+                sequence: 6
+            )
+
+            displayColumn IZLAZ (
+                sequence: 7
+            )
+
+            displayColumn SALDO (
+                sequence: 8
+            )
+
+            displayColumn CIJENA (
+                sequence: 9
+            )
+
+            displayColumn ULAZ_VRIJEDNOST (
+                sequence: 10
+            )
+
+            displayColumn IZLAZ_VRIJEDNOST (
+                sequence: 11
+            )
+
+            displayColumn SALDO_VRIJEDNOST (
+                sequence: 12
+            )
+
         )
 
     )
@@ -1056,7 +1300,7 @@ page 371 (
     region izv-promet (
         name: Promet po artiklima
         title: Promet po artiklima
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -1065,18 +1309,20 @@ page 371 (
                 SELECT p.artikal_sifra,
                        p.artikal_naziv,
                        p.jm_naziv,
-                       rtrim(to_char(sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina - p.izlaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS pocetno,
-                       rtrim(to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS ulaz,
-                       rtrim(to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_kolicina ELSE 0 END), 'FM999G999G999G990D999'), '.,') AS izlaz,
-                       rtrim(to_char(sum(p.ulaz_kolicina - p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS krajnje,
-                       to_char(sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost - p.izlaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS pocetno_vr,
-                       to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS ulaz_vr,
-                       to_char(sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_vrijednost ELSE 0 END), 'FM999G999G999G990D00') AS izlaz_vr,
-                       to_char(sum(p.ulaz_vrijednost - p.izlaz_vrijednost), 'FM999G999G999G990D00') AS krajnje_vr
+                       sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina - p.izlaz_kolicina ELSE 0 END) AS pocetno,
+                       sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_kolicina ELSE 0 END) AS ulaz,
+                       sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_kolicina ELSE 0 END) AS izlaz,
+                       sum(p.ulaz_kolicina - p.izlaz_kolicina) AS krajnje,
+                       sum(CASE WHEN p.datum < to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost - p.izlaz_vrijednost ELSE 0 END) AS pocetno_vr,
+                       sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.ulaz_vrijednost ELSE 0 END) AS ulaz_vr,
+                       sum(CASE WHEN p.datum >= to_date(:P371_OD, 'DD.MM.YYYY') THEN p.izlaz_vrijednost ELSE 0 END) AS izlaz_vr,
+                       sum(p.ulaz_vrijednost - p.izlaz_vrijednost) AS krajnje_vr
                 FROM vw_rm_promet p
                 WHERE p.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
                   AND p.status = 'Z'
                   AND p.datum <= to_date(:P371_DO, 'DD.MM.YYYY')
@@ -1098,88 +1344,89 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema prometa u izabranom periodu.
-        }
-        advanced {
-            htmlDomId: izv_pp
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',pp,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema prometa u izabranom periodu.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_pp
+            savedReportMappingIdentifier: 371000000000000005
+        }
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column POCETNO (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Početno
                 alignment: end
@@ -1188,17 +1435,19 @@ page 371 (
                 sequence: 40
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column ULAZ (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Ulaz
                 alignment: end
@@ -1207,17 +1456,19 @@ page 371 (
                 sequence: 50
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column IZLAZ (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Izlaz
                 alignment: end
@@ -1226,17 +1477,19 @@ page 371 (
                 sequence: 60
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column KRAJNJE (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Krajnje
                 alignment: end
@@ -1245,17 +1498,19 @@ page 371 (
                 sequence: 70
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column POCETNO_VR (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Početno (KM)
                 alignment: end
@@ -1264,17 +1519,19 @@ page 371 (
                 sequence: 80
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
             }
         )
 
         column ULAZ_VR (
-            reportColumnQueryId: 9
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Ulaz (KM)
                 alignment: end
@@ -1283,17 +1540,19 @@ page 371 (
                 sequence: 90
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
             }
         )
 
         column IZLAZ_VR (
-            reportColumnQueryId: 10
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Izlaz (KM)
                 alignment: end
@@ -1302,17 +1561,19 @@ page 371 (
                 sequence: 100
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: J
             }
         )
 
         column KRAJNJE_VR (
-            reportColumnQueryId: 11
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Krajnje (KM)
                 alignment: end
@@ -1321,12 +1582,67 @@ page 371 (
                 sequence: 110
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
             }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 1
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn POCETNO (
+                sequence: 4
+            )
+
+            displayColumn ULAZ (
+                sequence: 5
+            )
+
+            displayColumn IZLAZ (
+                sequence: 6
+            )
+
+            displayColumn KRAJNJE (
+                sequence: 7
+            )
+
+            displayColumn POCETNO_VR (
+                sequence: 8
+            )
+
+            displayColumn ULAZ_VR (
+                sequence: 9
+            )
+
+            displayColumn IZLAZ_VR (
+                sequence: 10
+            )
+
+            displayColumn KRAJNJE_VR (
+                sequence: 11
+            )
+
         )
 
     )
@@ -1334,7 +1650,7 @@ page 371 (
     region izv-dokumenti (
         name: Pregled dokumenata
         title: Pregled dokumenata
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -1343,19 +1659,22 @@ page 371 (
                 SELECT d.id,
                        d.naziv,
                        d.vrsta_naziv,
-                       to_char(d.datum, 'DD.MM.YYYY') AS datum,
+                       d.datum,
                        d.skladiste_sifra AS skladiste,
                        coalesce(d.klijent_naziv, d.mjesto_troska_naziv, d.zaduzeni_radnik_naziv, d.skladiste_prenos_naziv) AS partner,
-                       CASE WHEN d.stornirano = 'Y' THEN 'Storniran' WHEN d.glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
+                       CASE WHEN d.stornirano = 'Y' THEN 'Storniran' WHEN d.storniran_id IS NOT NULL THEN 'Storno'
+                            WHEN d.glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
                             WHEN d.status = 'Z' THEN 'Zaključen' ELSE 'U pripremi' END AS status,
                        d.stavki,
-                       to_char(d.iznos, 'FM999G999G999G990D00') AS iznos,
+                       d.iznos,
                        CASE WHEN d.v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => d.id, p_clear_cache => 331)
                             ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => d.id) END AS url
                 FROM vw_rm_dokumenti d
                 WHERE d.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR d.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(d.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR d.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND d.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND d.datum BETWEEN to_date(:P371_OD, 'DD.MM.YYYY') AND to_date(:P371_DO, 'DD.MM.YYYY')
                   AND (:P371_VRSTA IS NULL OR d.vrsta_sifra = :P371_VRSTA)
                 ORDER BY d.datum DESC, d.id DESC
@@ -1373,46 +1692,40 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema dokumenata u izabranom periodu.
-        }
-        advanced {
-            htmlDomId: izv_dok
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',dok,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema dokumenata u izabranom periodu.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_dok
+            savedReportMappingIdentifier: 371000000000000006
+        }
 
         column ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
             type: link
             heading {
                 heading: Dokument
@@ -1427,88 +1740,115 @@ page 371 (
                 }
                 linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
             type: hidden
+            heading {
+                heading: Broj
+            }
             layout {
-                sequence: 320
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column VRSTA_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
             type: hidden
+            heading {
+                heading: Vrsta
+            }
             layout {
-                sequence: 330
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column DATUM (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Datum
             }
             layout {
                 sequence: 40
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column SKLADISTE (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Skladište
             }
             layout {
                 sequence: 50
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column PARTNER (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Partner / MT / radnik / skladište
             }
             layout {
                 sequence: 60
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column STATUS (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Status
             }
             layout {
                 sequence: 70
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column STAVKI (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Stavki
                 alignment: center
@@ -1517,37 +1857,85 @@ page 371 (
                 sequence: 80
                 columnAlignment: center
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
             }
         )
 
         column IZNOS (
-            reportColumnQueryId: 9
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Iznos
+                heading: Iznos (KM)
                 alignment: end
             }
             layout {
                 sequence: 90
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: I
             }
         )
 
         column URL (
-            reportColumnQueryId: 10
-            derivedColumn: N
             type: hidden
-            layout {
-                sequence: 400
+            heading {
+                heading: Url
             }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ID (
+                sequence: 1
+            )
+
+            displayColumn DATUM (
+                sequence: 2
+            )
+
+            displayColumn SKLADISTE (
+                sequence: 3
+            )
+
+            displayColumn PARTNER (
+                sequence: 4
+            )
+
+            displayColumn STATUS (
+                sequence: 5
+            )
+
+            displayColumn STAVKI (
+                sequence: 6
+            )
+
+            displayColumn IZNOS (
+                sequence: 7
+            )
+
         )
 
     )
@@ -1555,7 +1943,7 @@ page 371 (
     region izv-potrosnja (
         name: Potrošnja po mjestu troška
         title: Potrošnja po mjestu troška
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -1566,12 +1954,14 @@ page 371 (
                        p.artikal_sifra,
                        p.artikal_naziv,
                        p.jm_naziv,
-                       rtrim(to_char(sum(p.izlaz_kolicina), 'FM999G999G999G990D999'), '.,') AS kolicina,
-                       to_char(sum(p.izlaz_vrijednost), 'FM999G999G999G990D00') AS vrijednost
+                       sum(p.izlaz_kolicina) AS kolicina,
+                       sum(p.izlaz_vrijednost) AS vrijednost
                 FROM vw_rm_promet p
                 WHERE p.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(p.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR p.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND p.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND (:P371_ARTIKL IS NULL OR p.stavka_id = to_number(:P371_ARTIKL))
                   AND p.status = 'Z'
                   AND p.vrsta_sifra IN ('IZD', 'IIN', 'IOS', 'ISI')
@@ -1594,116 +1984,121 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema izlaza u potrošnju u izabranom periodu.
-        }
-        advanced {
-            htmlDomId: izv_pmt
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',pmt,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema izlaza u potrošnju u izabranom periodu.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_pmt
+            savedReportMappingIdentifier: 371000000000000007
+        }
 
         column MJESTO_TROSKA (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Mjesto troška
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column VRSTA_NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Vrsta izlaza
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 40
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 50
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column KOLICINA (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Količina
                 alignment: end
@@ -1712,31 +2107,72 @@ page 371 (
                 sequence: 60
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column VRIJEDNOST (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Vrijednost
+                heading: Vrijednost (KM)
                 alignment: end
             }
             layout {
                 sequence: 70
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
             }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn MJESTO_TROSKA (
+                sequence: 1
+            )
+
+            displayColumn VRSTA_NAZIV (
+                sequence: 2
+            )
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 3
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 4
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 5
+            )
+
+            displayColumn KOLICINA (
+                sequence: 6
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 7
+            )
+
         )
 
     )
@@ -1744,7 +2180,7 @@ page 371 (
     region izv-zaduzenja (
         name: Zaduženja po radniku i komitentu
         title: Zaduženja po radniku i komitentu
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -1753,15 +2189,18 @@ page 371 (
                 SELECT z.partner_naziv,
                        z.vrsta,
                        z.dokument,
-                       to_char(z.datum, 'DD.MM.YYYY') AS datum,
+                       z.datum,
                        z.artikal_sifra,
                        z.artikal_naziv,
                        z.jm_naziv,
-                       rtrim(to_char(z.zaduzeno, 'FM999G999G999G990D999'), '.,') AS zaduzeno,
-                       to_char(z.vrijednost, 'FM999G999G999G990D00') AS vrijednost
+                       z.zaduzeno,
+                       z.vrijednost
                 FROM vw_rm_zaduzenja z
                 WHERE z.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR z.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR z.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND z.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                   AND (:P371_ARTIKL IS NULL OR z.stavka_id = to_number(:P371_ARTIKL))
                 ORDER BY z.partner_naziv, z.datum, z.dokument
                 ```
@@ -1776,144 +2215,156 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema otvorenih zaduženja.
-        }
-        advanced {
-            htmlDomId: izv_zad
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',zad,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema otvorenih zaduženja.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_zad
+            savedReportMappingIdentifier: 371000000000000008
+        }
 
         column PARTNER_NAZIV (
-            reportColumnQueryId: 1
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Radnik / komitent
             }
             layout {
                 sequence: 10
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column VRSTA (
-            reportColumnQueryId: 2
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Vrsta
             }
             layout {
                 sequence: 20
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column DOKUMENT (
-            reportColumnQueryId: 3
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Dokument
             }
             layout {
                 sequence: 30
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column DATUM (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Datum
             }
             layout {
                 sequence: 40
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column ARTIKAL_SIFRA (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šifra
             }
             layout {
                 sequence: 50
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
             }
         )
 
         column ARTIKAL_NAZIV (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Artikal
             }
             layout {
                 sequence: 60
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column JM_NAZIV (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: JM
             }
             layout {
                 sequence: 70
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column ZADUZENO (
-            reportColumnQueryId: 8
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Zaduženo
                 alignment: end
@@ -1922,31 +2373,80 @@ page 371 (
                 sequence: 80
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: TM9
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: H
             }
         )
 
         column VRIJEDNOST (
-            reportColumnQueryId: 9
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Vrijednost
+                heading: Vrijednost (KM)
                 alignment: end
             }
             layout {
                 sequence: 90
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
             }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn PARTNER_NAZIV (
+                sequence: 1
+            )
+
+            displayColumn VRSTA (
+                sequence: 2
+            )
+
+            displayColumn DOKUMENT (
+                sequence: 3
+            )
+
+            displayColumn DATUM (
+                sequence: 4
+            )
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 5
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 6
+            )
+
+            displayColumn JM_NAZIV (
+                sequence: 7
+            )
+
+            displayColumn ZADUZENO (
+                sequence: 8
+            )
+
+            displayColumn VRIJEDNOST (
+                sequence: 9
+            )
+
         )
 
     )
@@ -1954,7 +2454,7 @@ page 371 (
     region izv-cekanje (
         name: Dokumenti na čekanju
         title: Dokumenti na čekanju
-        type: classicReport
+        type: interactiveReport
         source {
             location: localDatabase
             type: sqlQuery
@@ -1963,15 +2463,17 @@ page 371 (
                 SELECT c.operacija_id AS id,
                        c.dokument AS naziv,
                        c.vrsta_naziv,
-                       to_char(c.datum, 'DD.MM.YYYY') AS datum,
+                       c.datum,
                        c.dana,
                        c.razlog,
-                       to_char(c.iznos, 'FM999G999G999G990D00') AS iznos,
+                       c.iznos,
                        apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => c.operacija_id, p_clear_cache => 331) AS url
                 FROM vw_rm_na_cekanju c
                 WHERE c.ooj_id = :APP_OOJ_ID
-                  AND (:P371_SKLADISTE_ID IS NULL OR c.skladiste_id = to_number(:P371_SKLADISTE_ID))
-                  AND (:P371_SKLADISTE_ID IS NOT NULL OR nvl(rm_skladiste_pkg.modul(c.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                  AND (nvl(:P371_SKLADISTE_ID, '0') = '0' OR c.skladiste_id = to_number(:P371_SKLADISTE_ID))
+                  AND c.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k
+                                           WHERE k.korisnik_id = :APP_USER_ID
+                                             AND nvl(rm_skladiste_pkg.modul(k.skladiste_id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
                 ORDER BY c.dana DESC, c.datum
                 ```
             pageItemsToSubmit: [
@@ -1984,46 +2486,40 @@ page 371 (
             slot: subRegions
         }
         appearance {
-            template: @standard
+            template: @interactive-report
             templateOptions: [
                 #DEFAULT#
-                t-Region--noPadding
-                t-Region--hideHeader js-addHiddenHeadingRoleDesc
-                t-Region--scrollBody
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-list fin-izv-tabela
-        }
-        reportLayout {
-            numberOfRows: 100
-        }
-        componentAppearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Report--stretch
-                t-Report--rowHighlight
-            ]
-        }
-        pagination {
-            type: rowRangesXToYOfZWithPagination
-        }
-        performance {
-            maxRowsToProcess: 5000
-        }
-        messages {
-            whenNoDataFound: Nema dokumenata koji čekaju.
-        }
-        advanced {
-            htmlDomId: izv_dc
+            cssClasses: fin-izv-tabela
         }
         serverSideCondition {
             type: expression
             plsqlExpression: instr(',dc,', ',' || :P371_IZV || ',') > 0
         }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Nema dokumenata koji čekaju.
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_dc
+            savedReportMappingIdentifier: 371000000000000009
+        }
 
         column ID (
-            reportColumnQueryId: 1
-            derivedColumn: N
             type: link
             heading {
                 heading: Dokument
@@ -2038,46 +2534,67 @@ page 371 (
                 }
                 linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
             }
         )
 
         column NAZIV (
-            reportColumnQueryId: 2
-            derivedColumn: N
             type: hidden
+            heading {
+                heading: Broj
+            }
             layout {
-                sequence: 320
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
             }
         )
 
         column VRSTA_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
             type: hidden
+            heading {
+                heading: Vrsta
+            }
             layout {
-                sequence: 330
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
             }
         )
 
         column DATUM (
-            reportColumnQueryId: 4
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Datum
             }
             layout {
                 sequence: 40
             }
-            sorting {
-                sortable: false
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
             }
         )
 
         column DANA (
-            reportColumnQueryId: 5
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Dana
                 alignment: end
@@ -2086,54 +2603,93 @@ page 371 (
                 sequence: 50
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            source {
+                dataType: NUMBER
             }
-            sorting {
-                sortable: false
+            advanced {
+                endUserAlias: E
             }
         )
 
         column RAZLOG (
-            reportColumnQueryId: 6
-            derivedColumn: N
+            type: plainText
             heading {
                 heading: Šta čeka
             }
             layout {
                 sequence: 60
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
             }
         )
 
         column IZNOS (
-            reportColumnQueryId: 7
-            derivedColumn: N
+            type: plainText
             heading {
-                heading: Iznos
+                heading: Iznos (KM)
                 alignment: end
             }
             layout {
                 sequence: 70
                 columnAlignment: end
             }
-            columnFormatting {
-                cssClasses: fin-num
+            appearance {
+                formatMask: FM999G999G999G990D00
             }
-            sorting {
-                sortable: false
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
             }
         )
 
         column URL (
-            reportColumnQueryId: 8
-            derivedColumn: N
             type: hidden
-            layout {
-                sequence: 380
+            heading {
+                heading: Url
             }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn ID (
+                sequence: 1
+            )
+
+            displayColumn DATUM (
+                sequence: 2
+            )
+
+            displayColumn DANA (
+                sequence: 3
+            )
+
+            displayColumn RAZLOG (
+                sequence: 4
+            )
+
+            displayColumn IZNOS (
+                sequence: 5
+            )
+
         )
 
     )
@@ -2160,6 +2716,17 @@ page 371 (
         }
     )
 
+    pageItem P371_PARAMETRI (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            slot: body
+        }
+    )
+
     pageItem P371_SKLADISTE_ID (
         type: selectList
         label {
@@ -2170,23 +2737,26 @@ page 371 (
             type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT s.sifra || ' - ' || s.naziv AS d, s.id AS r
-                FROM skladista s
-                WHERE s.ooj_id = :APP_OOJ_ID
-                  AND s.valid = 'Y'
-                  AND nvl(rm_skladiste_pkg.modul(s.id), 'MAT') = nvl(:A_RM_MODUL, 'MAT')
-                ORDER BY s.sifra
+                SELECT d, r
+                FROM (
+                    SELECT '— sva skladišta modula —' AS d, 0 AS r, ' ' AS sifra FROM dual
+                    UNION ALL
+                    SELECT s.sifra || ' - ' || s.naziv, s.id, s.sifra
+                    FROM skladista s
+                    JOIN skladiste_korisnici k ON k.skladiste_id = s.id AND k.korisnik_id = :APP_USER_ID
+                    WHERE s.ooj_id = :APP_OOJ_ID
+                      AND s.valid = 'Y'
+                      AND nvl(rm_skladiste_pkg.modul(s.id), 'MAT') = nvl(:A_RM_MODUL, 'MAT'))
+                ORDER BY sifra
                 ```
             displayExtraValues: false
-            displayNullValue: true
-            nullDisplayValue: - sva skladišta modula -
+            displayNullValue: false
         }
         layout {
             sequence: 10
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 3
         }
         appearance {
             template: @optional-floating
@@ -2209,7 +2779,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 2
         }
         appearance {
             template: @optional-floating
@@ -2232,7 +2801,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 2
         }
         appearance {
             template: @optional-floating
@@ -2255,7 +2823,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 2
         }
         appearance {
             template: @optional-floating
@@ -2286,7 +2853,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 3
         }
         appearance {
             template: @optional-floating
@@ -2317,7 +2883,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 3
         }
         appearance {
             template: @optional-floating
@@ -2356,7 +2921,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 3
         }
         appearance {
             template: @optional-floating
@@ -2379,7 +2943,6 @@ page 371 (
             region: @parametri
             slot: regionBody
             startNewRow: false
-            columnSpan: 2
         }
         appearance {
             template: @optional-floating
@@ -2413,26 +2976,82 @@ page 371 (
         }
     )
 
+    button stampaj (
+        buttonName: STAMPAJ
+        label: Štampaj
+        layout {
+            sequence: 95
+            region: @parametri
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-print
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+        advanced {
+            customAttributes: data-izv-stampaj="1"
+        }
+    )
+
     process podrazumijevano (
         name: Podrazumijevane vrijednosti
         type: executeCode
         source {
             plsqlCode:
                 ```plsql
-                -- period: radna godina do danas; skladište: izabrano skladište modula
+                -- nepoznat izvještaj (npr. stara veza): prvi u katalogu
+                if :P371_IZV is not null and instr(',sd,pl,sz,km,pp,dok,pmt,zad,dc,', ',' || :P371_IZV || ',') = 0 then
+                    :P371_IZV := 'sd';
+                end if;
+                -- period: radna godina do danas; skladište: trenutno skladište ('0' = sva skladišta modula)
                 :P371_OD    := nvl(:P371_OD, to_char(to_date('01.01.' || :APP_GODINA, 'DD.MM.YYYY'), 'DD.MM.YYYY'));
                 :P371_DO    := nvl(:P371_DO, to_char(least(trunc(sysdate), to_date('31.12.' || :APP_GODINA, 'DD.MM.YYYY')), 'DD.MM.YYYY'));
                 :P371_DATUM := nvl(:P371_DATUM, :P371_DO);
                 :P371_DANA  := nvl(:P371_DANA, '90');
-                if :P371_SKLADISTE_ID is null and :REQUEST is null then
-                    :P371_SKLADISTE_ID := :A_SKLADISTE_ID;
-                end if;
+                :P371_SKLADISTE_ID := nvl(:P371_SKLADISTE_ID, :A_SKLADISTE_ID);
                 :P371_NAZIV := case :P371_IZV when 'sd' then 'Stanje zaliha na dan' when 'pl' then 'Popisna lista' when 'sz' then 'Starost zaliha' when 'km' then 'Kartica artikla' when 'pp' then 'Promet po artiklima' when 'dok' then 'Pregled dokumenata' when 'pmt' then 'Potrošnja po mjestu troška' when 'zad' then 'Zaduženja' when 'dc' then 'Dokumenti na čekanju' end;
+                -- opis parametara (zaglavlje pri štampi)
+                :P371_PARAMETRI :=
+                    case when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
+                         else (select max('skladište ' || sifra || ' - ' || naziv) from skladista where id = to_number(:P371_SKLADISTE_ID)) end
+                    || case when :P371_IZV in ('sd', 'pl') then ' · na dan ' || :P371_DATUM
+                            when :P371_IZV in ('km', 'pp', 'dok', 'pmt') then ' · period ' || :P371_OD || ' - ' || :P371_DO end
+                    || case when :P371_ARTIKL is not null and :P371_IZV <> 'dok' and :P371_IZV <> 'dc' then
+                                (select ' · artikal ' || sifra || ' ' || naziv from sec_stavke where id = to_number(:P371_ARTIKL)) end;
                 ```
         }
         execution {
             sequence: 10
             point: beforeHeader
+        }
+    )
+
+    process novi-izvjestaj (
+        name: Novi izvještaj - parametri ispočetka
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- izbor drugog izvještaja: filteri prethodnog se ne prenose (trenutno skladište, bez artikla)
+                :P371_SKLADISTE_ID := :A_SKLADISTE_ID;
+                :P371_ARTIKL := null;
+                :P371_MT     := null;
+                :P371_VRSTA  := null;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: IZV
         }
     )
 

@@ -4629,6 +4629,8 @@ lov rm-skladista-prenos (
               AND (s.valid = 'Y' OR s.id = :P331_SKLADISTE_PRENOS_ID)
               AND s.id <> coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID), -1)
               AND s.id <> nvl(to_number(:A_SKLADISTE_ID), -1)
+              -- prenos samo između skladišta istog modula (materijalno - materijalno)
+              AND rm_skladiste_pkg.modul(s.id) = rm_skladiste_pkg.modul(coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID)))
             ORDER BY s.sifra
             ```
     }

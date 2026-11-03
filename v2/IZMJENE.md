@@ -510,3 +510,42 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
   - Izvještaji koriste zaključene dokumente (knjigovodstveno stanje). Štampa preko Jasper servera (dugme sa stare stranice, radila samo za KP) nije prenesena.
 - Novi view-ovi (`17_rm_izvjestaji.sql`): VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU.
 - **SQL:** `17_rm_izvjestaji.sql` (ACCOUNTING, poslije 12 i 13). Zatim import aplikacije.
+
+## Dorade poslije testa Materijalnog modula – korak R16 (03.11.2026)
+Po testu iz R15 i odgovorima korisnika (K = kritično, V = važno, S = sitnije, N = novi zahtjev).
+- **Poruke grešaka (V5) – `CORE.ERROR_MANAGER.F_APEX_ERROR_HANDLER` (`18_core_error_manager.sql`, šema CORE):**
+  - poslovne poruke iz paketa (`raise_application_error` -20000 … -20999, npr. „Za povrat je dostupno 2 – količina ne može biti veća“, „Na revers postoji povrat…“, „Iznos troška je veći od raspoloživog…“) prikazuju se sa stvarnim tekstom – bez ORA- koda, prefiksa „Greška CORP-RM:“ i steka; ne loguju se kao sistemske. Uzrok ranije opšte poruke: kad proces pozove `apex_error.add_error` u exception bloku, APEX grešci dodijeli i SQL kod (-20201), pa je handler takvu poruku tretirao kao sistemsku.
+  - sistemske greške se i dalje loguju u ERROR_LOG, a korisnik dobija poruku prema vrsti greške (obavezno polje, preduga vrijednost, format broja / datuma, zapis ne postoji, zapis zaključan od drugog korisnika, povezani zapisi, nedostupan paket, nema prava…) uz referentni broj CORP-<id>.
+  - vraćanje: `18_core_error_manager_vracanje.sql` (tijelo paketa iz ddl/core_ddl.sql).
+- **Kalkulacija:**
+  - **K3 – „Automatski – po vrijednosti“:** faktura robe se raspoređuje po vrijednosti prijemnice (količina × cijena prijemnice); zavisni trošak po vrijednosti – po vrijednosti koju su artiklima rasporedile fakture robe (dok one nisu raspoređene – po vrijednosti prijemnice). „Raspodijeli sve automatske“: prvo fakture robe, pa zavisni troškovi (po vrijednosti zadnji). Promjena raspodjele fakture robe preračunava već raspoređene zavisne troškove po vrijednosti.
+  - **Novi način „Automatski – cijene sa prijemnice“ (P, samo za fakturu robe):** iznos po artiklu = vrijednost sa prijemnice; iznos fakture u kalkulaciji = zbir vrijednosti prijemnica (ne smije preći raspoloživo fakture).
+  - **Poništavanje raspodjele:** dugmad „Poništi raspodjelu“ (izabrani izvor) i „Poništi sve raspodjele“. Poništavanje ručne raspodjele (ili fakture robe) poništava i automatske raspodjele koje od nje zavise; dodavanje, brisanje ili izmjena izvora poništava sve automatske raspodjele (ponovo „Raspodijeli sve automatske“).
+  - **S3:** kolona „Raspoređeno iz ostalih izvora“ (ranije „Do sada raspoređeno“) ne uključuje izabrani izvor.
+  - **V9:** zaključena kalkulacija koja se ne može otključati prikazuje razlog (npr. roba je već izdavana).
+  - **S15:** tab „Nabavne cijene“ u materijalnom modulu („Nabavne i prodajne cijene“ ostaje u robnom).
+- **Dokumenti skladišta:**
+  - **K4:** izlaz se provjerava i na datum dokumenta (raspoloživo tog dana) i ukupno; stavka izlaza i zaključavanje se odbijaju kad artikal na datum dokumenta nema nabavnu cijenu (ranije snimljeno sa 0,00).
+  - **N3 – datum:** datum bira korisnik samo na prijemnici; svi ostali dokumenti imaju današnji datum (datum unosa) koji se ne mijenja (polje je samo za čitanje, provjera i u paketu).
+  - **N3 – storniranje:** dugme „Storniraj“ na zaključenom izlaznom dokumentu (IZD, IIN, IOS, ISI, MPR, REV, RSV) bez veznog dokumenta (prenos nije preuzet, na revers nema povrata, nije proknjižen). Pravi se storno dokument iste vrste sa današnjim datumom (količine sa suprotnim predznakom, zaključen), original dobija status „Storniran“. Storniran dokument i storno se ne računaju u stanje, prosječnu cijenu, raspoloživo, serijske brojeve i izvještaje (kao do sada za storno; dopunjeno da storno dokument ni u jednom proračunu ne utiče na stanje). RM_DOKUMENT_PKG: `razlog_zabrane_storna`, `storniraj`, `datum_slobodan`.
+  - **V6:** unos po serijskom broju samo Enterom (dugme uklonjeno); stavke, serijski brojevi i zbir se osvježavaju bez ponovnog učitavanja stranice, polje se prazni (ranije se poslije ponovnog učitavanja nova stavka nije vidjela). Region serijskih brojeva postoji na svakom izlazu u pripremi.
+  - **V8:** mjesto troška se prikazuje za sve tipove firme na IZD / IIN / IOS / ISI; obavezno ostaje samo za dvojno knjigovodstvo.
+  - **P2:** međuskladišni prenos samo na skladište istog modula (lista i provjera u paketu); prenos materijal ↔ roba dolazi kroz posebne dokumente.
+  - **S1 / S2:** jedinstven format brojeva 123,000.00 (početni zbir više nije „0,00“); cijene na 4 decimale (prosječna cijena, cijena povrata, nabavna cijena kalkulacije, prikaz); iznos dokumenta = zbir zaokruženih iznosa redova.
+  - **S4 / S5:** lista – „1 stavka / 3 stavke / 5 stavki“; izbor „— sve vrste —“ (lista svih dokumenata skladišta; za novi dokument treba izabrati vrstu); lista prikazuje i storno / storniran.
+  - **S6:** kolona „Stanje“ na ulazima, „Raspoloživo“ na izlazima, „Dostupno za povrat“ na povratima; na zaključenom dokumentu se ne prikazuje.
+  - **S7:** povrat – „Nema preostalih količina za povrat kod izabranog radnika / komitenta…“.
+  - **S13:** serijski broj – „ne postoji na skladištu“ / „nije raspoloživ (već je izdat ili prijem nije zaključen)“; poruka bez vodećeg razmaka.
+  - **S14:** naslov regiona: „Mjesto troška“ (IZD, IIN), „Mjesto troška i zaduženje“ (IOS, ISI), „Zaduženje“ (reversi).
+  - **S17:** tabela stavki u dijalogu preračunava širine kolona poslije otvaranja (prazna tabela više nema skupljene kolone).
+- **Izvještaji (371):**
+  - **K1:** parametri bez fiksnih širina (automatski raspored) – „Potrošnja po mjestu troška“ više ne ruši stranicu; nepoznat izbor izvještaja vodi na prvi u katalogu.
+  - **K2:** stari izvještaji uklonjeni iz menija (Materijal i oprema → Izvještaji otvara katalog).
+  - **N1:** svi izvještaji su interaktivni (pretraga, filter, sortiranje, grupisanje, zbirovi, preuzimanje Excel / PDF preko „Akcije → Preuzmi“) + dugme „Štampaj“ (štampa samo izvještaj sa nazivom i parametrima).
+  - **N2:** „— sva skladišta modula —“ se pamti (ranije se poslije Prikaži vraćalo trenutno skladište).
+  - **S8 / S9:** izbor drugog izvještaja briše filtere prethodnog (artikal, mjesto troška, vrsta) i postavlja trenutno skladište.
+  - **S10:** skladišta samo ona na koja korisnik ima pravo (i u „sva skladišta modula“).
+  - **S11:** brojač redova „1 - 4“ bez engleskog teksta; prevedeni tekstovi interaktivnih izvještaja (text messages APEXIR_*: Akcije, Preuzmi / štampaj, Kolone, Filter, …).
+  - **S12:** kartica artikla – za prenos / prijem kolona partnera prikazuje skladište („na skladište …“ / „sa skladišta …“). VW_RM_PROMET: nove kolone SKLADISTE_PRENOS_ID, SKLADISTE_PRENOS_NAZIV.
+- **V7** (stavke izabranog prenosa na MPP): poslije V5 region prikazuje razlog greške i referentni broj – uzrok se ispravlja u sljedećem koraku.
+- **SQL (redom):** `18_core_error_manager.sql` (CORE), pa kao ACCOUNTING `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`. Zatim import aplikacije.
