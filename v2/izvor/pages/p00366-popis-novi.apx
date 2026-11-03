@@ -90,7 +90,8 @@ page 366 (
         source {
             htmlCode:
                 ```html
-                <label class="fin-popis-sva-l"><input type="checkbox" class="fin-popis-sva"> Sva skladišta koja se mogu popisati</label><span class="fin-sub fin-popis-izabrano" id="fin_popis_izabrano"></span>
+                <input type="search" class="apex-item-text fin-popis-trazi" placeholder="Pretraga skladišta (šifra, naziv)..." aria-label="Pretraga skladišta" autocomplete="off">
+                <label class="fin-popis-sva-l"><input type="checkbox" class="fin-popis-sva"> Sva prikazana skladišta koja se mogu popisati</label><span class="fin-sub fin-popis-izabrano" id="fin_popis_izabrano"></span>
                 ```
         }
         layout {

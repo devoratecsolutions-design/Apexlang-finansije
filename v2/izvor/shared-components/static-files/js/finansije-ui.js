@@ -1373,16 +1373,43 @@ window.finRmPopis = (function ($) {
         model = g.model;
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
         I.samoCitanje(regionId, ["JM_NAZIV", "KNJIGOVODSTVENO", "RAZLIKA", "CIJENA", "VRIJEDNOST_RAZLIKE"]);
-        /* boja ćelije Razlika (jednako / višak / manjak) i bijele ćelije za unos (Popisano, Napomena) */
-        var unos = $v(p + "_IZMJENJIV") === "Y";
-        try {
-            g.view$.grid("getColumns").forEach(function (c) {
-                if (c.property === "RAZLIKA") { c.cellCssClassesColumn = "RAZLIKA_KLASA"; }
-                if (unos && (c.property === "POPISANO" || c.property === "OPIS")) { c.cellCssClassesColumn = "UNOS_KLASA"; }
+        /* boja ćelije Razlika (jednako / višak / manjak) i bijele ćelije za unos (Popisano, Napomena):
+           kolone se nalaze po naslovu u zaglavlju tabele, klase se dodaju ćelijama poslije svakog
+           iscrtavanja redova (MutationObserver) */
+        var unos = $v(p + "_IZMJENJIV") === "Y", tajmer = null, boji;
+        boji = function () {
+            var $hdr = g.view$.find(".a-GridView-hdr table"), $body = g.view$.find(".a-GridView-body table");
+            $hdr.each(function (i) {
+                var raz = -1, ul = [], $b = $body.eq(i);
+                $(this).find("tr").last().children("th").each(function (j) {
+                    var t = $.trim($(this).text());
+                    if (t.indexOf("Razlika") === 0) { raz = j; }
+                    if (unos && (t.indexOf("Popisano") === 0 || t.indexOf("Napomena") === 0)) { ul.push(j); }
+                });
+                if (raz < 0 && !ul.length) { return; }
+                $b.find("tbody > tr").each(function () {
+                    var $td = $(this).children("td"), $r, v;
+                    if (raz >= 0) {
+                        $r = $td.eq(raz);
+                        v = $.trim($r.text());
+                        $r.removeClass("fin-raz--ok fin-raz--visak fin-raz--manjak");
+                        if (v !== "") {
+                            $r.addClass(I.num(v) > 0 ? "fin-raz--visak" : (I.num(v) < 0 ? "fin-raz--manjak" : "fin-raz--ok"));
+                        }
+                    }
+                    ul.forEach(function (j) { $td.eq(j).addClass("fin-unos"); });
+                });
             });
-            g.view$.grid("refreshColumns");
-            g.view$.grid("refresh");
-        } catch (e) { /* bez boja */ }
+        };
+        function planirajBoje() {
+            if (tajmer) { clearTimeout(tajmer); }
+            tajmer = setTimeout(function () { tajmer = null; boji(); }, 30);
+        }
+        if (window.MutationObserver && g.view$.find(".a-GridView-body").length) {
+            new MutationObserver(planirajBoje).observe(g.view$.find(".a-GridView-body")[0],
+                { childList: true, subtree: true, characterData: true });
+        }
+        planirajBoje();
 
         function racun(rec) {
             var pop = model.getValue(rec, "POPISANO"), raz;
@@ -1466,7 +1493,7 @@ window.finRmPopis = (function ($) {
 window.finRmPopisNovi = (function ($) {
     "use strict";
     function init(p, regionId) {
-        var izabrano = {}, item = p + "_SKLADISTA";
+        var izabrano = {}, item = p + "_SKLADISTA", filter = "";
         String($v(item) || "").split(":").forEach(function (x) { if (x) { izabrano[x] = true; } });
         function upisi() {
             var ids = Object.keys(izabrano).filter(function (k) { return izabrano[k]; }), n;
@@ -1474,11 +1501,20 @@ window.finRmPopisNovi = (function ($) {
             n = ids.length;
             $("#fin_popis_izabrano").text(n ? "izabrano: " + n : "");
         }
+        /* pretraga: sakriva redove koji ne sadrže tekst (šifra, naziv, napomena) */
+        function filtriraj() {
+            $("#" + regionId + " .fin-popis-chk").each(function () {
+                var $tr = $(this).closest("tr");
+                $tr.toggle(!filter || $tr.text().toLowerCase().indexOf(filter) >= 0);
+            });
+        }
         function primijeni() {
             var $r = $("#" + regionId), sve = true, ima = false;
+            filtriraj();
             $r.find(".fin-popis-chk").each(function () {
                 var $c = $(this);
                 if ($c.prop("disabled")) { delete izabrano[$c.val()]; $c.closest("tr").addClass("is-onemoguceno"); return; }
+                if (!$c.closest("tr").is(":visible")) { return; }
                 ima = true;
                 $c.prop("checked", !!izabrano[$c.val()]);
                 $c.closest("tr").toggleClass("is-izabran", !!izabrano[$c.val()]);
@@ -1498,13 +1534,20 @@ window.finRmPopisNovi = (function ($) {
             $c = $(this).closest("tr").find(".fin-popis-chk");
             if ($c.length && !$c.prop("disabled")) { $c.prop("checked", !$c.prop("checked")).trigger("change"); }
         });
+        /* "sva": označava / skida sva vidljiva (filtrirana) skladišta koja se mogu popisati */
         $(document).on("change", ".fin-popis-sva", function () {
             var da = $(this).prop("checked");
             $("#" + regionId + " .fin-popis-chk").each(function () {
-                if (!$(this).prop("disabled")) { izabrano[$(this).val()] = da; }
+                if (!$(this).prop("disabled") && $(this).closest("tr").is(":visible")) { izabrano[$(this).val()] = da; }
             });
             primijeni();
         });
+        $(document).on("input", ".fin-popis-trazi", function () {
+            filter = $.trim($(this).val()).toLowerCase();
+            primijeni();
+        });
+        /* Enter u pretrazi ne šalje formu */
+        $(document).on("keydown", ".fin-popis-trazi", function (e) { if (e.which === 13) { e.preventDefault(); } });
         $("#" + regionId).on("apexafterrefresh", primijeni);
         primijeni();
     }

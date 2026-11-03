@@ -569,3 +569,5 @@ Po testu iz R15 i odgovorima korisnika (K = kritično, V = važno, S = sitnije, 
   - **Novi popis (366):** polja u istom rasporedu i stilu kao ostale forme (sekcije „Popis“ i „Skladišta za popis“).
   - **Popis (365):** uklonjena „vrijednost manjka“ iz sažetka; veći sažetak i tekst tabele; ćelija Razlika obojena – zelena (jednako), plava (višak), crvena (manjak); ćelije za unos (Popisano, Napomena) bijele, ostale sive.
   - **Lista popisa (364)** se osvježava kad se zatvori popis ili novi popis (i tasterom Esc).
+  - Boje ćelije Razlika i bijele ćelije za unos se postavljaju direktno na ćelije tabele (prva verzija preko opcije kolone nije radila).
+  - Novi popis: pretraga skladišta (šifra, naziv) iznad liste; „Sva prikazana skladišta…“ označava samo filtrirana skladišta.
