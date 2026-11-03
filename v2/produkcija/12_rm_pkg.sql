@@ -15,7 +15,12 @@
   (komitent); povrat najviše do dostupnog sa zaključenih reversa partnera, po cijeni
   reversa; unos izlaza po serijskom broju (artikal se prepoznaje, količina raste);
   zaključavanje povrata; ispravka ORA-04091 pri zaključavanju izlaza;
-  R14: reversi samo u materijalnom modulu).
+  R14: reversi samo u materijalnom modulu;
+  R17: rashod RAS (izlaz, kao izdatnica), razlika inventure - višak RIV (ulaz) i manjak RIM (izlaz)
+  nastaju samo zaključavanjem popisa skladišta (RM_POPIS_PKG): količine se ne mijenjaju ručno,
+  na RIV se unosi samo cijena; knjigovodstveno stanje (svi ulazi - zaključani izlazi);
+  popis "zaključava" datume: dokument ne može imati datum prije posljednjeg popisa skladišta,
+  a količine dokumenata sa datumom prije popisa se ne mijenjaju).
   Sva pravila su u bazi; stranice 330/331/337 samo pozivaju paket.
     - vrsta dokumenta iz SIF.VRSTE_DOKUMENATA (modul MAT); tip kretanja po šifri
     - prijemnica: zaglavlje, stavke, serijski brojevi; zaključava je kalkulacija
@@ -158,6 +163,18 @@ create or replace package rm_dokument_pkg as
     -- datum dokumenta: prijemnica ga bira korisnik, svi ostali dokumenti imaju današnji datum (ne mijenja se)
     function datum_slobodan (p_vrsta_sifra in varchar2) return varchar2;    -- Y / N
 
+    -- R17: popis skladišta
+    --   knjigovodstveno stanje = svi ulazi (zaključani ili ne) - zaključani izlazi, do datuma (uključivo)
+    function knjigovodstveno (p_skladiste_id in number, p_stavka_id in number, p_datum in date default null, p_bez_dok in number default null) return number;
+    -- dokument se pravi ručno (Novi dokument): N za RIV / RIM (nastaju iz popisa) i MPP (preuzimanje prenosa)
+    function rucni_unos (p_vrsta_sifra in varchar2) return varchar2;         -- Y / N
+    -- razlika inventure (RIV / RIM): Y / N
+    function je_inventura (p_vrsta_sifra in varchar2) return varchar2;
+    -- posljednji popis skladišta (aktivan ili zaključan) - datum ili null
+    function zadnji_popis_datum (p_skladiste_id in number) return date;
+    -- popis blokira datum: na skladištu postoji popis sa datumom poslije zadatog - poruka ili null
+    function popis_blokada (p_skladiste_id in number, p_datum in date) return varchar2;
+
     -- međuskladišni prijem: preuzimanje zaključenog prenosa na skladište p_skladiste_id; vraća id prijema
     function prenos_preuzet (p_prenos_id in number) return varchar2;        -- naziv prijema ili null
     function preuzmi_prenos (p_prenos_id in number, p_ooj_id in number, p_godina in number,
@@ -203,6 +220,9 @@ create or replace package body rm_dokument_pkg as
                    when 'REVP' then 'U'
                    when 'RSV'  then 'I'
                    when 'RSVP' then 'U'
+                   when 'RAS'  then 'I'
+                   when 'RIV'  then 'U'
+                   when 'RIM'  then 'I'
                    when 'PRRO' then 'U'
                    when 'POV'  then 'U'
                    when 'IZRO' then 'I'
@@ -215,19 +235,30 @@ create or replace package body rm_dokument_pkg as
 
     function podrzana (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP')
+        return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP',
+                                            'RAS', 'RIV', 'RIM')
                     then 'Y' else 'N' end;
     end podrzana;
 
+    function rucni_unos (p_vrsta_sifra in varchar2) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'MPP') then 'N' else 'Y' end;
+    end rucni_unos;
+
+    function je_inventura (p_vrsta_sifra in varchar2) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM') then 'Y' else 'N' end;
+    end je_inventura;
+
     function u_modulu (p_vrsta_sifra in varchar2, p_modul in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'REV', 'REVP', 'RSV', 'RSVP')
+        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS')
                          and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N' else 'Y' end;
     end u_modulu;
 
     function ima_mjesto_troska (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI') then 'Y' else 'N' end;
+        return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'RAS') then 'Y' else 'N' end;
     end ima_mjesto_troska;
 
     function ima_radnika (p_vrsta_sifra in varchar2) return varchar2 is
@@ -415,6 +446,43 @@ create or replace package body rm_dokument_pkg as
         return kolicina_vrsta(p_skladiste_id, p_stavka_id, p_datum, p_bez_dok, 'Y', 'N');
     end raspolozivo;
 
+    function knjigovodstveno (p_skladiste_id in number, p_stavka_id in number, p_datum in date default null, p_bez_dok in number default null) return number is
+    begin
+        return kolicina_vrsta(p_skladiste_id, p_stavka_id, p_datum, p_bez_dok, 'N', 'Y');
+    end knjigovodstveno;
+
+    function zadnji_popis_datum (p_skladiste_id in number) return date is
+        l_d date;
+    begin
+        select max(trunc(datum)) into l_d from popisi where skladiste_id = p_skladiste_id and valid = 'Y';
+        return l_d;
+    end zadnji_popis_datum;
+
+    function popis_blokada (p_skladiste_id in number, p_datum in date) return varchar2 is
+    begin
+        for p in (select naziv, datum, nvl(zakljucano, 'N') as zakljucano
+                    from popisi
+                   where skladiste_id = p_skladiste_id and valid = 'Y'
+                     and trunc(datum) > trunc(p_datum)
+                   order by datum desc, id desc) loop
+            return 'Na skladištu postoji ' || case when p.zakljucano = 'Y' then 'zaključan ' else '' end
+                   || 'popis ' || p.naziv || ' na dan ' || to_char(p.datum, 'DD.MM.YYYY') || '.';
+        end loop;
+        return null;
+    end popis_blokada;
+
+    -- dokument (ne iz popisa) čije su količine "zamrznute" popisom: poruka ili null
+    function popis_blokada_dok (p_id in number) return varchar2 is
+        l_r varchar2(4000);
+    begin
+        for o in (select skladiste_id, datum, popis_id from operacije where id = p_id) loop
+            if o.popis_id is null then
+                l_r := popis_blokada(o.skladiste_id, o.datum);
+            end if;
+        end loop;
+        return l_r;
+    end popis_blokada_dok;
+
     function prosjecna_cijena (p_skladiste_id in number, p_stavka_id in number, p_datum in date default null) return number is
         l_kol number;
         l_vr  number;
@@ -545,6 +613,20 @@ create or replace package body rm_dokument_pkg as
         end if;
         if l_vrs = 'MPP' and p_id is null then
             return 'Međuskladišni prijem nastaje samo preuzimanjem međuskladišnog prenosa.';
+        end if;
+        if je_inventura(l_vrs) = 'Y' and p_id is null then
+            return 'Dokument razlike inventure nastaje samo zaključavanjem popisa skladišta.';
+        end if;
+        -- popis skladišta: dokument ne može imati datum prije posljednjeg popisa
+        if p_id is null then
+            l_stara := null;
+        else
+            select max(case when popis_id is null and trunc(datum) <> trunc(p_datum) then 1 end) into l_stara
+              from operacije where id = p_id;
+        end if;
+        if (p_id is null or l_stara = 1) and popis_blokada(p_skladiste_id, p_datum) is not null then
+            return popis_blokada(p_skladiste_id, p_datum)
+                   || ' Dokument ne može imati datum prije datuma posljednjeg popisa.';
         end if;
         if l_vrs = 'MPR' then
             if p_skladiste_prenos_id is null then
@@ -695,8 +777,18 @@ create or replace package body rm_dokument_pkg as
     end snimi;
 
     procedure obrisi (p_id in number) is
+        l_r varchar2(4000);
     begin
         provjeri_izmjenu(p_id);
+        if je_inventura(tip_dokumenta_sifra(p_id)) = 'Y' then
+            greska('Dokument razlike inventure nastaje iz popisa i ne briše se ručno.');
+        end if;
+        if tip_dokumenta(p_id) = 'U' then
+            l_r := popis_blokada_dok(p_id);
+            if l_r is not null then
+                greska(l_r || ' Ulazni dokument sa datumom prije popisa se ne može obrisati.');
+            end if;
+        end if;
         delete from operacija_stavke_sb
          where operacija_stavka_id in (select id from operacija_stavke where operacija_id = p_id);
         delete from operacija_stavke where operacija_id = p_id;
@@ -723,8 +815,44 @@ create or replace package body rm_dokument_pkg as
         l_valid varchar2(1);
         l_n     number;
         l_stara number;
+        l_skol  number;
+        l_vrs   varchar2(64) := tip_dokumenta_sifra(p_dokument_id);
+        l_blok  varchar2(4000);
     begin
         provjeri_izmjenu(p_dokument_id);
+        -- razlika inventure: količine su utvrđene popisom; na višku (RIV) se unosi samo cijena
+        if je_inventura(l_vrs) = 'Y' then
+            if l_vrs = 'RIM' then
+                greska('Dokument razlike inventure - manjak nastaje iz popisa i ne mijenja se.');
+            end if;
+            if p_id is null then
+                greska('Stavke razlike inventure nastaju iz popisa - nove stavke se ne mogu dodavati.');
+            end if;
+            select stavka_id, kolicina into l_stara, l_skol
+              from operacija_stavke where id = p_id and operacija_id = p_dokument_id;
+            if l_stara <> p_stavka_id or nvl(p_kolicina, -1) <> l_skol then
+                greska('Na dokumentu razlike inventure - višak mijenja se samo cijena; artikal i količina su utvrđeni popisom.');
+            end if;
+            if p_cijena is null or p_cijena < 0 then
+                greska('Unesite jediničnu cijenu viška.');
+            end if;
+            update operacija_stavke set nabavna_cijena = round(p_cijena, 4), opis = p_opis where id = p_id;
+            return;
+        end if;
+        -- ulaz sa datumom prije popisa: količine i artikli se ne mijenjaju (cijena da)
+        if tip_dokumenta(p_dokument_id) = 'U' then
+            l_blok := popis_blokada_dok(p_dokument_id);
+            if l_blok is not null then
+                if p_id is null then
+                    greska(l_blok || ' Na ulazni dokument sa datumom prije popisa ne mogu se dodavati stavke.');
+                end if;
+                select max(stavka_id), max(kolicina) into l_stara, l_skol
+                  from operacija_stavke where id = p_id and operacija_id = p_dokument_id;
+                if nvl(l_stara, -1) <> p_stavka_id or nvl(l_skol, -1) <> nvl(p_kolicina, -2) then
+                    greska(l_blok || ' Količine ulaznog dokumenta sa datumom prije popisa se ne mogu mijenjati.');
+                end if;
+            end if;
+        end if;
         if p_stavka_id is null then
             greska('Izaberite artikal.');
         end if;
@@ -817,6 +945,12 @@ create or replace package body rm_dokument_pkg as
     begin
         select operacija_id into l_dok from operacija_stavke where id = p_id;
         provjeri_izmjenu(l_dok);
+        if je_inventura(tip_dokumenta_sifra(l_dok)) = 'Y' then
+            greska('Stavke razlike inventure nastaju iz popisa i ne brišu se ručno.');
+        end if;
+        if tip_dokumenta(l_dok) = 'U' and popis_blokada_dok(l_dok) is not null then
+            greska(popis_blokada_dok(l_dok) || ' Stavke ulaznog dokumenta sa datumom prije popisa se ne mogu brisati.');
+        end if;
         delete from operacija_stavke_sb where operacija_stavka_id = p_id;
         delete from operacija_stavke where id = p_id;
     exception
@@ -1097,7 +1231,8 @@ create or replace package body rm_dokument_pkg as
 
     --------------------------------------------------------------------- kompletnost
     function provjeri_kompletnost (p_id in number) return varchar2 is
-        l_n number;
+        l_n   number;
+        l_inv varchar2(1) := je_inventura(tip_dokumenta_sifra(p_id));   -- RIV / RIM: serijski brojevi nisu obavezni
     begin
         select count(*) into l_n from operacija_stavke where operacija_id = p_id;
         if l_n = 0 then
@@ -1111,7 +1246,8 @@ create or replace package body rm_dokument_pkg as
                          (select count(*) from operacija_stavke_sb x where x.operacija_stavka_id = os.id) as n
                     from operacija_stavke os
                     join sec_stavke a on a.id = os.stavka_id
-                   where os.operacija_id = p_id and a.serijski_broj = 'Y') loop
+                   where os.operacija_id = p_id and a.serijski_broj = 'Y'
+                     and l_inv = 'N') loop
             if s.n <> s.kolicina then
                 return 'Artikal ' || s.sifra || ' ' || s.naziv || ': uneseno ' || s.n || ' serijskih brojeva, a količina je '
                        || s.kolicina || '.';
@@ -1123,7 +1259,8 @@ create or replace package body rm_dokument_pkg as
     --------------------------------------------------------------------- zaključavanje izlaza
     function moze_zakljucati (p_id in number) return varchar2 is
     begin
-        return case when p_id is not null and (tip_dokumenta(p_id) = 'I' or je_povrat(tip_dokumenta_sifra(p_id)) = 'Y')
+        return case when p_id is not null and (tip_dokumenta(p_id) = 'I' or je_povrat(tip_dokumenta_sifra(p_id)) = 'Y'
+                                               or tip_dokumenta_sifra(p_id) = 'RIV')
                          and razlog_zabrane(p_id) is null then 'Y' else 'N' end;
     end moze_zakljucati;
 
@@ -1136,9 +1273,25 @@ create or replace package body rm_dokument_pkg as
         if l_poruka is not null then
             return l_poruka;
         end if;
+        -- razlika inventure - višak: sve stavke moraju imati cijenu
+        if tip_dokumenta_sifra(p_id) = 'RIV' then
+            for s in (select a.sifra, a.naziv
+                        from operacija_stavke os join sec_stavke a on a.id = os.stavka_id
+                       where os.operacija_id = p_id and nvl(os.nabavna_cijena, 0) <= 0
+                       order by os.redni_broj, os.id) loop
+                return 'Artikal ' || s.sifra || ' ' || s.naziv || ': unesite cijenu viška (veću od nule).';
+            end loop;
+            return provjeri_kompletnost(p_id);
+        end if;
         if tip_dokumenta(p_id) <> 'I' and je_povrat(tip_dokumenta_sifra(p_id)) = 'N' then
             return 'Prijemnica se zaključava kroz kalkulaciju.';
         end if;
+        -- izlaz sa datumom prije popisa se ne može zaključiti (knjigovodstveno stanje popisa bi se promijenilo)
+        l_poruka := popis_blokada_dok(p_id);
+        if l_poruka is not null and tip_dokumenta(p_id) = 'I' then
+            return l_poruka || ' Izlaz sa datumom prije popisa se ne može zaključiti - obrišite ga ili napravite novi dokument.';
+        end if;
+        l_poruka := null;
         for o in (select o.skladiste_id, o.datum, o.mjesto_troska_id, o.vrsta_dokumenta_id, o.ooj_id,
                          o.zaduzeni_radnik_id, o.skladiste_prenos_id, o.klijent_id
                     from operacije o where o.id = p_id) loop
@@ -1201,7 +1354,8 @@ create or replace package body rm_dokument_pkg as
         -- (petlja, ne UPDATE sa funkcijom koja čita OPERACIJA_STAVKE: ORA-04091)
         for o in (select skladiste_id, datum, ooj_id, vrsta_dokumenta_id, zaduzeni_radnik_id, klijent_id
                     from operacije where id = p_id) loop
-            for st in (select id, stavka_id from operacija_stavke where operacija_id = p_id) loop
+            for st in (select id, stavka_id from operacija_stavke
+                        where operacija_id = p_id and vrsta_sifra(o.vrsta_dokumenta_id) <> 'RIV') loop
                 if je_povrat(vrsta_sifra(o.vrsta_dokumenta_id)) = 'Y' then
                     l_cij := cijena_povrata(o.ooj_id, vrsta_sifra(o.vrsta_dokumenta_id), o.zaduzeni_radnik_id, o.klijent_id, st.stavka_id);
                 else
@@ -1222,6 +1376,12 @@ create or replace package body rm_dokument_pkg as
             end if;
             if tip_dokumenta_sifra(p_id) = 'MPP' then
                 return 'Međuskladišni prijem se ne može otključati.';
+            end if;
+            if je_inventura(tip_dokumenta_sifra(p_id)) = 'Y' then
+                return 'Dokument razlike inventure je vezan za zaključen popis - ne može se otključati.';
+            end if;
+            if popis_blokada_dok(p_id) is not null then
+                return popis_blokada_dok(p_id) || ' Dokument sa datumom prije popisa se ne može otključati.';
             end if;
             if tip_dokumenta(p_id) <> 'I' and je_povrat(tip_dokumenta_sifra(p_id)) = 'N' then
                 return 'Prijemnica se otključava kroz kalkulaciju.';
@@ -1543,6 +1703,9 @@ create or replace package body rm_dokument_pkg as
             if l_zak is not null and l_datum < trunc(l_zak) then
                 greska('Datum prijema je u zaključanom periodu.');
             end if;
+            if popis_blokada(p_skladiste_id, l_datum) is not null then
+                greska(popis_blokada(p_skladiste_id, l_datum) || ' Prijem ne može imati datum prije datuma popisa.');
+            end if;
             select max(vd.id) into l_vrsta
               from sif.vrste_dokumenata vd join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = c_modul
              where vd.ooj_id = p_ooj_id and upper(vd.sifra) = 'MPP' and vd.valid = 'Y';
@@ -1608,6 +1771,12 @@ create or replace package body rm_dokument_pkg as
             end if;
             if podrzana(vrsta_sifra(o.vrsta_dokumenta_id)) = 'N' or tip_dokumenta(p_id) <> 'I' then
                 return 'Stornirati se mogu samo izlazni dokumenti.';
+            end if;
+            if je_inventura(vrsta_sifra(o.vrsta_dokumenta_id)) = 'Y' then
+                return 'Dokument razlike inventure je vezan za popis - ne može se stornirati.';
+            end if;
+            if popis_blokada_dok(p_id) is not null then
+                return popis_blokada_dok(p_id) || ' Dokument sa datumom prije popisa se ne može stornirati.';
             end if;
             if o.glavna_knjiga_id is not null then
                 return 'Dokument je proknjižen - prvo stornirajte nalog za knjiženje.';

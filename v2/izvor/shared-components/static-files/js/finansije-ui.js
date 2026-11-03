@@ -600,6 +600,11 @@ window.finRmStavke = (function ($) {
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
         ro = ["JM_NAZIV", "RASPOLOZIVO", "IZNOS", "SB"];
         if (izlaz) { ro.push("CIJENA"); }
+        /* razlika inventure (iz popisa): artikal i količina se ne mijenjaju, na višku samo cijena */
+        if ($v(p + "_VRSTA_SIFRA") === "RIV" || $v(p + "_VRSTA_SIFRA") === "RIM") {
+            ro.push("STAVKA_ID", "KOLICINA");
+            $("#" + regionId).find("button[data-action='selection-add-row']").hide();
+        }
         I.samoCitanje(regionId, ro);
 
         function racun(rec) {
@@ -833,7 +838,15 @@ window.finRmVrsta = (function ($) {
                     message: "Za novi dokument izaberite vrstu dokumenta (pored skladišta)." }]);
                 return;
             }
-            apex.server.process("NOVI_DOKUMENT_URL", { x01: $s.val() }, { dataType: "text" }).done(function (url) { otvori(url); });
+            apex.server.process("NOVI_DOKUMENT_URL", { x01: $s.val() }, { dataType: "text" }).done(function (url) {
+                url = String(url || "").trim();
+                if (url.indexOf("ERR:") === 0) {
+                    apex.message.clearErrors();
+                    apex.message.showErrors([{ type: "error", location: "page", unsafe: false, message: url.substring(4) }]);
+                    return;
+                }
+                otvori(url);
+            });
         });
     }
     return { init: init };
@@ -1327,6 +1340,157 @@ window.finRmKalk = (function ($) {
         initPrijemnice("kalk_prijemnice");
         initCijene("kalk_cijene");
         initRaspodjela();
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Popis skladišta (str. 365): stavke u Interactive Grid-u.
+   - knjigovodstveno stanje, cijena i razlika su samo za čitanje; unosi se popisana količina
+   - razlika = popisano - knjigovodstveno; vrijednost razlike = razlika x prosječna cijena
+   - sažetak iznad tabele: artikala, nepopisano, višak, manjak, vrijednost manjka
+   - novi red (artikal koji nije na stanju): knjigovodstveno i cijena iz baze (ARTIKL_POPIS)
+   Poziv: finRmPopis.init('rm_popis_stavke', 'P365')
+   ===================================================================== */
+window.finRmPopis = (function ($) {
+    "use strict";
+    var I = window.finIg;
+    function bez(n, mask) {
+        var s = apex.locale.formatNumber ? apex.locale.formatNumber(n, mask) : String(n);
+        return String(s).replace(/[.,]$/, "");
+    }
+    function fq(n) { return bez(n, "FM999999999990D999999"); }
+    function fc(n) {
+        var x = Number(n) || 0;
+        if (Math.round(x * 100) / 100 === x) { return bez(x, "FM999G999G999G990D00"); }
+        return bez(x, "FM999G999G999G990D9999").replace(/0+$/, "");
+    }
+    function prazno(v) { v = I.val(v); return v === null || v === undefined || String(v).trim() === ""; }
+    function init(regionId, p) {
+        var g = I.grid(regionId), model, $z = $("#fin_popis_sazetak");
+        if (!g) { return; }
+        model = g.model;
+        try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
+        I.samoCitanje(regionId, ["JM_NAZIV", "KNJIGOVODSTVENO", "RAZLIKA", "CIJENA", "VRIJEDNOST_RAZLIKE"]);
+
+        function racun(rec) {
+            var pop = model.getValue(rec, "POPISANO"), raz;
+            if (prazno(pop)) {
+                I.postavi(model, rec, "RAZLIKA", "");
+                I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", "");
+                return;
+            }
+            raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
+            raz = Math.round(raz * 1000000) / 1000000;
+            I.postavi(model, rec, "RAZLIKA", fq(raz));
+            I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", I.fmt(I.r2(raz * I.num(model.getValue(rec, "CIJENA")))));
+        }
+        function sazetak() {
+            var n = 0, np = 0, v = 0, m = 0, vm = 0;
+            model.forEach(function (rec, idx, id) {
+                var meta = model.getRecordMetadata(id), pop, raz;
+                if (meta && meta.deleted) { return; }
+                n++;
+                pop = model.getValue(rec, "POPISANO");
+                if (prazno(pop)) { np++; return; }
+                raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
+                if (raz > 0.0000001) { v++; }
+                if (raz < -0.0000001) { m++; vm += I.r2(-raz * I.num(model.getValue(rec, "CIJENA"))); }
+            });
+            $z.find("[data-s=n]").text(n);
+            $z.find("[data-s=np]").text(np);
+            $z.find("[data-s=v]").text(v);
+            $z.find("[data-s=m]").text(m);
+            $z.find("[data-s=vm]").text(I.fmt(I.r2(vm)));
+            $z.find("[data-s=np]").closest(".fin-chip").toggleClass("is-nula", np === 0);
+        }
+        model.subscribe({
+            onChange: function (type, change) {
+                var rec, art;
+                if (type === "set" && change) {
+                    rec = change.record;
+                    if (change.field === "STAVKA_ID") {
+                        art = I.val(model.getValue(rec, "STAVKA_ID"));
+                        if (!art) { return; }
+                        apex.server.process("ARTIKL_POPIS", { x01: art, pageItems: "#" + p + "_ID" }, { dataType: "json" })
+                            .done(function (d) {
+                                I.postavi(model, rec, "JM_NAZIV", d.jm || "");
+                                I.postavi(model, rec, "KNJIGOVODSTVENO", fq(d.knj || 0));
+                                I.postavi(model, rec, "CIJENA", fc(d.c || 0));
+                                racun(rec);
+                                sazetak();
+                            });
+                    } else if (change.field === "POPISANO") {
+                        if (!prazno(model.getValue(rec, "POPISANO")) && I.num(model.getValue(rec, "POPISANO")) < 0) {
+                            I.greska("Popisana količina ne može biti negativna.");
+                        }
+                        racun(rec);
+                    }
+                }
+                if (type === "set" || type === "delete" || type === "insert" || type === "revert" ||
+                    type === "refresh" || type === "addData") { sazetak(); }
+            }
+        });
+        sazetak();
+        function sirine() { try { g.view$.grid("resize"); } catch (e) { /* ništa */ } }
+        setTimeout(sirine, 150);
+        setTimeout(sirine, 600);
+        $(window).on("load apexwindowresized", sirine);
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Novi popis skladišta (str. 366): izbor jednog, više ili svih skladišta
+   (kvačice u tabeli) -> skriveno polje <P>_SKLADISTA (":12:15:").
+   Skladišta koja se ne mogu popisati (nema stanja, otvoren / kasniji popis) su onemogućena.
+   Promjena datuma osvježava tabelu; izbor se čuva.
+   Poziv: finRmPopisNovi.init('P366', 'rm_popis_skladista')
+   ===================================================================== */
+window.finRmPopisNovi = (function ($) {
+    "use strict";
+    function init(p, regionId) {
+        var izabrano = {}, item = p + "_SKLADISTA";
+        String($v(item) || "").split(":").forEach(function (x) { if (x) { izabrano[x] = true; } });
+        function upisi() {
+            var ids = Object.keys(izabrano).filter(function (k) { return izabrano[k]; }), n;
+            $s(item, ids.length ? ":" + ids.join(":") + ":" : "");
+            n = ids.length;
+            $("#fin_popis_izabrano").text(n ? "izabrano: " + n : "");
+        }
+        function primijeni() {
+            var $r = $("#" + regionId), sve = true, ima = false;
+            $r.find(".fin-popis-chk").each(function () {
+                var $c = $(this);
+                if ($c.prop("disabled")) { delete izabrano[$c.val()]; $c.closest("tr").addClass("is-onemoguceno"); return; }
+                ima = true;
+                $c.prop("checked", !!izabrano[$c.val()]);
+                $c.closest("tr").toggleClass("is-izabran", !!izabrano[$c.val()]);
+                if (!izabrano[$c.val()]) { sve = false; }
+            });
+            $(".fin-popis-sva").prop("checked", ima && sve).prop("disabled", !ima);
+            upisi();
+        }
+        $(document).on("change", "#" + regionId + " .fin-popis-chk", function () {
+            izabrano[$(this).val()] = $(this).prop("checked");
+            primijeni();
+        });
+        /* klik bilo gdje u redu mijenja izbor */
+        $(document).on("click", "#" + regionId + " td", function (e) {
+            var $c;
+            if ($(e.target).is("input, a")) { return; }
+            $c = $(this).closest("tr").find(".fin-popis-chk");
+            if ($c.length && !$c.prop("disabled")) { $c.prop("checked", !$c.prop("checked")).trigger("change"); }
+        });
+        $(document).on("change", ".fin-popis-sva", function () {
+            var da = $(this).prop("checked");
+            $("#" + regionId + " .fin-popis-chk").each(function () {
+                if (!$(this).prop("disabled")) { izabrano[$(this).val()] = da; }
+            });
+            primijeni();
+        });
+        $("#" + regionId).on("apexafterrefresh", primijeni);
+        primijeni();
     }
     return { init: init };
 })(apex.jQuery);

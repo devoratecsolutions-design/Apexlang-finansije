@@ -2039,7 +2039,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.je_inventura(:P331_VRSTA_SIFRA) = 'N'
         }
     )
 
@@ -2092,12 +2092,12 @@ page 331 (
             requiresConfirmation: true
         }
         confirmation {
-            message: Zaključati dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a roba se skida sa stanja.
+            message: Zaključati dokument? Izlaz - cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a roba se skida sa stanja. Višak iz popisa - roba se zadužuje po unesenim cijenama.
             style: danger
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y' or :P331_VRSTA_SIFRA = 'RIV') and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -2446,7 +2446,10 @@ page 331 (
                                                      when d.vrsta_sifra = 'MPR' and d.preuzeto_naziv is not null then 'Preuzeto prijemom ' || d.preuzeto_naziv
                                                      when d.vrsta_sifra = 'MPR' and d.status = 'Z' then 'Čeka prijem na skladištu ' || d.skladiste_prenos_naziv
                                                 end;
-                    :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv end;
+                    :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv
+                                                     when d.popis_naziv is not null and d.vrsta_sifra = 'RIV' and d.status <> 'Z'
+                                                     then 'Iz popisa ' || d.popis_naziv || ' - količine su utvrđene popisom, unesite cijene i zaključite'
+                                                     when d.popis_naziv is not null then 'Iz popisa ' || d.popis_naziv end;
                     :P331_STATUS_KLASA       := case when d.stornirano = 'Y' or d.storniran_id is not null then 'storno'
                                                      when d.glavna_knjiga_id is not null then 'proknjizena'
                                                      when d.status = 'Z' then 'zakljucena' else 'priprema' end;

@@ -198,6 +198,7 @@ list menu-dokumenti-ulaz (
                 AND vd.valid = 'Y'
                 AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
                 AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
+                AND rm_dokument_pkg.je_inventura(vd.sifra) = 'N'
             ORDER BY
                 CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END,
                 vd.naziv
@@ -3067,16 +3068,15 @@ list navigation-menu-materijal-oprema (
         isCurrent {
             type: pages
             pages: [
-                360
-                361
-                362
-                363
+                364
+                365
+                366
             ]
         }
         link {
             target: {
                 type: url
-                url: javascript:finRm.idi('MAT', 360);
+                url: javascript:finRm.idi('MAT', 364);
             }
         }
         serverSideCondition {

@@ -836,10 +836,15 @@ page 330 (
         source {
             plsqlCode:
                 ```plsql
-                sys.htp.p(apex_page.get_url(p_page        => 331,
-                                            p_items       => 'P331_VRSTA_DOKUMENTA_ID',
-                                            p_values      => to_number(apex_application.g_x01),
-                                            p_clear_cache => 331));
+                -- razlika inventure (RIV / RIM) nastaje samo zaključavanjem popisa skladišta
+                if rm_dokument_pkg.je_inventura(rm_dokument_pkg.vrsta_sifra(to_number(apex_application.g_x01))) = 'Y' then
+                    sys.htp.p('ERR:Dokument razlike inventure nastaje samo zaključavanjem popisa skladišta (meni Popis skladišta).');
+                else
+                    sys.htp.p(apex_page.get_url(p_page        => 331,
+                                                p_items       => 'P331_VRSTA_DOKUMENTA_ID',
+                                                p_values      => to_number(apex_application.g_x01),
+                                                p_clear_cache => 331));
+                end if;
                 ```
         }
         execution {

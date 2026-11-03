@@ -16,6 +16,8 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R17 (03.11.2026): OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA i OPIS (popis skladišta);
+  brojači RAS (rashod), RIV / RIM (razlika inventure - višak / manjak).
   R13 (02.11.2026): brojači REV, REVP, RSV, RSVP.
   R12 (02.11.2026): OPERACIJE.ZADUZENI_RADNIK_ID; brojači IOS, ISI, MPR, MPP.
   R11 (02.11.2026): OPERACIJE.MJESTO_TROSKA_ID (izdatnica, izlaz na investiciju u
@@ -71,6 +73,10 @@ begin
     kolona('OPERACIJA_STAVKE', 'redni_broj', 'number');
     kolona('OPERACIJE', 'mjesto_troska_id', 'number');
     kolona('OPERACIJE', 'zaduzeni_radnik_id', 'number');
+    -- R17: popis skladišta - dokumenti razlike inventure (RIV / RIM) vezani na popis; cijena stavke popisa
+    kolona('OPERACIJE', 'popis_id', 'number');
+    kolona('POPIS_STAVKE', 'cijena', 'number');
+    kolona('POPIS_STAVKE', 'opis', 'varchar2(500 char)');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -81,6 +87,8 @@ begin
     indeks('OPERACIJE_MT_I', 'create index operacije_mt_i on operacije (mjesto_troska_id)');
     indeks('OPERACIJE_VEZA_I', 'create index operacije_veza_i on operacije (veza_id)');
     indeks('OPERACIJE_SKL_PRENOS_I', 'create index operacije_skl_prenos_i on operacije (skladiste_prenos_id)');
+    indeks('OPERACIJE_POPIS_I', 'create index operacije_popis_i on operacije (popis_id)');
+    indeks('POPISI_SKL_DATUM_I', 'create index popisi_skl_datum_i on popisi (skladiste_id, datum)');
     indeks('OPERACIJA_STAVKE_SB_SB_I', 'create index operacija_stavke_sb_sb_i on operacija_stavke_sb (serijski_broj)');
     indeks('OPERACIJA_STAVKE_SB_UK',
         'create unique index operacija_stavke_sb_uk on operacija_stavke_sb (operacija_stavka_id, serijski_broj)');
@@ -93,6 +101,10 @@ comment on column operacije.otpremnica_broj is 'Broj otpremnice / dokumenta doba
 comment on column operacije.otpremnica_datum is 'Datum otpremnice / dokumenta dobavljača (v2)';
 comment on column operacija_stavke.redni_broj is 'Redni broj stavke u dokumentu (v2)';
 comment on column operacije.zaduzeni_radnik_id is 'Zaduženi radnik (SIF.ACC_RADNICI) - izlaz na osnovno sredstvo i sitni inventar (v2)';
+comment on column operacije.popis_id is 'Popis skladišta iz kojeg je nastao dokument razlike inventure RIV / RIM (v2)';
+comment on column popis_stavke.prethodna_kolicina is 'Knjigovodstveno stanje na datum popisa: svi ulazi - zaključeni izlazi (v2)';
+comment on column popis_stavke.popis_kolicina is 'Popisana (stvarna) količina - unosi knjigovođa (v2)';
+comment on column popis_stavke.cijena is 'Prosječna cijena artikla na skladištu na datum popisa (v2)';
 comment on column operacije.mjesto_troska_id is 'Mjesto troška (SIF.ACC_MJESTA_TROSKA) - izdatnica, izlaz na investiciju u toku (v2)';
 
 -- 2a) brojači izlaznih i međuskladišnih dokumenata (IZD, IIN, IOS, ISI, MPR, MPP) --------
@@ -104,7 +116,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop

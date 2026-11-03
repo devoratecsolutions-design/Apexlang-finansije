@@ -567,6 +567,7 @@ a:hover > .fin-amt-link  { border-color: currentColor; }
 .fin-chip--info    { color: var(--fin-violet); border-color: color-mix(in srgb, var(--fin-violet) 35%, transparent); }
 .fin-chip--warning { color: #8a5d00; border-color: color-mix(in srgb, var(--fin-amber) 45%, transparent);
                      background: color-mix(in srgb, var(--fin-amber) 9%, var(--fin-paper)); }
+.fin-chip--danger  { color: #a3352a; border-color: color-mix(in srgb, var(--fin-red) 35%, transparent); }
 a.fin-chip:hover   { border-color: currentColor; text-decoration: none; }
 
 /* akcije u redu */
@@ -1299,6 +1300,21 @@ body .t-TreeNav .a-TreeView-node--topLevel.is-collapsible > .a-TreeView-row:not(
 
 /* R16: izvještaji (str. 371) - zaglavlje i štampa */
 .fin-izv-stampa { display: none; }
+/* popis skladišta (str. 364 - 366) */
+.fin-popis-uputa { margin: 0 0 10px; max-width: 980px; }
+.fin-popis-sazetak { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.fin-popis-sazetak .fin-chip b { color: var(--fin-text); font-weight: 600; }
+.fin-popis-sazetak .fin-chip.is-nula { opacity: .55; }
+.fin-popis-sva-bar { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px; }
+.fin-popis-sva-l { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.fin-popis-skl td { cursor: pointer; }
+.fin-popis-skl tr.is-izabran td { background: color-mix(in srgb, var(--fin-blue) 7%, var(--fin-paper)); }
+.fin-popis-skl tr.is-onemoguceno td { cursor: default; color: var(--fin-muted); }
+.fin-popis-skl input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+.fin-popis-napomena.is-ok { color: #00775c; }
+.fin-popis-napomena.is-zabrana { color: #8a5d00; }
+.fin-popis-dok { margin-bottom: 12px; }
+
 @media print {
     .t-Header, .t-Body-nav, .t-Body-title, .t-Footer, #apexDevToolbar, .fin-izv-bez-stampe,
     .a-IRR-toolbar, .a-IRR-controlsContainer, .a-IRR-paginationWrap--top, .a-IRR-buttons, .t-Body-actions { display: none !important; }

@@ -17,6 +17,10 @@
       REVP Revers - povrat                (ulaz; zaduženi radnik, do dostupnog sa reversa)
       RSV  Revers servis                  (izlaz; komitent)
       RSVP Revers servis - povrat         (ulaz; komitent, do dostupnog sa reversa servisa)
+    R17 (RAS samo materijalna skladišta; RIV / RIM nastaju iz popisa skladišta):
+      RAS  Rashod                         (izlaz; kao izdatnica, mjesto troška)
+      RIV  Razlika inventure - višak      (ulaz; nastaje zaključavanjem popisa, cijenu unosi knjigovođa)
+      RIM  Razlika inventure - manjak     (izlaz; nastaje zaključavanjem popisa, prosječna cijena)
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
   sa istom aplikacijom (app_id). Postojeće vrste sa istom šifrom se ne mijenjaju.
   Skripta se može pokrenuti više puta.
@@ -59,6 +63,9 @@ begin
     dodaj('REVP', 'Revers - povrat', 'Povrat robe / opreme od zaduženog radnika (v2)', 'U');
     dodaj('RSV', 'Revers servis', 'Izdavanje robe / opreme komitentu na servis (v2)');
     dodaj('RSVP', 'Revers servis - povrat', 'Povrat robe / opreme od komitenta sa servisa (v2)', 'U');
+    dodaj('RAS', 'Rashod', 'Rashodovanje materijala / opreme sa skladišta (v2)');
+    dodaj('RIV', 'Razlika inventure - višak', 'Višak utvrđen popisom skladišta - nastaje zaključavanjem popisa (v2)', 'U');
+    dodaj('RIM', 'Razlika inventure - manjak', 'Manjak utvrđen popisom skladišta - nastaje zaključavanjem popisa (v2)');
     commit;
     dbms_output.put_line('Nove vrste dokumenata: ' || l_novih);
 end;
@@ -68,5 +75,5 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM')
  order by vd.ooj_id, vd.sifra;

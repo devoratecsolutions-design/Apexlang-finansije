@@ -80,7 +80,9 @@ select o.id,
        o.created,
        o.created_by,
        o.updated,
-       o.updated_by
+       o.updated_by,
+       o.popis_id,
+       pp.naziv                                                         as popis_naziv
   from operacije o
   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
@@ -93,6 +95,7 @@ select o.id,
   left join skladista skp on skp.id = o.skladiste_prenos_id
   left join operacije vz on vz.id = o.veza_id
   left join operacije so on so.id = o.storniran_id
+  left join popisi pp on pp.id = o.popis_id
   outer apply (select max(ko.kalkulacija_id) as kalkulacija_id
                  from kalkulacija_operacije ko
                 where ko.operacija_id = o.id) kk
@@ -100,7 +103,7 @@ select o.id,
   outer apply (select count(*)          as stavki,
                       sum(os.kolicina)  as kolicina,
                       sum(round(os.kolicina * os.nabavna_cijena, 2)) as iznos,
-                      sum(case when s.serijski_broj = 'Y'
+                      sum(case when s.serijski_broj = 'Y' and o.popis_id is null
                                 and nvl(os.kolicina, 0) <> (select count(*) from operacija_stavke_sb sb
                                                              where sb.operacija_stavka_id = os.id)
                                then 1 else 0 end) as sb_nedostaje

@@ -269,7 +269,7 @@ WHERE p.ooj_id = :APP_OOJ_ID
   AND {SKL}
   AND {ART}
   AND p.status = 'Z'
-  AND p.vrsta_sifra IN ('IZD', 'IIN', 'IOS', 'ISI')
+  AND p.vrsta_sifra IN ('IZD', 'IIN', 'IOS', 'ISI', 'RAS')
   AND p.datum BETWEEN {OD} AND {DO}
   AND (:P371_MT IS NULL OR p.mjesto_troska_id = to_number(:P371_MT))
 GROUP BY p.mjesto_troska_naziv, p.vrsta_naziv, p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv

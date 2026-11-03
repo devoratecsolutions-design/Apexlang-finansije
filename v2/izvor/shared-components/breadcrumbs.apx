@@ -417,6 +417,22 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry popisi-skladista (
+        name: Popis skladišta
+        pageNumber: 364
+        execution {
+            sequence: 15
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 364
+            }
+        }
+    )
+
     entry kalkulacije-robe (
         name: Kalkulacije
         pageNumber: 340
