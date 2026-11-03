@@ -625,6 +625,7 @@ create or replace package body rm_popis_pkg as
         l_oj    number;
         l_rb    number := 0;
         l_n     number := 0;
+        l_vrsta number := vrsta_id(p_popis.ooj_id, p_sifra);   -- privatna funkcija: ne može se zvati u SQL-u
     begin
         select oj_id into l_oj from skladista where id = p_popis.skladiste_id;
         core.protokoli_pkg.get_brojac(
@@ -638,7 +639,7 @@ create or replace package body rm_popis_pkg as
             ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
             status, zakljucano, stornirano, popis_id
         ) values (
-            p_popis.ooj_id, p_popis.godina, vrsta_id(p_popis.ooj_id, p_sifra), p_popis.skladiste_id, l_oj, trunc(p_popis.datum),
+            p_popis.ooj_id, p_popis.godina, l_vrsta, p_popis.skladiste_id, l_oj, trunc(p_popis.datum),
             case p_sifra when 'RIV' then 'Višak' else 'Manjak' end || ' utvrđen popisom ' || p_popis.naziv,
             l_broj, l_naziv,
             case p_sifra when 'RIM' then 'Z' else 'P' end, case p_sifra when 'RIM' then 'Y' else 'N' end, 'N', p_popis.id
