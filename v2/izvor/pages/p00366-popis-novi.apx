@@ -144,7 +144,7 @@ page 366 (
             ]
         }
         pagination {
-            type: noPagination
+            type: rowRangesXToYNoPagination
         }
         messages {
             whenNoDataFound: Nemate pristup nijednom skladištu ovog modula.
