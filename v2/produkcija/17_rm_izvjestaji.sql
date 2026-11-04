@@ -64,7 +64,8 @@ select o.id                                                             as opera
                      nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                 from dual) k
  where nvl(o.stornirano, 'N') = 'N'
-   and o.storniran_id is null;
+   and o.storniran_id is null
+   and nvl(k.tk, '-') <> 'Z';          -- R18: prezaduženje / rashod / višak SI kod radnika ne mijenjaju stanje skladišta
 
 -- otvorena zaduženja: reversi (preostalo poslije povrata) i izlazi na OS / sitni inventar (trajno)
 create or replace force view vw_rm_zaduzenja as
@@ -105,9 +106,30 @@ select p.ooj_id,
        p.kolicina,
        p.izlaz_vrijednost
   from vw_rm_promet p
- where p.vrsta_sifra in ('IOS', 'ISI')
+ where p.vrsta_sifra = 'IOS'
    and p.status = 'Z'
-   and p.zaduzeni_radnik_id is not null;
+   and p.zaduzeni_radnik_id is not null
+union all
+-- R18 sitni inventar: stvarno zaduženje radnika (poslije prezaduženja i rashoda), po artiklu;
+-- dokument / skladište = posljednje zaduženje
+select z.ooj_id,
+       'Sitni inventar',
+       'R',
+       z.radnik_id,
+       z.radnik_naziv,
+       z.operacija_id,
+       z.dokument,
+       z.zadnje_zaduzenje,
+       z.skladiste_id,
+       z.stavka_id,
+       z.sifra,
+       z.naziv,
+       z.jm_naziv,
+       z.zaduzeno,
+       z.zaduzeno,
+       z.vrijednost
+  from vw_rm_si_zaduzenja z
+ where z.zaduzeno > 0;
 
 -- dokumenti koji čekaju radnju
 create or replace force view vw_rm_na_cekanju as

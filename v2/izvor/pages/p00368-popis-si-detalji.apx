@@ -1,0 +1,1501 @@
+page 368 (
+    name: Popis sitnog inventara - detalji
+    alias: POPIS-SI-DETALJI
+    title: Popis sitnog inventara
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--xl
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmPopis.init('rm_popis_stavke', 'P368');
+            ```
+    }
+    css {
+        inline:
+            ```css
+            .ui-dialog-titlebar-close {
+                display: none !important;
+            }
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-popis
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region popis-traka (
+        name: Traka popisa
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-docbar">
+                  <span class="fin-docbar__no">&P368_NAZIV.</span>
+                  <span class="fin-status fin-status--&P368_STATUS_KLASA."><span class="fa &P368_STATUS_IKONA." aria-hidden="true"></span>&P368_STATUS_NAZIV.</span>
+                  <span class="fin-docbar__meta">Popis na dan &P368_DATUM.</span>
+                  <span class="fin-docbar__meta">&P368_SKLADISTE.</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region zakljucan (
+        name: Popis se ne može mijenjati
+        type: staticContent
+        source {
+            htmlCode: &P368_RAZLOG.
+        }
+        layout {
+            sequence: 7
+            slot: contentBody
+        }
+        appearance {
+            template: @alert
+            templateOptions: [
+                #DEFAULT#
+                t-Alert--colorBG
+                t-Alert--horizontal
+                t-Alert--defaultIcons
+                t-Alert--info
+            ]
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'N'
+        }
+    )
+
+    region dokumenti (
+        name: Dokumenti iz popisa
+        title: Dokumenti iz popisa (rashod / višak kod radnika)
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT d.id,
+                       d.naziv,
+                       d.vrsta_naziv,
+                       d.stavki,
+                       to_char(d.iznos, 'FM999G999G999G990D00') AS iznos,
+                       CASE WHEN d.status = 'Z' THEN 'zakljucena' ELSE 'priprema' END AS dok_status,
+                       CASE WHEN d.status = 'Z' THEN 'Zaključen'
+                            WHEN d.vrsta_sifra = 'RIV' THEN 'U pripremi - unesite cijene i zaključite'
+                            ELSE 'U pripremi' END AS dok_status_naziv,
+                       CASE WHEN d.status = 'Z' THEN 'fa-lock' ELSE 'fa-pencil' END AS dok_status_ikona,
+                       apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => d.id, p_clear_cache => 331) AS url
+                FROM vw_rm_popis_dokumenti d
+                WHERE d.popis_id = :P368_ID
+                ORDER BY d.id
+                ```
+            pageItemsToSubmit: P368_ID
+        }
+        layout {
+            sequence: 8
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-popis-dok
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Zaduženje radnika odgovara popisanom stanju - dokumenti nisu kreirani.
+        }
+        advanced {
+            htmlDomId: rm_popis_dok
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_ZAKLJUCANO = 'Y'
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column VRSTA_NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column STAVKI (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Artikala
+                alignment: end
+            }
+            layout {
+                sequence: 20
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column IZNOS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Iznos
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num fin-num--strong
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOK_STATUS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 40
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-status fin-status--#DOK_STATUS#"><span class="fa #DOK_STATUS_IKONA#" aria-hidden="true"></span>#DOK_STATUS_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOK_STATUS_IKONA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+    )
+
+    region popis-detalji (
+        name: Popis / Detalji
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'N'
+        }
+    )
+
+    region zaglavlje (
+        name: Popis
+        title: Popis
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @popis-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region stavke-sekcija (
+        name: Stavke
+        title: Stavke popisa
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @popis-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region sazetak (
+        name: Sažetak
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-popis-sazetak" id="fin_popis_sazetak">
+                  <span class="fin-chip"><b data-s="n">0</b> artikala</span>
+                  <span class="fin-chip fin-chip--warning"><b data-s="np">0</b> nepopisano</span>
+                  <span class="fin-chip fin-chip--success"><b data-s="v">0</b> višak</span>
+                  <span class="fin-chip fin-chip--danger"><b data-s="m">0</b> manjak</span>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @stavke-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region stavke (
+        name: Stavke popisa - tabela
+        title: Stavke popisa
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    s.id,
+                    s.redni_broj,
+                    s.stavka_id,
+                    s.serijski_broj,
+                    s.jm_naziv,
+                    rtrim(to_char(s.knjigovodstveno, 'FM999999999990D999999'), '.,') AS knjigovodstveno,
+                    rtrim(to_char(s.popisano, 'FM999999999990D999999'), '.,') AS popisano,
+                    rtrim(to_char(s.razlika, 'FM999999999990D999999'), '.,') AS razlika,
+                    CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
+                         ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
+                    s.vrijednost_razlike,
+                    s.opis,
+                    CASE WHEN s.popisano IS NULL THEN 'fin-raz'
+                         WHEN s.razlika > 0 THEN 'fin-raz fin-raz--visak'
+                         WHEN s.razlika < 0 THEN 'fin-raz fin-raz--manjak'
+                         ELSE 'fin-raz fin-raz--ok' END AS razlika_klasa,
+                    'fin-unos' AS unos_klasa
+                FROM vw_rm_popis_stavke s
+                WHERE s.popis_id = :P368_ID
+                ORDER BY s.redni_broj, s.id
+                ```
+            pageItemsToSubmit: P368_ID
+        }
+        layout {
+            sequence: 20
+            parentRegion: @stavke-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        messages {
+            whenNoDataFound: Popis nema stavki.
+        }
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
+        }
+        componentAdvanced {
+            initJavaScriptFunction:
+                ```javascript-browser
+                function(options) {
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj pronađen artikal / serijski broj"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("actions");
+                    options.toolbarData = toolbarData;
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: true, autoAddRecord: false };
+                    if (options.editable) { options.editable.autoAddRow = false; }
+                    return options;
+                }
+                ```
+        }
+        advanced {
+            htmlDomId: rm_popis_stavke
+            savedReportMappingIdentifier: 3680000000000001
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'N'
+        }
+
+        savedReport 3680000000000002 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    frozen: true
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @STAVKA_ID
+                layout {
+                    sequence: 2
+                    width: 340
+                }
+            )
+
+            displayColumn (
+                column: @SERIJSKI_BROJ
+                layout {
+                    sequence: 3
+                    width: 150
+                }
+            )
+
+            displayColumn (
+                column: @JM_NAZIV
+                layout {
+                    sequence: 3
+                    width: 55
+                }
+            )
+
+            displayColumn (
+                column: @KNJIGOVODSTVENO
+                layout {
+                    sequence: 4
+                    width: 120
+                }
+            )
+
+            displayColumn (
+                column: @POPISANO
+                layout {
+                    sequence: 5
+                    width: 120
+                }
+            )
+
+            displayColumn (
+                column: @RAZLIKA
+                layout {
+                    sequence: 6
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @CIJENA
+                layout {
+                    sequence: 7
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @VRIJEDNOST_RAZLIKE
+                layout {
+                    sequence: 8
+                    width: 120
+                }
+            )
+
+            displayColumn (
+                column: @OPIS
+                layout {
+                    sequence: 9
+                    width: 180
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+            serverSideCondition {
+                type: never
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column REDNI_BROJ (
+            type: hidden
+            layout {
+                sequence: 35
+            }
+            source {
+                databaseColumn: REDNI_BROJ
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+        column STAVKA_ID (
+            type: popupLov
+            heading {
+                heading: Artikal
+            }
+            settings {
+                popupWidth: 640
+            }
+            lov {
+                type: sharedComponent
+                lov: @rm-dokument-artikli
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite artikal -
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: STAVKA_ID
+                dataType: number
+            }
+            validation {
+                valueRequired: true
+            }
+        )
+
+        column SERIJSKI_BROJ (
+            type: textField
+            heading {
+                heading: Serijski broj
+            }
+            layout {
+                sequence: 45
+            }
+            source {
+                databaseColumn: SERIJSKI_BROJ
+                dataType: varchar2
+            }
+        )
+
+        column JM_NAZIV (
+            type: textField
+            heading {
+                heading: JM
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                databaseColumn: JM_NAZIV
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column KNJIGOVODSTVENO (
+            type: textField
+            heading {
+                heading: Zaduženo
+                alignment: end
+            }
+            layout {
+                sequence: 55
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: KNJIGOVODSTVENO
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column POPISANO (
+            type: textField
+            heading {
+                heading: Popisano
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: POPISANO
+                dataType: varchar2
+            }
+        )
+
+        column RAZLIKA (
+            type: textField
+            heading {
+                heading: Razlika
+                alignment: end
+            }
+            layout {
+                sequence: 62
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RAZLIKA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column CIJENA (
+            type: textField
+            heading {
+                heading: Cijena zaduženja
+                alignment: end
+            }
+            layout {
+                sequence: 64
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: CIJENA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column VRIJEDNOST_RAZLIKE (
+            type: numberField
+            heading {
+                heading: Vrijednost razlike
+                alignment: end
+            }
+            layout {
+                sequence: 66
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FM999G999G999G990D00
+            }
+            source {
+                databaseColumn: VRIJEDNOST_RAZLIKE
+                dataType: number
+                queryOnly: true
+            }
+        )
+
+        column OPIS (
+            type: textField
+            heading {
+                heading: Napomena
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                databaseColumn: OPIS
+                dataType: varchar2
+            }
+        )
+
+        column RAZLIKA_KLASA (
+            type: hidden
+            layout {
+                sequence: 80
+            }
+            source {
+                databaseColumn: RAZLIKA_KLASA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+        column UNOS_KLASA (
+            type: hidden
+            layout {
+                sequence: 90
+            }
+            source {
+                databaseColumn: UNOS_KLASA
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
+    )
+
+    pageItem P368_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @popis-detalji
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P368_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 2
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_DATUM (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 3
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_SKLADISTE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_ZAKLJUCANO (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 5
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_STATUS_NAZIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 6
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_STATUS_KLASA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 7
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_STATUS_IKONA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 8
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_IZMJENJIV (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 9
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_RAZLOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 10
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_ADMIN (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 11
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_OTKLJ_RAZLOG (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_PORUKA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 13
+            region: @popis-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P368_OPIS (
+        type: textField
+        label {
+            label: Opis popisa
+            alignment: left
+        }
+        validation {
+            maxLength: 255
+        }
+        layout {
+            sequence: 10
+            region: @zaglavlje
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Slobodan opis popisa (komisija, napomena).
+        }
+    )
+
+    button cancel (
+        buttonName: ZATVORI
+        label: Zatvori
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-times
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Obriši popis
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            cssClasses: u-color-9
+            icon: fa-trash-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Obrisati otvoren popis sa svim stavkama i unesenim količinama?
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    button otkljucaj (
+        buttonName: OTKLJUCAJ
+        label: Otključaj popis
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-unlock
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Otključati popis? Dokumenti rashoda i viška sitnog inventara iz ovog popisa se brišu i nastaju ponovo zaključavanjem popisa.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_OTKLJ_RAZLOG is null
+        }
+    )
+
+    button osvjezi (
+        buttonName: OSVJEZI
+        label: Osvježi zaduženje
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-refresh
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    button popuni (
+        buttonName: POPUNI
+        label: Prepiši zaduženje
+        layout {
+            sequence: 35
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-clone
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Prepisati zaduženje u popisanu količinu za sve stavke kod kojih popisana količina nije unesena? Zatim ispravite samo stavke sa razlikom (serijski broj koji nije pronađen = 0).
+            style: information
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Snimi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-save
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    button zakljucaj (
+        buttonName: ZAKLJUCAJ
+        label: Zaključaj popis
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Zaključati popis? Manjak se razdužuje dokumentom Rashod sitnog inventara kod radnika, a višak zadužuje dokumentom Višak sitnog inventara kod radnika (oba zaključena, sa serijskim brojevima). Popis se poslije ne može mijenjati.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    process ucitaj (
+        name: Učitavanje popisa
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                for p in (select * from vw_rm_popisi where id = :P368_ID and ooj_id = :APP_OOJ_ID) loop
+                    :P368_NAZIV        := p.naziv;
+                    :P368_DATUM        := to_char(p.datum, 'DD.MM.YYYY');
+                    :P368_SKLADISTE    := 'Radnik: ' || p.radnik_naziv;
+                    :P368_OPIS         := p.opis;
+                    :P368_ZAKLJUCANO   := p.zakljucano;
+                    :P368_STATUS_KLASA := case when p.zakljucano = 'Y' then 'zakljucena' else 'priprema' end;
+                    :P368_STATUS_NAZIV := case when p.zakljucano = 'Y' then 'Zaključen' else 'Otvoren' end;
+                    :P368_STATUS_IKONA := case when p.zakljucano = 'Y' then 'fa-lock' else 'fa-pencil' end;
+                end loop;
+                :P368_ADMIN        := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
+                :P368_RAZLOG       := rm_popis_pkg.razlog_zabrane(:P368_ID);
+                :P368_IZMJENJIV    := rm_popis_pkg.izmjenjiv(:P368_ID);
+                :P368_OTKLJ_RAZLOG := rm_popis_pkg.razlog_zabrane_otkljucavanja(:P368_ID, :P368_ADMIN);
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process snimi (
+        name: Snimi zaglavlje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_popis_pkg.snimi_zaglavlje(p_id => :P368_ID, p_opis => :P368_OPIS);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POPUNI', 'OSVJEZI') and :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    process stavke-snimi (
+        name: Stavke popisa - snimi redove
+        type: executeCode
+        editableRegion: @stavke
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_popis_pkg.obrisi_stavku(p_id => l_id);
+                        else
+                            rm_popis_pkg.snimi_stavku(
+                                p_id             => l_id,
+                                p_popis_id       => :P368_ID,
+                                p_stavka_id      => kuf_pkg.broj(:STAVKA_ID),
+                                p_popis_kolicina => kuf_pkg.broj(:POPISANO),
+                                p_opis           => :OPIS,
+                                p_serijski_broj  => :SERIJSKI_BROJ
+                            );
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Popis je snimljen.
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POPUNI', 'OSVJEZI') and :P368_IZMJENJIV = 'Y'
+        }
+    )
+
+    process popuni (
+        name: Prepiši knjigovodstveno stanje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    :P368_PORUKA := rm_popis_pkg.popuni(:P368_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: &P368_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @popuni
+        }
+    )
+
+    process osvjezi (
+        name: Osvježi knjigovodstveno stanje
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    :P368_PORUKA := rm_popis_pkg.osvjezi(:P368_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 32
+        }
+        successMessage {
+            successMessage: &P368_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @osvjezi
+        }
+    )
+
+    process zakljucaj (
+        name: Zaključaj popis
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    :P368_PORUKA := rm_popis_pkg.zakljucaj(:P368_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: &P368_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj
+        }
+    )
+
+    process otkljucaj (
+        name: Otključaj popis
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_popis_pkg.otkljucaj(p_id    => :P368_ID,
+                                           p_admin => case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 45
+        }
+        successMessage {
+            successMessage: Popis je otključan - dokumenti rashoda i viška sitnog inventara su obrisani.
+        }
+        serverSideCondition {
+            whenButtonPressed: @otkljucaj
+        }
+    )
+
+    process ajax-artikl (
+        name: ARTIKL_POPIS
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_rad   number;
+                    l_datum date;
+                    l_art   number := kuf_pkg.broj(apex_application.g_x01);
+                    l_json  varchar2(4000);
+                begin
+                    select radnik_id, trunc(datum) into l_rad, l_datum from popisi where id = :P368_ID and ooj_id = :APP_OOJ_ID;
+                    select json_object('jm'  value a.jm_naziv,
+                                       'knj' value case when a.prati_sb = 'Y' then 0
+                                                        else rm_dokument_pkg.si_saldo(:APP_OOJ_ID, l_rad, a.id, null, l_datum, 'Y') end,
+                                       'c'   value rm_dokument_pkg.si_cijena(:APP_OOJ_ID, l_rad, a.id))
+                      into l_json
+                      from vw_rm_artikli a
+                     where a.id = l_art and a.ooj_id = :APP_OOJ_ID;
+                    sys.htp.p(l_json);
+                exception
+                    when no_data_found then
+                        sys.htp.p('{}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 30
+            point: ajaxCallback
+        }
+    )
+
+    process obrisi (
+        name: Obriši popis
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_popis_pkg.obrisi(p_id => :P368_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Popis je obrisan.
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE,ZATVORI
+        }
+    )
+
+    branch (
+        name: Ostani na popisu
+        execution {
+            sequence: 50
+        }
+        behavior {
+            target: {
+                page: 365
+                items: {
+                    P368_ID: &P368_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,POPUNI,OSVJEZI
+        }
+    )
+
+)

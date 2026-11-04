@@ -417,6 +417,22 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry popisi-si (
+        name: Popis sitnog inventara
+        pageNumber: 367
+        execution {
+            sequence: 16
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 367
+            }
+        }
+    )
+
     entry popisi-skladista (
         name: Popis skladišta
         pageNumber: 364

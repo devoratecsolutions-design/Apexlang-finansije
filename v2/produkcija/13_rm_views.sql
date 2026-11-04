@@ -8,6 +8,8 @@
   VW_RM_DOKUMENTI       dokumenti skladišta (lista i forma)
   VW_RM_DOKUMENT_STAVKE stavke dokumenta sa brojem unesenih serijskih brojeva
   VW_RM_SB              serijski brojevi stavki
+  VW_RM_SI_ZADUZENJA    R18: zaduženje sitnog inventara po radniku i artiklu (ISI + PSI na radnika + VSR
+                        - PSI sa radnika - RSR), sa raspoloživim i vrijednošću
 ================================================================================
 */
 set define off
@@ -82,7 +84,9 @@ select o.id,
        o.updated,
        o.updated_by,
        o.popis_id,
-       pp.naziv                                                         as popis_naziv
+       pp.naziv                                                         as popis_naziv,
+       o.radnik_prenos_id,
+       nvl2(rpr.id, rpr.ime || ' ' || rpr.prezime, null)               as radnik_prenos_naziv
   from operacije o
   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
@@ -96,6 +100,7 @@ select o.id,
   left join operacije vz on vz.id = o.veza_id
   left join operacije so on so.id = o.storniran_id
   left join popisi pp on pp.id = o.popis_id
+  left join sif.acc_radnici rpr on rpr.id = o.radnik_prenos_id
   outer apply (select max(ko.kalkulacija_id) as kalkulacija_id
                  from kalkulacija_operacije ko
                 where ko.operacija_id = o.id) kk
@@ -248,3 +253,61 @@ select x.revers_id,
   from x
   join sec_stavke st on st.id = x.stavka_id
   left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id;
+
+-- R18 sitni inventar: zaduženje po radniku i artiklu (firma). Zaduženo = zaključeni dokumenti;
+-- raspoloživo = zaduženo - odlazni dokumenti u pripremi (prezaduženje / rashod koji još nisu zaključeni).
+create or replace force view vw_rm_si_zaduzenja as
+with m as (
+    select o.ooj_id, x.radnik_id, os.stavka_id, x.znak * os.kolicina as kol, x.znak,
+           nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st,
+           os.kolicina * nvl(os.nabavna_cijena, 0) as vr, os.kolicina as kol_abs,
+           o.id as operacija_id, o.naziv as dokument, o.datum, o.skladiste_id
+      from operacija_stavke os
+      join operacije o on o.id = os.operacija_id
+      join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+     cross apply (select o.zaduzeni_radnik_id as radnik_id,
+                         case when upper(vd.sifra) in ('ISI', 'VSR') then 1 else -1 end as znak
+                    from dual
+                  union all
+                  select o.radnik_prenos_id, 1 from dual where upper(vd.sifra) = 'PSI') x
+     where upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+       and nvl(o.stornirano, 'N') = 'N'
+       and o.storniran_id is null
+       and x.radnik_id is not null
+), a as (
+    select m.ooj_id, m.radnik_id, m.stavka_id,
+           sum(case when m.st = 'Z' then m.kol else 0 end)                         as zaduzeno,
+           sum(case when m.st <> 'Z' and m.znak < 0 then m.kol_abs else 0 end)      as u_pripremi,
+           sum(case when m.st = 'Z' and m.znak > 0 then m.vr else 0 end)            as ulaz_vr,
+           sum(case when m.st = 'Z' and m.znak > 0 then m.kol_abs else 0 end)       as ulaz_kol,
+           max(case when m.st = 'Z' and m.znak > 0 then m.datum end)                as zadnje_zaduzenje,
+           max(m.skladiste_id) keep (dense_rank last order by case when m.st = 'Z' and m.znak > 0 then 1 else 0 end,
+                                                              m.datum, m.operacija_id) as skladiste_id,
+           max(m.dokument) keep (dense_rank last order by case when m.st = 'Z' and m.znak > 0 then 1 else 0 end,
+                                                          m.datum, m.operacija_id) as dokument,
+           max(m.operacija_id) keep (dense_rank last order by case when m.st = 'Z' and m.znak > 0 then 1 else 0 end,
+                                                              m.datum, m.operacija_id) as operacija_id
+      from m
+     group by m.ooj_id, m.radnik_id, m.stavka_id
+)
+select a.ooj_id,
+       a.radnik_id,
+       r.ime || ' ' || r.prezime                                        as radnik_naziv,
+       a.stavka_id,
+       s.sifra,
+       s.naziv,
+       s.jm_naziv,
+       s.prati_sb,
+       a.zaduzeno,
+       a.u_pripremi,
+       a.zaduzeno - a.u_pripremi                                        as raspolozivo,
+       round(a.ulaz_vr / nullif(a.ulaz_kol, 0), 4)                      as cijena,
+       round(a.zaduzeno * nvl(a.ulaz_vr / nullif(a.ulaz_kol, 0), 0), 2) as vrijednost,
+       a.zadnje_zaduzenje,
+       a.skladiste_id,
+       a.operacija_id,
+       a.dokument
+  from a
+  join vw_rm_artikli s on s.id = a.stavka_id
+  left join sif.acc_radnici r on r.id = a.radnik_id
+ where a.zaduzeno <> 0 or a.u_pripremi <> 0;

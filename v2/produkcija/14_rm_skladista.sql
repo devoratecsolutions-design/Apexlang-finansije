@@ -181,6 +181,7 @@ select o.ooj_id,
                  from dual) k
  where nvl(o.stornirano, 'N') = 'N'
    and o.storniran_id is null
+   and nvl(k.tk, '-') <> 'Z'            -- R18: dokumenti zaduženja sitnog inventara ne mijenjaju stanje skladišta
  group by o.ooj_id, o.skladiste_id, os.stavka_id, s.sifra, s.naziv, jm.naziv, g.naziv, ts.naziv, s.serijski_broj;
 
 -- skladišta kojima korisnik ima pristup, sa modulom (ROB = Zalihe robe, MAT = Materijal i oprema)

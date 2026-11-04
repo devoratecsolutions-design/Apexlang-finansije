@@ -16,6 +16,9 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R18 (04.11.2026): sitni inventar - OPERACIJE.RADNIK_PRENOS_ID (prezaduženje: na radnika),
+  POPISI.VRSTA (S = skladište, I = sitni inventar kod radnika) i RADNIK_ID, POPIS_STAVKE.SERIJSKI_BROJ;
+  brojači PSI, RSZ, RSR, VSR.
   R17 (03.11.2026): OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA i OPIS (popis skladišta);
   brojači RAS (rashod), RIV / RIM (razlika inventure - višak / manjak).
   R13 (02.11.2026): brojači REV, REVP, RSV, RSVP.
@@ -77,6 +80,11 @@ begin
     kolona('OPERACIJE', 'popis_id', 'number');
     kolona('POPIS_STAVKE', 'cijena', 'number');
     kolona('POPIS_STAVKE', 'opis', 'varchar2(500 char)');
+    -- R18: sitni inventar - prezaduženje (na radnika) i popis SI kod radnika
+    kolona('OPERACIJE', 'radnik_prenos_id', 'number');
+    kolona('POPISI', 'vrsta', 'varchar2(1 char)');
+    kolona('POPISI', 'radnik_id', 'number');
+    kolona('POPIS_STAVKE', 'serijski_broj', 'varchar2(255 char)');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -89,6 +97,9 @@ begin
     indeks('OPERACIJE_SKL_PRENOS_I', 'create index operacije_skl_prenos_i on operacije (skladiste_prenos_id)');
     indeks('OPERACIJE_POPIS_I', 'create index operacije_popis_i on operacije (popis_id)');
     indeks('POPISI_SKL_DATUM_I', 'create index popisi_skl_datum_i on popisi (skladiste_id, datum)');
+    indeks('POPISI_RADNIK_I', 'create index popisi_radnik_i on popisi (radnik_id, datum)');
+    indeks('OPERACIJE_RADNIK_I', 'create index operacije_radnik_i on operacije (zaduzeni_radnik_id)');
+    indeks('OPERACIJE_RADNIK_PRENOS_I', 'create index operacije_radnik_prenos_i on operacije (radnik_prenos_id)');
     indeks('OPERACIJA_STAVKE_SB_SB_I', 'create index operacija_stavke_sb_sb_i on operacija_stavke_sb (serijski_broj)');
     indeks('OPERACIJA_STAVKE_SB_UK',
         'create unique index operacija_stavke_sb_uk on operacija_stavke_sb (operacija_stavka_id, serijski_broj)');
@@ -104,6 +115,10 @@ comment on column operacije.zaduzeni_radnik_id is 'Zaduženi radnik (SIF.ACC_RAD
 comment on column operacije.popis_id is 'Popis skladišta iz kojeg je nastao dokument razlike inventure RIV / RIM (v2)';
 comment on column popis_stavke.prethodna_kolicina is 'Knjigovodstveno stanje na datum popisa: svi ulazi - zaključeni izlazi (v2)';
 comment on column popis_stavke.popis_kolicina is 'Popisana (stvarna) količina - unosi knjigovođa (v2)';
+comment on column operacije.radnik_prenos_id is 'Prezaduženje sitnog inventara (PSI): radnik na kojeg se zaduženje prenosi; ZADUZENI_RADNIK_ID = sa radnika (v2)';
+comment on column popisi.vrsta is 'S (ili prazno) = popis skladišta, I = popis sitnog inventara kod zaduženog radnika (v2)';
+comment on column popisi.radnik_id is 'Popis sitnog inventara: zaduženi radnik (SIF.ACC_RADNICI) (v2)';
+comment on column popis_stavke.serijski_broj is 'Popis sitnog inventara: serijski broj (artikli koji se prate po SB - jedan red po komadu) (v2)';
 comment on column popis_stavke.cijena is 'Prosječna cijena artikla na skladištu na datum popisa (v2)';
 comment on column operacije.mjesto_troska_id is 'Mjesto troška (SIF.ACC_MJESTA_TROSKA) - izdatnica, izlaz na investiciju u toku (v2)';
 
@@ -116,7 +131,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop

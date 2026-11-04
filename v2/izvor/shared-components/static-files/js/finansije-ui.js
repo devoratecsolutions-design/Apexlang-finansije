@@ -1488,12 +1488,13 @@ window.finRmPopis = (function ($) {
    (kvačice u tabeli) -> skriveno polje <P>_SKLADISTA (":12:15:").
    Skladišta koja se ne mogu popisati (nema stanja, otvoren / kasniji popis) su onemogućena.
    Promjena datuma osvježava tabelu; izbor se čuva.
-   Poziv: finRmPopisNovi.init('P366', 'rm_popis_skladista')
+   Poziv: finRmPopisNovi.init('P366', 'rm_popis_skladista') ili, za popis sitnog inventara,
+   finRmPopisNovi.init('P369', 'rm_popis_radnici', 'P369_RADNICI')
    ===================================================================== */
 window.finRmPopisNovi = (function ($) {
     "use strict";
-    function init(p, regionId) {
-        var izabrano = {}, item = p + "_SKLADISTA", filter = "";
+    function init(p, regionId, itemName) {
+        var izabrano = {}, item = itemName || (p + "_SKLADISTA"), filter = "";
         String($v(item) || "").split(":").forEach(function (x) { if (x) { izabrano[x] = true; } });
         function upisi() {
             var ids = Object.keys(izabrano).filter(function (k) { return izabrano[k]; }), n;

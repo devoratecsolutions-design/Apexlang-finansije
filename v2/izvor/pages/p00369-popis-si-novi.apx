@@ -1,0 +1,552 @@
+page 369 (
+    name: Novi popis sitnog inventara
+    alias: POPIS-SI-NOVI
+    title: Novi popis sitnog inventara
+    pageGroup: @robno-materijalno
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+            js-dialog-class-t-Drawer--md
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmPopisNovi.init('P369', 'rm_popis_radnici', 'P369_RADNICI');
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-popis
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region forma (
+        name: Novi popis / Forma
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
+        }
+    )
+
+    region parametri (
+        name: Popis
+        title: Popis
+        type: staticContent
+        layout {
+            sequence: 10
+            parentRegion: @forma
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region sva (
+        name: Svi radnici
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <input type="search" class="apex-item-text fin-popis-trazi" placeholder="Pretraga radnika..." aria-label="Pretraga radnika" autocomplete="off">
+                <label class="fin-popis-sva-l"><input type="checkbox" class="fin-popis-sva"> Svi prikazani radnici koji se mogu popisati</label><span class="fin-sub fin-popis-izabrano" id="fin_popis_izabrano"></span>
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @skladista-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-popis-sva-bar
+        }
+    )
+
+    region skladista-sekcija (
+        name: Radnici - sekcija
+        title: Radnici sa zaduženim sitnim inventarom
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @forma
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region skladista (
+        name: Radnici za popis
+        title: Radnici
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT x.id,
+                       x.skladiste,
+                       x.artikala,
+                       nvl(x.razlog, CASE WHEN x.zadnji IS NOT NULL THEN 'Posljednji popis ' || to_char(x.zadnji, 'DD.MM.YYYY') ELSE 'Spremno za popis' END) AS napomena,
+                       CASE WHEN x.razlog IS NULL THEN NULL ELSE 'disabled' END AS dis,
+                       CASE WHEN x.razlog IS NULL THEN 'is-ok' ELSE 'is-zabrana' END AS klasa
+                FROM (
+                    SELECT r.id,
+                           r.prezime || ' ' || r.ime AS skladiste,
+                           rm_popis_pkg.si_broj_artikala(:APP_OOJ_ID, r.id, d.datum) AS artikala,
+                           rm_popis_pkg.si_razlog_zabrane_kreiranja(:APP_OOJ_ID, r.id, d.datum) AS razlog,
+                           (SELECT max(p.datum) FROM popisi p WHERE nvl(p.vrsta, 'S') = 'I' AND p.radnik_id = r.id AND p.valid = 'Y') AS zadnji
+                    FROM sif.acc_radnici r
+                    CROSS JOIN (SELECT nvl(to_date(:P369_DATUM, 'DD.MM.YYYY'), trunc(sysdate)) AS datum FROM dual) d
+                    WHERE r.ooj_id = :APP_OOJ_ID
+                      AND r.valid = 'Y'
+                ) x
+                WHERE x.artikala > 0
+                ORDER BY CASE WHEN x.razlog IS NULL THEN 0 ELSE 1 END, x.skladiste
+                ```
+            pageItemsToSubmit: P369_DATUM
+        }
+        layout {
+            sequence: 20
+            parentRegion: @skladista-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list fin-popis-skl
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Nijedan radnik nema zaduženog sitnog inventara na izabrani datum.
+        }
+        advanced {
+            htmlDomId: rm_popis_radnici
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Izbor
+                alignment: center
+            }
+            layout {
+                sequence: 10
+                columnAlignment: center
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <input type="checkbox" class="fin-popis-chk" value="#ID#" #DIS# aria-label="#SKLADISTE#">
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SKLADISTE (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-doc"><span class="fin-doc__no">#SKLADISTE#</span><span class="fin-sub fin-popis-napomena #KLASA#">#NAPOMENA#</span></span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column ARTIKALA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Artikala zaduženo
+                alignment: end
+            }
+            layout {
+                sequence: 30
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAPOMENA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column DIS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column KLASA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+    )
+
+    pageItem P369_DATUM (
+        type: datePicker
+        label {
+            label: Datum popisa
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @parametri
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Datum na koji se utvrđuje zaduženje radnika (zaključeni dokumenti zaduženja do ovog datuma, uključivo). Ne može biti u budućnosti, u zaključanom periodu niti prije posljednjeg popisa sitnog inventara radnika.
+        }
+    )
+
+    pageItem P369_OPIS (
+        type: textField
+        label {
+            label: Opis
+            alignment: left
+        }
+        validation {
+            maxLength: 255
+        }
+        layout {
+            sequence: 20
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Npr. Godišnji popis sitnog inventara 2026, komisija ... (upisuje se na sve otvorene popise).
+        }
+    )
+
+    pageItem P369_RADNICI (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 30
+            region: @parametri
+            slot: regionBody
+        }
+    )
+
+    pageItem P369_PORUKA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 40
+            region: @parametri
+            slot: regionBody
+        }
+    )
+
+    button cancel (
+        buttonName: ZATVORI
+        label: Odustani
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--simple
+                t-Button--iconLeft
+            ]
+            icon: fa-times
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button kreiraj (
+        buttonName: KREIRAJ
+        label: Otvori popis
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-list-ol
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation datum-obavezno (
+        name: P369_DATUM obavezno
+        execution {
+            sequence: 10
+        }
+        validation {
+            type: itemIsNotNull
+            item: P369_DATUM
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P369_DATUM
+        }
+        serverSideCondition {
+            whenButtonPressed: @kreiraj
+        }
+    )
+
+    validation skladista-obavezno (
+        name: Radnici obavezni
+        execution {
+            sequence: 20
+        }
+        validation {
+            type: itemIsNotNull
+            item: P369_RADNICI
+        }
+        error {
+            errorMessage: Označite bar jednog radnika.
+        }
+        serverSideCondition {
+            whenButtonPressed: @kreiraj
+        }
+    )
+
+    dynamicAction datum-promjena (
+        name: Promjena datuma - osvježi radnike
+        execution {
+            sequence: 10
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P369_DATUM
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @skladista
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction cancel-dialog (
+        name: Odustani
+        execution {
+            sequence: 20
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process pocetne (
+        name: Početne vrijednosti
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                if :P369_DATUM is null then
+                    -- radna godina: danas, a za ranije godine 31.12.
+                    :P369_DATUM := to_char(least(trunc(sysdate), to_date('31.12.' || :APP_GODINA, 'DD.MM.YYYY')), 'DD.MM.YYYY');
+                end if;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process kreiraj (
+        name: Otvori popis
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_id number;
+                begin
+                    :P369_PORUKA := rm_popis_pkg.kreiraj_si(
+                        p_ooj_id      => :APP_OOJ_ID,
+                        p_godina      => :APP_GODINA,
+                        p_datum       => to_date(:P369_DATUM, 'DD.MM.YYYY'),
+                        p_radnici     => :P369_RADNICI,
+                        p_opis        => :P369_OPIS,
+                        p_prvi_id     => l_id
+                    );
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: &P369_PORUKA.
+        }
+        serverSideCondition {
+            whenButtonPressed: @kreiraj
+        }
+    )
+
+    process close-dialog (
+        name: Zatvori dijalog
+        type: closeDialog
+        execution {
+            sequence: 90
+        }
+        serverSideCondition {
+            whenButtonPressed: @kreiraj
+        }
+    )
+
+)

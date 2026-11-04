@@ -21,6 +21,13 @@
       RAS  Rashod                         (izlaz; kao izdatnica, mjesto troška)
       RIV  Razlika inventure - višak      (ulaz; nastaje zaključavanjem popisa, cijenu unosi knjigovođa)
       RIM  Razlika inventure - manjak     (izlaz; nastaje zaključavanjem popisa, prosječna cijena)
+    R18 (sitni inventar, samo materijalna skladišta):
+      PSI  Prezaduženje sitnog inventara  (sa radnika na radnika; bez uticaja na skladište, ne knjiži se)
+      RSZ  Rashod sitnog inventara sa zaliha (izlaz sa skladišta, kao rashod)
+      RSR  Rashod sitnog inventara kod radnika (razduženje radnika; bez uticaja na skladište)
+      VSR  Višak sitnog inventara kod radnika (nastaje zaključavanjem popisa SI; bez uticaja na skladište)
+  Tip kretanja u šifarniku: PSI, RSR i VSR nemaju tip (ne mijenjaju stanje skladišta, samo zaduženje
+  radnika); pravila su u RM_DOKUMENT_PKG.
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
   sa istom aplikacijom (app_id). Postojeće vrste sa istom šifrom se ne mijenjaju.
   Skripta se može pokrenuti više puta.
@@ -66,6 +73,10 @@ begin
     dodaj('RAS', 'Rashod', 'Rashodovanje materijala / opreme sa skladišta (v2)');
     dodaj('RIV', 'Razlika inventure - višak', 'Višak utvrđen popisom skladišta - nastaje zaključavanjem popisa (v2)', 'U');
     dodaj('RIM', 'Razlika inventure - manjak', 'Manjak utvrđen popisom skladišta - nastaje zaključavanjem popisa (v2)');
+    dodaj('PSI', 'Prezaduženje sitnog inventara', 'Prenos zaduženja sitnog inventara sa radnika na radnika - ne knjiži se (v2)', null);
+    dodaj('RSZ', 'Rashod sitnog inventara sa zaliha', 'Rashodovanje sitnog inventara koji je na skladištu (v2)');
+    dodaj('RSR', 'Rashod sitnog inventara kod radnika', 'Rashodovanje sitnog inventara zaduženog kod radnika - razduženje radnika (v2)', null);
+    dodaj('VSR', 'Višak sitnog inventara kod radnika', 'Višak sitnog inventara utvrđen popisom kod radnika - nastaje zaključavanjem popisa (v2)', null);
     commit;
     dbms_output.put_line('Nove vrste dokumenata: ' || l_novih);
 end;
@@ -75,5 +86,5 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR')
  order by vd.ooj_id, vd.sifra;

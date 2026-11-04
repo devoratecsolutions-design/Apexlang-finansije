@@ -3088,6 +3088,37 @@ list navigation-menu-materijal-oprema (
         }
     )
 
+    entry popis-sitnog-inventara (
+        label: Popis sitnog inventara
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 41
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                367
+                368
+                369
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 367);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-popis
+        }
+    )
+
     entry skladista (
         label: Skladišta
         icon {

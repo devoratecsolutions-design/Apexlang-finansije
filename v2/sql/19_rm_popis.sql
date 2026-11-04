@@ -22,6 +22,13 @@
     - administrator može otključati popis dok dokument viška nije zaključen i dok nema
       kasnijeg popisa: dokumenti razlike se brišu
 
+  R18 (04.11.2026): POPIS SITNOG INVENTARA KOD ZADUŽENOG RADNIKA (stranice 367 / 368 / 369)
+    - POPISI.VRSTA = 'I', RADNIK_ID = radnik, bez skladišta; broj POPSI-000001 po firmi i godini
+    - knjigovodstveno = zaduženje radnika na datum popisa (zaključeni dokumenti: ISI, PSI, RSR, VSR);
+      artikli koji se prate po serijskom broju - jedan red po serijskom broju (količina 1)
+    - jedan otvoren popis SI po radniku; zaključavanje: manjak -> RSR (rashod SI kod radnika),
+      višak -> VSR (višak SI kod radnika), oba zaključena, sa serijskim brojevima, bez skladišta
+
   Skripta se može pokretati više puta.
 ================================================================================
 */
@@ -86,6 +93,20 @@ create or replace package rm_popis_pkg as
         p_prvi_id     out number
     ) return varchar2;
 
+    -- R18 popis sitnog inventara kod radnika
+    function je_si_popis (p_id in number) return varchar2;                 -- Y / N
+    function si_broj_artikala (p_ooj_id in number, p_radnik_id in number, p_datum in date) return number;
+    function si_razlog_zabrane_kreiranja (p_ooj_id in number, p_radnik_id in number, p_datum in date) return varchar2;
+    -- p_radnici = id-jevi radnika ":3:7:" ili 'SVI' (svi radnici firme sa zaduženjem)
+    function kreiraj_si (
+        p_ooj_id      in number,
+        p_godina      in number,
+        p_datum       in date,
+        p_radnici     in varchar2,
+        p_opis        in varchar2,
+        p_prvi_id     out number
+    ) return varchar2;
+
     -- status
     function razlog_zabrane (p_id in number) return varchar2;              -- null = popis se može mijenjati
     function izmjenjiv (p_id in number) return varchar2;                   -- Y / N
@@ -96,7 +117,8 @@ create or replace package rm_popis_pkg as
         p_popis_id       in number,
         p_stavka_id      in number,
         p_popis_kolicina in number,
-        p_opis           in varchar2 default null
+        p_opis           in varchar2 default null,
+        p_serijski_broj  in varchar2 default null    -- popis SI: serijski broj (artikal koji se prati po SB)
     );
     procedure obrisi_stavku (p_id in number);
     -- prepiše knjigovodstveno stanje u popisanu količinu gdje nije unesena; vraća poruku
@@ -118,6 +140,14 @@ end rm_popis_pkg;
 create or replace package body rm_popis_pkg as
 
     c_modul constant varchar2(10) := 'MAT';         -- modul vrsta dokumenata skladišta (SIF.ACC_MODULI)
+
+    -- R18 popis sitnog inventara: definisane na kraju paketa
+    function upisi_stanje_si (p_popis_id in number, p_samo_provjera in varchar2 default 'N') return number;
+    procedure snimi_stavku_si (p_id in out number, p_popis_id in number, p_stavka_id in number,
+                               p_popis_kolicina in number, p_opis in varchar2, p_sb in varchar2);
+    function provjeri_zakljucavanje_si (p_id in number) return varchar2;
+    function zakljucaj_si (p_id in number) return varchar2;
+    function si_razlog_zabrane_otkljucavanja (p_id in number, p_admin in varchar2) return varchar2;
 
     procedure greska (p_tekst in varchar2) is
     begin
@@ -173,6 +203,9 @@ create or replace package body rm_popis_pkg as
         l_rb    number;
         l_pr    number := 0;
     begin
+        if je_si_popis(p_popis_id) = 'Y' then
+            return upisi_stanje_si(p_popis_id);
+        end if;
         select skladiste_id, trunc(datum) into l_skl, l_datum from popisi where id = p_popis_id;
         select nvl(max(redni_broj), 0) into l_rb from popis_stavke where popis_id = p_popis_id;
         for s in (select x.stavka_id, x.kol, ps.id as ps_id, ps.prethodna_kolicina as stara
@@ -226,7 +259,7 @@ create or replace package body rm_popis_pkg as
         l_r varchar2(4000);
     begin
         for p in (select naziv, datum from popisi
-                   where skladiste_id = p_skladiste_id and valid = 'Y' and nvl(zakljucano, 'N') = 'N'
+                   where skladiste_id = p_skladiste_id and valid = 'Y' and nvl(zakljucano, 'N') = 'N' and nvl(vrsta, 'S') = 'S'
                    order by id) loop
             return 'Na skladištu je već otvoren popis ' || p.naziv || ' (' || to_char(p.datum, 'DD.MM.YYYY')
                    || ') - zaključite ga ili obrišite.';
@@ -348,7 +381,7 @@ create or replace package body rm_popis_pkg as
                 return 'Popis nije aktivan.';
             end if;
             if nvl(p.zakljucano, 'N') = 'Y' then
-                return 'Popis je zaključen - razlike su knjižene dokumentima razlike inventure.';
+                return 'Popis je zaključen - razlike su evidentirane dokumentima iz popisa.';
             end if;
             for o in (select period_zakljucan_do from core.ooj where id = p.ooj_id) loop
                 if o.period_zakljucan_do is not null and trunc(p.datum) < trunc(o.period_zakljucan_do) then
@@ -378,7 +411,8 @@ create or replace package body rm_popis_pkg as
         p_popis_id       in number,
         p_stavka_id      in number,
         p_popis_kolicina in number,
-        p_opis           in varchar2 default null
+        p_opis           in varchar2 default null,
+        p_serijski_broj  in varchar2 default null
     ) is
         l_ooj   number;
         l_skl   number;
@@ -393,6 +427,10 @@ create or replace package body rm_popis_pkg as
         provjeri_izmjenu(p_popis_id);
         if p_popis_kolicina is not null and p_popis_kolicina < 0 then
             greska('Popisana količina ne može biti negativna.');
+        end if;
+        if je_si_popis(p_popis_id) = 'Y' then
+            snimi_stavku_si(p_id, p_popis_id, p_stavka_id, p_popis_kolicina, p_opis, trim(p_serijski_broj));
+            return;
         end if;
         select ooj_id, skladiste_id, trunc(datum) into l_ooj, l_skl, l_datum from popisi where id = p_popis_id;
         if p_id is not null then
@@ -506,6 +544,9 @@ create or replace package body rm_popis_pkg as
     begin
         if l_r is not null then
             return l_r;
+        end if;
+        if je_si_popis(p_id) = 'Y' then
+            return provjeri_zakljucavanje_si(p_id);
         end if;
         for p in (select * from popisi where id = p_id) loop
             select count(*) into l_n from popis_stavke where popis_id = p_id;
@@ -648,6 +689,9 @@ create or replace package body rm_popis_pkg as
         if l_r is not null then
             greska(l_r);
         end if;
+        if je_si_popis(p_id) = 'Y' then
+            return zakljucaj_si(p_id);
+        end if;
         select * into l_p from popisi where id = p_id for update;
         select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina > nvl(prethodna_kolicina, 0);
         if l_n > 0 then
@@ -665,6 +709,9 @@ create or replace package body rm_popis_pkg as
     function razlog_zabrane_otkljucavanja (p_id in number, p_admin in varchar2) return varchar2 is
         l_s varchar2(255);
     begin
+        if je_si_popis(p_id) = 'Y' then
+            return si_razlog_zabrane_otkljucavanja(p_id, p_admin);
+        end if;
         for p in (select * from popisi where id = p_id) loop
             if nvl(p.zakljucano, 'N') <> 'Y' then
                 return 'Popis nije zaključen.';
@@ -710,6 +757,474 @@ create or replace package body rm_popis_pkg as
         update popisi set zakljucano = 'N' where id = p_id;
     end otkljucaj;
 
+    --------------------------------------------------------------------- R18 popis sitnog inventara kod radnika
+    function je_si_popis (p_id in number) return varchar2 is
+        l_v varchar2(1);
+    begin
+        select max(nvl(vrsta, 'S')) into l_v from popisi where id = p_id;
+        return case when l_v = 'I' then 'Y' else 'N' end;
+    end je_si_popis;
+
+    function radnik_naziv (p_radnik_id in number) return varchar2 is
+        l_s varchar2(400);
+    begin
+        select max(ime || ' ' || prezime) into l_s from sif.acc_radnici where id = p_radnik_id;
+        return l_s;
+    end radnik_naziv;
+
+    -- broj artikala zaduženih kod radnika na datum (samo zaključeni dokumenti)
+    function si_broj_artikala (p_ooj_id in number, p_radnik_id in number, p_datum in date) return number is
+        l_n number;
+    begin
+        select count(*) into l_n
+          from (select os.stavka_id
+                  from operacija_stavke os
+                  join operacije o on o.id = os.operacija_id
+                  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                 where o.ooj_id = p_ooj_id
+                   and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+                   and (o.zaduzeni_radnik_id = p_radnik_id or o.radnik_prenos_id = p_radnik_id)
+                   and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
+                   and nvl(o.stornirano, 'N') = 'N' and o.storniran_id is null
+                   and o.datum < trunc(p_datum) + 1
+                 group by os.stavka_id
+                having sum(case when upper(vd.sifra) in ('ISI', 'VSR') and o.zaduzeni_radnik_id = p_radnik_id then os.kolicina
+                                when upper(vd.sifra) = 'PSI' and o.radnik_prenos_id = p_radnik_id then os.kolicina
+                                when upper(vd.sifra) in ('PSI', 'RSR') and o.zaduzeni_radnik_id = p_radnik_id then -os.kolicina
+                                else 0 end) <> 0);
+        return l_n;
+    end si_broj_artikala;
+
+    function si_razlog_zabrane_kreiranja (p_ooj_id in number, p_radnik_id in number, p_datum in date) return varchar2 is
+        l_r varchar2(4000);
+    begin
+        for p in (select naziv, datum from popisi
+                   where nvl(vrsta, 'S') = 'I' and radnik_id = p_radnik_id and valid = 'Y' and nvl(zakljucano, 'N') = 'N'
+                   order by id) loop
+            return 'Za radnika je već otvoren popis ' || p.naziv || ' (' || to_char(p.datum, 'DD.MM.YYYY')
+                   || ') - zaključite ga ili obrišite.';
+        end loop;
+        l_r := rm_dokument_pkg.si_popis_blokada(p_radnik_id, p_datum);
+        if l_r is not null then
+            return l_r || ' Novi popis ne može imati datum prije posljednjeg popisa.';
+        end if;
+        if si_broj_artikala(p_ooj_id, p_radnik_id, p_datum) = 0 then
+            return 'Radnik nema zaduženog sitnog inventara na datum ' || to_char(p_datum, 'DD.MM.YYYY') || '.';
+        end if;
+        return null;
+    end si_razlog_zabrane_kreiranja;
+
+    function kreiraj_si (
+        p_ooj_id      in number,
+        p_godina      in number,
+        p_datum       in date,
+        p_radnici     in varchar2,
+        p_opis        in varchar2,
+        p_prvi_id     out number
+    ) return varchar2 is
+        l_datum  date := trunc(p_datum);
+        l_zak    date;
+        l_lista  apex_t_varchar2;
+        l_rad    number;
+        l_r      varchar2(4000);
+        l_greske varchar2(4000);
+        l_poruka varchar2(4000);
+        l_id     number;
+        l_broj   number;
+        l_naziv  varchar2(255);
+        l_n      number;
+        l_cnt    number := 0;
+    begin
+        if l_datum is null then
+            greska('Izaberite datum popisa.');
+        end if;
+        if extract(year from l_datum) <> p_godina then
+            greska('Datum popisa mora biti u ' || p_godina || '. godini. Za drugu godinu promijenite radnu godinu.');
+        end if;
+        if l_datum > trunc(sysdate) then
+            greska('Datum popisa ne može biti u budućnosti.');
+        end if;
+        select max(period_zakljucan_do) into l_zak from core.ooj where id = p_ooj_id;
+        if l_zak is not null and l_datum < trunc(l_zak) then
+            greska('Datum popisa je u zaključanom periodu (zaključano do ' || to_char(l_zak, 'DD.MM.YYYY') || ').');
+        end if;
+        if upper(trim(p_radnici)) = 'SVI' then
+            select to_char(r.id) bulk collect into l_lista
+              from sif.acc_radnici r
+             where r.ooj_id = p_ooj_id and r.valid = 'Y'
+               and rm_popis_pkg.si_razlog_zabrane_kreiranja(p_ooj_id, r.id, l_datum) is null
+             order by r.prezime, r.ime;
+            if l_lista.count = 0 then
+                greska('Nijedan radnik nema zaduženog sitnog inventara na datum ' || to_char(l_datum, 'DD.MM.YYYY')
+                       || ' bez otvorenog popisa.');
+            end if;
+        else
+            l_lista := apex_string.split(trim(both ':' from p_radnici), ':');
+            if l_lista.count = 0 or trim(l_lista(1)) is null then
+                greska('Izaberite bar jednog radnika.');
+            end if;
+        end if;
+        -- provjera svih izabranih radnika prije kreiranja (sve ili ništa)
+        for i in 1 .. l_lista.count loop
+            l_rad := to_number(trim(l_lista(i)));
+            select count(*) into l_n from sif.acc_radnici where id = l_rad and ooj_id = p_ooj_id;
+            l_r := case when l_n = 0 then 'radnik ne pripada firmi.' else si_razlog_zabrane_kreiranja(p_ooj_id, l_rad, l_datum) end;
+            if l_r is not null then
+                l_greske := substr(l_greske || case when l_greske is not null then ' ' end
+                                   || nvl(radnik_naziv(l_rad), 'Radnik ' || l_rad) || ': ' || l_r, 1, 3500);
+            end if;
+        end loop;
+        if l_greske is not null then
+            greska('Popis nije otvoren. ' || l_greske);
+        end if;
+        for i in 1 .. l_lista.count loop
+            l_rad := to_number(trim(l_lista(i)));
+            rm_dokument_pkg.novi_broj(p_ooj_id, p_godina, 'popsi', null, l_broj, l_naziv);
+            insert into popisi (ooj_id, godina, datum, opis, valid, skladiste_id, zakljucano, naziv, broj, vrsta, radnik_id)
+            values (p_ooj_id, p_godina, l_datum, substr(trim(p_opis), 1, 255), 'Y', null, 'N', l_naziv, l_broj, 'I', l_rad)
+            returning id into l_id;
+            l_n := upisi_stanje_si(l_id);
+            if p_prvi_id is null then
+                p_prvi_id := l_id;
+            end if;
+            l_cnt := l_cnt + 1;
+            l_poruka := substr(l_poruka || case when l_poruka is not null then ', ' end
+                               || l_naziv || ' (' || radnik_naziv(l_rad) || ', '
+                               || si_broj_artikala(p_ooj_id, l_rad, l_datum) || ' art.)', 1, 3500);
+        end loop;
+        return case when l_cnt = 1 then 'Otvoren je popis sitnog inventara '
+                    else 'Otvoreni su popisi sitnog inventara (' || l_cnt || '): ' end
+               || l_poruka || '. Unesite popisane količine.';
+    end kreiraj_si;
+
+    -- knjigovodstveno stanje popisa SI = zaduženje radnika na datum popisa (zaključeni dokumenti):
+    -- jedan red po artiklu; za artikle koji se prate po SB jedan red po serijskom broju
+    -- (+ red bez SB ako se količina i broj serijskih brojeva razlikuju). Vraća broj promjena;
+    -- p_samo_provjera = 'Y': ništa ne mijenja, samo broji razlike
+    function upisi_stanje_si (p_popis_id in number, p_samo_provjera in varchar2 default 'N') return number is
+        type t_map is table of number index by varchar2(400);
+        l_zelj  t_map;
+        l_ooj   number;
+        l_rad   number;
+        l_datum date;
+        l_rb    number;
+        l_pr    number := 0;
+        l_k     varchar2(400);
+        l_sbn   number;
+        l_kol   number;
+        l_st    number;
+        l_sb    varchar2(255);
+    begin
+        select ooj_id, radnik_id, trunc(datum) into l_ooj, l_rad, l_datum from popisi where id = p_popis_id;
+        -- željeno stanje: ključ = stavka_id || '#' || serijski broj
+        for a in (select os.stavka_id, max(case when s.serijski_broj = 'Y' then 'Y' else 'N' end) as prati_sb,
+                         sum(case when upper(vd.sifra) in ('ISI', 'VSR') and o.zaduzeni_radnik_id = l_rad then os.kolicina
+                                  when upper(vd.sifra) = 'PSI' and o.radnik_prenos_id = l_rad then os.kolicina
+                                  when upper(vd.sifra) in ('PSI', 'RSR') and o.zaduzeni_radnik_id = l_rad then -os.kolicina
+                                  else 0 end) as kol
+                    from operacija_stavke os
+                    join operacije o on o.id = os.operacija_id
+                    join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                    join sec_stavke s on s.id = os.stavka_id
+                   where o.ooj_id = l_ooj
+                     and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+                     and (o.zaduzeni_radnik_id = l_rad or o.radnik_prenos_id = l_rad)
+                     and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
+                     and nvl(o.stornirano, 'N') = 'N' and o.storniran_id is null
+                     and o.datum < l_datum + 1
+                   group by os.stavka_id) loop
+            continue when a.kol = 0;
+            if a.prati_sb = 'Y' then
+                l_sbn := 0;
+                for b in (select distinct sb.serijski_broj
+                            from operacija_stavke_sb sb
+                            join operacija_stavke os on os.id = sb.operacija_stavka_id
+                            join operacije o on o.id = os.operacija_id
+                           where os.stavka_id = a.stavka_id and o.ooj_id = l_ooj
+                             and (o.zaduzeni_radnik_id = l_rad or o.radnik_prenos_id = l_rad)) loop
+                    if rm_dokument_pkg.si_sb(l_ooj, l_rad, a.stavka_id, b.serijski_broj, null, l_datum, 'Y') > 0 then
+                        l_zelj(a.stavka_id || '#' || b.serijski_broj) := 1;
+                        l_sbn := l_sbn + 1;
+                    end if;
+                end loop;
+                if a.kol - l_sbn <> 0 then
+                    l_zelj(a.stavka_id || '#') := a.kol - l_sbn;
+                end if;
+            else
+                l_zelj(a.stavka_id || '#') := a.kol;
+            end if;
+        end loop;
+        -- postojeći redovi: ažuriranje / uklanjanje
+        for r in (select id, stavka_id, serijski_broj, nvl(prethodna_kolicina, 0) as pret, popis_kolicina
+                    from popis_stavke where popis_id = p_popis_id) loop
+            l_k := r.stavka_id || '#' || r.serijski_broj;
+            if l_zelj.exists(l_k) then
+                if l_zelj(l_k) <> r.pret then
+                    l_pr := l_pr + 1;
+                    if p_samo_provjera = 'N' then
+                        update popis_stavke set prethodna_kolicina = l_zelj(l_k) where id = r.id;
+                    end if;
+                end if;
+                l_zelj.delete(l_k);
+            elsif r.pret <> 0 then
+                l_pr := l_pr + 1;
+                if p_samo_provjera = 'N' then
+                    if r.popis_kolicina is null then
+                        delete from popis_stavke where id = r.id;
+                    else
+                        update popis_stavke set prethodna_kolicina = 0 where id = r.id;
+                    end if;
+                end if;
+            end if;
+        end loop;
+        -- novi redovi
+        select nvl(max(redni_broj), 0) into l_rb from popis_stavke where popis_id = p_popis_id;
+        l_k := l_zelj.first;
+        while l_k is not null loop
+            l_pr := l_pr + 1;
+            if p_samo_provjera = 'N' then
+                l_st := to_number(substr(l_k, 1, instr(l_k, '#') - 1));
+                l_sb := substr(l_k, instr(l_k, '#') + 1);
+                l_kol := l_zelj(l_k);
+                l_rb := l_rb + 1;
+                insert into popis_stavke (popis_id, stavka_id, serijski_broj, prethodna_kolicina, popis_kolicina, redni_broj, cijena, valid)
+                values (p_popis_id, l_st, l_sb, l_kol, null, l_rb, rm_dokument_pkg.si_cijena(l_ooj, l_rad, l_st), 'Y');
+            end if;
+            l_k := l_zelj.next(l_k);
+        end loop;
+        -- redni brojevi po šifri artikla i serijskom broju
+        if p_samo_provjera = 'N' then
+            for x in (select ps.id, row_number() over (order by a.sifra, ps.serijski_broj nulls first, ps.id) as rb
+                        from popis_stavke ps join sec_stavke a on a.id = ps.stavka_id
+                       where ps.popis_id = p_popis_id) loop
+                update popis_stavke set redni_broj = x.rb where id = x.id;
+            end loop;
+        end if;
+        return l_pr;
+    end upisi_stanje_si;
+
+    procedure snimi_stavku_si (p_id in out number, p_popis_id in number, p_stavka_id in number,
+                               p_popis_kolicina in number, p_opis in varchar2, p_sb in varchar2) is
+        l_ooj   number;
+        l_rad   number;
+        l_datum date;
+        l_sbp   varchar2(1);
+        l_tip   number;
+        l_valid varchar2(1);
+        l_st    number;
+        l_sb    varchar2(255);
+        l_pret  number;
+        l_n     number;
+        l_rb    number;
+    begin
+        select ooj_id, radnik_id, trunc(datum) into l_ooj, l_rad, l_datum from popisi where id = p_popis_id;
+        if p_id is not null then
+            select stavka_id, serijski_broj into l_st, l_sb from popis_stavke where id = p_id and popis_id = p_popis_id;
+            if p_stavka_id is not null and p_stavka_id <> l_st then
+                greska('Artikal stavke popisa se ne mijenja. Obrišite ručno dodat red i dodajte novi.');
+            end if;
+            if p_sb is not null and nvl(l_sb, '~') <> p_sb then
+                greska('Serijski broj stavke popisa se ne mijenja. Obrišite ručno dodat red i dodajte novi.');
+            end if;
+            if l_sb is not null and p_popis_kolicina is not null and p_popis_kolicina not in (0, 1) then
+                greska('Serijski broj ' || l_sb || ': popisana količina je 1 (pronađen) ili 0 (nije pronađen).');
+            end if;
+            update popis_stavke set popis_kolicina = p_popis_kolicina, opis = substr(p_opis, 1, 500) where id = p_id;
+            return;
+        end if;
+        if p_stavka_id is null then
+            greska('Izaberite artikal.');
+        end if;
+        begin
+            select case when serijski_broj = 'Y' then 'Y' else 'N' end, tip_stavke_id, valid
+              into l_sbp, l_tip, l_valid
+              from sec_stavke where id = p_stavka_id and ooj_id = l_ooj;
+        exception
+            when no_data_found then
+                greska('Artikal ne pripada firmi.');
+        end;
+        if l_tip = 3 then
+            greska('Usluga se ne vodi kao sitni inventar.');
+        end if;
+        if l_sbp = 'Y' then
+            if p_sb is null then
+                greska('Artikal se prati po serijskom broju - unesite serijski broj pronađenog komada.');
+            end if;
+            if p_popis_kolicina is not null and p_popis_kolicina not in (0, 1) then
+                greska('Za serijski broj popisana količina je 1 (pronađen) ili 0.');
+            end if;
+            select count(*) into l_n from popis_stavke where popis_id = p_popis_id and stavka_id = p_stavka_id and serijski_broj = p_sb;
+            if l_n > 0 then
+                greska('Serijski broj ' || p_sb || ' je već u popisu.');
+            end if;
+            l_pret := case when rm_dokument_pkg.si_sb(l_ooj, l_rad, p_stavka_id, p_sb, null, l_datum, 'Y') > 0 then 1 else 0 end;
+        else
+            if p_sb is not null then
+                greska('Artikal se ne prati po serijskom broju - ostavite serijski broj prazan.');
+            end if;
+            select count(*) into l_n from popis_stavke where popis_id = p_popis_id and stavka_id = p_stavka_id and serijski_broj is null;
+            if l_n > 0 then
+                greska('Artikal je već u popisu - unesite popisanu količinu na postojećem redu.');
+            end if;
+            l_pret := rm_dokument_pkg.si_saldo(l_ooj, l_rad, p_stavka_id, null, l_datum, 'Y');
+        end if;
+        select nvl(max(redni_broj), 0) + 1 into l_rb from popis_stavke where popis_id = p_popis_id;
+        insert into popis_stavke (popis_id, stavka_id, serijski_broj, prethodna_kolicina, popis_kolicina, redni_broj, cijena, opis, valid)
+        values (p_popis_id, p_stavka_id, case when l_sbp = 'Y' then p_sb end, l_pret, p_popis_kolicina, l_rb,
+                rm_dokument_pkg.si_cijena(l_ooj, l_rad, p_stavka_id), substr(p_opis, 1, 500), 'Y')
+        returning id into p_id;
+    end snimi_stavku_si;
+
+    function provjeri_zakljucavanje_si (p_id in number) return varchar2 is
+        l_n     number;
+        l_lista varchar2(1000);
+    begin
+        for p in (select * from popisi where id = p_id) loop
+            select count(*) into l_n from popis_stavke where popis_id = p_id;
+            if l_n = 0 then
+                return 'Popis nema stavki.';
+            end if;
+            select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina is null;
+            if l_n > 0 then
+                return 'Popisana količina nije unesena za ' || l_n || ' stavki. Unesite količine ili prepišite knjigovodstveno stanje.';
+            end if;
+            if upisi_stanje_si(p_id, 'Y') > 0 then
+                return 'Zaduženje radnika na dan popisa se promijenilo. Osvježite popis pa ga zaključite.';
+            end if;
+            -- dokumenti zaduženja radnika u pripremi do datuma popisa
+            select listagg(x.naziv, ', ') within group (order by x.datum, x.id), count(*)
+              into l_lista, l_n
+              from (select o.naziv, o.datum, o.id
+                      from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                     where o.ooj_id = p.ooj_id
+                       and upper(vd.sifra) in ('ISI', 'PSI', 'RSR')
+                       and (o.zaduzeni_radnik_id = p.radnik_id or o.radnik_prenos_id = p.radnik_id)
+                       and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'P'
+                       and nvl(o.stornirano, 'N') = 'N' and o.storniran_id is null
+                       and o.datum < trunc(p.datum) + 1
+                     order by o.datum, o.id
+                     fetch first 5 rows only) x;
+            if l_n > 0 then
+                return 'Za radnika postoje dokumenti zaduženja u pripremi do datuma popisa (' || l_lista
+                       || '). Zaključite ih ili obrišite, osvježite popis pa ga zaključite.';
+            end if;
+            select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina < nvl(prethodna_kolicina, 0);
+            if l_n > 0 and vrsta_id(p.ooj_id, 'RSR') is null then
+                return 'Firma nema vrstu dokumenta RSR (Rashod sitnog inventara kod radnika). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
+            end if;
+            select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina > nvl(prethodna_kolicina, 0);
+            if l_n > 0 and vrsta_id(p.ooj_id, 'VSR') is null then
+                return 'Firma nema vrstu dokumenta VSR (Višak sitnog inventara kod radnika). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
+            end if;
+            return null;
+        end loop;
+        return 'Popis ne postoji.';
+    end provjeri_zakljucavanje_si;
+
+    -- RSR (manjak) / VSR (višak) iz popisa SI: stavke po artiklu, serijski brojevi iz redova popisa
+    function napravi_dokument_si (p_popis in popisi%rowtype, p_sifra in varchar2) return varchar2 is
+        l_broj  number;
+        l_naziv varchar2(255);
+        l_id    number;
+        l_st    number;
+        l_rb    number := 0;
+        l_vrsta number := vrsta_id(p_popis.ooj_id, p_sifra);
+    begin
+        rm_dokument_pkg.novi_broj(p_popis.ooj_id, p_popis.godina, lower(p_sifra), null, l_broj, l_naziv);
+        insert into operacije (
+            ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
+            status, zakljucano, stornirano, popis_id, zaduzeni_radnik_id
+        ) values (
+            p_popis.ooj_id, p_popis.godina, l_vrsta, null, null, trunc(p_popis.datum),
+            case p_sifra when 'VSR' then 'Višak' else 'Manjak' end || ' sitnog inventara utvrđen popisom ' || p_popis.naziv,
+            l_broj, l_naziv, 'Z', 'Y', 'N', p_popis.id, p_popis.radnik_id
+        ) returning id into l_id;
+        for s in (select ps.stavka_id,
+                         sum(case when p_sifra = 'VSR' then ps.popis_kolicina - nvl(ps.prethodna_kolicina, 0)
+                                  else nvl(ps.prethodna_kolicina, 0) - ps.popis_kolicina end) as kol,
+                         max(ps.cijena) as cijena, min(a.sifra) as sifra
+                    from popis_stavke ps join sec_stavke a on a.id = ps.stavka_id
+                   where ps.popis_id = p_popis.id
+                     and ((p_sifra = 'VSR' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
+                       or (p_sifra = 'RSR' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)))
+                   group by ps.stavka_id
+                   order by min(a.sifra)) loop
+            l_rb := l_rb + 1;
+            insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, redni_broj)
+            values (l_id, s.stavka_id, s.kol, round(nvl(s.cijena, 0), 4), l_rb)
+            returning id into l_st;
+            insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
+            select l_st, ps.serijski_broj
+              from popis_stavke ps
+             where ps.popis_id = p_popis.id and ps.stavka_id = s.stavka_id and ps.serijski_broj is not null
+               and ((p_sifra = 'VSR' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
+                 or (p_sifra = 'RSR' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)));
+        end loop;
+        return l_naziv || case p_sifra when 'VSR' then ' (višak, ' else ' (manjak - rashod, ' end || l_rb
+               || case when l_rb = 1 then ' artikal)' else ' artikala)' end;
+    end napravi_dokument_si;
+
+    function zakljucaj_si (p_id in number) return varchar2 is
+        l_p   popisi%rowtype;
+        l_dok varchar2(4000);
+        l_n   number;
+    begin
+        select * into l_p from popisi where id = p_id for update;
+        select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina < nvl(prethodna_kolicina, 0);
+        if l_n > 0 then
+            l_dok := napravi_dokument_si(l_p, 'RSR');
+        end if;
+        select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina > nvl(prethodna_kolicina, 0);
+        if l_n > 0 then
+            l_dok := l_dok || case when l_dok is not null then '; ' end || napravi_dokument_si(l_p, 'VSR');
+        end if;
+        update popisi set zakljucano = 'Y' where id = p_id;
+        return case when l_dok is null then 'Popis je zaključen. Zaduženje radnika odgovara popisanom stanju - dokumenti nisu kreirani.'
+                    else 'Popis je zaključen. Kreirani dokumenti: ' || l_dok || '.' end;
+    end zakljucaj_si;
+
+    function si_razlog_zabrane_otkljucavanja (p_id in number, p_admin in varchar2) return varchar2 is
+        l_s varchar2(255);
+    begin
+        for p in (select * from popisi where id = p_id) loop
+            if nvl(p.zakljucano, 'N') <> 'Y' then
+                return 'Popis nije zaključen.';
+            end if;
+            if nvl(p_admin, 'N') <> 'Y' then
+                return 'Zaključan popis može otključati samo administrator.';
+            end if;
+            select max(naziv) into l_s from popisi
+             where nvl(vrsta, 'S') = 'I' and radnik_id = p.radnik_id and valid = 'Y' and id <> p.id
+               and (trunc(datum) > trunc(p.datum) or nvl(zakljucano, 'N') = 'N');
+            if l_s is not null then
+                return 'Za radnika postoji kasniji ili otvoren popis (' || l_s || ') - ovaj popis se ne može otključati.';
+            end if;
+            select max(naziv) into l_s from operacije
+             where popis_id = p.id and (glavna_knjiga_id is not null or nvl(stornirano, 'N') = 'Y');
+            if l_s is not null then
+                return 'Dokument ' || l_s || ' je proknjižen ili storniran - popis se ne može otključati.';
+            end if;
+            -- višak (VSR) koji je radnik u međuvremenu prezadužio ili rashodovao
+            for v in (select o.id as dok_id, o.naziv, os.stavka_id, a.sifra
+                        from operacije o
+                        join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                        join operacija_stavke os on os.operacija_id = o.id
+                        join sec_stavke a on a.id = os.stavka_id
+                       where o.popis_id = p.id and upper(vd.sifra) = 'VSR') loop
+                if rm_dokument_pkg.si_saldo(p.ooj_id, p.radnik_id, v.stavka_id, v.dok_id) < 0 then
+                    return 'Višak iz dokumenta ' || v.naziv || ' (artikal ' || v.sifra
+                           || ') je već prezadužen ili rashodovan - popis se ne može otključati.';
+                end if;
+            end loop;
+            for o in (select period_zakljucan_do from core.ooj where id = p.ooj_id) loop
+                if o.period_zakljucan_do is not null and trunc(p.datum) < trunc(o.period_zakljucan_do) then
+                    return 'Popis je u zaključanom periodu.';
+                end if;
+            end loop;
+            return null;
+        end loop;
+        return 'Popis ne postoji.';
+    end si_razlog_zabrane_otkljucavanja;
 end rm_popis_pkg;
 /
 
@@ -728,6 +1243,9 @@ select p.id,
        s.sifra                                                  as skladiste_sifra,
        s.naziv                                                  as skladiste_naziv,
        case when upper(ts.sifra) = 'ROB' then 'ROB' else 'MAT' end as modul,
+       nvl(p.vrsta, 'S')                                        as vrsta,
+       p.radnik_id,
+       nvl2(r.id, r.ime || ' ' || r.prezime, null)              as radnik_naziv,
        nvl(p.zakljucano, 'N')                                   as zakljucano,
        p.created,
        p.created_by,
@@ -740,8 +1258,9 @@ select p.id,
        x.vrijednost_manjka,
        d.dokumenti
   from popisi p
-  join skladista s on s.id = p.skladiste_id
+  left join skladista s on s.id = p.skladiste_id
   left join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id
+  left join sif.acc_radnici r on r.id = p.radnik_id
   outer apply (select count(*)                                                                   as stavki,
                       count(case when ps.popis_kolicina is null then 1 end)                      as nepopisano,
                       count(case when ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0) then 1 end) as visak_stavki,
@@ -766,6 +1285,7 @@ select ps.id,
        a.naziv                                                  as artikal_naziv,
        a.jm_naziv,
        a.prati_sb,
+       ps.serijski_broj,
        nvl(ps.prethodna_kolicina, 0)                            as knjigovodstveno,
        ps.popis_kolicina                                        as popisano,
        case when ps.popis_kolicina is not null then ps.popis_kolicina - nvl(ps.prethodna_kolicina, 0) end as razlika,

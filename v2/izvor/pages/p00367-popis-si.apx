@@ -1,0 +1,492 @@
+page 367 (
+    name: Popis sitnog inventara
+    alias: POPIS-SI
+    title: Popis sitnog inventara
+    pageGroup: @robno-materijalno
+    appearance {
+        pageTemplate: @standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            /* zatvoren popis / novi popis (i Esc): osvježi listu. Dijalog otvoren linkom iz izvještaja
+               javlja zatvaranje na window, pa se sluša i tu. */
+            apex.jQuery(window).on("apexafterclosedialog apexafterclosecanceldialog", function () {
+                apex.region("rm_popisi_si").refresh();
+            });
+            ```
+    }
+    security {
+        authorizationScheme: @robno-materijalno-popis
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region popisi-naslov (
+        name: Popis sitnog inventara
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 20
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--showBreadcrumb
+                t-BreadcrumbRegion--compactTitle
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region wrapper (
+        name: Wrapper
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-page
+        }
+    )
+
+    region uputa (
+        name: Uputa
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <span class="fin-sub">Popis sitnog inventara koji je zadužen kod radnika. Otvara se na datum za jednog, više ili sve radnike; stavke dobijaju zaduženje radnika na taj datum (artikli sa serijskim brojem - svaki komad posebno). Zaključavanjem popisa manjak se razdužuje dokumentom <b>Rashod sitnog inventara kod radnika</b>, a višak zadužuje dokumentom <b>Višak sitnog inventara kod radnika</b>.</span>
+                ```
+        }
+        layout {
+            sequence: 5
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+            cssClasses: fin-popis-uputa
+        }
+    )
+
+    region faceted-search (
+        name: Faceted Search
+        type: smartFilters
+        source {
+            filteredRegion: @popisi-report
+        }
+        layout {
+            sequence: 9
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: [
+                #DEFAULT#
+                margin-bottom-sm
+            ]
+            cssClasses: fin-filters
+        }
+        settings {
+            compactNosThreshold: 10000
+        }
+
+        filter P367_SEARCH (
+            type: search
+            label {
+                label: Pretraga...
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                valuePlaceholder: Pretraga...
+            }
+        )
+
+        filter P367_STATUS (
+            type: checkboxGroup
+            label {
+                label: Status
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Otvoren;priprema,Zaključen;zakljucena
+            }
+            layout {
+                sequence: 20
+            }
+            listEntries {
+                zeroCountEntries: disable
+            }
+            source {
+                databaseColumn: DOK_STATUS
+            }
+        )
+
+    )
+
+    region popisi-report (
+        name: Popisi
+        title: Popisi
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    p.id,
+                    p.naziv,
+                    p.opis,
+                    to_char(p.datum, 'DD.MM.YYYY') AS datum,
+                    p.radnik_naziv AS skladiste,
+                    p.stavki,
+                    CASE WHEN p.nepopisano > 0 AND p.zakljucano = 'N' THEN 'nepopisano ' || p.nepopisano END AS nepopisano,
+                    CASE WHEN p.visak_stavki + p.manjak_stavki = 0 THEN 'bez razlika'
+                         ELSE 'višak ' || p.visak_stavki || ' · manjak ' || p.manjak_stavki END AS razlike,
+                    to_char(p.vrijednost_manjka, 'FM999G999G999G990D00') AS vrijednost_manjka,
+                    p.dokumenti,
+                    CASE WHEN p.zakljucano = 'Y' THEN 'zakljucena' ELSE 'priprema' END AS dok_status,
+                    CASE WHEN p.zakljucano = 'Y' THEN 'Zaključen' ELSE 'Otvoren' END AS dok_status_naziv,
+                    CASE WHEN p.zakljucano = 'Y' THEN 'fa-lock' ELSE 'fa-pencil' END AS dok_status_ikona,
+                    apex_page.get_url(p_page => 368, p_items => 'P368_ID', p_values => p.id, p_clear_cache => 368) AS url,
+                    p.radnik_naziv AS skladiste_sifra
+                FROM vw_rm_popisi p
+                WHERE p.ooj_id = :APP_OOJ_ID
+                  AND p.godina = :APP_GODINA
+                  AND p.vrsta = 'I'
+                ORDER BY p.datum DESC, p.id DESC
+                ```
+        }
+        layout {
+            sequence: 10
+            parentRegion: @wrapper
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noPadding
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+            cssClasses: fin-list
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--rowHighlight
+            ]
+        }
+        pagination {
+            type: nextAndPreviousLinks
+        }
+        messages {
+            whenNoDataFound: Nema popisa sitnog inventara u radnoj godini. Otvorite novi popis dugmetom Novi popis.
+        }
+        advanced {
+            htmlDomId: rm_popisi_si
+        }
+
+        column ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Popis
+            }
+            layout {
+                sequence: 10
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#OPIS#</span></span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
+        column OPIS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 310
+            }
+        )
+
+        column DATUM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Datum popisa
+            }
+            layout {
+                sequence: 20
+            }
+            columnFormatting {
+                cssClasses: u-nowrap
+                htmlExpression:
+                    ```html
+                    <span class="fin-date">#DATUM#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SKLADISTE (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Radnik
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKI (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Artikala
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+                htmlExpression:
+                    ```html
+                    #STAVKI#{if NEPOPISANO/}<span class="fin-num-sub">#NEPOPISANO#</span>{endif/}
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NEPOPISANO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 320
+            }
+        )
+
+        column RAZLIKE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Razlike
+            }
+            layout {
+                sequence: 50
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    #RAZLIKE#
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column VRIJEDNOST_MANJKA (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 330
+            }
+        )
+
+        column DOKUMENTI (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Dokumenti razlike
+            }
+            layout {
+                sequence: 60
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOK_STATUS (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 70
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-status fin-status--#DOK_STATUS#"><span class="fa #DOK_STATUS_IKONA#" aria-hidden="true"></span>#DOK_STATUS_NAZIV#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column DOK_STATUS_IKONA (
+            reportColumnQueryId: 13
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 350
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 14
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 360
+            }
+        )
+
+        column SKLADISTE_SIFRA (
+            reportColumnQueryId: 15
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 370
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Novi popis
+        layout {
+            sequence: 10
+            region: @popisi-naslov
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 369
+                clearCache: 369
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction dialog-closed-refresh (
+        name: Zatvoren dijalog - osvježi
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: jQuerySelector
+            jquerySelector: body
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @popisi-report
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action native-refresh-2 (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @faceted-search
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

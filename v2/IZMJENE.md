@@ -571,3 +571,19 @@ Po testu iz R15 i odgovorima korisnika (K = kritično, V = važno, S = sitnije, 
   - **Lista popisa (364)** se osvježava kad se zatvori popis ili novi popis (i tasterom Esc).
   - Boje ćelije Razlika i bijele ćelije za unos se postavljaju direktno na ćelije tabele (prva verzija preko opcije kolone nije radila).
   - Novi popis: pretraga skladišta (šifra, naziv) iznad liste; „Sva prikazana skladišta…“ označava samo filtrirana skladišta.
+
+## Sitni inventar kod radnika – korak R18 (04.11.2026)
+Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na nivou firme (kao reversi): **zaduženje = Izlaz na sitni inventar (ISI) + prezaduženje na radnika + višak iz popisa − prezaduženje sa radnika − rashod kod radnika**. Serije i rokovi upotrebe se još ne uvode.
+- **Nove vrste dokumenata** (16_rm_vrste_izlaz.sql, samo materijalni modul):
+  - **PSI – Prezaduženje sitnog inventara:** sa radnika na radnika. Bira se radnik „sa“ i radnik „na“; region „Zaduženje radnika – sitni inventar“ prikazuje šta radnik ima (količina, raspoloživo, serijski brojevi). Stavke: dugme „Preuzmi zaduženja radnika“ (sve količine i serijski brojevi; višak se briše), izbor artikla iz liste zaduženog, ili unos / skeniranje tačnog serijskog broja (artikal se prepoznaje). Količina najviše do zaduženog; serijski broj mora biti kod radnika. Ne mijenja stanje skladišta i ne knjiži se (tip kretanja „Z“).
+  - **RSZ – Rashod sitnog inventara sa zaliha:** izlaz sa skladišta, kao rashod (mjesto troška, prosječna cijena, raspoloživo, storno).
+  - **RSR – Rashod sitnog inventara kod radnika:** razduženje radnika, isti unos kao prezaduženje; ne mijenja stanje skladišta. Cijena = prosječna cijena zaduženja radnika.
+  - **VSR – Višak sitnog inventara kod radnika:** nastaje samo zaključavanjem popisa SI.
+- **Zaštita zaduženja:** storno i otključavanje izlaza na SI ili prezaduženja nisu dozvoljeni ako je radnik taj inventar već prezadužio ili rashodovao; dokumenti iz popisa se ne otključavaju i ne storniraju; prezaduženje i rashod se mogu stornirati.
+- **Popis sitnog inventara kod radnika** (meni Materijal i oprema → Popis sitnog inventara; stranice 367 lista, 368 popis, 369 novi popis), po uzoru na popis skladišta:
+  - novi popis: datum + jedan, više ili svi radnici sa zaduženjem (pretraga, kvačice); jedan otvoren popis po radniku; broj POPSI-000001;
+  - stavke: zaduženje radnika na datum popisa (zaključeni dokumenti); artikal sa serijskim brojem – jedan red po komadu (popisano 1 = pronađen, 0 = nije); „Dodaj pronađen artikal / serijski broj“ za višak;
+  - zaključavanje: manjak → **RSR**, višak → **VSR** (zaključeni, sa serijskim brojevima, datum popisa); provjera da se zaduženje nije promijenilo i da nema dokumenata zaduženja u pripremi; otključavanje (administrator) briše te dokumente.
+- **Izvještaj zaduženja** (VW_RM_ZADUZENJA): sitni inventar po stvarnom zaduženju (poslije prezaduženja i rashoda), ne više po izlaznim dokumentima.
+- **Baza:** OPERACIJE.RADNIK_PRENOS_ID, POPISI.VRSTA / RADNIK_ID, POPIS_STAVKE.SERIJSKI_BROJ; VW_RM_SI_ZADUZENJA; RM_DOKUMENT_PKG (si_saldo, si_sb, si_cijena, si_popis_blokada), RM_POPIS_PKG (kreiraj_si i popis SI). Popis skladišta i zabrana datuma prije popisa uzimaju samo popise skladišta.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
