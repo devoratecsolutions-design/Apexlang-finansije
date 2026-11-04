@@ -110,7 +110,7 @@ select p.ooj_id,
    and p.status = 'Z'
    and p.zaduzeni_radnik_id is not null
 union all
--- R18 sitni inventar: stvarno zaduženje radnika (poslije prezaduženja i rashoda), po artiklu;
+-- R18 sitni inventar: stvarno zaduženje radnika (poslije prezaduženja i rashoda), po artiklu,
 -- dokument / skladište = posljednje zaduženje
 select z.ooj_id,
        'Sitni inventar',

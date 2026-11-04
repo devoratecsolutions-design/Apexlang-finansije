@@ -254,7 +254,7 @@ select x.revers_id,
   join sec_stavke st on st.id = x.stavka_id
   left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id;
 
--- R18 sitni inventar: zaduženje po radniku i artiklu (firma). Zaduženo = zaključeni dokumenti;
+-- R18 sitni inventar: zaduženje po radniku i artiklu (firma). Zaduženo = zaključeni dokumenti,
 -- raspoloživo = zaduženo - odlazni dokumenti u pripremi (prezaduženje / rashod koji još nisu zaključeni).
 create or replace force view vw_rm_si_zaduzenja as
 with m as (
