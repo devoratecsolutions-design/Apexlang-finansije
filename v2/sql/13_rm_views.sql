@@ -266,11 +266,11 @@ with m as (
       join operacije o on o.id = os.operacija_id
       join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
      cross apply (select o.zaduzeni_radnik_id as radnik_id,
-                         case when upper(vd.sifra) in ('ISI', 'VSR') then 1 else -1 end as znak
+                         case when upper(vd.sifra) in ('ISI', 'VSR', 'RUV') then 1 else -1 end as znak
                     from dual
                   union all
                   select o.radnik_prenos_id, 1 from dual where upper(vd.sifra) = 'PSI') x
-     where upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+     where upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
        and nvl(o.stornirano, 'N') = 'N'
        and o.storniran_id is null
        and x.radnik_id is not null
@@ -311,3 +311,50 @@ select a.ooj_id,
   join vw_rm_artikli s on s.id = a.stavka_id
   left join sif.acc_radnici r on r.id = a.radnik_id
  where a.zaduzeno <> 0 or a.u_pripremi <> 0;
+
+-- R19: kartica sitnog inventara u upotrebi - svaka promjena zaduženja radnika (zaključeni dokumenti, bez storniranih).
+-- Ulaz: izdavanje SI (ISI), višak iz popisa SI (RUV, raniji VSR), prijem prezaduženja (PSI - novi radnik).
+-- Izlaz: rashod SI kod radnika (RSR), manjak iz popisa SI (RUM), predaja prezaduženja (PSI - raniji radnik).
+create or replace force view vw_rm_si_promet as
+select o.ooj_id,
+       x.radnik_id,
+       r.ime || ' ' || r.prezime                                          as radnik_naziv,
+       os.stavka_id,
+       s.sifra                                                            as artikal_sifra,
+       s.naziv                                                            as artikal_naziv,
+       s.jm_naziv,
+       o.id                                                               as operacija_id,
+       os.id                                                              as stavka_dok_id,
+       o.naziv                                                            as dokument,
+       upper(vd.sifra)                                                    as vrsta_sifra,
+       vd.naziv                                                           as vrsta_naziv,
+       trunc(o.datum)                                                     as datum,
+       case when upper(vd.sifra) = 'PSI' and x.znak > 0 then 'prezaduženje sa radnika ' || rp.ime || ' ' || rp.prezime
+            when upper(vd.sifra) = 'PSI' then 'prezaduženje na radnika ' || rp.ime || ' ' || rp.prezime
+            when upper(vd.sifra) = 'ISI' then 'sa skladišta ' || sk.sifra || ' - ' || sk.naziv
+       end                                                                as opis,
+       (select listagg(sb.serijski_broj, ', ' on overflow truncate) within group (order by sb.serijski_broj)
+          from operacija_stavke_sb sb where sb.operacija_stavka_id = os.id)  as serijski_brojevi,
+       case when x.znak > 0 then os.kolicina else 0 end                   as ulaz_kolicina,
+       case when x.znak < 0 then os.kolicina else 0 end                   as izlaz_kolicina,
+       os.nabavna_cijena                                                  as cijena,
+       case when x.znak > 0 then round(os.kolicina * nvl(os.nabavna_cijena, 0), 2) else 0 end as ulaz_vrijednost,
+       case when x.znak < 0 then round(os.kolicina * nvl(os.nabavna_cijena, 0), 2) else 0 end as izlaz_vrijednost
+  from operacija_stavke os
+  join operacije o on o.id = os.operacija_id
+  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+ cross apply (select o.zaduzeni_radnik_id as radnik_id, o.radnik_prenos_id as drugi_id,
+                     case when upper(vd.sifra) in ('ISI', 'VSR', 'RUV') then 1 else -1 end as znak
+                from dual
+              union all
+              select o.radnik_prenos_id, o.zaduzeni_radnik_id, 1 from dual where upper(vd.sifra) = 'PSI') x
+  join vw_rm_artikli s on s.id = os.stavka_id
+  left join sif.acc_radnici r on r.id = x.radnik_id
+  left join sif.acc_radnici rp on rp.id = x.drugi_id
+  left join skladista sk on sk.id = o.skladiste_id
+ where upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
+   and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
+   and nvl(o.stornirano, 'N') = 'N'
+   and o.storniran_id is null
+   and x.radnik_id is not null
+   and nvl(os.kolicina, 0) <> 0;

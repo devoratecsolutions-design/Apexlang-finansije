@@ -320,7 +320,7 @@ create or replace package body rm_skladiste_pkg as
         l_n number;
     begin
         if ima_dokumenata(p_id) = 'Y' then
-            return 'Skladište ima dokumente (ulaz, izlaz, trebovanje, popis ili fakturu) i ne može se obrisati. Možete ga deaktivirati ako nema robe na stanju.';
+            return 'Skladište ima dokumente (ulaz, izlaz, trebovanje, popis ili fakturu) i ne može se obrisati. Možete ga deaktivirati ako nema artikala na stanju.';
         end if;
         select count(*) into l_n from skladista where nadredjeno_id = p_id;
         if l_n > 0 then
@@ -409,7 +409,7 @@ create or replace package body rm_skladiste_pkg as
                 end loop;
             end if;
             if nvl(p_valid, 'Y') = 'N' and ima_stanja(p_id) = 'Y' then
-                return 'Skladište ima robu na stanju i ne može se deaktivirati.';
+                return 'Skladište ima artikle na stanju i ne može se deaktivirati.';
             end if;
         end if;
         return null;

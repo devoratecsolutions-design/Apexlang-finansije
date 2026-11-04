@@ -17,7 +17,8 @@
   zaključavanje povrata; ispravka ORA-04091 pri zaključavanju izlaza;
   R14: reversi samo u materijalnom modulu;
   R18: sitni inventar - zaduženje radnika (ISI) se vodi na nivou firme, kao reversi: prezaduženje PSI
-  (sa radnika na radnika), rashod kod radnika RSR i višak iz popisa VSR mijenjaju samo zaduženje
+  (sa radnika na radnika), rashod kod radnika RSR i razlike popisa SI u upotrebi RUV (višak) / RUM (manjak)
+  mijenjaju samo zaduženje
   (tip kretanja 'Z', bez uticaja na stanje skladišta i bez knjiženja); rashod sa zaliha RSZ je izlaz.
   PSI i RSR se pune kao povrat: lista zaduženja radnika, količine najviše do zaduženog, tačan serijski broj.
   R17: broj dokumenta po skladištu (novi_broj); rashod RAS (izlaz, kao izdatnica), razlika inventure - višak RIV (ulaz) i manjak RIM (izlaz)
@@ -255,6 +256,8 @@ create or replace package body rm_dokument_pkg as
                    when 'PSI'  then 'Z'
                    when 'RSR'  then 'Z'
                    when 'VSR'  then 'Z'
+                   when 'RUV'  then 'Z'
+                   when 'RUM'  then 'Z'
                    when 'PRRO' then 'U'
                    when 'POV'  then 'U'
                    when 'IZRO' then 'I'
@@ -268,29 +271,29 @@ create or replace package body rm_dokument_pkg as
     function podrzana (p_vrsta_sifra in varchar2) return varchar2 is
     begin
         return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP',
-                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR')
+                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM')
                     then 'Y' else 'N' end;
     end podrzana;
 
     function je_si (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('PSI', 'RSR', 'VSR') then 'Y' else 'N' end;
+        return case when upper(p_vrsta_sifra) in ('PSI', 'RSR', 'VSR', 'RUV', 'RUM') then 'Y' else 'N' end;
     end je_si;
 
     function rucni_unos (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'MPP') then 'N' else 'Y' end;
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM', 'MPP') then 'N' else 'Y' end;
     end rucni_unos;
 
     function je_inventura (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR') then 'Y' else 'N' end;
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM') then 'Y' else 'N' end;
     end je_inventura;
 
     function u_modulu (p_vrsta_sifra in varchar2, p_modul in varchar2) return varchar2 is
     begin
         return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS',
-                                                 'PSI', 'RSZ', 'RSR', 'VSR')
+                                                 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM')
                          and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N' else 'Y' end;
     end u_modulu;
 
@@ -301,7 +304,7 @@ create or replace package body rm_dokument_pkg as
 
     function ima_radnika (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('IOS', 'ISI', 'REV', 'REVP', 'PSI', 'RSR', 'VSR') then 'Y' else 'N' end;
+        return case when upper(p_vrsta_sifra) in ('IOS', 'ISI', 'REV', 'REVP', 'PSI', 'RSR', 'VSR', 'RUV', 'RUM') then 'Y' else 'N' end;
     end ima_radnika;
 
     function ima_komitenta (p_vrsta_sifra in varchar2) return varchar2 is
@@ -361,6 +364,9 @@ create or replace package body rm_dokument_pkg as
     end mjesto_troska_obavezno;
 
     -- modul skladišta: robno (ROB) ili materijalno (sve ostalo)
+    -- naziv predmeta u porukama: materijal (materijalno skladište) / roba (robno)
+    function predmet (p_skladiste_id in number) return varchar2;
+
     function modul_skladista (p_skladiste_id in number) return varchar2 is
         l_s varchar2(64);
     begin
@@ -369,6 +375,11 @@ create or replace package body rm_dokument_pkg as
          where s.id = p_skladiste_id;
         return case when l_s is null then null when l_s = 'ROB' then 'ROB' else 'MAT' end;
     end modul_skladista;
+
+    function predmet (p_skladiste_id in number) return varchar2 is
+    begin
+        return case when modul_skladista(p_skladiste_id) = 'ROB' then 'roba' else 'materijal' end;
+    end predmet;
 
     function vrsta_sifra (p_vrsta_dokumenta_id in number) return varchar2 is
         l_sifra varchar2(64);
@@ -580,9 +591,9 @@ create or replace package body rm_dokument_pkg as
             return 0;
         end if;
         select nvl(sum(case
-                           when x.s in ('ISI', 'VSR') and o.zaduzeni_radnik_id = p_radnik_id and x.st = 'Z' then os.kolicina
+                           when x.s in ('ISI', 'VSR', 'RUV') and o.zaduzeni_radnik_id = p_radnik_id and x.st = 'Z' then os.kolicina
                            when x.s = 'PSI' and o.radnik_prenos_id = p_radnik_id and x.st = 'Z' then os.kolicina
-                           when x.s in ('PSI', 'RSR') and o.zaduzeni_radnik_id = p_radnik_id
+                           when x.s in ('PSI', 'RSR', 'RUM') and o.zaduzeni_radnik_id = p_radnik_id
                                 and (x.st = 'Z' or p_samo_zakljuceno = 'N') then -os.kolicina
                            else 0
                        end), 0)
@@ -595,7 +606,7 @@ create or replace package body rm_dokument_pkg as
                         from dual) x
          where os.stavka_id = p_stavka_id
            and o.ooj_id = p_ooj_id
-           and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+           and upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
            and (o.zaduzeni_radnik_id = p_radnik_id or o.radnik_prenos_id = p_radnik_id)
            and nvl(o.stornirano, 'N') = 'N'
            and o.storniran_id is null
@@ -613,9 +624,9 @@ create or replace package body rm_dokument_pkg as
             return 0;
         end if;
         select nvl(sum(case
-                           when x.s in ('ISI', 'VSR') and o.zaduzeni_radnik_id = p_radnik_id and x.st = 'Z' then 1
+                           when x.s in ('ISI', 'VSR', 'RUV') and o.zaduzeni_radnik_id = p_radnik_id and x.st = 'Z' then 1
                            when x.s = 'PSI' and o.radnik_prenos_id = p_radnik_id and x.st = 'Z' then 1
-                           when x.s in ('PSI', 'RSR') and o.zaduzeni_radnik_id = p_radnik_id
+                           when x.s in ('PSI', 'RSR', 'RUM') and o.zaduzeni_radnik_id = p_radnik_id
                                 and (x.st = 'Z' or p_samo_zakljuceno = 'N') then -1
                            else 0
                        end), 0)
@@ -630,7 +641,7 @@ create or replace package body rm_dokument_pkg as
          where sb.serijski_broj = p_sb
            and os.stavka_id = p_stavka_id
            and o.ooj_id = p_ooj_id
-           and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+           and upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
            and (o.zaduzeni_radnik_id = p_radnik_id or o.radnik_prenos_id = p_radnik_id)
            and nvl(o.stornirano, 'N') = 'N'
            and o.storniran_id is null
@@ -650,7 +661,7 @@ create or replace package body rm_dokument_pkg as
           join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
          where os.stavka_id = p_stavka_id
            and o.ooj_id = p_ooj_id
-           and ((upper(vd.sifra) in ('ISI', 'VSR') and o.zaduzeni_radnik_id = p_radnik_id)
+           and ((upper(vd.sifra) in ('ISI', 'VSR', 'RUV') and o.zaduzeni_radnik_id = p_radnik_id)
                 or (upper(vd.sifra) = 'PSI' and o.radnik_prenos_id = p_radnik_id))
            and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
            and nvl(o.stornirano, 'N') = 'N'
@@ -824,10 +835,8 @@ create or replace package body rm_dokument_pkg as
             end if;
         end if;
         -- R18 prezaduženje SI: na drugog radnika iste firme
-        if l_vrs = 'PSI' then
-            if p_radnik_prenos_id is null then
-                return 'Izaberite radnika na kojeg se prezadužuje sitni inventar.';
-            end if;
+        -- (radnik na kojeg se prezadužuje je obavezan tek pri zaključavanju: stavke se pune čim se izabere radnik sa kojeg)
+        if l_vrs = 'PSI' and p_radnik_prenos_id is not null then
             if p_radnik_prenos_id = p_radnik_id then
                 return 'Sitni inventar se ne može prezadužiti na istog radnika.';
             end if;
@@ -853,7 +862,7 @@ create or replace package body rm_dokument_pkg as
                 return 'Komitent ne pripada firmi.';
             end if;
         end if;
-        if je_povrat(l_vrs) = 'Y' and p_id is not null then
+        if je_povrat(l_vrs) = 'Y' and l_vrs <> 'PSI' and p_id is not null then
             select count(*) into l_n from operacije o
              where o.id = p_id
                and (nvl(o.zaduzeni_radnik_id, -1) <> nvl(case when ima_radnika(l_vrs) = 'Y' then p_radnik_id end, -1)
@@ -882,14 +891,14 @@ create or replace package body rm_dokument_pkg as
         end if;
         if l_vrs = 'MPR' then
             if p_skladiste_prenos_id is null then
-                return 'Izaberite skladište na koje se roba prenosi.';
+                return 'Izaberite skladište na koje se ' || predmet(p_skladiste_id) || ' prenosi.';
             end if;
             if p_skladiste_prenos_id = p_skladiste_id then
-                return 'Roba se ne može prenijeti na isto skladište.';
+                return initcap(predmet(p_skladiste_id)) || ' se ne može prenijeti na isto skladište.';
             end if;
             select count(*) into l_n from skladista where id = p_skladiste_prenos_id and ooj_id = p_ooj_id and valid = 'Y';
             if l_n = 0 then
-                return 'Skladište na koje se roba prenosi ne pripada firmi ili nije aktivno.';
+                return 'Skladište na koje se ' || predmet(p_skladiste_id) || ' prenosi ne pripada firmi ili nije aktivno.';
             end if;
             if nvl(modul_skladista(p_skladiste_prenos_id), '-') <> nvl(modul_skladista(p_skladiste_id), '-') then
                 return 'Međuskladišni prenos je moguć samo na skladište istog modula (materijalno - materijalno).';
@@ -994,6 +1003,14 @@ create or replace package body rm_dokument_pkg as
                 l_mt, l_rad, l_skp, l_rpr
             ) returning id into l_id;
         else
+            -- prezaduženje SI: promjena radnika sa kojeg se prezadužuje briše stavke (pune se ponovo iz njegovog zaduženja)
+            if upper(l_sifra) = 'PSI' then
+                for x in (select 1 from operacije where id = l_id and nvl(zaduzeni_radnik_id, -1) <> nvl(l_rad, -1)) loop
+                    delete from operacija_stavke_sb
+                     where operacija_stavka_id in (select id from operacija_stavke where operacija_id = l_id);
+                    delete from operacija_stavke where operacija_id = l_id;
+                end loop;
+            end if;
             update operacije
                set skladiste_id     = p_skladiste_id,
                    oj_id            = l_oj,
@@ -1115,7 +1132,8 @@ create or replace package body rm_dokument_pkg as
         if l_tip = 3 then
             greska('Usluga se ne vodi na skladištu.');
         end if;
-        if p_kolicina is null or p_kolicina <= 0 then
+        -- prezaduženje SI: stavke se pune iz zaduženja radnika sa količinom 0; prezadužuju se samo stavke sa količinom > 0
+        if p_kolicina is null or p_kolicina < 0 or (p_kolicina = 0 and l_vrs <> 'PSI') then
             greska('Količina mora biti veća od nule.');
         end if;
         if l_sb = 'Y' and p_kolicina <> trunc(p_kolicina) then
@@ -1479,13 +1497,17 @@ create or replace package body rm_dokument_pkg as
     --------------------------------------------------------------------- kompletnost
     function provjeri_kompletnost (p_id in number) return varchar2 is
         l_n   number;
+        l_vrs varchar2(64) := tip_dokumenta_sifra(p_id);
         l_inv varchar2(1) := je_inventura(tip_dokumenta_sifra(p_id));   -- RIV / RIM: serijski brojevi nisu obavezni
     begin
-        select count(*) into l_n from operacija_stavke where operacija_id = p_id;
+        select count(*) into l_n from operacija_stavke
+         where operacija_id = p_id and (l_vrs <> 'PSI' or nvl(kolicina, 0) > 0);
         if l_n = 0 then
-            return 'Dokument nema stavki.';
+            return case when l_vrs = 'PSI' then 'Upišite količinu bar za jedan artikal koji se prezadužuje.'
+                        else 'Dokument nema stavki.' end;
         end if;
-        select count(*) into l_n from operacija_stavke where operacija_id = p_id and nvl(kolicina, 0) <= 0;
+        select count(*) into l_n from operacija_stavke
+         where operacija_id = p_id and nvl(kolicina, 0) <= 0 and l_vrs <> 'PSI';
         if l_n > 0 then
             return 'Sve stavke moraju imati količinu veću od nule.';
         end if;
@@ -1550,7 +1572,7 @@ create or replace package body rm_dokument_pkg as
                 return 'Zaduženi radnik je obavezan.';
             end if;
             if o.skladiste_prenos_id is null and l_vrs = 'MPR' then
-                return 'Izaberite skladište na koje se roba prenosi.';
+                return 'Izaberite skladište na koje se ' || predmet(o.skladiste_id) || ' prenosi.';
             end if;
             if o.klijent_id is null and ima_komitenta(l_vrs) = 'Y' then
                 return 'Komitent je obavezan.';
@@ -1612,6 +1634,12 @@ create or replace package body rm_dokument_pkg as
     begin
         if l_poruka is not null then
             greska(l_poruka);
+        end if;
+        -- prezaduženje SI: stavke sa količinom 0 se ne prenose
+        if tip_dokumenta_sifra(p_id) = 'PSI' then
+            delete from operacija_stavke_sb
+             where operacija_stavka_id in (select id from operacija_stavke where operacija_id = p_id and nvl(kolicina, 0) = 0);
+            delete from operacija_stavke where operacija_id = p_id and nvl(kolicina, 0) = 0;
         end if;
         -- cijena = prosječna cijena skladišta na datum dokumenta (u trenutku zaključavanja)
         -- (petlja, ne UPDATE sa funkcijom koja čita OPERACIJA_STAVKE: ORA-04091)
@@ -1799,6 +1827,8 @@ create or replace package body rm_dokument_pkg as
         l_n     number := 0;
         l_id    number;
         l_dost  number;
+        l_cnt   number;
+        l_cij   number;
     begin
         provjeri_izmjenu(p_dokument_id);
         for o in (select o.ooj_id, upper(vd.sifra) as sifra, o.zaduzeni_radnik_id, o.klijent_id
@@ -1819,10 +1849,20 @@ create or replace package body rm_dokument_pkg as
                             join sec_stavke s on s.id = os.stavka_id
                            where r.ooj_id = o.ooj_id
                              and nvl(r.stornirano, 'N') = 'N' and r.storniran_id is null
-                             and ((upper(rv.sifra) in ('ISI', 'VSR') and r.zaduzeni_radnik_id = o.zaduzeni_radnik_id)
+                             and ((upper(rv.sifra) in ('ISI', 'VSR', 'RUV') and r.zaduzeni_radnik_id = o.zaduzeni_radnik_id)
                                   or (upper(rv.sifra) = 'PSI' and r.radnik_prenos_id = o.zaduzeni_radnik_id))) loop
                     l_dost := si_saldo(o.ooj_id, o.zaduzeni_radnik_id, a.stavka_id, p_dokument_id);
-                    if l_dost > 0 then
+                    if l_dost > 0 and o.sifra = 'PSI' then
+                        -- prezaduženje: red sa količinom 0, korisnik upisuje koliko prenosi
+                        select count(*) into l_cnt from operacija_stavke where operacija_id = p_dokument_id and stavka_id = a.stavka_id;
+                        if l_cnt = 0 then
+                            l_cij := si_cijena(o.ooj_id, o.zaduzeni_radnik_id, a.stavka_id);
+                            select nvl(max(redni_broj), 0) + 1 into l_cnt from operacija_stavke where operacija_id = p_dokument_id;
+                            insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, redni_broj)
+                            values (p_dokument_id, a.stavka_id, 0, round(l_cij, 4), l_cnt);
+                            l_n := l_n + 1;
+                        end if;
+                    elsif l_dost > 0 then
                         select max(id) into l_id from operacija_stavke where operacija_id = p_dokument_id and stavka_id = a.stavka_id;
                         snimi_stavku(p_id => l_id, p_dokument_id => p_dokument_id, p_stavka_id => a.stavka_id, p_kolicina => l_dost);
                         if a.prati_sb = 'Y' then
@@ -1843,9 +1883,10 @@ create or replace package body rm_dokument_pkg as
                         l_n := l_n + 1;
                     end if;
                 end loop;
-                return case when l_n = 0 then 'Radnik nema zaduženog sitnog inventara.'
-                            else 'Preuzeta zaduženja radnika: ' || l_n || ' artikala. Obrišite ili smanjite ono što se ne '
-                                 || case when o.sifra = 'PSI' then 'prezadužuje.' else 'rashoduje.' end end;
+                return case when l_n = 0 and o.sifra = 'PSI' then null
+                            when l_n = 0 then 'Radnik nema zaduženog sitnog inventara.'
+                            when o.sifra = 'PSI' then 'Učitano ' || l_n || ' artikala iz zaduženja radnika. U koloni Količina upišite koliko se prezadužuje (stavke sa 0 se ne prenose).'
+                            else 'Preuzeta zaduženja radnika: ' || l_n || ' artikala. Obrišite ili smanjite ono što se ne rashoduje.' end;
             end if;
             if (ima_radnika(o.sifra) = 'Y' and o.zaduzeni_radnik_id is null)
                or (ima_komitenta(o.sifra) = 'Y' and o.klijent_id is null) then

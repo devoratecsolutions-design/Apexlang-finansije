@@ -418,7 +418,7 @@ breadcrumb breadcrumb (
     )
 
     entry popisi-si (
-        name: Popis sitnog inventara
+        name: Popis sitnog inventara u upotrebi
         pageNumber: 367
         execution {
             sequence: 16
@@ -434,7 +434,7 @@ breadcrumb breadcrumb (
     )
 
     entry popisi-skladista (
-        name: Popis skladišta
+        name: Popis zaliha
         pageNumber: 364
         execution {
             sequence: 15
@@ -498,7 +498,7 @@ breadcrumb breadcrumb (
     )
 
     entry klijenti (
-        name: Klijenti
+        name: Poslovni partneri
         pageNumber: 10
         execution {
             sequence: 90

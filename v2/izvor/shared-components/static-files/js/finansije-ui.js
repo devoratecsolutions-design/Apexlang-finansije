@@ -657,7 +657,12 @@ window.finRmStavke = (function ($) {
                         if (izlaz && change.field === "KOLICINA") {
                             k = I.num(model.getValue(rec, "KOLICINA"));
                             r = I.num(model.getValue(rec, "RASPOLOZIVO"));
-                            if (k > r) { I.greska("Raspoloživo je " + fq(r) + " - količina ne može biti veća."); }
+                            if (k > r) {
+                                /* veća količina od dozvoljene se ne zadržava: poruka i količina se vraća na 0 */
+                                I.greska("Raspoloživo je " + fq(r) + " - količina ne može biti veća. Količina je vraćena na 0.");
+                                I.postavi(model, rec, "KOLICINA", "0");
+                                racun(rec);
+                            }
                         }
                     }
                 }
@@ -1553,4 +1558,45 @@ window.finRmPopisNovi = (function ($) {
         primijeni();
     }
     return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Zatvaranje modalnog dijaloga (X, Esc ili zatvaranje iz procesa):
+   osvježavaju se izvještaji i tabele stranice koja je otvorila dijalog.
+   Regioni koje je stranica već sama osvježila (svoj dinamički događaj)
+   preskaču se; tabela sa nesnimljenim izmjenama se ne osvježava.
+   Radi na svim stranicama, bez podešavanja.
+   ===================================================================== */
+window.finDijalogOsvjezi = (function ($) {
+    "use strict";
+    var zadnje = {}, ceka = false, tip = /grid|report|cards|map|chart|tree/i;
+    function izmjene(r) {
+        var v;
+        try {
+            v = r.widget().interactiveGrid("getViews", "grid");
+            return !!(v && v.model && v.model.isChanged());
+        } catch (e) { return false; }
+    }
+    function osvjezi() {
+        var sad = Date.now();
+        $("[id]").each(function () {
+            var id = this.id, r, t;
+            if (!id || (zadnje[id] && sad - zadnje[id] < 1000) || !apex.region.isRegion || !apex.region.isRegion(id)) { return; }
+            r = apex.region(id);
+            t = String((r && r.type) || "");
+            if (!r || !tip.test(t) || /facet|smartfilter/i.test(t)) { return; }
+            if (/grid/i.test(t) && izmjene(r)) { return; }
+            try { r.refresh(); } catch (e) { /* ništa */ }
+        });
+    }
+    /* region koji je stranica upravo sama osvježila ne osvježava se ponovo */
+    $(document).on("apexbeforerefresh", function (e) {
+        if (e.target && e.target.id) { zadnje[e.target.id] = Date.now(); }
+    });
+    $(window).on("apexafterclosedialog apexafterclosecanceldialog", function () {
+        if (ceka) { return; }
+        ceka = true;
+        setTimeout(function () { ceka = false; osvjezi(); }, 80);
+    });
+    return { osvjezi: osvjezi };
 })(apex.jQuery);

@@ -24,10 +24,10 @@
 
   R18 (04.11.2026): POPIS SITNOG INVENTARA KOD ZADUŽENOG RADNIKA (stranice 367 / 368 / 369)
     - POPISI.VRSTA = 'I', RADNIK_ID = radnik, bez skladišta; broj POPSI-000001 po firmi i godini
-    - knjigovodstveno = zaduženje radnika na datum popisa (zaključeni dokumenti: ISI, PSI, RSR, VSR);
+    - knjigovodstveno = zaduženje radnika na datum popisa (zaključeni dokumenti: ISI, PSI, RSR, RUV, RUM);
       artikli koji se prate po serijskom broju - jedan red po serijskom broju (količina 1)
-    - jedan otvoren popis SI po radniku; zaključavanje: manjak -> RSR (rashod SI kod radnika),
-      višak -> VSR (višak SI kod radnika), oba zaključena, sa serijskim brojevima, bez skladišta
+    - jedan otvoren popis SI po radniku; zaključavanje: razlike -> RUM / RUV (razlika inventure sitnog
+      inventara u upotrebi - manjak / višak), oba zaključena, sa serijskim brojevima, bez skladišta
 
   Skripta se može pokretati više puta.
 ================================================================================
@@ -782,15 +782,15 @@ create or replace package body rm_popis_pkg as
                   join operacije o on o.id = os.operacija_id
                   join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
                  where o.ooj_id = p_ooj_id
-                   and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+                   and upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
                    and (o.zaduzeni_radnik_id = p_radnik_id or o.radnik_prenos_id = p_radnik_id)
                    and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
                    and nvl(o.stornirano, 'N') = 'N' and o.storniran_id is null
                    and o.datum < trunc(p_datum) + 1
                  group by os.stavka_id
-                having sum(case when upper(vd.sifra) in ('ISI', 'VSR') and o.zaduzeni_radnik_id = p_radnik_id then os.kolicina
+                having sum(case when upper(vd.sifra) in ('ISI', 'VSR', 'RUV') and o.zaduzeni_radnik_id = p_radnik_id then os.kolicina
                                 when upper(vd.sifra) = 'PSI' and o.radnik_prenos_id = p_radnik_id then os.kolicina
-                                when upper(vd.sifra) in ('PSI', 'RSR') and o.zaduzeni_radnik_id = p_radnik_id then -os.kolicina
+                                when upper(vd.sifra) in ('PSI', 'RSR', 'RUM') and o.zaduzeni_radnik_id = p_radnik_id then -os.kolicina
                                 else 0 end) <> 0);
         return l_n;
     end si_broj_artikala;
@@ -918,16 +918,16 @@ create or replace package body rm_popis_pkg as
         select ooj_id, radnik_id, trunc(datum) into l_ooj, l_rad, l_datum from popisi where id = p_popis_id;
         -- željeno stanje: ključ = stavka_id || '#' || serijski broj
         for a in (select os.stavka_id, max(case when s.serijski_broj = 'Y' then 'Y' else 'N' end) as prati_sb,
-                         sum(case when upper(vd.sifra) in ('ISI', 'VSR') and o.zaduzeni_radnik_id = l_rad then os.kolicina
+                         sum(case when upper(vd.sifra) in ('ISI', 'VSR', 'RUV') and o.zaduzeni_radnik_id = l_rad then os.kolicina
                                   when upper(vd.sifra) = 'PSI' and o.radnik_prenos_id = l_rad then os.kolicina
-                                  when upper(vd.sifra) in ('PSI', 'RSR') and o.zaduzeni_radnik_id = l_rad then -os.kolicina
+                                  when upper(vd.sifra) in ('PSI', 'RSR', 'RUM') and o.zaduzeni_radnik_id = l_rad then -os.kolicina
                                   else 0 end) as kol
                     from operacija_stavke os
                     join operacije o on o.id = os.operacija_id
                     join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
                     join sec_stavke s on s.id = os.stavka_id
                    where o.ooj_id = l_ooj
-                     and upper(vd.sifra) in ('ISI', 'VSR', 'PSI', 'RSR')
+                     and upper(vd.sifra) in ('ISI', 'VSR', 'RUV', 'PSI', 'RSR', 'RUM')
                      and (o.zaduzeni_radnik_id = l_rad or o.radnik_prenos_id = l_rad)
                      and nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
                      and nvl(o.stornirano, 'N') = 'N' and o.storniran_id is null
@@ -1109,19 +1109,19 @@ create or replace package body rm_popis_pkg as
                        || '). Zaključite ih ili obrišite, osvježite popis pa ga zaključite.';
             end if;
             select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina < nvl(prethodna_kolicina, 0);
-            if l_n > 0 and vrsta_id(p.ooj_id, 'RSR') is null then
-                return 'Firma nema vrstu dokumenta RSR (Rashod sitnog inventara kod radnika). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
+            if l_n > 0 and vrsta_id(p.ooj_id, 'RUM') is null then
+                return 'Firma nema vrstu dokumenta RUM (Razlika inventure sitnog inventara u upotrebi - manjak). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
             end if;
             select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina > nvl(prethodna_kolicina, 0);
-            if l_n > 0 and vrsta_id(p.ooj_id, 'VSR') is null then
-                return 'Firma nema vrstu dokumenta VSR (Višak sitnog inventara kod radnika). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
+            if l_n > 0 and vrsta_id(p.ooj_id, 'RUV') is null then
+                return 'Firma nema vrstu dokumenta RUV (Razlika inventure sitnog inventara u upotrebi - višak). Pokrenite skriptu 16_rm_vrste_izlaz.sql.';
             end if;
             return null;
         end loop;
         return 'Popis ne postoji.';
     end provjeri_zakljucavanje_si;
 
-    -- RSR (manjak) / VSR (višak) iz popisa SI: stavke po artiklu, serijski brojevi iz redova popisa
+    -- RUM (manjak) / RUV (višak) - razlika inventure sitnog inventara u upotrebi: stavke po artiklu, serijski brojevi iz redova popisa
     function napravi_dokument_si (p_popis in popisi%rowtype, p_sifra in varchar2) return varchar2 is
         l_broj  number;
         l_naziv varchar2(255);
@@ -1136,17 +1136,18 @@ create or replace package body rm_popis_pkg as
             status, zakljucano, stornirano, popis_id, zaduzeni_radnik_id
         ) values (
             p_popis.ooj_id, p_popis.godina, l_vrsta, null, null, trunc(p_popis.datum),
-            case p_sifra when 'VSR' then 'Višak' else 'Manjak' end || ' sitnog inventara utvrđen popisom ' || p_popis.naziv,
+            'Razlika inventure sitnog inventara u upotrebi - ' || case p_sifra when 'RUV' then 'višak' else 'manjak' end
+            || ' (popis ' || p_popis.naziv || ')',
             l_broj, l_naziv, 'Z', 'Y', 'N', p_popis.id, p_popis.radnik_id
         ) returning id into l_id;
         for s in (select ps.stavka_id,
-                         sum(case when p_sifra = 'VSR' then ps.popis_kolicina - nvl(ps.prethodna_kolicina, 0)
+                         sum(case when p_sifra = 'RUV' then ps.popis_kolicina - nvl(ps.prethodna_kolicina, 0)
                                   else nvl(ps.prethodna_kolicina, 0) - ps.popis_kolicina end) as kol,
                          max(ps.cijena) as cijena, min(a.sifra) as sifra
                     from popis_stavke ps join sec_stavke a on a.id = ps.stavka_id
                    where ps.popis_id = p_popis.id
-                     and ((p_sifra = 'VSR' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
-                       or (p_sifra = 'RSR' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)))
+                     and ((p_sifra = 'RUV' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
+                       or (p_sifra = 'RUM' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)))
                    group by ps.stavka_id
                    order by min(a.sifra)) loop
             l_rb := l_rb + 1;
@@ -1157,10 +1158,10 @@ create or replace package body rm_popis_pkg as
             select l_st, ps.serijski_broj
               from popis_stavke ps
              where ps.popis_id = p_popis.id and ps.stavka_id = s.stavka_id and ps.serijski_broj is not null
-               and ((p_sifra = 'VSR' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
-                 or (p_sifra = 'RSR' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)));
+               and ((p_sifra = 'RUV' and ps.popis_kolicina > nvl(ps.prethodna_kolicina, 0))
+                 or (p_sifra = 'RUM' and ps.popis_kolicina < nvl(ps.prethodna_kolicina, 0)));
         end loop;
-        return l_naziv || case p_sifra when 'VSR' then ' (višak, ' else ' (manjak - rashod, ' end || l_rb
+        return l_naziv || case p_sifra when 'RUV' then ' (razlika inventure - višak, ' else ' (razlika inventure - manjak, ' end || l_rb
                || case when l_rb = 1 then ' artikal)' else ' artikala)' end;
     end napravi_dokument_si;
 
@@ -1172,11 +1173,11 @@ create or replace package body rm_popis_pkg as
         select * into l_p from popisi where id = p_id for update;
         select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina < nvl(prethodna_kolicina, 0);
         if l_n > 0 then
-            l_dok := napravi_dokument_si(l_p, 'RSR');
+            l_dok := napravi_dokument_si(l_p, 'RUM');
         end if;
         select count(*) into l_n from popis_stavke where popis_id = p_id and popis_kolicina > nvl(prethodna_kolicina, 0);
         if l_n > 0 then
-            l_dok := l_dok || case when l_dok is not null then '; ' end || napravi_dokument_si(l_p, 'VSR');
+            l_dok := l_dok || case when l_dok is not null then '; ' end || napravi_dokument_si(l_p, 'RUV');
         end if;
         update popisi set zakljucano = 'Y' where id = p_id;
         return case when l_dok is null then 'Popis je zaključen. Zaduženje radnika odgovara popisanom stanju - dokumenti nisu kreirani.'
@@ -1204,13 +1205,13 @@ create or replace package body rm_popis_pkg as
             if l_s is not null then
                 return 'Dokument ' || l_s || ' je proknjižen ili storniran - popis se ne može otključati.';
             end if;
-            -- višak (VSR) koji je radnik u međuvremenu prezadužio ili rashodovao
+            -- višak (RUV) koji je radnik u međuvremenu prezadužio ili rashodovao
             for v in (select o.id as dok_id, o.naziv, os.stavka_id, a.sifra
                         from operacije o
                         join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
                         join operacija_stavke os on os.operacija_id = o.id
                         join sec_stavke a on a.id = os.stavka_id
-                       where o.popis_id = p.id and upper(vd.sifra) = 'VSR') loop
+                       where o.popis_id = p.id and upper(vd.sifra) = 'RUV') loop
                 if rm_dokument_pkg.si_saldo(p.ooj_id, p.radnik_id, v.stavka_id, v.dok_id) < 0 then
                     return 'Višak iz dokumenta ' || v.naziv || ' (artikal ' || v.sifra
                            || ') je već prezadužen ili rashodovan - popis se ne može otključati.';

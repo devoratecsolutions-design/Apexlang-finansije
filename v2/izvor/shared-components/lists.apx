@@ -1061,7 +1061,7 @@ list navigation-menu (
     )
 
     entry klijenti (
-        label: Klijenti
+        label: Poslovni partneri
         icon {
             imageIconCssClasses: fa-users
         }
@@ -3058,7 +3058,7 @@ list navigation-menu-materijal-oprema (
     )
 
     entry popis (
-        label: Popis
+        label: Popis zaliha
         icon {
             imageIconCssClasses: fa-list-ol
         }
@@ -3089,7 +3089,7 @@ list navigation-menu-materijal-oprema (
     )
 
     entry popis-sitnog-inventara (
-        label: Popis sitnog inventara
+        label: Popis sitnog inventara u upotrebi
         icon {
             imageIconCssClasses: fa-users
         }
@@ -3808,7 +3808,7 @@ list dashboard-moduli-poslovanje (
     )
 
     entry klijenti (
-        label: Klijenti
+        label: Poslovni partneri
         icon {
             imageIconCssClasses: fa-users
         }

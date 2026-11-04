@@ -1,7 +1,7 @@
 page 367 (
-    name: Popis sitnog inventara
+    name: Popis sitnog inventara u upotrebi
     alias: POPIS-SI
-    title: Popis sitnog inventara
+    title: Popis sitnog inventara u upotrebi
     pageGroup: @robno-materijalno
     appearance {
         pageTemplate: @standard
@@ -11,16 +11,6 @@ page 367 (
         cursorFocus: doNotFocusCursor
         warnOnUnsavedChanges: false
     }
-    javaScript {
-        executeWhenPageLoads:
-            ```javascript-browser
-            /* zatvoren popis / novi popis (i Esc): osvježi listu. Dijalog otvoren linkom iz izvještaja
-               javlja zatvaranje na window, pa se sluša i tu. */
-            apex.jQuery(window).on("apexafterclosedialog apexafterclosecanceldialog", function () {
-                apex.region("rm_popisi_si").refresh();
-            });
-            ```
-    }
     security {
         authorizationScheme: @robno-materijalno-popis
         pageAccessProtection: argumentsMustHaveChecksum
@@ -28,7 +18,7 @@ page 367 (
     }
 
     region popisi-naslov (
-        name: Popis sitnog inventara
+        name: Popis sitnog inventara u upotrebi
         type: breadcrumb
         source {
             breadcrumb: @breadcrumb
@@ -72,7 +62,7 @@ page 367 (
         source {
             htmlCode:
                 ```html
-                <span class="fin-sub">Popis sitnog inventara koji je zadužen kod radnika. Otvara se na datum za jednog, više ili sve radnike; stavke dobijaju zaduženje radnika na taj datum (artikli sa serijskim brojem - svaki komad posebno). Zaključavanjem popisa manjak se razdužuje dokumentom <b>Rashod sitnog inventara kod radnika</b>, a višak zadužuje dokumentom <b>Višak sitnog inventara kod radnika</b>.</span>
+                <span class="fin-sub">Popis sitnog inventara koji je zadužen kod radnika. Otvara se na datum za jednog, više ili sve radnike; stavke dobijaju zaduženje radnika na taj datum (artikli sa serijskim brojem - svaki komad posebno). Kada se popisane i knjigovodstvene količine ne slažu, zaključavanjem popisa nastaju dokumenti <b>Razlika inventure sitnog inventara u upotrebi - manjak</b> (radnik se razdužuje) i <b>Razlika inventure sitnog inventara u upotrebi - višak</b> (radnik se zadužuje).</span>
                 ```
         }
         layout {

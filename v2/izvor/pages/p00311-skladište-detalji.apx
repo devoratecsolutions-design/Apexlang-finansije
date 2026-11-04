@@ -19,14 +19,6 @@ page 311 (
     navigation {
         cursorFocus: doNotFocusCursor
     }
-    css {
-        inline:
-            ```css
-            .ui-dialog-titlebar-close {
-                display: none !important;
-            }
-            ```
-    }
     security {
         authorizationScheme: @robno-materijalno-konfiguracija-skladišta
         pageAccessProtection: argumentsMustHaveChecksum
@@ -666,30 +658,6 @@ page 311 (
             template: @optional-above
             templateOptions: #DEFAULT#
             height: 2
-        }
-    )
-
-    button cancel (
-        buttonName: ZATVORI
-        label: Zatvori
-        layout {
-            sequence: 10
-            region: @buttons
-            slot: close
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--simple
-                t-Button--iconLeft
-            ]
-            icon: fa-times
-        }
-        behavior {
-            executeValidations: false
-            warnOnUnsavedChanges: doNotCheck
         }
     )
 

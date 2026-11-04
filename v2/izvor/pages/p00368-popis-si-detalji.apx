@@ -1,7 +1,7 @@
 page 368 (
     name: Popis sitnog inventara - detalji
     alias: POPIS-SI-DETALJI
-    title: Popis sitnog inventara
+    title: Popis sitnog inventara u upotrebi
     pageGroup: @robno-materijalno
     appearance {
         pageMode: modalDialog
@@ -23,14 +23,6 @@ page 368 (
         executeWhenPageLoads:
             ```javascript-browser
             finRmPopis.init('rm_popis_stavke', 'P368');
-            ```
-    }
-    css {
-        inline:
-            ```css
-            .ui-dialog-titlebar-close {
-                display: none !important;
-            }
             ```
     }
     security {
@@ -107,7 +99,7 @@ page 368 (
 
     region dokumenti (
         name: Dokumenti iz popisa
-        title: Dokumenti iz popisa (rashod / višak kod radnika)
+        title: Dokumenti iz popisa (razlika inventure SI u upotrebi - manjak / višak)
         type: classicReport
         source {
             location: localDatabase
@@ -965,30 +957,6 @@ page 368 (
         }
     )
 
-    button cancel (
-        buttonName: ZATVORI
-        label: Zatvori
-        layout {
-            sequence: 10
-            region: @buttons
-            slot: close
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--simple
-                t-Button--iconLeft
-            ]
-            icon: fa-times
-        }
-        behavior {
-            executeValidations: false
-            warnOnUnsavedChanges: doNotCheck
-        }
-    )
-
     button delete (
         buttonName: DELETE
         label: Obriši popis
@@ -1047,7 +1015,7 @@ page 368 (
             requiresConfirmation: true
         }
         confirmation {
-            message: Otključati popis? Dokumenti rashoda i viška sitnog inventara iz ovog popisa se brišu i nastaju ponovo zaključavanjem popisa.
+            message: Otključati popis? Dokumenti razlike inventure (manjak / višak) iz ovog popisa se brišu i nastaju ponovo zaključavanjem popisa.
             style: danger
         }
         serverSideCondition {
@@ -1162,7 +1130,7 @@ page 368 (
             requiresConfirmation: true
         }
         confirmation {
-            message: Zaključati popis? Manjak se razdužuje dokumentom Rashod sitnog inventara kod radnika, a višak zadužuje dokumentom Višak sitnog inventara kod radnika (oba zaključena, sa serijskim brojevima). Popis se poslije ne može mijenjati.
+            message: Zaključati popis? Gdje se popisane i knjigovodstvene količine ne slažu nastaju dokumenti Razlika inventure sitnog inventara u upotrebi - manjak (razduženje radnika) i - višak (zaduženje radnika), zaključeni i sa serijskim brojevima. Popis se poslije ne može mijenjati.
             style: danger
         }
         serverSideCondition {
@@ -1396,7 +1364,7 @@ page 368 (
             sequence: 45
         }
         successMessage {
-            successMessage: Popis je otključan - dokumenti rashoda i viška sitnog inventara su obrisani.
+            successMessage: Popis je otključan - dokumenti razlike inventure (manjak / višak) su obrisani.
         }
         serverSideCondition {
             whenButtonPressed: @otkljucaj
@@ -1486,7 +1454,7 @@ page 368 (
         }
         behavior {
             target: {
-                page: 365
+                page: 368
                 items: {
                     P368_ID: &P368_ID.
                 }

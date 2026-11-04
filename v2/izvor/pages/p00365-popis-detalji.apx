@@ -1,7 +1,7 @@
 page 365 (
     name: Popis skladišta - detalji
     alias: POPIS-SKLADISTA-DETALJI
-    title: Popis skladišta
+    title: Popis zaliha
     pageGroup: @robno-materijalno
     appearance {
         pageMode: modalDialog
@@ -23,14 +23,6 @@ page 365 (
         executeWhenPageLoads:
             ```javascript-browser
             finRmPopis.init('rm_popis_stavke', 'P365');
-            ```
-    }
-    css {
-        inline:
-            ```css
-            .ui-dialog-titlebar-close {
-                display: none !important;
-            }
             ```
     }
     security {
@@ -939,30 +931,6 @@ page 365 (
         }
         help {
             helpText: Slobodan opis popisa (komisija, napomena).
-        }
-    )
-
-    button cancel (
-        buttonName: ZATVORI
-        label: Zatvori
-        layout {
-            sequence: 10
-            region: @buttons
-            slot: close
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--simple
-                t-Button--iconLeft
-            ]
-            icon: fa-times
-        }
-        behavior {
-            executeValidations: false
-            warnOnUnsavedChanges: doNotCheck
         }
     )
 

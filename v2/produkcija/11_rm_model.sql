@@ -18,7 +18,7 @@
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
   R18 (04.11.2026): sitni inventar - OPERACIJE.RADNIK_PRENOS_ID (prezaduženje: na radnika),
   POPISI.VRSTA (S = skladište, I = sitni inventar kod radnika) i RADNIK_ID, POPIS_STAVKE.SERIJSKI_BROJ;
-  brojači PSI, RSZ, RSR, VSR.
+  brojači PSI, RSZ, RSR, RUM, RUV.
   R17 (03.11.2026): OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA i OPIS (popis skladišta);
   brojači RAS (rashod), RIV / RIM (razlika inventure - višak / manjak).
   R13 (02.11.2026): brojači REV, REVP, RSV, RSVP.
@@ -131,7 +131,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop

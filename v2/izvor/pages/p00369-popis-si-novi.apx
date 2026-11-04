@@ -353,29 +353,6 @@ page 369 (
         }
     )
 
-    button cancel (
-        buttonName: ZATVORI
-        label: Odustani
-        layout {
-            sequence: 10
-            region: @buttons
-            slot: close
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--simple
-                t-Button--iconLeft
-            ]
-            icon: fa-times
-        }
-        behavior {
-            action: definedByDynamicAction
-        }
-    )
-
     button kreiraj (
         buttonName: KREIRAJ
         label: Otvori popis
@@ -451,27 +428,6 @@ page 369 (
                 selectionType: region
                 region: @skladista
             }
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
-
-    )
-
-    dynamicAction cancel-dialog (
-        name: Odustani
-        execution {
-            sequence: 20
-        }
-        when {
-            event: click
-            selectionType: button
-            button: @cancel
-        }
-
-        action native-dialog-cancel (
-            action: cancelDialog
             execution {
                 sequence: 10
                 fireOnInit: false

@@ -318,6 +318,99 @@ cols_dc = [c("ID", "Dokument", "NUMBER", link='<span class="fin-doc"><span class
            c("DANA", "Dana", "NUMBER", None, "end"), c("RAZLOG", "Šta čeka"), c("IZNOS", "Iznos (KM)", "NUMBER", VM, "end"), c("URL", "Url", hidden=True)]
 R.append(report("izv-cekanje", "Dokumenti na čekanju", ["dc"], sql_dc, cols_dc, ["P371_SKLADISTE_ID"], "Nema dokumenata koji čekaju.", 90, rid)); rid += 1
 
+# R19: sitni inventar u upotrebi (zaduženja radnika na nivou firme - bez filtera skladišta)
+RAD = "(:P371_RADNIK IS NULL OR z.radnik_id = to_number(:P371_RADNIK))"
+ARTZ = "(:P371_ARTIKL IS NULL OR z.stavka_id = to_number(:P371_ARTIKL))"
+sql_siu = f"""
+SELECT z.radnik_naziv,
+       z.sifra AS artikal_sifra,
+       z.naziv AS artikal_naziv,
+       z.jm_naziv,
+       z.zaduzeno,
+       nullif(z.u_pripremi, 0) AS u_pripremi,
+       z.cijena,
+       z.vrijednost,
+       z.zadnje_zaduzenje,
+       z.dokument
+FROM vw_rm_si_zaduzenja z
+WHERE z.ooj_id = :APP_OOJ_ID
+  AND {RAD}
+  AND {ARTZ}
+  AND z.zaduzeno <> 0
+ORDER BY z.radnik_naziv, z.sifra"""
+cols_siu = [c("RADNIK_NAZIV", "Radnik"), c("ARTIKAL_SIFRA", "Šifra"), c("ARTIKAL_NAZIV", "Materijal"), c("JM_NAZIV", "JM"),
+            c("ZADUZENO", "U upotrebi", "NUMBER", QM, "end"), c("U_PRIPREMI", "Na dokumentima u pripremi", "NUMBER", QM, "end"),
+            c("CIJENA", "Cijena", "NUMBER", CM, "end"), c("VRIJEDNOST", "Vrijednost (KM)", "NUMBER", VM, "end"),
+            c("ZADNJE_ZADUZENJE", "Zadnje zaduženje", "DATE", DM), c("DOKUMENT", "Dokument zaduženja")]
+R.append(report("izv-si-radnik", "Sitni inventar u upotrebi po radniku", ["siu"], sql_siu, cols_siu, ["P371_RADNIK", "P371_ARTIKL"],
+                "Nema sitnog inventara u upotrebi za izabrane parametre.", 100, rid)); rid += 1
+sql_sim = f"""
+SELECT z.sifra AS artikal_sifra,
+       z.naziv AS artikal_naziv,
+       z.jm_naziv,
+       count(DISTINCT z.radnik_id) AS radnika,
+       sum(z.zaduzeno) AS zaduzeno,
+       round(sum(z.vrijednost) / nullif(sum(z.zaduzeno), 0), 4) AS cijena,
+       sum(z.vrijednost) AS vrijednost
+FROM vw_rm_si_zaduzenja z
+WHERE z.ooj_id = :APP_OOJ_ID
+  AND {RAD}
+  AND {ARTZ}
+  AND z.zaduzeno <> 0
+GROUP BY z.stavka_id, z.sifra, z.naziv, z.jm_naziv
+ORDER BY z.sifra"""
+cols_sim = [c("ARTIKAL_SIFRA", "Šifra"), c("ARTIKAL_NAZIV", "Materijal"), c("JM_NAZIV", "JM"),
+            c("RADNIKA", "Radnika", "NUMBER", None, "end"), c("ZADUZENO", "U upotrebi", "NUMBER", QM, "end"),
+            c("CIJENA", "Prosječna cijena", "NUMBER", CM, "end"), c("VRIJEDNOST", "Vrijednost (KM)", "NUMBER", VM, "end")]
+R.append(report("izv-si-materijal", "Sitni inventar u upotrebi po materijalu", ["sim"], sql_sim, cols_sim, ["P371_RADNIK", "P371_ARTIKL"],
+                "Nema sitnog inventara u upotrebi za izabrane parametre.", 110, rid)); rid += 1
+sql_sik = f"""
+WITH p AS (
+    SELECT z.*
+      FROM vw_rm_si_promet z
+     WHERE z.ooj_id = :APP_OOJ_ID
+       AND z.radnik_id = to_number(:P371_RADNIK)
+       AND {ARTZ}
+), x AS (
+    SELECT 0 AS red, p.stavka_id, max(p.artikal_sifra) AS artikal_sifra, max(p.artikal_naziv) AS artikal_naziv, max(p.jm_naziv) AS jm_naziv,
+           {OD} AS datum, 0 AS operacija_id, 0 AS stavka_dok_id, 'Početno stanje' AS dokument,
+           CAST(NULL AS VARCHAR2(255)) AS vrsta_naziv, CAST(NULL AS VARCHAR2(500)) AS opis, CAST(NULL AS VARCHAR2(4000)) AS serijski_brojevi,
+           to_number(NULL) AS ulaz_kolicina, to_number(NULL) AS izlaz_kolicina, to_number(NULL) AS cijena,
+           sum(p.ulaz_kolicina - p.izlaz_kolicina) AS d_kol, sum(p.ulaz_vrijednost - p.izlaz_vrijednost) AS d_vr
+      FROM p WHERE p.datum < {OD}
+     GROUP BY p.stavka_id
+    HAVING sum(p.ulaz_kolicina - p.izlaz_kolicina) <> 0
+    UNION ALL
+    SELECT 1, p.stavka_id, p.artikal_sifra, p.artikal_naziv, p.jm_naziv, p.datum, p.operacija_id, p.stavka_dok_id, p.dokument,
+           p.vrsta_naziv, p.opis, p.serijski_brojevi,
+           p.ulaz_kolicina, p.izlaz_kolicina, p.cijena,
+           p.ulaz_kolicina - p.izlaz_kolicina, p.ulaz_vrijednost - p.izlaz_vrijednost
+      FROM p WHERE p.datum BETWEEN nvl({OD}, DATE '1900-01-01') AND nvl({DO}, DATE '2999-12-31')
+)
+SELECT x.artikal_sifra,
+       x.artikal_naziv,
+       x.jm_naziv,
+       x.datum,
+       x.dokument,
+       x.vrsta_naziv,
+       x.opis,
+       x.serijski_brojevi,
+       nullif(x.ulaz_kolicina, 0) AS ulaz,
+       nullif(x.izlaz_kolicina, 0) AS izlaz,
+       sum(x.d_kol) OVER (PARTITION BY x.stavka_id ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id) AS saldo,
+       x.cijena,
+       sum(x.d_vr) OVER (PARTITION BY x.stavka_id ORDER BY x.red, x.datum, x.operacija_id, x.stavka_dok_id) AS saldo_vrijednost
+FROM x
+WHERE :P371_RADNIK IS NOT NULL
+ORDER BY x.artikal_sifra, x.red, x.datum, x.operacija_id, x.stavka_dok_id"""
+cols_sik = [c("ARTIKAL_SIFRA", "Šifra"), c("ARTIKAL_NAZIV", "Materijal"), c("JM_NAZIV", "JM"), c("DATUM", "Datum", "DATE", DM),
+            c("DOKUMENT", "Dokument"), c("VRSTA_NAZIV", "Vrsta"), c("OPIS", "Opis"), c("SERIJSKI_BROJEVI", "Serijski brojevi"),
+            c("ULAZ", "Zaduženo", "NUMBER", QM, "end"), c("IZLAZ", "Razduženo", "NUMBER", QM, "end"),
+            c("SALDO", "U upotrebi", "NUMBER", QM, "end"), c("CIJENA", "Cijena", "NUMBER", CM, "end"),
+            c("SALDO_VRIJEDNOST", "Vrijednost (KM)", "NUMBER", VM, "end")]
+R.append(report("izv-si-kartica", "Kartica sitnog inventara radnika", ["sik"], sql_sik, cols_sik, ["P371_RADNIK", "P371_ARTIKL", "P371_OD", "P371_DO"],
+                "Izaberite radnika (kartica se prikazuje za jednog radnika, po materijalu).", 120, rid)); rid += 1
+
 KATALOG = [
     ("Stanje i vrijednost", "fa-cubes", [("sd", "Stanje zaliha na dan", "Količina, prosječna cijena i vrijednost po artiklu"),
                                          ("pl", "Popisna lista", "Knjigovodstveno stanje sa poljima za popis"),
@@ -328,6 +421,9 @@ KATALOG = [
     ("Potrošnja i zaduženja", "fa-users", [("pmt", "Potrošnja po mjestu troška", "Izdatnice i izlazi na investiciju, OS i sitni inventar"),
                                            ("zad", "Zaduženja", "Otvoreni reversi i zaduženja radnika / komitenata")]),
     ("Kontrola", "fa-bell-o", [("dc", "Dokumenti na čekanju", "Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema")]),
+    ("Sitni inventar", "fa-wrench", [("siu", "SI u upotrebi po radniku", "Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu"),
+                                     ("sim", "SI u upotrebi po materijalu", "Ukupno u upotrebi po materijalu i broj radnika"),
+                                     ("sik", "Kartica SI radnika", "Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika")]),
 ]
 kat_html = '<div class="fin-izv-katalog">'
 for g, ic, its in KATALOG:
@@ -366,7 +462,7 @@ def item(name, typ, label, seq, codes, extra=""):
 """
 
 items = []
-items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, ALL, extra="""        lov {
+items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, [k for k in ALL if not k.startswith("si")], extra="""        lov {
             type: sqlQuery
             sqlQuery:
                 ```sql
@@ -387,9 +483,9 @@ items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, ALL, extr
         }
 """))
 items.append(item("P371_DATUM", "datePicker", "Na dan", 20, ["sd", "pl"]))
-items.append(item("P371_OD", "datePicker", "Od", 30, ["km", "pp", "dok", "pmt"]))
-items.append(item("P371_DO", "datePicker", "Do", 40, ["km", "pp", "dok", "pmt"]))
-items.append(item("P371_ARTIKL", "popupLov", "Artikal", 50, ["sd", "pl", "sz", "km", "pp", "pmt", "zad"], extra="""        settings {
+items.append(item("P371_OD", "datePicker", "Od", 30, ["km", "pp", "dok", "pmt", "sik"]))
+items.append(item("P371_DO", "datePicker", "Do", 40, ["km", "pp", "dok", "pmt", "sik"]))
+items.append(item("P371_ARTIKL", "popupLov", "Artikal", 50, ["sd", "pl", "sz", "km", "pp", "pmt", "zad", "siu", "sim", "sik"], extra="""        settings {
             popupWidth: 720
         }
         lov {
@@ -424,6 +520,21 @@ items.append(item("P371_VRSTA", "selectList", "Vrsta dokumenta", 60, ["dok"], ex
             nullDisplayValue: - sve vrste -
         }
 """))
+items.append(item("P371_RADNIK", "selectList", "Radnik", 45, ["siu", "sim", "sik"], extra="""        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT r.ime || ' ' || r.prezime || nvl2(r.interni_broj, ' (' || r.interni_broj || ')', NULL) AS d, r.id AS r
+                FROM sif.acc_radnici r
+                WHERE r.ooj_id = :APP_OOJ_ID
+                  AND (r.valid = 'Y' OR EXISTS (SELECT 1 FROM vw_rm_si_zaduzenja z WHERE z.radnik_id = r.id AND z.ooj_id = r.ooj_id))
+                ORDER BY r.prezime, r.ime
+                ```
+            displayExtraValues: false
+            displayNullValue: true
+            nullDisplayValue: - svi radnici -
+        }
+"""))
 items.append(item("P371_DANA", "numberField", "Dana bez izlaza (najmanje)", 60, ["sz"]))
 
 page = f"""page 371 (
@@ -453,7 +564,7 @@ page = f"""page 371 (
     help {{
         helpText:
             ```html
-            Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola),
+            Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola, sitni inventar),
             podesite parametre (skladište, period, artikal...) i kliknite <b>Prikaži</b>.
             Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>), preuzeti kao Excel / PDF
             (<b>Actions &gt; Download</b>) ili odštampati dugmetom <b>Štampaj</b>.
@@ -689,11 +800,14 @@ page = f"""page 371 (
                 :P371_NAZIV := {case_naziv};
                 -- opis parametara (zaglavlje pri štampi)
                 -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
-                select case when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
+                select case when :P371_IZV like 'si%' then
+                                'sitni inventar u upotrebi · ' || nvl((select max('radnik ' || r.ime || ' ' || r.prezime) from sif.acc_radnici r
+                                                                       where r.id = to_number(:P371_RADNIK)), 'svi radnici')
+                            when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
                             else (select max('skladište ' || s.sifra || ' - ' || s.naziv) from skladista s
                                    where s.id = to_number(:P371_SKLADISTE_ID)) end
                        || case when :P371_IZV in ('sd', 'pl') then ' · na dan ' || :P371_DATUM
-                               when :P371_IZV in ('km', 'pp', 'dok', 'pmt') then ' · period ' || :P371_OD || ' - ' || :P371_DO end
+                               when :P371_IZV in ('km', 'pp', 'dok', 'pmt', 'sik') then ' · period ' || :P371_OD || ' - ' || :P371_DO end
                        || case when :P371_ARTIKL is not null and :P371_IZV not in ('dok', 'dc') then
                                    (select max(' · artikal ' || a.sifra || ' ' || a.naziv) from sec_stavke a
                                      where a.id = to_number(:P371_ARTIKL)) end
@@ -718,6 +832,7 @@ page = f"""page 371 (
                 :P371_ARTIKL := null;
                 :P371_MT     := null;
                 :P371_VRSTA  := null;
+                :P371_RADNIK := null;
                 ```
         }}
         execution {{

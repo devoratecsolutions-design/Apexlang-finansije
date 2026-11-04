@@ -277,10 +277,15 @@ page 330 (
                                         || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
                                                 WHEN status = 'Z' THEN ' · čeka prijem' END
                         WHEN 'MPP' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'PSI' THEN 'prezaduženje sa ' || nvl(zaduzeni_radnik_naziv, '?') || ' na ' || nvl(radnik_prenos_naziv, '?')
+                        WHEN 'RSR' THEN 'razduženje radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'RUM' THEN 'manjak kod radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'RUV' THEN 'višak kod radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'REVP' THEN 'povrat od radnika ' || zaduzeni_radnik_naziv
                     END
                     || CASE WHEN storniran_id IS NOT NULL THEN ' storno dokumenta ' || storniran_naziv
                             WHEN storno_naziv IS NOT NULL THEN ' storniran dokumentom ' || storno_naziv END) AS prenos_info,
-                    zaduzeni_radnik_naziv,
+                    CASE WHEN vrsta_sifra IN ('PSI', 'RSR', 'RUM', 'RUV', 'REVP') THEN NULL ELSE zaduzeni_radnik_naziv END AS zaduzeni_radnik_naziv,
                     -- gramatika: 1 stavka, 2-4 stavke, 5+ stavki (21 stavka, 22 stavke, 11-14 stavki)
                     CASE WHEN mod(stavki, 10) = 1 AND mod(stavki, 100) <> 11 THEN 'stavka'
                          WHEN mod(stavki, 10) BETWEEN 2 AND 4 AND mod(stavki, 100) NOT BETWEEN 12 AND 14 THEN 'stavke'

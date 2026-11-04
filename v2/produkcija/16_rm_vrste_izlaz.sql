@@ -25,8 +25,10 @@
       PSI  Prezaduženje sitnog inventara  (sa radnika na radnika; bez uticaja na skladište, ne knjiži se)
       RSZ  Rashod sitnog inventara sa zaliha (izlaz sa skladišta, kao rashod)
       RSR  Rashod sitnog inventara kod radnika (razduženje radnika; bez uticaja na skladište)
-      VSR  Višak sitnog inventara kod radnika (nastaje zaključavanjem popisa SI; bez uticaja na skladište)
-  Tip kretanja u šifarniku: PSI, RSR i VSR nemaju tip (ne mijenjaju stanje skladišta, samo zaduženje
+      RUM  Razlika inventure sitnog inventara u upotrebi - manjak (nastaje zaključavanjem popisa SI u upotrebi)
+      RUV  Razlika inventure sitnog inventara u upotrebi - višak  (nastaje zaključavanjem popisa SI u upotrebi)
+      (VSR iz prve verzije R18 se ne koristi - deaktivira se ako nema dokumenata)
+  Tip kretanja u šifarniku: PSI, RSR, RUM i RUV nemaju tip (ne mijenjaju stanje skladišta, samo zaduženje
   radnika); pravila su u RM_DOKUMENT_PKG.
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
   sa istom aplikacijom (app_id). Postojeće vrste sa istom šifrom se ne mijenjaju.
@@ -76,7 +78,19 @@ begin
     dodaj('PSI', 'Prezaduženje sitnog inventara', 'Prenos zaduženja sitnog inventara sa radnika na radnika - ne knjiži se (v2)', null);
     dodaj('RSZ', 'Rashod sitnog inventara sa zaliha', 'Rashodovanje sitnog inventara koji je na skladištu (v2)');
     dodaj('RSR', 'Rashod sitnog inventara kod radnika', 'Rashodovanje sitnog inventara zaduženog kod radnika - razduženje radnika (v2)', null);
-    dodaj('VSR', 'Višak sitnog inventara kod radnika', 'Višak sitnog inventara utvrđen popisom kod radnika - nastaje zaključavanjem popisa (v2)', null);
+    dodaj('RUM', 'Razlika inventure sitnog inventara u upotrebi - manjak', 'Manjak sitnog inventara kod radnika utvrđen popisom - nastaje zaključavanjem popisa (v2)', null);
+    dodaj('RUV', 'Razlika inventure sitnog inventara u upotrebi - višak', 'Višak sitnog inventara kod radnika utvrđen popisom - nastaje zaključavanjem popisa (v2)', null);
+    -- VSR (prva verzija R18) zamijenjen sa RUV: deaktivira se ako nema dokumenata
+    -- (dinamički: SIF možda nema pravo čitanja ACCOUNTING.OPERACIJE - tada se VSR ostavlja)
+    begin
+        execute immediate q'[update sif.vrste_dokumenata vd set vd.valid = 'N'
+                              where vd.acc_modul_id = :1 and upper(vd.sifra) = 'VSR' and vd.valid = 'Y'
+                                and not exists (select 1 from accounting.operacije o where o.vrsta_dokumenta_id = vd.id)]'
+            using l_modul;
+    exception
+        when others then
+            dbms_output.put_line('VSR nije deaktiviran: ' || sqlerrm);
+    end;
     commit;
     dbms_output.put_line('Nove vrste dokumenata: ' || l_novih);
 end;
@@ -86,5 +100,5 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUM', 'RUV')
  order by vd.ooj_id, vd.sifra;
