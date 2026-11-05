@@ -699,5 +699,6 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
   - **Zaključaj prijem**: provjera da sve stavke imaju MPC, nova ili promijenjena MPC se upisuje u cjenovnik maloprodaje (VPC = MPC / (1 + PDV), napomena „MPC sa prijema …“), postojeće zalihe ostalih maloprodajnih skladišta tog cjenovnika se prethodno niveliraju (NIVM), prijem se zaključuje sa datumom zaključavanja;
   - prijem koji čeka MPC se može obrisati – prenos se vraća na listu „Prenosi na čekanju“;
   - kada svi artikli imaju MPC u cjenovniku, prijem se kao i do sada odmah zaključuje.
+- **Greška pri Snimi na dokumentima skladišta** (ERR-1002 Unable to find item ID for item "ZAMJENA_STAVKA_ID"): proces snimanja stavki je navodio kolonu zamjenskog artikla koja postoji samo na zamjeni šifara (R21), pa je snimanje izmijenjenih stavki na svim ostalim dokumentima javljalo grešku. Snimanje stavki je razdvojeno u tri procesa: opšti, zamjena šifara (ZSA) i finansijsko doknjiženje (FDK, bez kolone količine).
 - **Baza:** RM_DOKUMENT_PKG (DODAJ_SB_VISE_JSON, PREUZMI_PRENOS, RAZLOG_ZABRANE, OBRISI, PROVJERI_KOMPLETNOST), RM_CJENOVNIK_PKG (UVM_MPC_JSON, ZAKLJUCAJ_UVM), pogledi VW_RM_DOKUMENTI i VW_RM_DOKUMENT_STAVKE. Bez novih kolona.
 - **SQL (redom, kao ACCOUNTING):** `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`. Zatim import aplikacije.

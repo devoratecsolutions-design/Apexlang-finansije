@@ -3144,8 +3144,60 @@ page 331 (
         }
     )
 
+    -- R24: kolone ZAMJENA_STAVKA_ID (samo ZSA) i KOLICINA (nema na FDK) postoje samo uslovno; proces koji ih
+    -- navodi kao :KOLONA javlja ERR-1002 kad kolona nije na stranici - zato poseban proces po vrsti dokumenta
     process stavke-snimi (
         name: Stavke - snimi redove
+        type: executeCode
+        editableRegion: @stavke
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        -- vrijednosti iz tabele su tekst; novi red ima privremeni ID (t1000) -> kuf_pkg.broj vraća null
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_dokument_pkg.obrisi_stavku(p_id => l_id);
+                        else
+                            rm_dokument_pkg.snimi_stavku(
+                                p_id          => l_id,
+                                p_dokument_id => :P331_ID,
+                                p_stavka_id   => kuf_pkg.broj(:STAVKA_ID),
+                                p_kolicina    => kuf_pkg.broj(:KOLICINA),
+                                p_cijena      => kuf_pkg.broj(:CIJENA)
+                            );
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Dokument je snimljen.
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, '-') not in ('ZSA', 'FDK')
+        }
+    )
+
+    process stavke-snimi-zsa (
+        name: Stavke - snimi redove (zamjena šifara)
         type: executeCode
         editableRegion: @stavke
         source {
@@ -3183,7 +3235,7 @@ page 331 (
                 ```
         }
         execution {
-            sequence: 20
+            sequence: 21
         }
         successMessage {
             successMessage: Dokument je snimljen.
@@ -3191,7 +3243,57 @@ page 331 (
         serverSideCondition {
             executionScope: allSubmittedRows
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'ZSA'
+        }
+    )
+
+    process stavke-snimi-fdk (
+        name: Stavke - snimi redove (finansijsko doknjiženje)
+        type: executeCode
+        editableRegion: @stavke
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        -- vrijednosti iz tabele su tekst; novi red ima privremeni ID (t1000) -> kuf_pkg.broj vraća null
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            rm_dokument_pkg.obrisi_stavku(p_id => l_id);
+                        else
+                            rm_dokument_pkg.snimi_stavku(
+                                p_id          => l_id,
+                                p_dokument_id => :P331_ID,
+                                p_stavka_id   => kuf_pkg.broj(:STAVKA_ID),
+                                p_kolicina    => 1,                 -- FDK: stavka nema količinu
+                                p_cijena      => kuf_pkg.broj(:CIJENA)
+                            );
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 22
+        }
+        successMessage {
+            successMessage: Dokument je snimljen.
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: expression
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'FDK'
         }
     )
 
