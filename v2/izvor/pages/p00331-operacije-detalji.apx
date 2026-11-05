@@ -973,7 +973,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, 'PRI') in ('PRI', 'PDB')
         }
     )
 
@@ -2020,6 +2020,10 @@ page 331 (
             template: @optional-above
             templateOptions: #DEFAULT#
         }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, 'PRI') <> 'PDB'
+        }
     )
 
     pageItem P331_OTPREMNICA_DATUM (
@@ -2038,6 +2042,10 @@ page 331 (
         appearance {
             template: @optional-above
             templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: nvl(:P331_VRSTA_SIFRA, 'PRI') <> 'PDB'
         }
     )
 
@@ -2742,7 +2750,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, 'PRI') = 'PRI'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and nvl(:P331_VRSTA_SIFRA, 'PRI') in ('PRI', 'PDB')
         }
     )
 
@@ -3009,6 +3017,9 @@ page 331 (
                     when :P331_VRSTA_SIFRA = 'FDK' then 'Zaključiti doknjiženje? Vrijednost zaliha artikala se mijenja za unesene iznose (količina ostaje ista), pa se mijenja i prosječna cijena.'
                     when :P331_VRSTA_SIFRA = 'ZSA' then 'Zaključiti zamjenu šifara? Artikli se skidaju sa stanja po prosječnoj cijeni, a zamjenski artikli se dodaju na stanje u istoj količini i po istoj cijeni.'
                     when :P331_POVRAT = 'Y' then 'Zaključiti povrat? Vraćene količine se zadužuju na skladištu.'
+                    when :P331_VRSTA_SIFRA = 'PDB' then 'Zaključiti povrat dobavljaču? '
+                         || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'Roba' else 'Materijal' end
+                         || ' se skida sa stanja po trenutnoj cijeni (prosječna cijena; veleprodaja - prosjek iz cjenovnika; maloprodaja - MPC).'
                     else 'Zaključiti dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a '
                          || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'roba' else 'materijal' end
                          || ' se skida sa stanja.' end;
@@ -3085,6 +3096,9 @@ page 331 (
                     when :P331_VRSTA_SIFRA = 'FDK' then 'Zaključiti doknjiženje? Vrijednost zaliha artikala se mijenja za unesene iznose (količina ostaje ista), pa se mijenja i prosječna cijena.'
                     when :P331_VRSTA_SIFRA = 'ZSA' then 'Zaključiti zamjenu šifara? Artikli se skidaju sa stanja po prosječnoj cijeni, a zamjenski artikli se dodaju na stanje u istoj količini i po istoj cijeni.'
                     when :P331_POVRAT = 'Y' then 'Zaključiti povrat? Vraćene količine se zadužuju na skladištu.'
+                    when :P331_VRSTA_SIFRA = 'PDB' then 'Zaključiti povrat dobavljaču? '
+                         || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'Roba' else 'Materijal' end
+                         || ' se skida sa stanja po trenutnoj cijeni (prosječna cijena; veleprodaja - prosjek iz cjenovnika; maloprodaja - MPC).'
                     else 'Zaključiti dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a '
                          || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'roba' else 'materijal' end
                          || ' se skida sa stanja.' end;

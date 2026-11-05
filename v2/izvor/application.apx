@@ -48,14 +48,14 @@ app FINANSIJE (
         fileUrls: [
             #WORKSPACE_FILES#highlight_required#MIN#.js
             #APP_FILES#js/success-autohide.js
-            #APP_FILES#js/finansije-ui#MIN#.js?v=0167575a
+            #APP_FILES#js/finansije-ui#MIN#.js?v=ab5d6f06
         ]
     }
     css {
         fileUrls: [
             #WORKSPACE_FILES#highlight_required#MIN#.css
             #APP_FILES#css/nav-icons#MIN#.css
-            #APP_FILES#css/finansije-ui#MIN#.css?v=2cd4b705
+            #APP_FILES#css/finansije-ui#MIN#.css?v=754467a4
         ]
     }
     authentication {

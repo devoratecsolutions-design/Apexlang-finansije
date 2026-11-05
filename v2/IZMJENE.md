@@ -702,3 +702,13 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
 - **Greška pri Snimi na dokumentima skladišta** (ERR-1002 Unable to find item ID for item "ZAMJENA_STAVKA_ID"): proces snimanja stavki je navodio kolonu zamjenskog artikla koja postoji samo na zamjeni šifara (R21), pa je snimanje izmijenjenih stavki na svim ostalim dokumentima javljalo grešku. Snimanje stavki je razdvojeno u tri procesa: opšti, zamjena šifara (ZSA) i finansijsko doknjiženje (FDK, bez kolone količine).
 - **Baza:** RM_DOKUMENT_PKG (DODAJ_SB_VISE_JSON, PREUZMI_PRENOS, RAZLOG_ZABRANE, OBRISI, PROVJERI_KOMPLETNOST), RM_CJENOVNIK_PKG (UVM_MPC_JSON, ZAKLJUCAJ_UVM), pogledi VW_RM_DOKUMENTI i VW_RM_DOKUMENT_STAVKE. Bez novih kolona.
 - **SQL (redom, kao ACCOUNTING):** `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`. Zatim import aplikacije.
+
+## Povrat dobavljaču, pretraga izbora na listi dokumenata – korak R25 (05.11.2026, grana claude/robno-pdb)
+- **Povrat dobavljaču (PDB)** – nova vrsta dokumenta u oba modula (Zalihe robe i Materijal i oprema), izlazni dokument:
+  - dobavljač je obavezan (sekcija „Dobavljač i ugovor“ kao na prijemnici, bez broja i datuma otpremnice);
+  - izlaz po trenutnoj cijeni: skladište materijala – prosječna cijena skladišta; veleprodaja – zajednička prosječna cijena iz cjenovnika; maloprodaja – MPC;
+  - raspoloživo stanje, serijski brojevi, zaključavanje, otključavanje i storno kao kod ostalih izlaza;
+  - nudi se u meniju „Novi dokument“ i u izboru vrste na listi dokumenata.
+- **Lista dokumenata skladišta:** izbor vrste dokumenta je sada padajuća lista sa pretragom (isti izgled kao izbor skladišta; Enter bira prvi pronađeni); u izboru skladišta pretraga je uvijek vidljiva (ranije samo kod više od 7 skladišta).
+- **Baza:** vrsta PDB (16, SIF) i brojač (11); RM_DOKUMENT_PKG (tip kretanja, podržane vrste, provjera dobavljača).
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`. Zatim import aplikacije.

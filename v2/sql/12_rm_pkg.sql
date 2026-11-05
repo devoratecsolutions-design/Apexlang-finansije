@@ -284,6 +284,7 @@ create or replace package body rm_dokument_pkg as
                    when 'RSV'  then 'I'
                    when 'RSVP' then 'U'
                    when 'RAS'  then 'I'
+                   when 'PDB'  then 'I'          -- R25: povrat dobavljaču
                    when 'RIV'  then 'U'
                    when 'RIM'  then 'I'
                    when 'RSZ'  then 'I'
@@ -309,7 +310,7 @@ create or replace package body rm_dokument_pkg as
     begin
         return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP',
                                             'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM', 'FDK', 'ZSA', 'NIVM',
-                                            'PIV', 'UIV', 'PVI', 'UVI', 'PVM', 'UVM', 'PMV', 'UMV')
+                                            'PIV', 'UIV', 'PVI', 'UVI', 'PVM', 'UVM', 'PMV', 'UMV', 'PDB')
                     then 'Y' else 'N' end;
     end podrzana;
 
@@ -1145,14 +1146,17 @@ create or replace package body rm_dokument_pkg as
                                  || ' koristite dokument ' || vrsta_prenosa(kat_skladista(p_skladiste_id), kat_skladista(p_skladiste_prenos_id)) || '.' end;
             end if;
         end if;
-        if l_vrs = 'PRI' then
+        if l_vrs in ('PRI', 'PDB') then
             if p_klijent_id is null then
-                return 'Dobavljač je obavezan.';
+                return case when l_vrs = 'PDB' then 'Izaberite dobavljača kojem se vraća ' || predmet(p_skladiste_id) || '.'
+                            else 'Dobavljač je obavezan.' end;
             end if;
             select count(*) into l_n from sec_klijenti where id = p_klijent_id and ooj_id = p_ooj_id;
             if l_n = 0 then
                 return 'Dobavljač ne pripada firmi.';
             end if;
+        end if;
+        if l_vrs = 'PRI' then
             if p_otpremnica_datum is not null and trunc(p_otpremnica_datum) > trunc(p_datum) then
                 return 'Datum otpremnice ne može biti poslije datuma prijema.';
             end if;

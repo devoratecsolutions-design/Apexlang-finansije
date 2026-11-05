@@ -102,6 +102,7 @@ begin
     dodaj('PVM', 'Prenos robe u maloprodaju', 'Izlaz sa veleprodajnog na maloprodajno skladište (v2)');
     dodaj('UVM', 'Prijem u maloprodaju', 'Prijem na maloprodajno skladište po MPC iz cjenovnika - nastaje preuzimanjem prenosa iz veleprodaje (v2)', 'U');
     dodaj('PMV', 'Povrat iz maloprodaje u veleprodaju', 'Izlaz sa maloprodajnog skladišta (po MPC) na veleprodajno skladište (v2)');
+    dodaj('PDB', 'Povrat dobavljaču', 'Vraćanje robe / materijala dobavljaču - izlaz po trenutnoj cijeni (prosječna / cjenovnik / MPC) (v2)');
     dodaj('UMV', 'Prijem povrata iz maloprodaje', 'Prijem na veleprodajno skladište po prosječnoj cijeni - nastaje preuzimanjem povrata iz maloprodaje (v2)', 'U');
     begin
         execute immediate q'[update sif.vrste_dokumenata vd set vd.valid = 'N'

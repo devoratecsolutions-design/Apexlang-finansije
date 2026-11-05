@@ -790,7 +790,7 @@ window.finSkl = (function ($) {
         $m.find(".fin-skl__lista").html('<div class="fin-skl__prazno">Učitavanje…</div>');
         apex.server.process("RM_SKLADISTA", {}, { dataType: "json" }).done(function (d) {
             lista = d || [];
-            $m.find(".fin-skl__trazi").toggle(lista.length > 7);
+            /* R25: pretraga je uvijek vidljiva */
             crtaj($m);
             $m.find("input").trigger("focus");
         });
@@ -847,7 +847,58 @@ window.finRmVrsta = (function ($) {
         $cilj = $(".t-Body-title .t-BreadcrumbRegion-buttons").first();
         if ($skl.length && $skl.parent().length) { $r.insertAfter($skl); } else if ($cilj.length) { $cilj.prepend($r); }
         $r.addClass("is-ready");
+        /* R25: izbor vrste sa pretragom (isti izgled kao izbor skladišta); select ostaje nosilac vrijednosti */
+        (function () {
+            var $w, $m, $l;
+            function esc(x) { return apex.util.escapeHTML(String(x == null ? "" : x)); }
+            function naziv() { var t = $s.find("option:selected").text(); return t || "— sve vrste —"; }
+            function crtaj(f) {
+                var html = "", v = String($s.val());
+                f = (f || "").toLowerCase();
+                $s.find("option").each(function () {
+                    var o = this, t = $(o).text();
+                    if (f && t.toLowerCase().indexOf(f) < 0) { return; }
+                    html += '<button type="button" role="option" class="fin-skl__stavka fin-vrsta__stavka' + (String(o.value) === v ? " is-current" : "") +
+                        '" data-v="' + esc(o.value) + '"><span class="fin-skl__ime">' + esc(t) + "</span>" +
+                        (String(o.value) === v ? '<span class="fa fa-check" aria-hidden="true"></span>' : "") + "</button>";
+                });
+                $l.html(html || '<div class="fin-skl__prazno">Nema vrste za pretragu.</div>');
+            }
+            function zatvori() { $w.removeClass("is-open").find(".fin-skl__chip").attr("aria-expanded", "false"); $m.prop("hidden", true); }
+            $w = $('<div class="fin-skl fin-vrsta"><button type="button" class="fin-skl__chip" aria-haspopup="listbox" aria-expanded="false" title="Promijeni vrstu dokumenta">' +
+                '<span class="fin-skl__ikona"><span class="fa fa-file-text-o" aria-hidden="true"></span></span><span class="fin-skl__tekst"><span class="fin-skl__lbl">Vrsta dokumenta</span>' +
+                '<span class="fin-skl__naziv"></span></span><span class="fa fa-chevron-down fin-skl__strelica" aria-hidden="true"></span></button>' +
+                '<div class="fin-skl__meni" hidden><div class="fin-skl__trazi"><input type="search" placeholder="Pretraga vrste dokumenta…" aria-label="Pretraga vrste dokumenta"></div>' +
+                '<div class="fin-skl__lista" role="listbox"></div></div></div>');
+            $m = $w.find(".fin-skl__meni");
+            $l = $w.find(".fin-skl__lista");
+            $w.find(".fin-skl__naziv").text(naziv());
+            $s.closest(".t-Form-fieldContainer").hide();
+            $r.append($w);
+            $w.on("click", ".fin-skl__chip", function (e) {
+                e.stopPropagation();
+                if ($w.hasClass("is-open")) { zatvori(); return; }
+                $w.addClass("is-open").find(".fin-skl__chip").attr("aria-expanded", "true");
+                $m.prop("hidden", false);
+                crtaj("");
+                $m.find("input").val("").trigger("focus");
+            });
+            $w.on("input", "input", function () { crtaj(this.value); });
+            $w.on("keydown", "input", function (e) {
+                if (e.key === "Enter") { e.preventDefault(); $l.find(".fin-skl__stavka").first().trigger("click"); }
+            });
+            $w.on("click", ".fin-skl__meni", function (e) { e.stopPropagation(); });
+            $w.on("click", ".fin-skl__stavka", function () {
+                var v = String($(this).data("v"));
+                zatvori();
+                if (v !== String($s.val())) { apex.item(item).setValue(v); }
+            });
+            $s.on("change", function () { $w.find(".fin-skl__naziv").text(naziv()); });
+            $(document).on("click", zatvori);
+            $(document).on("keydown", function (e) { if (e.key === "Escape") { zatvori(); } });
+        })();
         function osvjezi() {
+            $r.find(".fin-vrsta .fin-skl__naziv").text($s.find("option:selected").text() || "— sve vrste —");
             try { localStorage.setItem(KLJUC, $s.val()); } catch (e) { /* ništa */ }
             if (regionId && apex.region(regionId)) { apex.region(regionId).refresh(); }
         }

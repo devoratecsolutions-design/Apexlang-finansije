@@ -78,7 +78,7 @@ Na produkciji moraju postojati sa **istim parametrima** (imena i redoslijed).
 | 13_rm_views.sql | VW_RM_ARTIKLI, VW_RM_DOKUMENTI, VW_RM_DOKUMENT_STAVKE, VW_RM_SB, VW_RM_SB_STANJE, VW_RM_PRENOSI_CEKANJE, VW_RM_REVERS_PREOSTALO, VW_RM_SI_ZADUZENJA, VW_RM_SI_PROMET | novi objekti |
 | 14_rm_skladista.sql | paket RM_SKLADISTE_PKG, VW_RM_SKLADISTE_STANJE, VW_RM_KORISNIK_SKLADISTA, VW_RM_SKLADISTA | novi objekti |
 | 15_rm_kalkulacija.sql | kolone KALKULACIJA_RASPODJELA.CIJENA, KALKULACIJA_TROSKOVI.KUF_ID / SA_PDV; paket RM_KALKULACIJA_PKG, VW_RM_KALKULACIJE, VW_RM_KALK_FAKTURE, VW_RM_KALKULACIJA_STAVKE, VW_RM_KALKULACIJA_IZVORI, VW_RM_KALKULACIJA_RASPODJELA | novi objekti |
-| 16_rm_vrste_izlaz.sql (SIF) | SIF.VRSTE_DOKUMENATA | podaci: nove vrste po firmi (R17: RAS, RIV, RIM; R18: PSI, RSZ, RSR; R19: RUM, RUV – VSR iz R18 se deaktivira; R21: FDK, ZSA; R23: NIVM, PIV, UIV, PVI, UVI, PVM, UVM, PMV, UMV) |
+| 16_rm_vrste_izlaz.sql (SIF) | SIF.VRSTE_DOKUMENATA | podaci: nove vrste po firmi (R17: RAS, RIV, RIM; R18: PSI, RSZ, RSR; R19: RUM, RUV – VSR iz R18 se deaktivira; R21: FDK, ZSA; R23: NIVM, PIV, UIV, PVI, UVI, PVM, UVM, PMV, UMV; R25: PDB) |
 | 17_rm_izvjestaji.sql | VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU | novi objekti |
 | 18_core_error_manager.sql (CORE) | **CORE.ERROR_MANAGER – tijelo paketa (F_APEX_ERROR_HANDLER)** | **izmijenjen postojeći objekat** – spojiti sa verzijom sa produkcije |
 | 19_rm_popis.sql | paket RM_POPIS_PKG, VW_RM_POPISI, VW_RM_POPIS_STAVKE, VW_RM_POPIS_DOKUMENTI; brojač POP u CORE.PROTOKOLI (ako postoji vrsta POP) | novi objekti (koristi postojeće tabele POPISI i POPIS_STAVKE) |
