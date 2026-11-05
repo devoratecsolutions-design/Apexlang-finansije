@@ -151,10 +151,10 @@ comment on column kalkulacije.status is 'P = u pripremi, Z = zaključena (v2)';
 comment on column kalkulacije.nacin_raspodjele is 'V = po vrijednosti, K = po količini, L = linearno, R = ručno - ukupan iznos, J = ručno - jedinična cijena (v2)';
 comment on column kalkulacija_kuf.iznos is 'Iznos fakture koji se raspoređuje u ovoj kalkulaciji (KM) (v2)';
 comment on column kalkulacija_kuf.sa_pdv is 'Y = iznos sa PDV-om, N = bez PDV-a (v2)';
-comment on column kalkulacija_kuf.nacin_raspodjele is 'V = automatski po vrijednosti (do tada raspoređenoj), K = po količini, L = linearno, R = ručno - ukupan iznos, J = ručno - jedinična cijena (v2)';
+comment on column kalkulacija_kuf.nacin_raspodjele is 'V = automatski po vrijednosti (do tada raspoređenoj), K = po količini, L = linearno, R = ručno - ukupan iznos, J = ručno - jedinična cijena, P = ručno - cijena sa prijemnice (cijene se predlažu sa prijemnice) (v2)';
 comment on column kalkulacija_troskovi.kuf_id is 'Ulazna faktura zavisnog troška (prazno = ručno unesen trošak bez fakture) (v2)';
 comment on column kalkulacija_troskovi.sa_pdv is 'Y = iznos fakture sa PDV-om, N = bez PDV-a (samo trošak kroz fakturu) (v2)';
-comment on column kalkulacija_raspodjela.cijena is 'Jedinična cijena koju je korisnik upisao kod načina J (ručno - jedinična cijena) (v2)';
+comment on column kalkulacija_raspodjela.cijena is 'Jedinična cijena koju je korisnik upisao kod načina J (ručno - jedinična cijena) ili P (ručno - cijena sa prijemnice) (v2)';
 comment on table kalkulacija_raspodjela is 'Raspodjela iznosa fakture / zavisnog troška na stavke prijemnica u kalkulaciji (v2)';
 
 -- brojač KALK (tekuća godina) za firme koje imaju vrstu dokumenta KALK
@@ -554,7 +554,7 @@ create or replace package body rm_kalkulacija_pkg as
 
     function rucni_nacin (p_nacin in varchar2) return boolean is
     begin
-        return p_nacin in ('R', 'J');
+        return p_nacin in ('R', 'J', 'P');
     end rucni_nacin;
 
     procedure snimi_kuf (p_red_id in out number, p_id in number, p_kuf_id in number, p_sa_pdv in varchar2,
@@ -640,7 +640,7 @@ create or replace package body rm_kalkulacija_pkg as
     begin
         provjeri_izmjenu(p_id);
         if l_nacin = 'P' then
-            greska('Način "cijene sa prijemnice" je samo za fakturu robe - za zavisni trošak izaberite drugi način.');
+            greska('Način "ručno - cijena sa prijemnice" je samo za fakturu robe - za zavisni trošak izaberite drugi način.');
         end if;
         if l_nacin not in ('V', 'K', 'L', 'R', 'J') then
             greska('Nepoznat način raspodjele.');
@@ -727,9 +727,9 @@ create or replace package body rm_kalkulacija_pkg as
         delete from kalkulacija_raspodjela r
          where r.kalkulacija_id = p_id
            and (r.kalkulacija_kuf_id in (select id from kalkulacija_kuf
-                                          where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') not in ('R', 'J'))
+                                          where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') not in ('R', 'J', 'P'))
                 or r.kalkulacija_trosak_id in (select id from kalkulacija_troskovi
-                                                where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') not in ('R', 'J')));
+                                                where kalkulacija_id = p_id and nvl(nacin_raspodjele, 'V') not in ('R', 'J', 'P')));
     end ponisti_automatske;
 
     -- zavisni troškovi "po vrijednosti" zavise od raspodjele faktura robe
@@ -1102,15 +1102,18 @@ create or replace package body rm_kalkulacija_pkg as
             l_ima := l_ima or l_a(i).sacuvano is not null;
         end loop;
         if l_ima or not p_prijedlog or p_nacin in ('R', 'J') then
+            -- (ručno - cijena sa prijemnice bez sačuvane raspodjele: prijedlog su cijene sa prijemnice, niže)
             for i in 1 .. l_a.count loop
                 l_a(i).iznos := l_a(i).sacuvano;
             end loop;
             return l_a;
         end if;
         if p_nacin = 'P' then
-            -- cijene sa prijemnice: iznos artikla = vrijednost prijemnice
+            -- ručno - cijena sa prijemnice: predložena jedinična cijena = cijena prijemnice (vrijednost / količina),
+            -- iznos artikla = cijena x količina; korisnik ih mijenja i snima kao kod jedinične cijene
             for i in 1 .. l_a.count loop
-                l_a(i).iznos := round(nvl(l_a(i).osn, 0), 2);
+                l_a(i).cijena := case when nvl(l_a(i).kol, 0) <> 0 then round(nvl(l_a(i).osn, 0) / l_a(i).kol, 4) end;
+                l_a(i).iznos  := round(nvl(l_a(i).osn, 0), 2);
             end loop;
             return l_a;
         end if;
@@ -1151,7 +1154,7 @@ create or replace package body rm_kalkulacija_pkg as
     begin
         return case p_nacin when 'V' then 'automatski - po vrijednosti' when 'K' then 'automatski - po količini'
                             when 'L' then 'automatski - linearno' when 'J' then 'ručno - jedinična cijena'
-                            when 'P' then 'automatski - cijene sa prijemnice'
+                            when 'P' then 'ručno - cijena sa prijemnice'
                             else 'ručno - ukupan iznos' end;
     end naziv_nacina;
 
@@ -1309,7 +1312,7 @@ create or replace package body rm_kalkulacija_pkg as
     procedure rasporedi_automatske (p_id in number) is
     begin
         for f in (select kalkulacija_kuf_id, kalkulacija_trosak_id, iznos, nacin from vw_rm_kalkulacija_izvori
-                   where kalkulacija_id = p_id and nacin not in ('R', 'J')
+                   where kalkulacija_id = p_id and nacin not in ('R', 'J', 'P')
                    order by case when kalkulacija_kuf_id is not null then 0 else 1 end,
                             case when nacin = 'V' then 1 else 0 end, redoslijed) loop
             rasporedi_jedan(p_id, f.kalkulacija_kuf_id, f.kalkulacija_trosak_id, f.iznos, f.nacin);
@@ -1346,8 +1349,8 @@ create or replace package body rm_kalkulacija_pkg as
                 greska('Zbir raspodjele (' || to_char(l_suma, 'FM999G999G999G990D00') || ') mora biti jednak iznosu izvora ('
                        || to_char(l_iznos, 'FM999G999G999G990D00') || ').');
             end if;
-        elsif l_nacin = 'J' then
-            -- jedinične cijene: iznos izvora = zbir (cijena x količina)
+        elsif l_nacin in ('J', 'P') then
+            -- jedinične cijene (unesene ili prekopirane sa prijemnice): iznos izvora = zbir (cijena x količina)
             for i in 1 .. p_artikli.count loop
                 l_v := kuf_pkg.broj(p_iznosi(i));
                 if nvl(l_v, 0) < 0 then
@@ -1413,7 +1416,7 @@ create or replace package body rm_kalkulacija_pkg as
             delete from kalkulacija_raspodjela
              where kalkulacija_id = p_id
                and ((l_kuf is not null and kalkulacija_kuf_id = l_kuf) or (l_tr is not null and kalkulacija_trosak_id = l_tr));
-            if l_nacin in ('R', 'J') then
+            if l_nacin in ('R', 'J', 'P') then
                 ponisti_automatske(p_id);
             elsif l_kuf is not null then
                 ponisti_zavisne(p_id);

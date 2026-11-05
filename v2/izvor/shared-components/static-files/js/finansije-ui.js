@@ -1005,7 +1005,8 @@ apex.jQuery(function ($) {
    - prijemnice: izbor prijemnice odmah popunjava datum, dobavljača i vrijednost (PRI_INFO)
    - fakture i zavisni troškovi kroz fakturu: izbor fakture / sa-bez PDV-a -> raspoloživo
      i predlog iznosa (KUF_INFO)
-   - načini raspodjele: ručno - ukupan iznos (R), ručno - jedinična cijena (J: unose se
+   - načini raspodjele: ručno - ukupan iznos (R), ručno - jedinična cijena (J) i ručno - cijena sa
+     prijemnice (P: kao J, jedinične cijene se predlažu sa prijemnice; unose se
      cijene, iznos se preračunava), automatski po vrijednosti / količini / linearno
    - raspodjela: izbor fakture / troška učitava samo panel raspodjele (RASP_IZVOR);
      raspodjela po artiklima (zbirno iz svih prijemnica), čuvanje bez ponovnog
@@ -1091,7 +1092,7 @@ window.finRmKalk = (function ($) {
         });
         s = I.r2(s);
         $p.find(".fin-kalk-rasp__suma").text(f2(s));
-        if ($p.data("nacin") === "J") {
+        if ($p.data("nacin") === "J" || $p.data("nacin") === "P") {
             /* jedinična cijena: ukupan iznos se preračunava; granica je raspoloživo fakture */
             $p.find(".fin-kalk-rasp__ukupno").text(f2(s));
             if (rasp !== undefined && rasp !== null && rasp !== "") {
@@ -1106,7 +1107,7 @@ window.finRmKalk = (function ($) {
         $p.find(".fin-kalk-rasp__razlika").text(f2(raz)).toggleClass("is-greska", Math.abs(raz) >= 0.005);
     }
     function crtaj(d) {
-        var $p = $("#finKalkRasp"), izm = d.izmjenjiva === "Y", jed = d.nacin === "J", rucno = d.nacin === "R" && izm,
+        var $p = $("#finKalkRasp"), izm = d.izmjenjiva === "Y", jed = d.nacin === "J" || d.nacin === "P", rucno = d.nacin === "R" && izm,
             html, redovi = "", uputa;
         (d.stavke || []).forEach(function (s) {
             var izn = s.iznos ? f2(I.num(s.iznos)) : "", cij = s.cijena ? f4(I.num(s.cijena)) : "";
@@ -1125,14 +1126,14 @@ window.finRmKalk = (function ($) {
                     '</td><td class="u-tR fin-kalk-rasp__jed" data-kol="' + esc(s.kol) + '"></td></tr>';
             }
         });
-        if (jed) {
+        if (d.nacin === "P") {
+            uputa = "Jedinične cijene su prekopirane sa prijemnice - po potrebi ih promijenite i sačuvajte; iznos i ukupan iznos se preračunavaju (cijena × količina)." +
+                (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
+        } else if (jed) {
             uputa = "Upišite jediničnu cijenu po artiklu; iznos i ukupan iznos se preračunavaju (cijena × količina)." +
                 (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
         } else if (d.nacin === "R") {
             uputa = "Upišite iznos po artiklu; zbir mora biti jednak iznosu.";
-        } else if (d.nacin === "P") {
-            uputa = "Iznos po artiklu je vrijednost sa prijemnice (količina × cijena prijemnice); iznos fakture u kalkulaciji je " +
-                "zbir tih vrijednosti" + (d.raspolozivo ? " i ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)" : "") + ".";
         } else {
             uputa = "Iznosi su izračunati " + d.nacinNaziv + (d.nacin === "V"
                 ? (String(d.izvor).indexOf("F:") === 0
@@ -1143,7 +1144,8 @@ window.finRmKalk = (function ($) {
         html = '<div class="fin-kalk-rasp__zaglavlje"><div><div class="fin-kalk-rasp__naziv">' + esc(d.naziv) + '</div>' +
             '<div class="fin-kalk-rasp__meta"><span class="fin-chip fin-chip--info"><span class="fa fa-random" aria-hidden="true"></span> raspodjela: ' +
             esc(d.nacinNaziv) + '</span><span class="fin-chip fin-kalk-stanje fin-kalk-stanje--' + esc(d.rasporedjen) + '"></span>' +
-            (d.sacuvano === "N" && d.nacin !== "R" && d.nacin !== "J" ? '<span class="fin-sub">prijedlog - nije sačuvano</span>' : "") +
+            (d.sacuvano === "N" && d.nacin !== "R" && d.nacin !== "J"
+                ? '<span class="fin-sub">' + (d.nacin === "P" ? "cijene sa prijemnice - nije sačuvano" : "prijedlog - nije sačuvano") + '</span>' : "") +
             '</div></div><div class="fin-kalk-rasp__iznos"><span>' + (jed ? "Ukupan iznos" : "Iznos") + '</span><b>' +
             (jed ? '<span class="fin-kalk-rasp__ukupno">' + esc(d.iznos) + '</span>' : esc(d.iznos)) + ' KM</b></div></div>' +
             '<p class="fin-kalk-uputa">' + esc(uputa) + '</p>' +
@@ -1169,7 +1171,7 @@ window.finRmKalk = (function ($) {
         zbirPanela($p);
     }
     function osvjeziJedinicno($p) {
-        if ($p.data("nacin") === "J") {
+        if ($p.data("nacin") === "J" || $p.data("nacin") === "P") {
             /* iznos = jedinična cijena x količina (kao u bazi: zaokruženo na 2 decimale) */
             $p.find("tbody tr").each(function () {
                 var $r = $(this), $c = $r.find("[data-cijena-red]"), $i = $r.find("[data-iznos-red]");
@@ -1233,7 +1235,7 @@ window.finRmKalk = (function ($) {
     function ponisti(sve) {
         var $p = $("#finKalkRasp"), izvor = sve ? "SVE" : $p.data("izvor"),
             pitanje = sve ? "Poništiti raspodjele svih faktura i troškova?"
-                : "Poništiti raspodjelu izvora?" + ($p.data("nacin") === "R" || $p.data("nacin") === "J" || String(izvor).indexOf("F:") === 0
+                : "Poništiti raspodjelu izvora?" + ($p.data("nacin") === "R" || $p.data("nacin") === "J" || $p.data("nacin") === "P" || String(izvor).indexOf("F:") === 0
                     ? " Poništiće se i automatske raspodjele koje od nje zavise." : "");
         apex.message.confirm(pitanje, function (ok) {
             if (!ok) { return; }

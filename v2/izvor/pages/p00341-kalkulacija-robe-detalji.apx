@@ -807,7 +807,7 @@ page 341 (
             }
             lov {
                 type: staticValues
-                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Automatski – cijene sa prijemnice;P,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
+                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Ručno – cijena sa prijemnice;P,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
                 displayExtraValues: false
                 displayNullValue: false
             }
@@ -1208,6 +1208,7 @@ page 341 (
                     naziv,
                     CASE nacin WHEN 'V' THEN 'automatski – po vrijednosti' WHEN 'K' THEN 'automatski – po količini'
                                WHEN 'L' THEN 'automatski – linearno' WHEN 'J' THEN 'ručno – jedinična cijena'
+                               WHEN 'P' THEN 'ručno – cijena sa prijemnice'
                                ELSE 'ručno – ukupan iznos' END AS nacin,
                     to_char(iznos, 'FM999G999G999G990D00') AS iznos,
                     to_char(rasporedjeno, 'FM999G999G999G990D00') AS rasporedjeno,
