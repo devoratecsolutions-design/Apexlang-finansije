@@ -152,7 +152,7 @@ select d.id                                                             as opera
  where d.v2 = 'Y'
    and d.status = 'P'
    and d.stornirano = 'N'
-   and d.vrsta_sifra <> 'MPP'
+   and d.vrsta_sifra not in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV')
 union all
 select p.id,
        p.ooj_id,

@@ -63,7 +63,7 @@ select o.id,
        o.veza_id,
        vz.naziv                                                         as veza_naziv,
        (select max(p.naziv) from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
-         where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N') as preuzeto_naziv,
+         where p.veza_id = o.id and upper(pv.sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') and nvl(p.stornirano, 'N') = 'N') as preuzeto_naziv,
        o.opis,
        nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
        o.zakljucano,
@@ -192,6 +192,8 @@ select o.id,
        sk.sifra || ' - ' || sk.naziv                                    as sa_skladista,
        o.skladiste_prenos_id,
        o.opis,
+       upper(vd.sifra)                                                  as prenos_sifra,     -- R23: MPR / PIV / PVI / PVM / PMV
+       rm_dokument_pkg.prijem_za(vd.sifra)                              as prijem_sifra,
        (select count(*) from operacija_stavke os where os.operacija_id = o.id) as stavki,
        (select sum(round(os.kolicina * os.nabavna_cijena, 2)) from operacija_stavke os where os.operacija_id = o.id) as iznos,
        (select listagg(st.sifra || ' ' || st.naziv || ': ' || rtrim(to_char(os.kolicina, 'FM999G999G990D999999'), '.,')
@@ -203,13 +205,13 @@ select o.id,
           left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id
          where os.operacija_id = o.id)                                  as stavke_opis
   from operacije o
-  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'MPR'
+  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) in ('MPR', 'PIV', 'PVI', 'PVM', 'PMV')
   left join skladista sk on sk.id = o.skladiste_id
  where nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
    and nvl(o.stornirano, 'N') = 'N'
    and o.storniran_id is null
    and not exists (select 1 from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
-                    where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N');
+                    where p.veza_id = o.id and upper(pv.sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') and nvl(p.stornirano, 'N') = 'N');
 
 -- R14: preostale količine po reversima (zaključeni reversi partnera; povrati se raspoređuju
 -- na najstarije reverse - FIFO). Partner: REV = zaduženi radnik, RSV = komitent.

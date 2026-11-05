@@ -276,7 +276,23 @@ page 330 (
                         WHEN 'MPR' THEN 'na skladište ' || skladiste_prenos_naziv
                                         || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
                                                 WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'PIV' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'PVI' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'PVM' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'PMV' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
                         WHEN 'MPP' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'UIV' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'UVI' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'UVM' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'UMV' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
                         WHEN 'PSI' THEN 'prezaduženje sa ' || nvl(zaduzeni_radnik_naziv, '?') || ' na ' || nvl(radnik_prenos_naziv, '?')
                         WHEN 'RSR' THEN 'razduženje radnika ' || zaduzeni_radnik_naziv
                         WHEN 'RUM' THEN 'manjak kod radnika ' || zaduzeni_radnik_naziv
@@ -844,6 +860,8 @@ page 330 (
                 -- razlika inventure (RIV / RIM) nastaje samo zaključavanjem popisa skladišta
                 if rm_dokument_pkg.je_inventura(rm_dokument_pkg.vrsta_sifra(to_number(apex_application.g_x01))) = 'Y' then
                     sys.htp.p('ERR:Dokument razlike inventure nastaje samo zaključavanjem popisa skladišta (meni Popis skladišta).');
+                elsif rm_dokument_pkg.vrsta_sifra(to_number(apex_application.g_x01)) = 'NIVM' then
+                    sys.htp.p('ERR:Nivelacija nastaje automatski - pri zaključavanju kalkulacije, prijemu u maloprodaju ili izmjeni MPC u cjenovniku.');
                 else
                     sys.htp.p(apex_page.get_url(p_page        => 331,
                                                 p_items       => 'P331_VRSTA_DOKUMENTA_ID',

@@ -144,7 +144,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: not (nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null)
+            plsqlExpression: not (rm_dokument_pkg.je_prijem_prenosa(:P331_VRSTA_SIFRA) = 'Y' and :P331_ID is null)
         }
     )
 
@@ -170,6 +170,7 @@ page 331 (
                 FROM vw_rm_prenosi_cekanje p
                 WHERE p.ooj_id = :APP_OOJ_ID
                   AND p.skladiste_prenos_id = :A_SKLADISTE_ID
+                  AND p.prijem_sifra = :P331_VRSTA_SIFRA          -- R23: prenos odgovarajuće vrste (MPR -> MPP, PVM -> UVM ...)
                 ORDER BY p.datum, p.id
                 ```
         }
@@ -203,7 +204,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null
+            plsqlExpression: rm_dokument_pkg.je_prijem_prenosa(:P331_VRSTA_SIFRA) = 'Y' and :P331_ID is null
         }
 
         column ID (
@@ -384,7 +385,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null
+            plsqlExpression: rm_dokument_pkg.je_prijem_prenosa(:P331_VRSTA_SIFRA) = 'Y' and :P331_ID is null
         }
 
         column REDNI_BROJ (
@@ -2085,7 +2086,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_VRSTA_SIFRA = 'MPR'
+            plsqlExpression: rm_dokument_pkg.je_prenos(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -2110,7 +2111,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_VRSTA_SIFRA = 'MPP'
+            plsqlExpression: rm_dokument_pkg.je_prijem_prenosa(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -2301,7 +2302,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_IZMJENJIVA = 'Y' and not (nvl(:P331_VRSTA_SIFRA, '-') = 'MPP' and :P331_ID is null)
+            plsqlExpression: :P331_IZMJENJIVA = 'Y' and not (rm_dokument_pkg.je_prijem_prenosa(:P331_VRSTA_SIFRA) = 'Y' and :P331_ID is null)
         }
     )
 
@@ -2539,7 +2540,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and :P331_VRSTA_SIFRA = 'MPR'
+            plsqlExpression: :REQUEST in ('SAVE', 'ZAKLJUCAJ', 'POVRAT') and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.je_prenos(:P331_VRSTA_SIFRA) = 'Y'
         }
     )
 
@@ -2679,9 +2680,9 @@ page 331 (
                     :P331_SKLADISTE_PRENOS_ID := d.skladiste_prenos_id;
                     :P331_RADNIK_PRENOS_ID   := d.radnik_prenos_id;
                     :P331_SKLADISTE_PRENOS   := d.skladiste_prenos_naziv;
-                    :P331_VEZA_INFO          := case when d.vrsta_sifra = 'MPP' then 'Preuzet prenos ' || d.veza_naziv
-                                                     when d.vrsta_sifra = 'MPR' and d.preuzeto_naziv is not null then 'Preuzeto prijemom ' || d.preuzeto_naziv
-                                                     when d.vrsta_sifra = 'MPR' and d.status = 'Z' then 'Čeka prijem na skladištu ' || d.skladiste_prenos_naziv
+                    :P331_VEZA_INFO          := case when rm_dokument_pkg.je_prijem_prenosa(d.vrsta_sifra) = 'Y' then 'Preuzet prenos ' || d.veza_naziv
+                                                     when rm_dokument_pkg.je_prenos(d.vrsta_sifra) = 'Y' and d.preuzeto_naziv is not null then 'Preuzeto prijemom ' || d.preuzeto_naziv
+                                                     when rm_dokument_pkg.je_prenos(d.vrsta_sifra) = 'Y' and d.status = 'Z' then 'Čeka prijem na skladištu ' || d.skladiste_prenos_naziv
                                                 end;
                     :P331_KALKULACIJA        := case when d.kalkulacija_naziv is not null then 'Kalkulacija ' || d.kalkulacija_naziv
                                                      when d.popis_naziv is not null and d.vrsta_sifra = 'RIV' and d.status <> 'Z'

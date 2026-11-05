@@ -263,11 +263,8 @@ page 26 (
     pageItem P26_NABAVNA_CIJENA (
         type: textField
         label {
-            label: Nabavna cijena (iz kalkulacije)
+            label: Prosječna nabavna cijena
             alignment: left
-        }
-        settings {
-            disabled: true
         }
         layout {
             sequence: 10
@@ -278,10 +275,35 @@ page 26 (
         appearance {
             template: @optional-above
             templateOptions: #DEFAULT#
-            formatMask: FM999G999G999G999G990D00
+            formatMask: FM999G999G999G999G990D0000
         }
         help {
-            helpText: Nabavnu cijenu određuje kalkulacija (modul Robno-materijalno); u cjenovniku se samo prikazuje.
+            helpText: Prosječnu nabavnu cijenu određuju kalkulacija i prijemi. Izmjena u veleprodajnom cjenovniku (korekcija greške) usklađuje vrijednost zaliha svih skladišta tog cjenovnika automatskim finansijskim doknjiženjem; u maloprodaji je informativna. Izmjena MPC u maloprodajnom cjenovniku nivelira zalihe svih maloprodajnih skladišta cjenovnika.
+        }
+    )
+
+    pageItem P26_NAPOMENA (
+        type: textarea
+        label {
+            label: Napomena (razlog izmjene)
+            alignment: left
+        }
+        validation {
+            maxLength: 1000
+        }
+        layout {
+            sequence: 90
+            region: @cijene
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            height: 2
+        }
+        help {
+            helpText: Upisuje se u istoriju cjenovnika i u opis automatskih dokumenata (finansijsko doknjiženje / nivelacija).
         }
     )
 
@@ -1016,22 +1038,34 @@ page 26 (
         source {
             plsqlCode:
                 ```plsql
-                stavke_pkg.insert_cjenovnik_stavka (
-                    p_cjenovnik_id   => :P26_CJENOVNIK_ID,
-                    p_stavka_id      => :P26_STAVKA_ID,
-                    p_datum          => sysdate,
-                    p_nabavna_cijena => stavke_pkg.get_nabavna_cijena(:P26_CJENOVNIK_ID, :P26_STAVKA_ID),
-                    p_vpc            => to_number(:P26_VPC, 'FM999G999G999G999G990D00'),
-                    p_mpc            => CASE WHEN :P26_PDV_SISTEM = 'Y'
-                                             THEN to_number(:P26_MPC, 'FM999G999G999G999G990D00')
-                                             ELSE to_number(:P26_VPC, 'FM999G999G999G999G990D00') END);
+                -- R23: ručna izmjena kroz RM_CJENOVNIK_PKG (napomena, doknjiženje / nivelacija)
+                declare
+                    l_vpc number := kuf_pkg.broj(:P26_VPC);
+                begin
+                    apex_application.g_print_success_message := rm_cjenovnik_pkg.rucna_izmjena(
+                        p_cjenovnik_id => :P26_CJENOVNIK_ID,
+                        p_stavka_id    => :P26_STAVKA_ID,
+                        p_nabavna      => kuf_pkg.broj(:P26_NABAVNA_CIJENA),
+                        p_vpc          => l_vpc,
+                        p_mpc          => case when :P26_PDV_SISTEM = 'Y' then kuf_pkg.broj(:P26_MPC) else l_vpc end,
+                        p_napomena     => :P26_NAPOMENA);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
                 ```
         }
         execution {
             sequence: 60
         }
         successMessage {
-            successMessage: Uspješno kreirana cijena za izabranu stavku.
+            successMessage: Cijena je snimljena u cjenovnik (po potrebi su napravljeni finansijsko doknjiženje ili nivelacija).
         }
         advanced {
             executionMappingIdentifier: 189245086134409634
@@ -1079,7 +1113,7 @@ page 26 (
                             :P26_MARZA := to_char(round(c.marza, 2), 'FM999G990D00');
                             :P26_PDV := c.pdv;
                         END LOOP;
-                        :P26_NABAVNA_CIJENA := to_char(round(to_number(:P26_NABAVNA_CIJENA), 2), 'FM999G999G999G999G990D00');
+                        :P26_NABAVNA_CIJENA := to_char(round(to_number(:P26_NABAVNA_CIJENA), 4), 'FM999G999G999G999G990D0000');
                         :P26_VPC := to_char(round(to_number(:P26_VPC), 2), 'FM999G999G999G999G990D00');
                         :P26_MPC := to_char(round(to_number(:P26_MPC), 2), 'FM999G999G999G999G990D00');
                     END IF;
@@ -1102,15 +1136,27 @@ page 26 (
             plsqlCode:
                 ```plsql
                 IF :P26_VALID = 'Y' THEN
-                    stavke_pkg.insert_cjenovnik_stavka (
-                        p_cjenovnik_id   => :P26_CJENOVNIK_ID,
-                        p_stavka_id      => :P26_STAVKA_ID,
-                        p_datum          => sysdate,
-                        p_nabavna_cijena => stavke_pkg.get_nabavna_cijena(:P26_CJENOVNIK_ID, :P26_STAVKA_ID),
-                        p_vpc            => to_number(:P26_VPC, 'FM999G999G999G999G990D00'),
-                        p_mpc            => CASE WHEN :P26_PDV_SISTEM = 'Y'
-                                                 THEN to_number(:P26_MPC, 'FM999G999G999G999G990D00')
-                                                 ELSE to_number(:P26_VPC, 'FM999G999G999G999G990D00') END);
+                -- R23: ručna izmjena kroz RM_CJENOVNIK_PKG (napomena, doknjiženje / nivelacija)
+                declare
+                    l_vpc number := kuf_pkg.broj(:P26_VPC);
+                begin
+                    apex_application.g_print_success_message := rm_cjenovnik_pkg.rucna_izmjena(
+                        p_cjenovnik_id => :P26_CJENOVNIK_ID,
+                        p_stavka_id    => :P26_STAVKA_ID,
+                        p_nabavna      => kuf_pkg.broj(:P26_NABAVNA_CIJENA),
+                        p_vpc          => l_vpc,
+                        p_mpc          => case when :P26_PDV_SISTEM = 'Y' then kuf_pkg.broj(:P26_MPC) else l_vpc end,
+                        p_napomena     => :P26_NAPOMENA);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
                 ELSE
                     stavke_pkg.deaktiviraj_cjenovnik_stavka (
                         p_id => :P26_ID
@@ -1122,7 +1168,7 @@ page 26 (
             sequence: 70
         }
         successMessage {
-            successMessage: Uspješno ažurirana cijena za izabranu stavku.
+            successMessage: Cijena je snimljena u cjenovnik (po potrebi su napravljeni finansijsko doknjiženje ili nivelacija).
         }
         advanced {
             executionMappingIdentifier: 42788039489541229

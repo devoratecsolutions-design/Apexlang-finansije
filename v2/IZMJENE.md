@@ -668,5 +668,22 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
   - otključavanje kalkulacije briše nivelacije (ako artikli poslije nisu izdavani) i vraća cjenovnik.
 - Cjenovnik maloprodaje dobija nabavnu cijenu iz kalkulacije (zajednička prosječna nabavna je samo za veleprodaju).
 - **Baza:** OPERACIJA_STAVKE.NABAVNA_MP, MPC_STARA; vrsta NIVM i brojač; RM_CJENOVNIK_PKG.NIVELISI, PDV_STOPA; RM_DOKUMENT_PKG.JE_MP i MP grana u CIJENA_IZLAZA.
-- **Napomena:** postojeće (stare) zalihe maloprodajnih skladišta su vođene po nabavnoj cijeni – prije stvarnog rada u maloprodaji treba ih jednom nivelisati na MPC (alat za to dolazi sa ručnom izmjenom cjenovnika).
-- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`. Zatim import aplikacije. (Uključuje i R22.)
+- **Napomena:** postojeće (stare) zalihe maloprodajnih skladišta su vođene po nabavnoj cijeni – prije stvarnog rada u maloprodaji treba ih jednom nivelisati na MPC: snimiti važeću MPC u cjenovniku (ručna izmjena) – nivelacija nastaje automatski.
+- **Prenosi između tipova skladišta** (M = skladište materijala, V = veleprodaja, MP = maloprodaja) – vrsta dokumenta pokazuje prelaz između modula:
+
+  | Smjer | Izlaz | Prijem | Cijena |
+  |---|---|---|---|
+  | isti tip (M→M, V→V, MP→MP) | MPR Međuskladišni prenos | MPP Međuskladišni prijem | cijena izlaza; V/MP: cjenovnik odredišta |
+  | M → V | PIV Prenos materijala u veleprodaju | UIV Prijem materijala u veleprodaju | prosječna materijala → novi zajednički prosjek VP |
+  | V → M | PVI Prenos robe u skladište materijala | UVI Prijem robe u skladište materijala | prosječna VP |
+  | V → MP | PVM Prenos robe u maloprodaju | UVM Prijem u maloprodaju | zaliha po MPC cjenovnika MP, nabavna = cijena izlaza (bez MPC u cjenovniku prijem nije moguć) |
+  | MP → V | PMV Povrat iz maloprodaje u veleprodaju | UMV Prijem povrata iz maloprodaje | izlaz po MPC, prijem po prosječnoj VP (razlika = RUC / PDV za knjiženje) |
+
+  - M → MP nije predviđen (ide preko veleprodaje); prenos se nudi samo na skladišta čiji tip odgovara vrsti (pogrešna vrsta → poruka koju vrstu koristiti);
+  - prijem nastaje preuzimanjem prenosa sa liste „Prenosi na čekanju“ (Novi dokument → vrsta prijema), zaključen, kao i do sada;
+  - **promjena cijene dok je roba na putu:** poslije svakog prijema na veleprodajno skladište računa se zajednički prosjek iz stvarnih vrijednosti svih skladišta cjenovnika i vrijednost se usklađuje automatskim finansijskim doknjiženjem; na maloprodajno skladište – primljena roba se automatski nivelira na važeću MPC (dokumenti vezani za prijem, datum prijema).
+- **Ručna izmjena cijene u cjenovniku** (Cjenovnik → artikal): novo polje **Napomena** (u istoriji cjenovnika i u opisu automatskih dokumenata); **prosječna nabavna** se može ispraviti:
+  - veleprodaja: vrijednost zaliha svih skladišta cjenovnika se usklađuje sa (novom) prosječnom cijenom automatskim finansijskim doknjiženjem – isto služi i za početno usklađivanje skladišta;
+  - maloprodaja: izmjena MPC nivelira zalihe svih maloprodajnih skladišta cjenovnika (NIVM) – isto služi i za početnu nivelaciju starih zaliha na MPC;
+  - promjena VPC (veleprodaja) ili nabavne (maloprodaja) mijenja samo cjenovnik.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije. (Uključuje i R22.)

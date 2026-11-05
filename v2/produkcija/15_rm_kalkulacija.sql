@@ -985,6 +985,7 @@ create or replace package body rm_kalkulacija_pkg as
         l_robno := robno(p_id);
         -- R22: nova prosječna cijena po artiklu (zajednička za skladišta cjenovnika) - prije zaključavanja prijemnica
         if l_robno then
+            rm_cjenovnik_pkg.nova_akcija;                -- novi skup automatskih dokumenata (FDK / NIVM) za ovu kalkulaciju
             select k.naziv, rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id) into l_naziv, l_cj from kalkulacije k where k.id = p_id;
             l_tip := rm_cjenovnik_pkg.tip(l_cj);
             select max(sifra || ' - ' || naziv) into l_cjn from cjenovnici where id = l_cj;

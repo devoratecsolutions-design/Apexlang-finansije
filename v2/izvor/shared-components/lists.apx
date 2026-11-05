@@ -199,6 +199,8 @@ list menu-dokumenti-ulaz (
                 AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
                 AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
                 AND rm_dokument_pkg.je_inventura(vd.sifra) = 'N'
+                -- R23: automatski dokumenti (nivelacija) se ne prave ručno; prijemi po prenosu se biraju sa liste prenosa
+                AND (rm_dokument_pkg.rucni_unos(vd.sifra) = 'Y' OR rm_dokument_pkg.je_prijem_prenosa(vd.sifra) = 'Y')
             ORDER BY
                 CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END,
                 vd.naziv

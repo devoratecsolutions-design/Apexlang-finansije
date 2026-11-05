@@ -53,6 +53,15 @@ create or replace package rm_dokument_pkg as
     function ima_radnika (p_vrsta_sifra in varchar2) return varchar2;
     -- međuskladišni prenos (MPR) / prijem (MPP): drugo skladište
     function ima_skladiste_prenosa (p_vrsta_sifra in varchar2) return varchar2;
+    -- R23 prenosi između tipova skladišta: MPR / MPP isti tip; PIV / UIV materijal -> veleprodaja;
+    -- PVI / UVI veleprodaja -> materijal; PVM / UVM veleprodaja -> maloprodaja; PMV / UMV maloprodaja -> veleprodaja
+    function je_prenos (p_vrsta_sifra in varchar2) return varchar2;
+    function je_prijem_prenosa (p_vrsta_sifra in varchar2) return varchar2;
+    function prijem_za (p_prenos_sifra in varchar2) return varchar2;
+    function prenos_za (p_prijem_sifra in varchar2) return varchar2;
+    function kat_skladista (p_skladiste_id in number) return varchar2;           -- MAT / VP / MP
+    function vrsta_prenosa (p_sa in varchar2, p_na in varchar2) return varchar2;
+    function prenos_dozvoljen (p_vrsta_sifra in varchar2, p_skladiste_id in number, p_skladiste_prenos_id in number) return varchar2;
     -- komitent (SEC_KLIJENTI): revers servis i povrat - obavezan
     function ima_komitenta (p_vrsta_sifra in varchar2) return varchar2;
     -- povrat reversa (REVP, RSVP): Y / N; vrsta izlaza za povrat (REV / RSV)
@@ -259,6 +268,15 @@ create or replace package body rm_dokument_pkg as
                    when 'ISI'  then 'I'
                    when 'MPR'  then 'I'
                    when 'MPP'  then 'U'
+                   -- R23: prenosi između tipova skladišta (materijal / veleprodaja / maloprodaja)
+                   when 'PIV'  then 'I'
+                   when 'UIV'  then 'U'
+                   when 'PVI'  then 'I'
+                   when 'UVI'  then 'U'
+                   when 'PVM'  then 'I'
+                   when 'UVM'  then 'U'
+                   when 'PMV'  then 'I'
+                   when 'UMV'  then 'U'
                    when 'REV'  then 'I'
                    when 'REVP' then 'U'
                    when 'RSV'  then 'I'
@@ -288,7 +306,8 @@ create or replace package body rm_dokument_pkg as
     function podrzana (p_vrsta_sifra in varchar2) return varchar2 is
     begin
         return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP',
-                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM', 'FDK', 'ZSA', 'NIVM')
+                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM', 'FDK', 'ZSA', 'NIVM',
+                                            'PIV', 'UIV', 'PVI', 'UVI', 'PVM', 'UVM', 'PMV', 'UMV')
                     then 'Y' else 'N' end;
     end podrzana;
 
@@ -299,7 +318,8 @@ create or replace package body rm_dokument_pkg as
 
     function rucni_unos (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM', 'MPP', 'NIVM') then 'N' else 'Y' end;
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM', 'NIVM') or je_prijem_prenosa(p_vrsta_sifra) = 'Y'
+                    then 'N' else 'Y' end;
     end rucni_unos;
 
     function je_inventura (p_vrsta_sifra in varchar2) return varchar2 is
@@ -313,7 +333,9 @@ create or replace package body rm_dokument_pkg as
                                                  'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM')
                          and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N'
                     -- R23: samo robna skladišta
-                    when upper(p_vrsta_sifra) in ('NIVM') and nvl(upper(p_modul), 'ROB') = 'MAT' then 'N'
+                    when upper(p_vrsta_sifra) in ('NIVM', 'PVI', 'PVM', 'PMV', 'UIV', 'UVM', 'UMV') and nvl(upper(p_modul), 'ROB') = 'MAT' then 'N'
+                    -- izlaz sa skladišta materijala u veleprodaju i prijem robe na skladište materijala: modul materijala
+                    when upper(p_vrsta_sifra) in ('PIV', 'UVI') and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N'
                     else 'Y' end;
     end u_modulu;
 
@@ -345,8 +367,67 @@ create or replace package body rm_dokument_pkg as
 
     function ima_skladiste_prenosa (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('MPR', 'MPP') then 'Y' else 'N' end;
+        return case when je_prenos(p_vrsta_sifra) = 'Y' or je_prijem_prenosa(p_vrsta_sifra) = 'Y' then 'Y' else 'N' end;
     end ima_skladiste_prenosa;
+
+    -- R23 prenosi: izlaz (prenos) / prijem po prenosu, par i dozvoljene kombinacije tipova skladišta
+    function je_prenos (p_vrsta_sifra in varchar2) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) in ('MPR', 'PIV', 'PVI', 'PVM', 'PMV') then 'Y' else 'N' end;
+    end je_prenos;
+
+    function je_prijem_prenosa (p_vrsta_sifra in varchar2) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') then 'Y' else 'N' end;
+    end je_prijem_prenosa;
+
+    function prijem_za (p_prenos_sifra in varchar2) return varchar2 is
+    begin
+        return case upper(p_prenos_sifra) when 'MPR' then 'MPP' when 'PIV' then 'UIV' when 'PVI' then 'UVI'
+                                          when 'PVM' then 'UVM' when 'PMV' then 'UMV' end;
+    end prijem_za;
+
+    function prenos_za (p_prijem_sifra in varchar2) return varchar2 is
+    begin
+        return case upper(p_prijem_sifra) when 'MPP' then 'MPR' when 'UIV' then 'PIV' when 'UVI' then 'PVI'
+                                          when 'UVM' then 'PVM' when 'UMV' then 'PMV' end;
+    end prenos_za;
+
+    -- tip skladišta: MAT = skladište materijala, VP = robno veleprodaja, MP = robno maloprodaja
+    function kat_skladista (p_skladiste_id in number) return varchar2 is
+        l_k varchar2(3);
+    begin
+        select max(case when upper(ts.sifra) <> 'ROB' or ts.sifra is null then 'MAT'
+                        when cj.tip = 'M' then 'MP' else 'VP' end)
+          into l_k
+          from skladista s
+          left join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id
+          left join cjenovnici cj on cj.id = s.cjenovnik_id
+         where s.id = p_skladiste_id;
+        return l_k;
+    end kat_skladista;
+
+    -- vrsta prenosa za kombinaciju tipova skladišta (sa -> na)
+    function vrsta_prenosa (p_sa in varchar2, p_na in varchar2) return varchar2 is
+    begin
+        return case when p_sa = p_na then 'MPR'
+                    when p_sa = 'MAT' and p_na = 'VP' then 'PIV'
+                    when p_sa = 'VP' and p_na = 'MAT' then 'PVI'
+                    when p_sa = 'VP' and p_na = 'MP' then 'PVM'
+                    when p_sa = 'MP' and p_na = 'VP' then 'PMV' end;
+    end vrsta_prenosa;
+
+    function prenos_dozvoljen (p_vrsta_sifra in varchar2, p_skladiste_id in number, p_skladiste_prenos_id in number) return varchar2 is
+    begin
+        return case when upper(p_vrsta_sifra) = vrsta_prenosa(kat_skladista(p_skladiste_id), kat_skladista(p_skladiste_prenos_id))
+                    then 'Y' else 'N' end;
+    end prenos_dozvoljen;
+
+    function naziv_kat (p_k in varchar2) return varchar2 is
+    begin
+        return case p_k when 'MAT' then 'skladište materijala' when 'VP' then 'veleprodajno skladište'
+                        when 'MP' then 'maloprodajno skladište' end;
+    end naziv_kat;
 
     function dvojno (p_ooj_id in number, p_tip_preduzetnika in varchar2 default null) return varchar2 is
         l_s varchar2(64);
@@ -436,8 +517,8 @@ create or replace package body rm_dokument_pkg as
             if nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z' then
                 return 'Dokument je zaključen.';
             end if;
-            if tip_dokumenta_sifra(p_id) = 'MPP' then
-                return 'Međuskladišni prijem se ne može mijenjati.';
+            if je_prijem_prenosa(tip_dokumenta_sifra(p_id)) = 'Y' then
+                return 'Prijem po prenosu se ne može mijenjati.';
             end if;
             select max(k.naziv) into l_kalk
               from kalkulacija_operacije ko join kalkulacije k on k.id = ko.kalkulacija_id
@@ -1022,8 +1103,8 @@ create or replace package body rm_dokument_pkg as
                 return 'Radnik / komitent se ne može promijeniti dok povrat ima stavke.';
             end if;
         end if;
-        if l_vrs = 'MPP' and p_id is null then
-            return 'Međuskladišni prijem nastaje samo preuzimanjem međuskladišnog prenosa.';
+        if je_prijem_prenosa(l_vrs) = 'Y' and p_id is null then
+            return 'Prijem nastaje samo preuzimanjem prenosa na čekanju.';
         end if;
         if je_inventura(l_vrs) = 'Y' and p_id is null then
             return 'Dokument nastaje samo zaključavanjem popisa (skladišta ili sitnog inventara).';
@@ -1039,7 +1120,7 @@ create or replace package body rm_dokument_pkg as
             return popis_blokada(p_skladiste_id, p_datum)
                    || ' Dokument ne može imati datum prije datuma posljednjeg popisa.';
         end if;
-        if l_vrs = 'MPR' then
+        if je_prenos(l_vrs) = 'Y' then
             if p_skladiste_prenos_id is null then
                 return 'Izaberite skladište na koje se ' || predmet(p_skladiste_id) || ' prenosi.';
             end if;
@@ -1050,8 +1131,13 @@ create or replace package body rm_dokument_pkg as
             if l_n = 0 then
                 return 'Skladište na koje se ' || predmet(p_skladiste_id) || ' prenosi ne pripada firmi ili nije aktivno.';
             end if;
-            if nvl(modul_skladista(p_skladiste_prenos_id), '-') <> nvl(modul_skladista(p_skladiste_id), '-') then
-                return 'Međuskladišni prenos je moguć samo na skladište istog modula (materijalno - materijalno).';
+            -- R23: vrsta prenosa mora odgovarati tipovima skladišta (sa -> na)
+            if prenos_dozvoljen(l_vrs, p_skladiste_id, p_skladiste_prenos_id) = 'N' then
+                return case when vrsta_prenosa(kat_skladista(p_skladiste_id), kat_skladista(p_skladiste_prenos_id)) is null
+                            then 'Prenos sa ' || naziv_kat(kat_skladista(p_skladiste_id)) || 'a na ' || naziv_kat(kat_skladista(p_skladiste_prenos_id))
+                                 || ' nije predviđen (materijal -> maloprodaja ide preko veleprodaje).'
+                            else 'Za prenos sa ' || naziv_kat(kat_skladista(p_skladiste_id)) || 'a na ' || naziv_kat(kat_skladista(p_skladiste_prenos_id))
+                                 || ' koristite dokument ' || vrsta_prenosa(kat_skladista(p_skladiste_id), kat_skladista(p_skladiste_prenos_id)) || '.' end;
             end if;
         end if;
         if l_vrs = 'PRI' then
@@ -1107,7 +1193,7 @@ create or replace package body rm_dokument_pkg as
         l_id     number := p_id;
         l_mt     number := case when ima_mjesto_troska(vrsta_sifra(p_vrsta_dokumenta_id)) = 'Y' then p_mjesto_troska_id end;
         l_rad    number := case when ima_radnika(vrsta_sifra(p_vrsta_dokumenta_id)) = 'Y' then p_radnik_id end;
-        l_skp    number := case when upper(vrsta_sifra(p_vrsta_dokumenta_id)) = 'MPR' then p_skladiste_prenos_id end;
+        l_skp    number := case when je_prenos(vrsta_sifra(p_vrsta_dokumenta_id)) = 'Y' then p_skladiste_prenos_id end;
         l_rpr    number := case when upper(vrsta_sifra(p_vrsta_dokumenta_id)) = 'PSI' then p_radnik_prenos_id end;
         l_cij    number;
         l_sifra  varchar2(64) := lower(vrsta_sifra(p_vrsta_dokumenta_id));
@@ -1834,7 +1920,7 @@ create or replace package body rm_dokument_pkg as
             if o.zaduzeni_radnik_id is null and ima_radnika(l_vrs) = 'Y' then
                 return 'Zaduženi radnik je obavezan.';
             end if;
-            if o.skladiste_prenos_id is null and l_vrs = 'MPR' then
+            if o.skladiste_prenos_id is null and je_prenos(l_vrs) = 'Y' then
                 return 'Izaberite skladište na koje se ' || predmet(o.skladiste_id) || ' prenosi.';
             end if;
             if o.klijent_id is null and ima_komitenta(l_vrs) = 'Y' then
@@ -2000,8 +2086,8 @@ create or replace package body rm_dokument_pkg as
             if si_razlog_ponistenja(p_id) is not null then
                 return si_razlog_ponistenja(p_id) || ' Dokument se ne može otključati.';
             end if;
-            if tip_dokumenta_sifra(p_id) = 'MPP' then
-                return 'Međuskladišni prijem se ne može otključati.';
+            if je_prijem_prenosa(tip_dokumenta_sifra(p_id)) = 'Y' then
+                return 'Prijem po prenosu se ne može otključati.';
             end if;
             if je_inventura(tip_dokumenta_sifra(p_id)) = 'Y' then
                 return 'Dokument razlike inventure je vezan za zaključen popis - ne može se otključati.';
@@ -2371,7 +2457,7 @@ create or replace package body rm_dokument_pkg as
     begin
         select max(o.naziv) into l_n
           from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
-         where o.veza_id = p_prenos_id and upper(vd.sifra) = 'MPP' and nvl(o.stornirano, 'N') = 'N';
+         where o.veza_id = p_prenos_id and upper(vd.sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') and nvl(o.stornirano, 'N') = 'N';
         return l_n;
     end prenos_preuzet;
 
@@ -2385,14 +2471,22 @@ create or replace package body rm_dokument_pkg as
         l_datum  date := trunc(sysdate);
         l_zak    date;
         l_st     number;
+        l_pri    varchar2(10);
+        l_cij    number;
+        l_mpc    number;
+        l_pdv    number;
+        l_nmp    number;
+        l_cj     number;
+        l_scj    number;
     begin
         for pr in (select o.id, o.naziv, o.datum, o.skladiste_id, o.skladiste_prenos_id, o.ooj_id,
                           nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
                           nvl(o.stornirano, 'N') as stornirano
                      from operacije o
                     where o.id = p_prenos_id) loop
-            if tip_dokumenta_sifra(pr.id) <> 'MPR' or pr.ooj_id <> p_ooj_id then
-                greska('Dokument nije međuskladišni prenos firme.');
+            l_pri := prijem_za(tip_dokumenta_sifra(pr.id));
+            if l_pri is null or pr.ooj_id <> p_ooj_id then
+                greska('Dokument nije prenos firme.');
             end if;
             if pr.stornirano = 'Y' then
                 greska('Prenos je storniran.');
@@ -2420,16 +2514,17 @@ create or replace package body rm_dokument_pkg as
             end if;
             select max(vd.id) into l_vrsta
               from sif.vrste_dokumenata vd join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = c_modul
-             where vd.ooj_id = p_ooj_id and upper(vd.sifra) = 'MPP' and vd.valid = 'Y';
+             where vd.ooj_id = p_ooj_id and upper(vd.sifra) = l_pri and vd.valid = 'Y';
             if l_vrsta is null then
-                greska('Firma nema vrstu dokumenta MPP (Međuskladišni prijem).');
+                greska('Firma nema vrstu dokumenta ' || l_pri || ' (prijem po prenosu) - pokrenite skriptu 16_rm_vrste_izlaz.sql.');
             end if;
-            if not core.protokoli_pkg.check_brojac(p_ooj_id, 'mpp', p_godina) then
-                greska('Nije definisan brojač za vrstu dokumenta MPP u ' || p_godina || '. godini. Podesite numeraciju dokumenata.');
+            if not core.protokoli_pkg.check_brojac(p_ooj_id, lower(l_pri), p_godina) then
+                greska('Nije definisan brojač za vrstu dokumenta ' || l_pri || ' u ' || p_godina || '. godini. Podesite numeraciju dokumenata.');
             end if;
-            select oj_id into l_oj from skladista where id = p_skladiste_id;
+            select oj_id, cjenovnik_id into l_oj, l_cj from skladista where id = p_skladiste_id;
+            select cjenovnik_id into l_scj from skladista where id = pr.skladiste_id;
             -- broj po skladištu (format iz brojača vrste)
-            novi_broj(p_ooj_id, p_godina, 'mpp', p_skladiste_id, l_broj, l_naziv);
+            novi_broj(p_ooj_id, p_godina, lower(l_pri), p_skladiste_id, l_broj, l_naziv);
             insert into operacije (
                 ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
                 status, zakljucano, stornirano, skladiste_prenos_id, veza_id
@@ -2437,15 +2532,52 @@ create or replace package body rm_dokument_pkg as
                 p_ooj_id, p_godina, l_vrsta, p_skladiste_id, l_oj, l_datum, 'Prijem po prenosu ' || pr.naziv, l_broj, l_naziv,
                 'Z', 'Y', 'N', pr.skladiste_id, pr.id
             ) returning id into l_id;
-            -- stavke sa količinama i cijenama iz prenosa, serijski brojevi
-            for s in (select id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj
-                        from operacija_stavke where operacija_id = pr.id order by redni_broj, id) loop
-                insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj)
-                values (l_id, s.stavka_id, s.kolicina, s.nabavna_cijena, s.opis, s.redni_broj)
+            -- stavke sa količinama iz prenosa, serijski brojevi; cijena prijema po vrsti (R23):
+            --   MPP / UIV / UVI: cijena izlaza (zatim cjenovnik odredišta: novi prosjek veleprodaje / nivelacija maloprodaje)
+            --   UVM (veleprodaja -> maloprodaja): zaliha po MPC cjenovnika maloprodaje, nabavna = cijena izlaza
+            --   UMV (maloprodaja -> veleprodaja): nabavna = prosječna cijena veleprodaje (cjenovnik); razlika = RUC / PDV
+            for s in (select os.id, os.stavka_id, os.kolicina, os.nabavna_cijena, os.opis, os.redni_broj, st.sifra, st.naziv,
+                             case when nvl(st.pdv_indikator, 'Y') = 'Y' then 17 else nvl(pi.vrijednost, 0) end as pdv
+                        from operacija_stavke os
+                        join sec_stavke st on st.id = os.stavka_id
+                        left join sif.acc_pdv_indikatori pi on pi.id = st.pdv_indikator_id
+                       where os.operacija_id = pr.id order by os.redni_broj, os.id) loop
+                l_cij := s.nabavna_cijena;
+                l_mpc := null;
+                l_nmp := null;
+                l_pdv := null;
+                if l_pri = 'UVM' then
+                    select max(cs.mpc) into l_mpc from cjenovnik_stavke cs
+                     where cs.cjenovnik_id = l_cj and cs.stavka_id = s.stavka_id and cs.valid = 'Y' and nvl(cs.mpc, 0) > 0;
+                    if l_mpc is null then
+                        greska('Artikal ' || s.sifra || ' ' || s.naziv || ' nema MPC u cjenovniku maloprodajnog skladišta - unesite MPC u cjenovnik pa preuzmite prenos.');
+                    end if;
+                    l_nmp := s.nabavna_cijena;
+                    l_pdv := s.pdv;
+                    l_cij := l_mpc;
+                elsif l_pri = 'UMV' then
+                    l_cij := cijena_izlaza(p_skladiste_id, s.stavka_id, l_datum, null);
+                    if nvl(l_cij, 0) <= 0 then
+                        select max(cs.nabavna_cijena) into l_cij from cjenovnik_stavke cs
+                         where cs.cjenovnik_id = l_scj and cs.stavka_id = s.stavka_id and cs.valid = 'Y';
+                    end if;
+                    if nvl(l_cij, 0) <= 0 then
+                        greska('Artikal ' || s.sifra || ' ' || s.naziv || ' nema nabavnu cijenu ni u veleprodaji ni u cjenovniku maloprodaje - povrat se ne može primiti.');
+                    end if;
+                    l_mpc := s.nabavna_cijena;               -- MPC po kojoj je roba izašla iz maloprodaje
+                end if;
+                insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj,
+                                              mpc, nabavna_mp, porez_procenat, marza)
+                values (l_id, s.stavka_id, s.kolicina, round(l_cij, 4), s.opis, s.redni_broj,
+                        l_mpc, l_nmp, l_pdv,
+                        case when l_pri = 'UVM' then round(l_mpc / (1 + l_pdv / 100) - l_nmp, 4) end)
                 returning id into l_st;
                 insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
                 select l_st, sb.serijski_broj from operacija_stavke_sb sb where sb.operacija_stavka_id = s.id;
             end loop;
+            -- cjenovnik odredišta: veleprodaja - novi zajednički prosjek i doknjiženja; maloprodaja - nivelacija na MPC
+            -- (dinamički poziv: RM_CJENOVNIK_PKG se instalira poslije ovog paketa, 21_rm_cjenovnik.sql)
+            execute immediate 'begin rm_cjenovnik_pkg.poslije_prijema(:1); end;' using l_id;
             return l_id;
         end loop;
         greska('Prenos ne postoji.');

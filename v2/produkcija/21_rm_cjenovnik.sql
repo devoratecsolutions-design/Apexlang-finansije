@@ -112,12 +112,23 @@ create or replace package rm_cjenovnik_pkg as
     -- veleprodaja: usklađivanje vrijednosti svih skladišta cjenovnika sa cijenom p_cijena (nezaokruženom)
     -- automatskim zaključenim FDK dokumentima (jedan po skladištu u okviru iste kalkulacije); vraća broj stavki
     function uskladi (p_cjenovnik_id in number, p_stavka_id in number, p_cijena in number,
-                      p_kalkulacija_id in number, p_opis in varchar2) return number;
+                      p_kalkulacija_id in number, p_opis in varchar2, p_veza_id in number default null) return number;
 
     -- R23 maloprodaja: nivelacija zaliha svih maloprodajnih skladišta cjenovnika na novu MPC automatskim,
     -- zaključenim dokumentima NIVM (jedan po skladištu u okviru iste kalkulacije); vraća broj stavki
     function nivelisi (p_cjenovnik_id in number, p_stavka_id in number, p_nova_mpc in number,
-                       p_kalkulacija_id in number, p_opis in varchar2) return number;
+                       p_kalkulacija_id in number, p_opis in varchar2, p_veza_id in number default null) return number;
+
+    -- R23: početak automatske radnje (kalkulacija, prijem, ručna izmjena) - novi skup automatskih dokumenata
+    procedure nova_akcija;
+    -- R23: prijem po prenosu (MPP / UIV / UVI / UVM / UMV) - cjenovnik odredišta:
+    --   veleprodaja: novi zajednički prosjek iz stvarnih vrijednosti svih skladišta cjenovnika + doknjiženja
+    --   maloprodaja: nivelacija zaliha na važeću MPC (roba primljena po drugoj MPC - promjena cijene u tranzitu)
+    procedure poslije_prijema (p_prijem_id in number);
+    -- R23: ručna izmjena cijene u cjenovniku (sa napomenom): veleprodaja - promjena prosječne nabavne usklađuje
+    -- vrijednost svih skladišta (FDK); maloprodaja - promjena MPC nivelira zalihe (NIVM). Vraća poruku.
+    function rucna_izmjena (p_cjenovnik_id in number, p_stavka_id in number, p_nabavna in number, p_vpc in number,
+                            p_mpc in number, p_napomena in varchar2) return varchar2;
     -- PDV stopa artikla: pun iznos -> 17 %, poseban indikator -> stopa indikatora
     function pdv_stopa (p_stavka_id in number) return number;
 
@@ -229,7 +240,17 @@ create or replace package body rm_cjenovnik_pkg as
     end postavi_cijenu;
 
     -- FDK dokument skladišta za kalkulaciju (jedan po skladištu): postojeći ili novi (zaključen, današnji datum)
-    function auto_dokument (p_sifra in varchar2, p_skladiste_id in number, p_kalkulacija_id in number, p_opis in varchar2) return number is
+    -- automatski dokumenti trenutne radnje: ključ vrsta:skladište -> id (nova_akcija prazni)
+    type t_dok is table of number index by varchar2(100);
+    g_dok t_dok;
+
+    procedure nova_akcija is
+    begin
+        g_dok.delete;
+    end nova_akcija;
+
+    function auto_dokument (p_sifra in varchar2, p_skladiste_id in number, p_kalkulacija_id in number, p_opis in varchar2,
+                            p_veza_id in number default null) return number is
         l_id    number;
         l_vrsta number;
         l_ooj   number;
@@ -237,12 +258,10 @@ create or replace package body rm_cjenovnik_pkg as
         l_god   number := extract(year from sysdate);
         l_broj  number;
         l_naziv varchar2(255);
+        l_kljuc varchar2(100) := p_sifra || ':' || p_skladiste_id;
     begin
-        select max(o.id) into l_id
-          from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = p_sifra
-         where o.kalkulacija_id = p_kalkulacija_id and o.skladiste_id = p_skladiste_id;
-        if l_id is not null then
-            return l_id;
+        if g_dok.exists(l_kljuc) then
+            return g_dok(l_kljuc);
         end if;
         select ooj_id, oj_id into l_ooj, l_oj from skladista where id = p_skladiste_id;
         select max(vd.id) into l_vrsta
@@ -256,15 +275,16 @@ create or replace package body rm_cjenovnik_pkg as
         end if;
         rm_dokument_pkg.novi_broj(l_ooj, l_god, lower(p_sifra), p_skladiste_id, l_broj, l_naziv);
         insert into operacije (ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
-                               status, zakljucano, stornirano, kalkulacija_id)
+                               status, zakljucano, stornirano, kalkulacija_id, veza_id)
         values (l_ooj, l_god, l_vrsta, p_skladiste_id, l_oj, trunc(sysdate), substr(p_opis, 1, 1000), l_broj, l_naziv,
-                'Z', 'Y', 'N', p_kalkulacija_id)
+                'Z', 'Y', 'N', p_kalkulacija_id, p_veza_id)
         returning id into l_id;
+        g_dok(l_kljuc) := l_id;
         return l_id;
     end auto_dokument;
 
     function uskladi (p_cjenovnik_id in number, p_stavka_id in number, p_cijena in number,
-                      p_kalkulacija_id in number, p_opis in varchar2) return number is
+                      p_kalkulacija_id in number, p_opis in varchar2, p_veza_id in number default null) return number is
         type t_red is record (skl number, razlika number, kol number);
         type t_redovi is table of t_red index by pls_integer;
         l_r     t_redovi;
@@ -301,7 +321,7 @@ create or replace package body rm_cjenovnik_pkg as
         end if;
         for i in 1 .. l_r.count loop
             continue when l_r(i).razlika = 0;
-            l_dok := auto_dokument('FDK', l_r(i).skl, p_kalkulacija_id, p_opis);
+            l_dok := auto_dokument('FDK', l_r(i).skl, p_kalkulacija_id, p_opis, p_veza_id);
             insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj)
             values (l_dok, p_stavka_id, 1, l_r(i).razlika, 'Usklađivanje sa prosječnom cijenom ' || to_char(round(p_cijena, 4), 'FM999G999G990D0000'),
                     (select nvl(max(redni_broj), 0) + 1 from operacija_stavke where operacija_id = l_dok));
@@ -321,7 +341,7 @@ create or replace package body rm_cjenovnik_pkg as
     end pdv_stopa;
 
     function nivelisi (p_cjenovnik_id in number, p_stavka_id in number, p_nova_mpc in number,
-                       p_kalkulacija_id in number, p_opis in varchar2) return number is
+                       p_kalkulacija_id in number, p_opis in varchar2, p_veza_id in number default null) return number is
         l_kol  number;
         l_vr   number;
         l_stara number;
@@ -340,7 +360,7 @@ create or replace package body rm_cjenovnik_pkg as
             -- stara MPC = trenutna vrijednost zalihe po jedinici (zaliha se vodi po MPC)
             l_stara := round(l_vr / l_kol, 4);
             continue when round(p_nova_mpc, 4) = l_stara;
-            l_dok := auto_dokument('NIVM', s.id, p_kalkulacija_id, p_opis);
+            l_dok := auto_dokument('NIVM', s.id, p_kalkulacija_id, p_opis, p_veza_id);
             insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, mpc_stara, mpc, porez_procenat,
                                           opis, redni_broj)
             values (l_dok, p_stavka_id, l_kol, round(p_nova_mpc, 4) - l_stara, l_stara, round(p_nova_mpc, 4), l_pdv,
@@ -350,6 +370,79 @@ create or replace package body rm_cjenovnik_pkg as
         end loop;
         return l_n;
     end nivelisi;
+
+    procedure poslije_prijema (p_prijem_id in number) is
+        l_cj    number;
+        l_tip   varchar2(1);
+        l_naziv varchar2(255);
+        l_q     number;
+        l_v     number;
+        l_avg   number;
+        l_red   number;
+        l_n     number;
+    begin
+        select max(rm_cjenovnik_pkg.cjenovnik_skladista(o.skladiste_id)), max(o.naziv)
+          into l_cj, l_naziv
+          from operacije o where o.id = p_prijem_id;
+        if l_cj is null then
+            return;                                      -- skladište materijala: prosjek po skladištu
+        end if;
+        l_tip := tip(l_cj);
+        nova_akcija;
+        for a in (select distinct stavka_id from operacija_stavke where operacija_id = p_prijem_id) loop
+            if l_tip = 'V' then
+                l_q := grupa_kolicina(l_cj, a.stavka_id);
+                l_v := grupa_vrijednost(l_cj, a.stavka_id);
+                continue when l_q <= 0;
+                l_avg := l_v / l_q;
+                if abs(nvl(nabavna(l_cj, a.stavka_id), -1) - round(l_avg, 4)) >= 0.00005 then
+                    l_red := postavi_cijenu(l_cj, a.stavka_id, l_avg, vpc(l_cj, a.stavka_id), mpc(l_cj, a.stavka_id),
+                                            'Prijem ' || l_naziv, 'U', null, p_prijem_id);
+                end if;
+                l_n := uskladi(l_cj, a.stavka_id, l_avg, null,
+                               'Usklađivanje sa prosječnom cijenom poslije prijema ' || l_naziv, p_prijem_id);
+            elsif l_tip = 'M' and nvl(mpc(l_cj, a.stavka_id), 0) > 0 then
+                l_n := nivelisi(l_cj, a.stavka_id, mpc(l_cj, a.stavka_id), null,
+                                'Nivelacija na važeću MPC poslije prijema ' || l_naziv, p_prijem_id);
+            end if;
+        end loop;
+    end poslije_prijema;
+
+    function rucna_izmjena (p_cjenovnik_id in number, p_stavka_id in number, p_nabavna in number, p_vpc in number,
+                            p_mpc in number, p_napomena in varchar2) return varchar2 is
+        l_tip  varchar2(1) := tip(p_cjenovnik_id);
+        l_red  number;
+        l_n    number := 0;
+        l_nab  number := p_nabavna;
+        l_opis varchar2(1000);
+    begin
+        if p_cjenovnik_id is null or p_stavka_id is null then
+            greska('Izaberite cjenovnik i artikal.');
+        end if;
+        if nvl(p_vpc, 0) <= 0 and nvl(p_mpc, 0) <= 0 then
+            greska('Unesite cijenu.');
+        end if;
+        -- prosječna nabavna se ne mijenja ako nije unesena
+        if l_nab is null then
+            l_nab := nabavna(p_cjenovnik_id, p_stavka_id);
+        end if;
+        select substr('Ručna izmjena cjenovnika ' || max(c.sifra) || nvl2(trim(p_napomena), ': ' || trim(p_napomena), ''), 1, 1000)
+          into l_opis from cjenovnici c where c.id = p_cjenovnik_id;
+        nova_akcija;
+        l_red := postavi_cijenu(p_cjenovnik_id, p_stavka_id, l_nab, p_vpc, p_mpc,
+                                nvl(trim(p_napomena), 'Ručna izmjena'), 'R');
+        if l_tip = 'V' and nvl(l_nab, 0) > 0 then
+            -- vrijednost svih skladišta cjenovnika na (novu) prosječnu cijenu
+            l_n := uskladi(p_cjenovnik_id, p_stavka_id, l_nab, null, l_opis);
+            return 'Cijena je snimljena.' || case when l_n > 0 then ' Usklađena vrijednost zaliha na ' || l_n
+                                                               || ' skladišta (finansijsko doknjiženje).' end;
+        elsif l_tip = 'M' and nvl(p_mpc, 0) > 0 then
+            l_n := nivelisi(p_cjenovnik_id, p_stavka_id, p_mpc, null, l_opis);
+            return 'Cijena je snimljena.' || case when l_n > 0 then ' Nivelacija zaliha na ' || l_n
+                                                               || ' maloprodajnih skladišta.' end;
+        end if;
+        return 'Cijena je snimljena.';
+    end rucna_izmjena;
 
     function razlog_zabrane_vracanja (p_kalkulacija_id in number) return varchar2 is
         l_izl varchar2(255);

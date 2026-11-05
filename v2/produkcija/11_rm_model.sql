@@ -157,7 +157,8 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV', 'FDK', 'ZSA', 'NIVM')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV', 'FDK', 'ZSA', 'NIVM',
+                                         'PIV', 'UIV', 'PVI', 'UVI', 'PVM', 'UVM', 'PMV', 'UMV')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop
