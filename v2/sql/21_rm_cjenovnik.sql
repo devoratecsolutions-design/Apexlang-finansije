@@ -141,6 +141,11 @@ end rm_cjenovnik_pkg;
 
 create or replace package body rm_cjenovnik_pkg as
 
+    -- automatski dokumenti trenutne radnje: ključ vrsta:skladište -> id (nova_akcija prazni)
+    -- (deklaracije moraju biti prije procedura - PLS-00103)
+    type t_dok is table of number index by varchar2(100);
+    g_dok t_dok;
+
     procedure greska (p_tekst in varchar2) is
     begin
         raise_application_error(-20202, 'Greška CORP-RM: ' || p_tekst);
@@ -239,11 +244,7 @@ create or replace package body rm_cjenovnik_pkg as
         return l_id;
     end postavi_cijenu;
 
-    -- FDK dokument skladišta za kalkulaciju (jedan po skladištu): postojeći ili novi (zaključen, današnji datum)
-    -- automatski dokumenti trenutne radnje: ključ vrsta:skladište -> id (nova_akcija prazni)
-    type t_dok is table of number index by varchar2(100);
-    g_dok t_dok;
-
+    -- automatski dokument (FDK / NIVM) skladišta u okviru trenutne radnje: postojeći ili novi (zaključen, današnji datum)
     procedure nova_akcija is
     begin
         g_dok.delete;
