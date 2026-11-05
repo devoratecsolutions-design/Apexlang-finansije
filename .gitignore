@@ -12,3 +12,6 @@ desktop.ini
 # Lokalna podešavanja editora
 .vscode/
 *.swp
+
+# lokalni folder za test isporuke (ne ide u git)
+_za_test/

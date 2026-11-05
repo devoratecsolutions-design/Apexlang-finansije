@@ -16,6 +16,18 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R21 (05.11.2026): OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER, IZVOR_STAVKA_ID (zamjena šifara artikla);
+  brojači FDK (finansijsko doknjiženje) i ZSA (zamjena šifara artikla).
+  R18 (04.11.2026): sitni inventar - OPERACIJE.RADNIK_PRENOS_ID (prezaduženje: na radnika),
+  POPISI.VRSTA (S = skladište, I = sitni inventar kod radnika) i RADNIK_ID, POPIS_STAVKE.SERIJSKI_BROJ;
+  brojači PSI, RSZ, RSR, RUM, RUV.
+  R17 (03.11.2026): OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA i OPIS (popis skladišta);
+  brojači RAS (rashod), RIV / RIM (razlika inventure - višak / manjak).
+  R13 (02.11.2026): brojači REV, REVP, RSV, RSVP.
+  R12 (02.11.2026): OPERACIJE.ZADUZENI_RADNIK_ID; brojači IOS, ISI, MPR, MPP.
+  R11 (02.11.2026): OPERACIJE.MJESTO_TROSKA_ID (izdatnica, izlaz na investiciju u
+  toku; SIF.ACC_MJESTA_TROSKA) i brojači IZD / IIN za firme koje imaju te vrste
+  (vrste dodaje 16_rm_vrste_izlaz.sql, kao SIF - pokrenuti prije ove skripte).
   Skripta se može pokrenuti više puta (ono što postoji se preskače).
 ================================================================================
 */
@@ -64,6 +76,21 @@ begin
     kolona('OPERACIJE', 'otpremnica_broj', 'varchar2(100 char)');
     kolona('OPERACIJE', 'otpremnica_datum', 'date');
     kolona('OPERACIJA_STAVKE', 'redni_broj', 'number');
+    kolona('OPERACIJE', 'mjesto_troska_id', 'number');
+    kolona('OPERACIJE', 'zaduzeni_radnik_id', 'number');
+    -- R17: popis skladišta - dokumenti razlike inventure (RIV / RIM) vezani na popis; cijena stavke popisa
+    kolona('OPERACIJE', 'popis_id', 'number');
+    kolona('POPIS_STAVKE', 'cijena', 'number');
+    kolona('POPIS_STAVKE', 'opis', 'varchar2(500 char)');
+    -- R18: sitni inventar - prezaduženje (na radnika) i popis SI kod radnika
+    kolona('OPERACIJE', 'radnik_prenos_id', 'number');
+    kolona('POPISI', 'vrsta', 'varchar2(1 char)');
+    kolona('POPISI', 'radnik_id', 'number');
+    kolona('POPIS_STAVKE', 'serijski_broj', 'varchar2(255 char)');
+    -- R21: zamjena šifara artikla (ZSA) - zamjenski artikal na stavci izlaza i generisana stavka ulaza
+    kolona('OPERACIJA_STAVKE', 'zamjena_stavka_id', 'number');
+    kolona('OPERACIJA_STAVKE', 'smjer', 'varchar2(1 char)');
+    kolona('OPERACIJA_STAVKE', 'izvor_stavka_id', 'number');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -71,6 +98,17 @@ begin
     indeks('OPERACIJE_SKL_DATUM_I', 'create index operacije_skl_datum_i on operacije (skladiste_id, datum)');
     indeks('OPERACIJE_VRSTA_I', 'create index operacije_vrsta_i on operacije (vrsta_dokumenta_id)');
     indeks('OPERACIJE_KLIJENT_I', 'create index operacije_klijent_i on operacije (klijent_id)');
+    indeks('OPERACIJE_MT_I', 'create index operacije_mt_i on operacije (mjesto_troska_id)');
+    indeks('OPERACIJE_VEZA_I', 'create index operacije_veza_i on operacije (veza_id)');
+    indeks('OPERACIJE_SKL_PRENOS_I', 'create index operacije_skl_prenos_i on operacije (skladiste_prenos_id)');
+    indeks('OPERACIJE_POPIS_I', 'create index operacije_popis_i on operacije (popis_id)');
+    indeks('POPISI_SKL_DATUM_I', 'create index popisi_skl_datum_i on popisi (skladiste_id, datum)');
+    indeks('POPISI_RADNIK_I', 'create index popisi_radnik_i on popisi (radnik_id, datum)');
+    indeks('OPERACIJE_RADNIK_I', 'create index operacije_radnik_i on operacije (zaduzeni_radnik_id)');
+    indeks('OPERACIJE_RADNIK_PRENOS_I', 'create index operacije_radnik_prenos_i on operacije (radnik_prenos_id)');
+    ogranicenje('OPERACIJA_STAVKE_SMJER_CK',
+        q'[alter table operacija_stavke add constraint operacija_stavke_smjer_ck check (smjer in ('U', 'I'))]');
+    indeks('OPERACIJA_STAVKE_IZVOR_I', 'create index operacija_stavke_izvor_i on operacija_stavke (izvor_stavka_id)');
     indeks('OPERACIJA_STAVKE_SB_SB_I', 'create index operacija_stavke_sb_sb_i on operacija_stavke_sb (serijski_broj)');
     indeks('OPERACIJA_STAVKE_SB_UK',
         'create unique index operacija_stavke_sb_uk on operacija_stavke_sb (operacija_stavka_id, serijski_broj)');
@@ -82,6 +120,52 @@ comment on column operacije.status is 'P = u pripremi, Z = zaključen (v2; prije
 comment on column operacije.otpremnica_broj is 'Broj otpremnice / dokumenta dobavljača (v2)';
 comment on column operacije.otpremnica_datum is 'Datum otpremnice / dokumenta dobavljača (v2)';
 comment on column operacija_stavke.redni_broj is 'Redni broj stavke u dokumentu (v2)';
+comment on column operacije.zaduzeni_radnik_id is 'Zaduženi radnik (SIF.ACC_RADNICI) - izlaz na osnovno sredstvo i sitni inventar (v2)';
+comment on column operacije.popis_id is 'Popis skladišta iz kojeg je nastao dokument razlike inventure RIV / RIM (v2)';
+comment on column popis_stavke.prethodna_kolicina is 'Knjigovodstveno stanje na datum popisa: svi ulazi - zaključeni izlazi (v2)';
+comment on column popis_stavke.popis_kolicina is 'Popisana (stvarna) količina - unosi knjigovođa (v2)';
+comment on column operacije.radnik_prenos_id is 'Prezaduženje sitnog inventara (PSI): radnik na kojeg se zaduženje prenosi; ZADUZENI_RADNIK_ID = sa radnika (v2)';
+comment on column popisi.vrsta is 'S (ili prazno) = popis skladišta, I = popis sitnog inventara kod zaduženog radnika (v2)';
+comment on column popisi.radnik_id is 'Popis sitnog inventara: zaduženi radnik (SIF.ACC_RADNICI) (v2)';
+comment on column popis_stavke.serijski_broj is 'Popis sitnog inventara: serijski broj (artikli koji se prate po SB - jedan red po komadu) (v2)';
+comment on column popis_stavke.cijena is 'Prosječna cijena artikla na skladištu na datum popisa (v2)';
+comment on column operacija_stavke.zamjena_stavka_id is 'Zamjena šifara (ZSA): artikal koji se dodaje na stanje umjesto artikla stavke (v2)';
+comment on column operacija_stavke.smjer is 'U / I = smjer stavke kada se razlikuje od vrste dokumenta (ZSA: generisana stavka ulaza zamjenskog artikla) (v2)';
+comment on column operacija_stavke.izvor_stavka_id is 'ZSA: stavka izlaza iz koje je nastala generisana stavka ulaza (v2)';
+comment on column operacije.mjesto_troska_id is 'Mjesto troška (SIF.ACC_MJESTA_TROSKA) - izdatnica, izlaz na investiciju u toku (v2)';
+
+-- 2a) brojači izlaznih i međuskladišnih dokumenata (IZD, IIN, IOS, ISI, MPR, MPP) --------
+declare
+    l_modul number;
+    l_novih number := 0;
+begin
+    select id into l_modul from sif.acc_moduli where upper(sifra) = 'MAT';
+    for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
+                from sif.vrste_dokumenata vd
+               where vd.acc_modul_id = l_modul
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV', 'FDK', 'ZSA')
+                 and vd.ooj_id is not null
+                 and vd.valid = 'Y') loop
+        for g in 2024 .. extract(year from sysdate) loop
+            if not core.protokoli_pkg.check_brojac(v.ooj_id, lower(v.sifra), g) then
+                core.protokoli_pkg.insert_protokol(
+                    p_ooj_id          => v.ooj_id,
+                    p_vrsta_naloga_id => v.id,
+                    p_godina          => g,
+                    p_prefix          => v.sifra || '-',
+                    p_broj            => 0,
+                    p_sufix           => null,
+                    p_duzina          => 6,
+                    p_auto_restart    => 'Y'
+                );
+                l_novih := l_novih + 1;
+            end if;
+        end loop;
+    end loop;
+    commit;
+    dbms_output.put_line('Novi brojači izlaznih, međuskladišnih i reversa: ' || l_novih);
+end;
+/
 
 -- 2) brojač PRI za svaku firmu sa vrstom dokumenta PRI ---------------------------------
 declare

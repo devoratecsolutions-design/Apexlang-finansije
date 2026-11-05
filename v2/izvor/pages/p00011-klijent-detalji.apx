@@ -1,7 +1,7 @@
 page 11 (
-    name: Klijent / Detalji
+    name: Poslovni partner / Detalji
     alias: KLIJENT-DETALJI
-    title: Klijent / Detalji
+    title: Poslovni partner
     pageGroup: @klijenti
     appearance {
         pageMode: modalDialog
@@ -23,6 +23,16 @@ page 11 (
         pageAccessProtection: argumentsMustHaveChecksum
         formAutoComplete: false
     }
+    help {
+        helpText:
+            ```html
+            Osnovni podaci, adresa i kontakt poslovnog partnera (kupca, dobavljača ili oba).
+            Kod dvojnog knjigovodstva partneru se dodjeljuju <b>konta za knjiženje</b> - može ih imati više
+            (npr. kupac 2110 i dobavljač 4330). U svakoj kontnoj grupi (prva cifra konta) jedno aktivno konto je
+            <b>podrazumijevano</b> - po njemu se knjiže fakture i izvodi. Ako se označi novo podrazumijevano konto,
+            ranije u istoj grupi se automatski isključuje; ako nijedno nije označeno, podrazumijevano je prvo po šifri.
+            ```
+    }
 
     region buttons (
         name: Buttons
@@ -40,8 +50,8 @@ page 11 (
         }
     )
 
-    region klijent-detalji (
-        name: Klijent / Detalji
+    region partner-detalji (
+        name: Poslovni partner / Detalji
         type: staticContent
         layout {
             sequence: 10
@@ -49,39 +59,71 @@ page 11 (
         }
         appearance {
             template: @blank-with-attributes
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
         }
     )
 
-    region kontaig (
-        name: KontaIG
-        type: interactiveGrid
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                select * from accounting.sec_klijent_konta acc
-                where acc.sec_klijent_id=:P11_ID
-                ```
-        }
+    region osnovno (
+        name: Osnovni podaci
+        title: Osnovni podaci
+        type: staticContent
         layout {
-            sequence: 230
-            parentRegion: @klijent-detalji
-            slot: regionBody
-            column: 1
-            columnSpan: 8
+            sequence: 10
+            parentRegion: @partner-detalji
+            slot: subRegions
         }
         appearance {
-            template: @interactive-report
+            template: @standard
             templateOptions: [
                 #DEFAULT#
-                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
-                margin-top-md
+                t-Region--noUI
+                t-Form--stretchInputs
             ]
+            cssClasses: fin-section
         }
-        headerAndFooter {
-            footerText: <span style="font-size:10px; font-style:italic; font-weight:bold">Definisanjem konta poslovnog partnera omogućavate automatiku knjiženja ulaznih/izlaznih faktura, izvoda i automatsko uparivanje otvarenih stavki.</span>
+    )
+
+    region adresa (
+        name: Adresa i kontakt
+        title: Adresa i kontakt
+        type: staticContent
+        layout {
+            sequence: 20
+            parentRegion: @partner-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
+        }
+    )
+
+    region konta-sekcija (
+        name: Konta za knjiženje
+        title: Konta za knjiženje
+        type: staticContent
+        layout {
+            sequence: 30
+            parentRegion: @partner-detalji
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-section
         }
         serverSideCondition {
             type: itemIsNotInColonDelimitedList
@@ -91,6 +133,46 @@ page 11 (
                 vsp_prosto
             ]
         }
+    )
+
+    region konta (
+        name: Konta partnera
+        title: Konta partnera
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT kk.id,
+                       kk.sec_klijent_id,
+                       kk.kontna_klasa_id,
+                       kk.podrazumijevano,
+                       kk.valid
+                FROM sec_klijent_konta kk
+                LEFT JOIN sif.acc_kontni_okvir_klase ko ON ko.id = kk.kontna_klasa_id
+                WHERE kk.sec_klijent_id = :P11_ID
+                ORDER BY ko.code
+                ```
+            pageItemsToSubmit: P11_ID
+        }
+        layout {
+            sequence: 10
+            parentRegion: @konta-sekcija
+            slot: subRegions
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ig
+        }
+        headerAndFooter {
+            footerText: <span class="fin-sub">Partner može imati više konta; u svakoj kontnoj grupi (prva cifra) jedno je podrazumijevano za knjiženje faktura i izvoda i uparivanje otvorenih stavki.</span>
+        }
         edit {
             enabled: true
             allowedOperations: [
@@ -99,39 +181,32 @@ page 11 (
                 delete
             ]
         }
-        toolbar {
-            controls: actionsMenu
+        messages {
+            whenNoDataFound: Partner nema konta. Dodajte konto za knjiženje (npr. kupci 2xxx, dobavljači 4xxx).
         }
-        download {
-            formats: [
-                csv
-                html
-                excel
-                pdf
-            ]
+        enableUsersTo {
+            flashback: false
+            defineChartView: false
+            download: false
         }
         componentAdvanced {
             initJavaScriptFunction:
                 ```javascript-browser
                 function(options) {
-                    let $ = apex.jQuery,
-                        toolbarData = $.apex.interactiveGrid.copyDefaultToolbar();
-                        addrowAction = toolbarData.toolbarFind("selection-add-row"),
-                        addrowAction.label = "Nova stavka"; // Pick name you need
-                        editrowAction = toolbarData.toolbarFind("edit"),
-                        editrowAction.label = "Izmjeni"; // Pick name you need
-                        saverowAction = toolbarData.toolbarFind("save"),
-                        saverowAction.label = "Sačuvaj izmjene"
+                    var toolbarData = apex.jQuery.apex.interactiveGrid.copyDefaultToolbar(),
+                        addrow = toolbarData.toolbarFind("selection-add-row");
+                    if (addrow) { addrow.label = "Dodaj konto"; }
+                    toolbarData.toolbarRemove("save");
+                    toolbarData.toolbarRemove("search");
+                    toolbarData.toolbarRemove("actions");
                     options.toolbarData = toolbarData;
-                    
-                    options.defaultGridViewOptions = {
-                        reorderColumns: false
-                    }
+                    options.defaultGridViewOptions = { reorderColumns: false, footer: false };
                     return options;
                 }
                 ```
         }
         advanced {
+            htmlDomId: partner_konta
             savedReportMappingIdentifier: 270563304789033340
         }
 
@@ -145,76 +220,49 @@ page 11 (
             }
 
             displayColumn (
-                column: @ID
+                column: @APEX$ROW_ACTION
                 layout {
-                    sequence: 2
-                }
-            )
-
-            displayColumn (
-                column: @SEC_KLIJENT_ID
-                layout {
-                    sequence: 3
+                    frozen: true
+                    width: 50
+                    sequence: 1
                 }
             )
 
             displayColumn (
                 column: @KONTNA_KLASA_ID
                 layout {
-                    width: 350
-                    sequence: 4
+                    width: 380
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @PODRAZUMIJEVANO
+                layout {
+                    width: 130
+                    sequence: 3
                 }
             )
 
             displayColumn (
                 column: @VALID
                 layout {
-                    width: 50
+                    width: 80
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @ID
+                layout {
                     sequence: 5
                 }
             )
 
             displayColumn (
-                column: @ROW_VERSION
+                column: @SEC_KLIJENT_ID
                 layout {
                     sequence: 6
-                }
-            )
-
-            displayColumn (
-                column: @CREATED
-                layout {
-                    sequence: 7
-                }
-            )
-
-            displayColumn (
-                column: @CREATED_BY
-                layout {
-                    sequence: 8
-                }
-            )
-
-            displayColumn (
-                column: @UPDATED
-                layout {
-                    sequence: 9
-                }
-            )
-
-            displayColumn (
-                column: @UPDATED_BY
-                layout {
-                    sequence: 10
-                }
-            )
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    frozen: true
-                    width: 50
-                    sequence: 1
                 }
             )
 
@@ -234,34 +282,6 @@ page 11 (
             }
         )
 
-        column CREATED (
-            type: hidden
-            layout {
-                sequence: 80
-            }
-            source {
-                databaseColumn: CREATED
-                dataType: date
-            }
-            exportPrinting {
-                includeInExportPrint: false
-            }
-        )
-
-        column CREATED_BY (
-            type: hidden
-            layout {
-                sequence: 90
-            }
-            source {
-                databaseColumn: CREATED_BY
-                dataType: varchar2
-            }
-            exportPrinting {
-                includeInExportPrint: false
-            }
-        )
-
         column ID (
             type: hidden
             layout {
@@ -277,14 +297,28 @@ page 11 (
             }
         )
 
+        column SEC_KLIJENT_ID (
+            type: hidden
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: SEC_KLIJENT_ID
+                dataType: number
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
         column KONTNA_KLASA_ID (
             type: popupLov
             heading {
-                heading: Konta poslovnog partnera
+                heading: Konto
             }
             settings {
-                popupWidth: 500
-                popupHeight: 400
+                popupWidth: 600
+                popupHeight: 420
             }
             lov {
                 type: sharedComponent
@@ -316,59 +350,26 @@ page 11 (
             }
         )
 
-        column ROW_VERSION (
-            type: hidden
+        column PODRAZUMIJEVANO (
+            type: checkbox
+            heading {
+                heading: Podrazumijevano
+                alignment: center
+            }
             layout {
-                sequence: 70
+                sequence: 55
+                columnAlignment: center
             }
             source {
-                databaseColumn: ROW_VERSION
-                dataType: number
-            }
-            exportPrinting {
-                includeInExportPrint: false
-            }
-        )
-
-        column SEC_KLIJENT_ID (
-            type: hidden
-            layout {
-                sequence: 40
-            }
-            source {
-                databaseColumn: SEC_KLIJENT_ID
-                dataType: number
-            }
-            exportPrinting {
-                includeInExportPrint: false
-            }
-        )
-
-        column UPDATED (
-            type: hidden
-            layout {
-                sequence: 100
-            }
-            source {
-                databaseColumn: UPDATED
-                dataType: date
-            }
-            exportPrinting {
-                includeInExportPrint: false
-            }
-        )
-
-        column UPDATED_BY (
-            type: hidden
-            layout {
-                sequence: 110
-            }
-            source {
-                databaseColumn: UPDATED_BY
+                databaseColumn: PODRAZUMIJEVANO
                 dataType: varchar2
             }
-            exportPrinting {
-                includeInExportPrint: false
+            default {
+                type: expression
+                plsqlExpression: 'N'
+            }
+            enableUsersTo {
+                hide: false
             }
         )
 
@@ -382,9 +383,6 @@ page 11 (
                 sequence: 60
                 columnAlignment: center
             }
-            validation {
-                valueRequired: true
-            }
             source {
                 databaseColumn: VALID
                 dataType: varchar2
@@ -393,161 +391,18 @@ page 11 (
                 type: expression
                 plsqlExpression: 'Y'
             }
-            columnFilter {
-                performanceImpactingOperators: [
-                    contains
-                    startsWith
-                    caseInsensitive
-                    regexp
-                ]
-                lovType: useLov
-            }
             enableUsersTo {
                 hide: false
             }
         )
 
-        page {
-            borderWidth: 0.5
-            borderColor: #666666
-        }
-    )
-
-    pageItem P11_ADRESA (
-        type: textField
-        label {
-            label: Adresa
-            alignment: left
-        }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 120
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 200
-        }
-    )
-
-    pageItem P11_DRZAVA_ID (
-        type: selectOne
-        label {
-            label: Država
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sif-drzave
-        }
-        layout {
-            sequence: 90
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 30
-        }
-    )
-
-    pageItem P11_EMAIL (
-        type: textField
-        label {
-            label: Email
-            alignment: left
-        }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 160
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 100
-        }
-    )
-
-    pageItem P11_ENTITET_ID (
-        type: selectOne
-        label {
-            label: Entitet
-            alignment: left
-        }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sif-entiteti
-        }
-        layout {
-            sequence: 100
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 30
-        }
-    )
-
-    pageItem P11_GRAD (
-        type: textField
-        label {
-            label: Grad
-            alignment: left
-        }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 130
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 200
-        }
     )
 
     pageItem P11_ID (
         type: hidden
         layout {
-            sequence: 40
-            region: @klijent-detalji
+            sequence: 1
+            region: @partner-detalji
             slot: regionBody
         }
         security {
@@ -555,149 +410,88 @@ page 11 (
         }
     )
 
-    pageItem P11_JIB (
-        type: textField
-        label {
-            label: JIB
-            alignment: left
+    pageItem P11_OOJ_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @partner-detalji
+            slot: regionBody
         }
+    )
+
+    pageItem P11_SABLON_ID (
+        type: hidden
         settings {
-            trimSpaces: none
+            valueProtected: false
         }
         layout {
-            sequence: 190
-            region: @klijent-detalji
+            sequence: 3
+            region: @partner-detalji
             slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 30
         }
     )
 
     pageItem P11_KONTNA_KLASA_ID (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            region: @partner-detalji
+            slot: regionBody
+        }
+    )
+
+    pageItem P11_VRSTA_KLIJENTA (
+        type: radioGroup
+        label {
+            label: Vrsta partnera
+            alignment: left
+        }
+        settings {
+            noOfCols: 3
+        }
+        lov {
+            type: sharedComponent
+            lov: @vrsta-klijenta
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_TIP_KLIJENTA_ID (
         type: selectOne
         label {
-            label: Konto
+            label: Tip partnera
             alignment: left
         }
         settings {
             infiniteScroll: false
         }
-        search {
-            matchType: startsWith
-        }
         lov {
             type: sharedComponent
-            lov: @kontni-okvir-klase-ooj
+            lov: @sif-tip-klijenta
         }
         layout {
-            sequence: 220
-            region: @klijent-detalji
+            sequence: 20
+            region: @osnovno
             slot: regionBody
-            alignment: left
+            columnSpan: 6
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 30
-        }
-        serverSideCondition {
-            type: itemIsNotInColonDelimitedList
-            item: APP_TIP_PREDUZETNIKA_SIFRA
-            list: [
-                msp
-                vsp_prosto
-            ]
-        }
-    )
-
-    pageItem P11_NAZIV (
-        type: textField
-        label {
-            label: Naziv
-            alignment: left
-        }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 110
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 200
-        }
-    )
-
-    pageItem P11_OOJ_ID (
-        type: hidden
-        layout {
-            sequence: 50
-            region: @klijent-detalji
-            slot: regionBody
-        }
-    )
-
-    pageItem P11_PIB (
-        type: textField
-        label {
-            label: PIB
-            alignment: left
-        }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 200
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
-        validation {
-            maxLength: 30
-        }
-    )
-
-    pageItem P11_POSTANSKI_BROJ (
-        type: textField
-        label {
-            label: Poštanski broj
-            alignment: left
-        }
-        layout {
-            sequence: 140
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: #DEFAULT#
-            width: 60
-        }
-        validation {
-            maxLength: 500
         }
     )
 
@@ -715,49 +509,85 @@ page 11 (
             lov: @hr-radnici
         }
         layout {
-            sequence: 80
-            region: @klijent-detalji
+            sequence: 30
+            region: @osnovno
             slot: regionBody
-            alignment: left
+            startNewRow: false
+            columnSpan: 6
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 30
+        }
+        help {
+            helpText: Kod partnera tipa zaposleno lice bira se radnik.
         }
     )
 
-    pageItem P11_SABLON_ID (
-        type: selectOne
+    pageItem P11_NAZIV (
+        type: textField
         label {
-            label: Šablon
+            label: Naziv
             alignment: left
         }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sabloni
+        validation {
+            maxLength: 200
         }
         layout {
-            sequence: 210
-            region: @klijent-detalji
+            sequence: 40
+            region: @osnovno
             slot: regionBody
-            alignment: left
+            columnSpan: 12
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 30
         }
-        serverSideCondition {
-            type: itemIsNotInColonDelimitedList
-            item: APP_TIP_PREDUZETNIKA_SIFRA
-            list: [
-                msp
-                vsp_prosto
-            ]
+    )
+
+    pageItem P11_JIB (
+        type: textField
+        label {
+            label: JIB
+            alignment: left
+        }
+        validation {
+            maxLength: 30
+        }
+        layout {
+            sequence: 50
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_PIB (
+        type: textField
+        label {
+            label: PIB
+            alignment: left
+        }
+        validation {
+            maxLength: 30
+        }
+        layout {
+            sequence: 60
+            region: @osnovno
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: PIB imaju obveznici PDV-a.
         }
     )
 
@@ -767,22 +597,163 @@ page 11 (
             label: Sud
             alignment: left
         }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 180
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
         validation {
             maxLength: 150
+        }
+        layout {
+            sequence: 70
+            region: @osnovno
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Sud kod kojeg je partner registrovan.
+        }
+    )
+
+    pageItem P11_VALID (
+        type: switch
+        label {
+            label: Partner je aktivan
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: Y
+        }
+        layout {
+            sequence: 80
+            region: @osnovno
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P11_ID
+        }
+    )
+
+    pageItem P11_DRZAVA_ID (
+        type: selectOne
+        label {
+            label: Država
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-drzave
+        }
+        layout {
+            sequence: 10
+            region: @adresa
+            slot: regionBody
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_ENTITET_ID (
+        type: selectOne
+        label {
+            label: Entitet
+            alignment: left
+        }
+        settings {
+            infiniteScroll: false
+        }
+        lov {
+            type: sharedComponent
+            lov: @sif-entiteti
+        }
+        layout {
+            sequence: 20
+            region: @adresa
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_ADRESA (
+        type: textField
+        label {
+            label: Adresa
+            alignment: left
+        }
+        validation {
+            maxLength: 200
+        }
+        layout {
+            sequence: 30
+            region: @adresa
+            slot: regionBody
+            columnSpan: 12
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_GRAD (
+        type: textField
+        label {
+            label: Grad
+            alignment: left
+        }
+        validation {
+            maxLength: 200
+        }
+        layout {
+            sequence: 40
+            region: @adresa
+            slot: regionBody
+            columnSpan: 8
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_POSTANSKI_BROJ (
+        type: textField
+        label {
+            label: Poštanski broj
+            alignment: left
+        }
+        validation {
+            maxLength: 20
+        }
+        layout {
+            sequence: 50
+            region: @adresa
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+        }
+        appearance {
+            template: @required-above
+            templateOptions: #DEFAULT#
         }
     )
 
@@ -792,116 +763,40 @@ page 11 (
             label: Telefon
             alignment: left
         }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 150
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
         validation {
             maxLength: 50
         }
+        layout {
+            sequence: 60
+            region: @adresa
+            slot: regionBody
+            columnSpan: 4
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+        }
     )
 
-    pageItem P11_TIP_KLIJENTA_ID (
-        type: selectOne
+    pageItem P11_EMAIL (
+        type: textField
         label {
-            label: Tip klijenta
+            label: Email
             alignment: left
         }
-        settings {
-            infiniteScroll: false
-        }
-        lov {
-            type: sharedComponent
-            lov: @sif-tip-klijenta
+        validation {
+            maxLength: 100
         }
         layout {
             sequence: 70
-            region: @klijent-detalji
+            region: @adresa
             slot: regionBody
-            alignment: left
+            startNewRow: false
+            columnSpan: 4
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 30
-        }
-    )
-
-    pageItem P11_VALID (
-        type: radioGroup
-        label {
-            label: Poslovni partner aktivan
-            alignment: left
-        }
-        settings {
-            noOfCols: 2
-        }
-        lov {
-            type: sharedComponent
-            lov: @da-ne
-            displayExtraValues: false
-            displayNullValue: false
-        }
-        layout {
-            sequence: 240
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: [
-                #DEFAULT#
-                t-Form-fieldContainer--stretchInputs
-                t-Form-fieldContainer--large
-                t-Form-fieldContainer--radioButtonGroup
-            ]
-        }
-        serverSideCondition {
-            type: itemIsNotNull
-            item: P11_ID
-        }
-    )
-
-    pageItem P11_VRSTA_KLIJENTA (
-        type: radioGroup
-        label {
-            label: Vrsta klijenta
-            alignment: left
-        }
-        settings {
-            noOfCols: 3
-        }
-        lov {
-            type: sharedComponent
-            lov: @vrsta-klijenta
-            displayExtraValues: false
-            displayNullValue: false
-        }
-        layout {
-            sequence: 60
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @required-floating
-            templateOptions: [
-                #DEFAULT#
-                t-Form-fieldContainer--stretchInputs
-                t-Form-fieldContainer--large
-                t-Form-fieldContainer--radioButtonGroup
-            ]
         }
     )
 
@@ -911,79 +806,19 @@ page 11 (
             label: Web
             alignment: left
         }
-        settings {
-            trimSpaces: none
-        }
-        layout {
-            sequence: 170
-            region: @klijent-detalji
-            slot: regionBody
-            alignment: left
-            startNewRow: false
-        }
-        appearance {
-            template: @optional-floating
-            templateOptions: #DEFAULT#
-            width: 32
-        }
         validation {
             maxLength: 100
         }
-        help {
-            helpText: U ovo polje unesite web adresu klijenta.
-        }
-    )
-
-    button cancel (
-        buttonName: CANCEL
-        label: Odustani
         layout {
-            sequence: 10
-            region: @buttons
-            slot: close
+            sequence: 80
+            region: @adresa
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
         }
         appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--large
-                t-Button--iconLeft
-            ]
-            icon: fa-box-arrow-in-west
-        }
-        behavior {
-            action: definedByDynamicAction
-            executeValidations: false
-        }
-    )
-
-    button create (
-        buttonName: CREATE
-        label: Kreiraj
-        layout {
-            sequence: 40
-            region: @buttons
-            slot: next
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            hot: true
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--large
-                t-Button--iconLeft
-            ]
-            icon: fa-plus-circle-o
-        }
-        behavior {
-            warnOnUnsavedChanges: doNotCheck
-            databaseAction: insert
-        }
-        serverSideCondition {
-            type: itemIsNull
-            item: P11_ID
+            template: @optional-above
+            templateOptions: #DEFAULT#
         }
     )
 
@@ -993,14 +828,14 @@ page 11 (
         layout {
             sequence: 20
             region: @buttons
-            slot: delete
+            slot: close
         }
         appearance {
             buttonTemplate: @text-with-icon
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
+                t-Button--simple
                 t-Button--iconLeft
             ]
             cssClasses: u-color-9
@@ -1009,11 +844,10 @@ page 11 (
         behavior {
             executeValidations: false
             warnOnUnsavedChanges: doNotCheck
-            databaseAction: delete
             requiresConfirmation: true
         }
         confirmation {
-            message: &APP_TEXT$DELETE_MSG!RAW.
+            message: Obrisati poslovnog partnera?
             style: danger
         }
         serverSideCondition {
@@ -1024,7 +858,7 @@ page 11 (
 
     button save (
         buttonName: SAVE
-        label: Ažuriraj
+        label: Snimi
         layout {
             sequence: 30
             region: @buttons
@@ -1036,14 +870,12 @@ page 11 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
                 t-Button--iconLeft
             ]
-            icon: fa-edit
+            icon: fa-save
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
-            databaseAction: update
         }
         serverSideCondition {
             type: itemIsNotNull
@@ -1051,29 +883,35 @@ page 11 (
         }
     )
 
-    dynamicAction cancel-dialog (
-        name: Cancel Dialog
-        execution {
-            sequence: 10
+    button create (
+        buttonName: CREATE
+        label: Snimi
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
         }
-        when {
-            event: click
-            selectionType: button
-            button: @cancel
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-save
         }
-
-        action native-dialog-cancel (
-            action: cancelDialog
-            execution {
-                sequence: 10
-                fireOnInit: false
-            }
-        )
-
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P11_ID
+        }
     )
 
-    dynamicAction change (
-        name: Change
+    dynamicAction tip-radnik (
+        name: Tip partnera - radnik
         execution {
             sequence: 20
         }
@@ -1112,8 +950,8 @@ page 11 (
 
     )
 
-    dynamicAction check-for-bih (
-        name: Check for BIH
+    dynamicAction drzava-bih (
+        name: Država BiH - entitet
         execution {
             sequence: 30
         }
@@ -1152,152 +990,23 @@ page 11 (
 
     )
 
-    dynamicAction close-dialog (
-        name: Close Dialog
+    validation tip-klijenta-not-null (
+        name: Tip partnera obavezan
         execution {
-            sequence: 40
-        }
-        when {
-            event: ready
-        }
-
-        action native-javascript-code (
-            action: executeJsCode
-            settings {
-                jsCode:
-                    ```javascript-browser
-                    function zameniX() {
-                        var topWin = window.top;
-                        var $ = topWin.apex.jQuery;
-                        var btn = $('.ui-dialog-titlebar-close', topWin.document);
-                    
-                        if (btn.length) {
-                            btn.off('click').on('click', function(e) {
-                                e.preventDefault();
-                                e.stopImmediatePropagation();
-                    
-                                apex.page.cancelWarnOnUnsavedChanges();
-                                topWin.apex.navigation.dialog.close(true);
-                            });
-                        }
-                    }
-                    
-                    var observer = new MutationObserver(zameniX);
-                    observer.observe(window.top.document.documentElement, {
-                        childList: true,
-                        subtree: true,
-                        attributes: true,
-                        attributeFilter: ['style', 'class']
-                    });
-                    
-                    zameniX();
-                    ```
-            }
-            execution {
-                sequence: 10
-            }
-        )
-
-    )
-
-    validation adresa-not-null (
-        name: Adresa NOT NULL
-        execution {
-            sequence: 60
+            sequence: 10
         }
         validation {
             type: itemIsNotNull
-            item: P11_ADRESA
+            item: P11_TIP_KLIJENTA_ID
         }
         error {
             errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_ADRESA
-        }
-    )
-
-    validation drzava-not-null (
-        name: Drzava NOT NULL
-        execution {
-            sequence: 40
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_DRZAVA_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_DRZAVA_ID
-        }
-    )
-
-    validation email-not-null (
-        name: Email NOT NULL
-        execution {
-            sequence: 90
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_EMAIL
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_EMAIL
-        }
-    )
-
-    validation email-regex (
-        name: EMAIL REGEX
-        execution {
-            sequence: 140
-        }
-        validation {
-            type: itemMatchesRegexp
-            item: P11_EMAIL
-            regexp: "^[A-Za-z]+[A-Za-z0-9.]+@[A-Za-z0-9 -.]+\\.[A-Za-z]{2,4}$"
-        }
-        error {
-            errorMessage: Unesena adresa nije u ispravnom formatu.
-            associatedItem: @P11_EMAIL
-        }
-    )
-
-    validation entitet-not-null (
-        name: Entitet NOT NULL
-        execution {
-            sequence: 100
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_ENTITET_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_ENTITET_ID
-        }
-        serverSideCondition {
-            type: item=value
-            item: P11_DRZAVA_ID
-            value: 28
-        }
-    )
-
-    validation grad-not-null (
-        name: Grad NOT NULL
-        execution {
-            sequence: 70
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_GRAD
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_GRAD
+            associatedItem: @P11_TIP_KLIJENTA_ID
         }
     )
 
     validation jib-not-null (
-        name: Jib NOT NULL
+        name: JIB obavezan
         execution {
             sequence: 20
         }
@@ -1311,77 +1020,8 @@ page 11 (
         }
     )
 
-    validation kontna-klasa-not-null (
-        name: Kontna klasa NOT NULL
-        execution {
-            sequence: 120
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_KONTNA_KLASA_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_KONTNA_KLASA_ID
-        }
-        serverSideCondition {
-            type: itemIsNotInColonDelimitedList
-            item: APP_TIP_PREDUZETNIKA_SIFRA
-            list: [
-                msp
-                vsp_prosto
-            ]
-        }
-    )
-
-    validation konto-is-not-null (
-        name: KONTO IS NOT NULL
-        execution {
-            sequence: 150
-        }
-        validation {
-            editableRegion: @kontaig
-            type: columnIsNotNull
-            column: KONTNA_KLASA_ID
-        }
-        error {
-            errorMessage: #COLUMN_HEADER# must have a value.
-            associatedColumn: KONTNA_KLASA_ID
-        }
-    )
-
-    validation naziv-not-null (
-        name: Naziv NOT NULL
-        execution {
-            sequence: 50
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_NAZIV
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_NAZIV
-        }
-    )
-
-    validation postanski-broj-not-null (
-        name: Postanski broj NOT NULL
-        execution {
-            sequence: 80
-        }
-        validation {
-            type: itemIsNotNull
-            item: P11_POSTANSKI_BROJ
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_POSTANSKI_BROJ
-        }
-    )
-
     validation radnik-not-null (
-        name: Radnik NOT NULL
+        name: Radnik obavezan
         execution {
             sequence: 30
         }
@@ -1400,46 +1040,118 @@ page 11 (
         }
     )
 
-    validation sablon-not-null (
-        name: Sablon NOT NULL
+    validation drzava-not-null (
+        name: Država obavezna
         execution {
-            sequence: 110
+            sequence: 40
         }
         validation {
             type: itemIsNotNull
-            item: P11_SABLON_ID
+            item: P11_DRZAVA_ID
         }
         error {
             errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_SABLON_ID
-        }
-        serverSideCondition {
-            type: itemIsNotInColonDelimitedList
-            item: APP_TIP_PREDUZETNIKA_SIFRA
-            list: [
-                msp
-                vsp_prosto
-            ]
+            associatedItem: @P11_DRZAVA_ID
         }
     )
 
-    validation tip-klijenta-not-null (
-        name: Tip klijenta NOT NULL
+    validation naziv-not-null (
+        name: Naziv obavezan
         execution {
-            sequence: 10
+            sequence: 50
         }
         validation {
             type: itemIsNotNull
-            item: P11_TIP_KLIJENTA_ID
+            item: P11_NAZIV
         }
         error {
             errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P11_TIP_KLIJENTA_ID
+            associatedItem: @P11_NAZIV
+        }
+    )
+
+    validation adresa-not-null (
+        name: Adresa obavezna
+        execution {
+            sequence: 60
+        }
+        validation {
+            type: itemIsNotNull
+            item: P11_ADRESA
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P11_ADRESA
+        }
+    )
+
+    validation grad-not-null (
+        name: Grad obavezan
+        execution {
+            sequence: 70
+        }
+        validation {
+            type: itemIsNotNull
+            item: P11_GRAD
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P11_GRAD
+        }
+    )
+
+    validation postanski-broj-not-null (
+        name: Poštanski broj obavezan
+        execution {
+            sequence: 80
+        }
+        validation {
+            type: itemIsNotNull
+            item: P11_POSTANSKI_BROJ
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P11_POSTANSKI_BROJ
+        }
+    )
+
+    validation email-not-null (
+        name: Email obavezan
+        execution {
+            sequence: 90
+        }
+        validation {
+            type: itemIsNotNull
+            item: P11_EMAIL
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P11_EMAIL
+        }
+    )
+
+    validation entitet-not-null (
+        name: Entitet obavezan (BiH)
+        execution {
+            sequence: 100
+        }
+        validation {
+            type: itemIsNotNull
+            item: P11_ENTITET_ID
+        }
+        error {
+            errorMessage: #LABEL# je obavezno polje za unos.
+            associatedItem: @P11_ENTITET_ID
+        }
+        serverSideCondition {
+            type: item=value
+            item: P11_DRZAVA_ID
+            value: 28
         }
     )
 
     validation vrsta-klijenta-not-null (
-        name: VRSTA_KLIJENTA NOT NULL
+        name: Vrsta partnera obavezna
         execution {
             sequence: 130
         }
@@ -1453,66 +1165,40 @@ page 11 (
         }
     )
 
-    process close-dialog-create-update (
-        name: Close Dialog - Create/Update
-        type: closeDialog
+    validation email-regex (
+        name: Email - format
         execution {
-            sequence: 120
+            sequence: 140
         }
-        successMessage {
-            successMessage: Izmjene sačuvane!
+        validation {
+            type: itemMatchesRegexp
+            item: P11_EMAIL
+            regexp: "^[A-Za-z]+[A-Za-z0-9.]+@[A-Za-z0-9 -.]+\\.[A-Za-z]{2,4}$"
         }
-        advanced {
-            executionMappingIdentifier: 271636962525161309
-        }
-        serverSideCondition {
-            type: requestIsContainedInValue
-            value: CREATE,SAVE
+        error {
+            errorMessage: Unesena adresa nije u ispravnom formatu.
+            associatedItem: @P11_EMAIL
         }
     )
 
-    process close-dialog-delete (
-        name: Close Dialog - Delete
-        type: closeDialog
+    validation konto-is-not-null (
+        name: Konto partnera obavezan
         execution {
-            sequence: 110
+            sequence: 150
         }
-        successMessage {
-            successMessage: Klijent je uspješno obrisan!
+        validation {
+            editableRegion: @konta
+            type: columnIsNotNull
+            column: KONTNA_KLASA_ID
         }
-        advanced {
-            executionMappingIdentifier: 15261619269340888
-        }
-        serverSideCondition {
-            type: requestIsContainedInValue
-            value: DELETE
-        }
-    )
-
-    process delete (
-        name: Delete
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                sec_pkg.delete_klijent (
-                    p_id => :P11_ID
-                );
-                ```
-        }
-        execution {
-            sequence: 100
-        }
-        advanced {
-            executionMappingIdentifier: 15312896798885302
-        }
-        serverSideCondition {
-            whenButtonPressed: @delete
+        error {
+            errorMessage: Izaberite konto.
+            associatedColumn: KONTNA_KLASA_ID
         }
     )
 
     process get-data (
-        name: Get data
+        name: Učitavanje partnera
         type: executeCode
         source {
             plsqlCode:
@@ -1593,52 +1279,6 @@ page 11 (
         }
     )
 
-    process save-kontoig (
-        name: Save KontoIG
-        type: executeCode
-        editableRegion: @kontaig
-        source {
-            plsqlCode:
-                ```plsql
-                IF :APEX$ROW_STATUS = 'D' THEN -- DELETE
-                    accounting.sec_pkg.delete_klijent_konto (
-                                            p_id => :ID
-                        );
-                ELSIF :APEX$ROW_STATUS  IN ('C','I') THEN 
-                
-                    accounting.sec_pkg.insert_klijent_konto (
-                                            p_sec_klijent_id => :P11_ID,
-                                            p_kontna_klasa_id => :KONTNA_KLASA_ID,
-                                            p_valid => :VALID,
-                                            p_id => :ID
-                        );
-                
-                
-                ELSIF :APEX$ROW_STATUS  IN ('U') THEN
-                    accounting.sec_pkg.update_klijent_konto (
-                                            p_id => :ID,
-                                            p_sec_klijent_id => :P11_ID,
-                                            p_kontna_klasa_id => :KONTNA_KLASA_ID,
-                                            p_valid => :VALID
-                                            
-                        );
-                
-                END IF;
-                ```
-        }
-        execution {
-            sequence: 90
-        }
-        advanced {
-            executionMappingIdentifier: 271636578665161305
-        }
-        serverSideCondition {
-            executionScope: allSubmittedRows
-            type: requestIsContainedInValue
-            value: CREATE,SAVE, DELETE
-        }
-    )
-
     process update (
         name: Update
         type: executeCode
@@ -1665,7 +1305,7 @@ page 11 (
                     p_pib             => :P11_PIB,
                     p_sablon_id       => :P11_SABLON_ID,
                     p_kontna_klasa_id => :P11_KONTNA_KLASA_ID,
-                    p_valid           => :P11_VALID
+                    p_valid           => nvl(:P11_VALID, 'N')
                 );
                 ```
         }
@@ -1680,5 +1320,140 @@ page 11 (
         }
     )
 
-)
+    process konta-snimi (
+        name: Konta partnera - snimi redove
+        type: executeCode
+        editableRegion: @konta
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    declare
+                        l_id number := kuf_pkg.broj(:ID);
+                    begin
+                        if :APEX$ROW_STATUS = 'D' then
+                            sec_partner_pkg.obrisi_konto(p_id => l_id);
+                        else
+                            sec_partner_pkg.snimi_konto(
+                                p_id              => l_id,
+                                p_klijent_id      => :P11_ID,
+                                p_konto_id        => kuf_pkg.broj(:KONTNA_KLASA_ID),
+                                p_podrazumijevano => nvl(:PODRAZUMIJEVANO, 'N'),
+                                p_valid           => nvl(:VALID, 'N'));
+                            :ID := l_id;
+                        end if;
+                    end;
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        advanced {
+            executionMappingIdentifier: 271636578665161305
+        }
+        serverSideCondition {
+            executionScope: allSubmittedRows
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
 
+    process konta-uskladi (
+        name: Konta partnera - podrazumijevana
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_application.g_print_success_message := sec_partner_pkg.uskladi(:P11_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 95
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('CREATE', 'SAVE') and nvl(:APP_TIP_PREDUZETNIKA_SIFRA, '-') not in ('msp', 'vsp_prosto')
+        }
+    )
+
+    process delete (
+        name: Delete
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sec_partner_pkg.obrisi_konta(p_klijent_id => :P11_ID);
+                sec_pkg.delete_klijent (
+                    p_id => :P11_ID
+                );
+                ```
+        }
+        execution {
+            sequence: 100
+        }
+        advanced {
+            executionMappingIdentifier: 15312896798885302
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process close-dialog-delete (
+        name: Zatvori dijalog - brisanje
+        type: closeDialog
+        execution {
+            sequence: 110
+        }
+        successMessage {
+            successMessage: Poslovni partner je obrisan.
+        }
+        advanced {
+            executionMappingIdentifier: 15261619269340888
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE
+        }
+    )
+
+    process close-dialog-create-update (
+        name: Zatvori dijalog - snimanje
+        type: closeDialog
+        execution {
+            sequence: 120
+        }
+        successMessage {
+            successMessage: Poslovni partner je snimljen.
+        }
+        advanced {
+            executionMappingIdentifier: 271636962525161309
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+)

@@ -234,7 +234,7 @@ page 341 (
 
     region tab-cijene (
         name: Nabavne i prodajne cijene
-        title: Nabavne i prodajne cijene
+        title: &P341_TAB_CIJENE.
         type: staticContent
         layout {
             sequence: 30
@@ -290,7 +290,6 @@ page 341 (
                     ko.operacija_id,
                     to_char(o.datum, 'DD.MM.YYYY') AS datum,
                     o.klijent_naziv AS dobavljac,
-                    o.stavki,
                     to_char(o.iznos, 'FM999G999G999G990D00') AS vrijednost
                 FROM kalkulacija_operacije ko
                 JOIN vw_rm_dokumenti o ON o.id = ko.operacija_id
@@ -380,7 +379,7 @@ page 341 (
                 column: @OPERACIJA_ID
                 layout {
                     sequence: 2
-                    width: 420
+                    width: 380
                 }
             )
 
@@ -401,17 +400,9 @@ page 341 (
             )
 
             displayColumn (
-                column: @STAVKI
-                layout {
-                    sequence: 5
-                    width: 70
-                }
-            )
-
-            displayColumn (
                 column: @VRIJEDNOST
                 layout {
-                    sequence: 6
+                    sequence: 5
                     width: 140
                 }
             )
@@ -456,21 +447,8 @@ page 341 (
                 popupWidth: 720
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT o.naziv || ' · ' || to_char(o.datum, 'DD.MM.YYYY') || ' · ' || o.klijent_naziv
-                           || ' · ' || o.stavki || ' stavki · ' || to_char(o.iznos, 'FM999G999G999G990D00') AS d,
-                           o.id AS r
-                    FROM vw_rm_dokumenti o
-                    WHERE o.ooj_id = :APP_OOJ_ID
-                      AND o.skladiste_id = nvl(:P341_SKLADISTE_ID, :A_SKLADISTE_ID)
-                      AND o.vrsta_sifra = 'PRI'
-                      AND o.stornirano = 'N'
-                      AND ((o.status = 'P' AND NOT EXISTS (SELECT 1 FROM kalkulacija_operacije ko WHERE ko.operacija_id = o.id))
-                           OR o.id IN (SELECT ko.operacija_id FROM kalkulacija_operacije ko WHERE ko.kalkulacija_id = :P341_ID))
-                    ORDER BY o.datum DESC, o.id DESC
-                    ```
+                type: sharedComponent
+                lov: @rm-kalk-prijemnice
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - izaberite prijemnicu -
@@ -512,23 +490,6 @@ page 341 (
             }
             source {
                 databaseColumn: DOBAVLJAC
-                dataType: varchar2
-                queryOnly: true
-            }
-        )
-
-        column STAVKI (
-            type: textField
-            heading {
-                heading: Stavki
-                alignment: center
-            }
-            layout {
-                sequence: 70
-                columnAlignment: center
-            }
-            source {
-                databaseColumn: STAVKI
                 dataType: varchar2
                 queryOnly: true
             }
@@ -621,7 +582,7 @@ page 341 (
             ]
         }
         messages {
-            whenNoDataFound: Dodajte zaključene ulazne fakture (roba, prevoz, carina...) i iznos koji se raspoređuje.
+            whenNoDataFound: Dodajte zaključene ulazne fakture za robu i iznos koji se raspoređuje. Fakture za prevoz, carinu i sl. dodajte kao zavisne troškove.
         }
         enableUsersTo {
             flashback: false
@@ -708,7 +669,7 @@ page 341 (
                 column: @NACIN_RASPODJELE
                 layout {
                     sequence: 6
-                    width: 140
+                    width: 200
                 }
             )
 
@@ -760,18 +721,8 @@ page 341 (
                 popupWidth: 720
             }
             lov {
-                type: sqlQuery
-                sqlQuery:
-                    ```sql
-                    SELECT f.naziv || ' · ' || f.klijent_naziv || nvl2(f.naziv_fakture, ' · ' || f.naziv_fakture, '')
-                           || ' · raspoloživo ' || to_char(CASE WHEN :APP_PDV_SISTEM = 'Y' THEN f.raspolozivo_bez_pdv ELSE f.raspolozivo_sa_pdv END, 'FM999G999G999G990D00') AS d,
-                           f.id AS r
-                    FROM vw_rm_kalk_fakture f
-                    WHERE f.ooj_id = :APP_OOJ_ID
-                      AND (f.raspolozivo_sa_pdv > 0
-                           OR f.id IN (SELECT kk.kuf_id FROM kalkulacija_kuf kk WHERE kk.kalkulacija_id = :P341_ID))
-                    ORDER BY f.datum_fakture DESC
-                    ```
+                type: sharedComponent
+                lov: @rm-kalk-fakture
                 displayExtraValues: true
                 displayNullValue: true
                 nullDisplayValue: - izaberite ulaznu fakturu -
@@ -805,6 +756,10 @@ page 341 (
             source {
                 databaseColumn: SA_PDV
                 dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: N
             }
             serverSideCondition {
                 type: expression
@@ -843,9 +798,6 @@ page 341 (
                 databaseColumn: IZNOS
                 dataType: varchar2
             }
-            validation {
-                valueRequired: true
-            }
         )
 
         column NACIN_RASPODJELE (
@@ -855,7 +807,7 @@ page 341 (
             }
             lov {
                 type: staticValues
-                staticValues: STATIC2:Po vrijednosti;V,Po količini;K,Linearno;L,Ručno;R
+                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Ručno – cijena sa prijemnice;P,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
                 displayExtraValues: false
                 displayNullValue: false
             }
@@ -865,6 +817,10 @@ page 341 (
             source {
                 databaseColumn: NACIN_RASPODJELE
                 dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: V
             }
         )
 
@@ -886,8 +842,8 @@ page 341 (
     )
 
     region troskovi-sekcija (
-        name: Zavisni troškovi bez fakture
-        title: Zavisni troškovi bez fakture
+        name: Zavisni troškovi
+        title: Zavisni troškovi
         type: staticContent
         layout {
             sequence: 30
@@ -916,6 +872,11 @@ page 341 (
                 ```sql
                 SELECT
                     t.id,
+                    t.kuf_id,
+                    nvl(t.sa_pdv, 'N') AS sa_pdv,
+                    CASE WHEN t.kuf_id IS NOT NULL
+                         THEN to_char(rm_kalkulacija_pkg.kuf_raspolozivo(t.kuf_id, nvl(t.sa_pdv, 'N'), null, t.id), 'FM999G999G999G990D00')
+                    END AS raspolozivo,
                     t.opis,
                     nvl(t.nacin_raspodjele, 'V') AS nacin_raspodjele,
                     CASE WHEN rm_kalkulacija_pkg.izvor_rasporedjen(null, t.id) = 'Y' THEN '✓ raspoređeno' ELSE 'nije raspoređeno' END AS stanje,
@@ -951,7 +912,7 @@ page 341 (
             ]
         }
         messages {
-            whenNoDataFound: Npr. vlastiti prevoz ili drugi trošak nabavke za koji nema ulazne fakture.
+            whenNoDataFound: Prevoz, carina, osiguranje... Izaberite ulaznu fakturu troška ili ostavite fakturu praznu i upišite opis i iznos (npr. vlastiti prevoz).
         }
         enableUsersTo {
             flashback: false
@@ -1003,33 +964,57 @@ page 341 (
             )
 
             displayColumn (
-                column: @OPIS
+                column: @KUF_ID
                 layout {
                     sequence: 2
-                    width: 440
+                    width: 300
+                }
+            )
+
+            displayColumn (
+                column: @SA_PDV
+                layout {
+                    sequence: 3
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @RASPOLOZIVO
+                layout {
+                    sequence: 4
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @OPIS
+                layout {
+                    sequence: 5
+                    width: 240
                 }
             )
 
             displayColumn (
                 column: @IZNOS
                 layout {
-                    sequence: 3
-                    width: 140
+                    sequence: 6
+                    width: 130
                 }
             )
 
             displayColumn (
                 column: @NACIN_RASPODJELE
                 layout {
-                    sequence: 4
-                    width: 140
+                    sequence: 7
+                    width: 200
                 }
             )
 
             displayColumn (
                 column: @STANJE
                 layout {
-                    sequence: 5
+                    sequence: 8
                     width: 130
                 }
             )
@@ -1065,6 +1050,75 @@ page 341 (
             }
         )
 
+        column KUF_ID (
+            type: popupLov
+            heading {
+                heading: Ulazna faktura (opciono)
+            }
+            settings {
+                popupWidth: 720
+            }
+            lov {
+                type: sharedComponent
+                lov: @rm-kalk-fakture
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - bez fakture (ručni unos) -
+            }
+            layout {
+                sequence: 35
+            }
+            source {
+                databaseColumn: KUF_ID
+                dataType: number
+            }
+        )
+
+        column SA_PDV (
+            type: selectList
+            heading {
+                heading: Iznos
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC2:Bez PDV-a;N,Sa PDV-om;Y
+                displayExtraValues: false
+                displayNullValue: false
+            }
+            layout {
+                sequence: 36
+            }
+            source {
+                databaseColumn: SA_PDV
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: N
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :APP_PDV_SISTEM = 'Y'
+            }
+        )
+
+        column RASPOLOZIVO (
+            type: textField
+            heading {
+                heading: Raspoloživo
+                alignment: end
+            }
+            layout {
+                sequence: 37
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: RASPOLOZIVO
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+
         column OPIS (
             type: textField
             heading {
@@ -1078,7 +1132,6 @@ page 341 (
                 dataType: varchar2
             }
             validation {
-                valueRequired: true
                 maxLength: 500
             }
         )
@@ -1097,9 +1150,6 @@ page 341 (
                 databaseColumn: IZNOS
                 dataType: varchar2
             }
-            validation {
-                valueRequired: true
-            }
         )
 
         column NACIN_RASPODJELE (
@@ -1109,7 +1159,7 @@ page 341 (
             }
             lov {
                 type: staticValues
-                staticValues: STATIC2:Po vrijednosti;V,Po količini;K,Linearno;L,Ručno;R
+                staticValues: STATIC2:Ručno – ukupan iznos;R,Ručno – jedinična cijena;J,Automatski – po vrijednosti;V,Automatski – po količini;K,Automatski – linearno;L
                 displayExtraValues: false
                 displayNullValue: false
             }
@@ -1119,6 +1169,10 @@ page 341 (
             source {
                 databaseColumn: NACIN_RASPODJELE
                 dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: V
             }
         )
 
@@ -1152,7 +1206,10 @@ page 341 (
                     izvor,
                     vrsta,
                     naziv,
-                    CASE nacin WHEN 'V' THEN 'po vrijednosti' WHEN 'K' THEN 'po količini' WHEN 'L' THEN 'linearno' ELSE 'ručno' END AS nacin,
+                    CASE nacin WHEN 'V' THEN 'automatski – po vrijednosti' WHEN 'K' THEN 'automatski – po količini'
+                               WHEN 'L' THEN 'automatski – linearno' WHEN 'J' THEN 'ručno – jedinična cijena'
+                               WHEN 'P' THEN 'ručno – cijena sa prijemnice'
+                               ELSE 'ručno – ukupan iznos' END AS nacin,
                     to_char(iznos, 'FM999G999G999G990D00') AS iznos,
                     to_char(rasporedjeno, 'FM999G999G999G990D00') AS rasporedjeno,
                     rasporedjen
@@ -1970,6 +2027,18 @@ page 341 (
         }
     )
 
+    pageItem P341_TAB_CIJENE (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 12
+            region: @kalk-detalji
+            slot: regionBody
+        }
+    )
+
     pageItem P341_ADMIN (
         type: hidden
         settings {
@@ -2330,10 +2399,16 @@ page 341 (
                     :P341_RAZLIKA_KLASA    := case when abs(k.iznos_faktura + k.iznos_troskova - k.nabavna_vrijednost) > 0.005 then 'greska' else 'ok' end;
                 end loop;
                 :P341_ADMIN := case when apex_authorization.is_authorized('MAIN ADMIN') then 'Y' else 'N' end;
+                -- materijalno skladište nema prodajnih cijena
+                :P341_TAB_CIJENE := case when :P341_ROBNO = 'Y' then 'Nabavne i prodajne cijene' else 'Nabavne cijene' end;
                 :P341_RAZLOG := rm_kalkulacija_pkg.razlog_zabrane(:P341_ID);
                 :P341_IZMJENJIVA := rm_kalkulacija_pkg.izmjenjiva(:P341_ID);
                 :P341_RAZLOG_OTKLJ := rm_kalkulacija_pkg.razlog_zabrane_otkljucavanja(:P341_ID, :P341_ADMIN);
                 :P341_SVE_RASP := rm_kalkulacija_pkg.sve_rasporedjeno(:P341_ID);
+                -- zaključena kalkulacija: korisnik vidi i zašto se ne može otključati
+                if :P341_STATUS = 'Z' and :P341_RAZLOG_OTKLJ is not null then
+                    :P341_RAZLOG := :P341_RAZLOG || ' Otključavanje nije moguće: ' || :P341_RAZLOG_OTKLJ;
+                end if;
                 ```
         }
         execution {
@@ -2538,7 +2613,8 @@ page 341 (
                         if :APEX$ROW_STATUS = 'D' then
                             rm_kalkulacija_pkg.obrisi_trosak(l_id);
                         else
-                            rm_kalkulacija_pkg.snimi_trosak(l_id, :P341_ID, :OPIS, kuf_pkg.broj(:IZNOS), :NACIN_RASPODJELE);
+                            rm_kalkulacija_pkg.snimi_trosak(l_id, :P341_ID, :OPIS, kuf_pkg.broj(:IZNOS), :NACIN_RASPODJELE,
+                                                            kuf_pkg.broj(:KUF_ID), :SA_PDV, :APP_PDV_SISTEM);
                             :ID := l_id;
                         end if;
                     end;
@@ -2649,14 +2725,30 @@ page 341 (
             plsqlCode:
                 ```plsql
                 sys.htp.p(rm_kalkulacija_pkg.kuf_info(
-                    p_kuf_id => to_number(apex_application.g_x01),
-                    p_sa_pdv => case when :APP_PDV_SISTEM = 'Y' then nvl(apex_application.g_x02, 'N') else 'Y' end,
-                    p_red_id => kuf_pkg.broj(apex_application.g_x03)
+                    p_kuf_id    => to_number(apex_application.g_x01),
+                    p_sa_pdv    => case when :APP_PDV_SISTEM = 'Y' then nvl(apex_application.g_x02, 'N') else 'Y' end,
+                    p_red_id    => kuf_pkg.broj(apex_application.g_x03),
+                    p_trosak_id => kuf_pkg.broj(apex_application.g_x04)
                 ));
                 ```
         }
         execution {
             sequence: 60
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-pri-info (
+        name: PRI_INFO
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(rm_kalkulacija_pkg.prijemnica_info(to_number(apex_application.g_x01)));
+                ```
+        }
+        execution {
+            sequence: 59
             point: ajaxCallback
         }
     )
@@ -2724,6 +2816,26 @@ page 341 (
         }
         execution {
             sequence: 63
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-rasp-ponisti (
+        name: RASP_PONISTI
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    apex_util.prn(rm_kalkulacija_pkg.ponisti_json(:P341_ID, apex_application.g_x01), false);
+                exception
+                    when others then
+                        sys.htp.p('{"greska":"' || apex_escape.json(regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '')) || '"}');
+                end;
+                ```
+        }
+        execution {
+            sequence: 64
             point: ajaxCallback
         }
     )

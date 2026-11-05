@@ -76,3 +76,192 @@ textMessage FLOW.VALIDATION_ERROR (
         usedInJavaScript: true
     }
 )
+
+textMessage APEXIR_ACTIONS (
+    message {
+        text: Akcije
+        language: en
+    }
+)
+
+textMessage APEXIR_GO (
+    message {
+        text: Traži
+        language: en
+    }
+)
+
+textMessage APEXIR_SEARCH (
+    message {
+        text: Pretraga
+        language: en
+    }
+)
+
+textMessage APEXIR_DOWNLOAD (
+    message {
+        text: Preuzmi / štampaj
+        language: en
+    }
+)
+
+textMessage APEXIR_COLUMNS (
+    message {
+        text: Kolone
+        language: en
+    }
+)
+
+textMessage APEXIR_FILTER (
+    message {
+        text: Filter
+        language: en
+    }
+)
+
+textMessage APEXIR_ROWS_PER_PAGE (
+    message {
+        text: Redova po stranici
+        language: en
+    }
+)
+
+textMessage APEXIR_FORMAT (
+    message {
+        text: Format
+        language: en
+    }
+)
+
+textMessage APEXIR_SORT (
+    message {
+        text: Sortiranje
+        language: en
+    }
+)
+
+textMessage APEXIR_CONTROL_BREAK (
+    message {
+        text: Grupisanje (prelom)
+        language: en
+    }
+)
+
+textMessage APEXIR_HIGHLIGHT (
+    message {
+        text: Isticanje
+        language: en
+    }
+)
+
+textMessage APEXIR_COMPUTE (
+    message {
+        text: Izračunaj
+        language: en
+    }
+)
+
+textMessage APEXIR_AGGREGATE (
+    message {
+        text: Zbir / prosjek
+        language: en
+    }
+)
+
+textMessage APEXIR_GROUP_BY (
+    message {
+        text: Grupiši po
+        language: en
+    }
+)
+
+textMessage APEXIR_PIVOT (
+    message {
+        text: Pivot
+        language: en
+    }
+)
+
+textMessage APEXIR_REPORT (
+    message {
+        text: Izvještaj
+        language: en
+    }
+)
+
+textMessage APEXIR_SAVE_REPORT (
+    message {
+        text: Sačuvaj izvještaj
+        language: en
+    }
+)
+
+textMessage APEXIR_RESET (
+    message {
+        text: Vrati početno
+        language: en
+    }
+)
+
+textMessage APEXIR_HELP (
+    message {
+        text: Pomoć
+        language: en
+    }
+)
+
+textMessage APEXIR_DATA (
+    message {
+        text: Podaci
+        language: en
+    }
+)
+
+textMessage APEXIR_ALL_COLUMNS (
+    message {
+        text: Sve kolone
+        language: en
+    }
+)
+
+textMessage APEXIR_ROW_TEXT_CONTAINS (
+    message {
+        text: Red sadrži tekst
+        language: en
+    }
+)
+
+textMessage APEXIR_APPLY (
+    message {
+        text: Primijeni
+        language: en
+    }
+)
+
+textMessage APEXIR_CANCEL (
+    message {
+        text: Odustani
+        language: en
+    }
+)
+
+textMessage APEXIR_ALL (
+    message {
+        text: Sve
+        language: en
+    }
+)
+
+textMessage APEXIR_ROWS (
+    message {
+        text: Redova
+        language: en
+    }
+)
+
+textMessage APEXIR_NO_DATA_FOUND (
+    message {
+        text: Nema podataka.
+        language: en
+    }
+)

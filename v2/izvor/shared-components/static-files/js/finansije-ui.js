@@ -590,26 +590,38 @@ window.finRmStavke = (function ($) {
     function fc(n) {
         var x = Number(n) || 0;
         if (Math.round(x * 100) / 100 === x) { return bez(x, "FM999G999G999G990D00"); }
-        return bez(x, "FM999G999G999G990D999999").replace(/0+$/, "");
+        return bez(x, "FM999G999G999G990D9999").replace(/0+$/, "");
     }
     function init(regionId, p) {
-        var g = I.grid(regionId), model, izlaz = ($v(p + "_TIP_KRETANJA") === "I"), ro, formatira = false;
+        /* izlaz i povrat reversa: cijenu računa baza, količina najviše do raspoloživog / dostupnog */
+        var g = I.grid(regionId), model, izlaz = ($v(p + "_TIP_KRETANJA") === "I" || $v(p + "_POVRAT") === "Y"), ro, formatira = false;
         if (!g) { return; }
         model = g.model;
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
         ro = ["JM_NAZIV", "RASPOLOZIVO", "IZNOS", "SB"];
         if (izlaz) { ro.push("CIJENA"); }
+        /* razlika inventure (iz popisa): artikal i količina se ne mijenjaju, na višku samo cijena */
+        if ($v(p + "_VRSTA_SIFRA") === "RIV" || $v(p + "_VRSTA_SIFRA") === "RIM") {
+            ro.push("STAVKA_ID", "KOLICINA");
+            $("#" + regionId).find("button[data-action='selection-add-row']").hide();
+        }
         I.samoCitanje(regionId, ro);
+        /* finansijsko doknjiženje (FDK): stavka nema količinu - iznos stavke je uneseni iznos doknjiženja */
+        var fdk = ($v(p + "_VRSTA_SIFRA") === "FDK");
+        function kol(rec) {
+            if (fdk) { return 1; }
+            try { return I.num(model.getValue(rec, "KOLICINA")); } catch (e) { return 0; }
+        }
 
         function racun(rec) {
-            I.postavi(model, rec, "IZNOS", I.fmt(I.r2(I.num(model.getValue(rec, "KOLICINA")) * I.num(model.getValue(rec, "CIJENA")))));
+            I.postavi(model, rec, "IZNOS", I.fmt(I.r2(kol(rec) * I.num(model.getValue(rec, "CIJENA")))));
         }
         function zbir() {
             var s = 0;
             model.forEach(function (rec, idx, id) {
                 var meta = model.getRecordMetadata(id);
                 if (meta && meta.deleted) { return; }
-                s += I.r2(I.num(model.getValue(rec, "KOLICINA")) * I.num(model.getValue(rec, "CIJENA")));
+                s += I.r2(kol(rec) * I.num(model.getValue(rec, "CIJENA")));
             });
             $s(p + "_ZBIR", I.fmt(I.r2(s)));
         }
@@ -622,17 +634,19 @@ window.finRmStavke = (function ($) {
                         art = I.val(model.getValue(rec, "STAVKA_ID"));
                         if (!art) { return; }
                         apex.server.process("ARTIKL_INFO",
-                            { x01: art, pageItems: "#" + p + "_ID,#" + p + "_SKLADISTE_ID,#" + p + "_DATUM" },
+                            { x01: art, pageItems: "#" + p + "_ID,#" + p + "_SKLADISTE_ID,#" + p + "_DATUM,#" + p + "_VRSTA_SIFRA,#" +
+                                                   p + "_ZADUZENI_RADNIK_ID,#" + p + "_KOMITENT_ID" },
                             { dataType: "json" })
                             .done(function (d) {
                                 I.postavi(model, rec, "JM_NAZIV", d.jm || "");
-                                I.postavi(model, rec, "RASPOLOZIVO", fq(izlaz ? (d.rasp || 0) : (d.stanje || 0)));
-                                /* izlaz: prosječna cijena; ulaz: predlog samo kad postoji prosječna cijena
-                                   (inače polje ostaje prazno za unos, bez "0.00" preko kojeg se kuca) */
+                                I.postavi(model, rec, "RASPOLOZIVO", fdk ? fq(d.obr || 0) + " · " + fc(d.vr || 0) + " KM"
+                                                                          : fq(izlaz ? (d.rasp || 0) : (d.stanje || 0)));
+                                /* izlaz: prosječna cijena (računa baza); ulaz sa ručnom cijenom: predlog je 0 -
+                                   korisnik unosi cijenu, prosječna se ne nudi */
                                 if (izlaz) {
                                     I.postavi(model, rec, "CIJENA", fc(d.cijena || 0));
-                                } else if (!I.num(model.getValue(rec, "CIJENA")) && Number(d.cijena) > 0) {
-                                    I.postavi(model, rec, "CIJENA", fc(d.cijena));
+                                } else if (!I.num(model.getValue(rec, "CIJENA"))) {
+                                    I.postavi(model, rec, "CIJENA", fc(0));
                                 }
                                 racun(rec);
                                 zbir();
@@ -650,13 +664,84 @@ window.finRmStavke = (function ($) {
                         if (izlaz && change.field === "KOLICINA") {
                             k = I.num(model.getValue(rec, "KOLICINA"));
                             r = I.num(model.getValue(rec, "RASPOLOZIVO"));
-                            if (k > r) { I.greska("Na skladištu je raspoloživo " + fq(r) + " - količina ne može biti veća."); }
+                            if (k > r) {
+                                /* veća količina od dozvoljene se ne zadržava: poruka i količina se vraća na 0 */
+                                I.greska("Raspoloživo je " + fq(r) + " - količina ne može biti veća. Količina je vraćena na 0.");
+                                I.postavi(model, rec, "KOLICINA", "0");
+                                racun(rec);
+                            }
                         }
                     }
                 }
-                if (type === "set" || type === "delete" || type === "insert" || type === "revert") { zbir(); }
+                if (type === "set" || type === "delete" || type === "insert" || type === "revert" ||
+                    type === "refresh" || type === "addData") { zbir(); }
             }
         });
+        /* tabela u modalnom dijalogu: širine kolona se računaju tek kad je dijalog otvoren
+           (inače su kolone prazne tabele skupljene) */
+        function sirine() { try { g.view$.grid("resize"); } catch (e) { /* ništa */ } }
+        setTimeout(sirine, 150);
+        setTimeout(sirine, 600);
+        $(window).on("load apexwindowresized", sirine);
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Dokument skladišta (str. 331): unos izlaza po serijskom broju
+   (barkod / QR čitač kuca broj i Enter). Artikal se prepoznaje u bazi,
+   stavka se dodaje ili joj se povećava količina (DODAJ_PO_SB).
+   Poziv: finRmSbUnos.init('P331')
+   ===================================================================== */
+window.finRmSbUnos = (function ($) {
+    "use strict";
+    var P = "P331", u_toku = false;
+    function izmijenjena() {
+        var g = window.finIg.grid("rm_stavke");
+        try { return !!(g && g.model && g.model.isChanged()); } catch (e) { return false; }
+    }
+    /* stavke, serijski brojevi i zbir se osvježavaju bez ponovnog učitavanja stranice */
+    function osvjezi() {
+        ["rm_stavke", "rm_sb"].forEach(function (r) {
+            try { if (apex.region(r)) { apex.region(r).refresh(); } } catch (e) { /* ništa */ }
+        });
+    }
+    function dodaj() {
+        var $f = $("#" + P + "_SB_UNOS"), tekst = String($f.val() || "").trim();
+        if (!tekst || u_toku) { return; }
+        if (izmijenjena()) {
+            window.finIg.greska("Stavke imaju nesnimljene izmjene - prvo kliknite Snimi, pa unosite serijske brojeve.");
+            return;
+        }
+        u_toku = true;
+        apex.server.process("DODAJ_PO_SB", { x01: tekst }, { dataType: "json" })
+            .done(function (d) {
+                apex.message.clearErrors();
+                if (d.n > 0) {
+                    osvjezi();
+                    if (d.poruka && d.poruka.indexOf(": ") >= 0) { window.finIg.greska(d.poruka); }
+                    else { apex.message.showPageSuccess(d.poruka || "Serijski broj je dodat."); }
+                    $f.val("");
+                } else {
+                    window.finIg.greska(d.poruka || "Serijski broj nije dodat.");
+                    $f.trigger("select");
+                }
+            })
+            .always(function () {
+                u_toku = false;
+                setTimeout(function () { $f.trigger("focus"); }, 50);
+            });
+    }
+    function init(p) {
+        var $f;
+        P = p || "P331";
+        $f = $("#" + P + "_SB_UNOS");
+        if (!$f.length) { return; }
+        /* čitač barkoda / QR koda šalje Enter poslije broja */
+        $f.on("keydown", function (e) {
+            if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); dodaj(); }
+        });
+        try { sessionStorage.removeItem("finSbPoruka"); } catch (e) { /* ništa */ }
     }
     return { init: init };
 })(apex.jQuery);
@@ -721,6 +806,82 @@ window.finSkl = (function ($) {
         $(document).on("keydown", function (e) { if (e.key === "Escape") { zatvori($w); } });
     }
     $(init);
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Lista dokumenata skladišta (str. 330): izbor vrste dokumenta pored
+   izbora skladišta; "Novi dokument" otvara izabranu vrstu.
+   Promjena vrste osvježava listu (samo dokumenti te vrste); URL forme
+   (sa kontrolnom sumom) daje proces NOVI_DOKUMENT_URL.
+   Poziv: finRmVrsta.init('P330_NOVA_VRSTA', 'dokumenti_report')
+   ===================================================================== */
+window.finRmVrsta = (function ($) {
+    "use strict";
+    var KLJUC = "finRmVrstaId";
+    function otvori(url) {
+        url = String(url || "").trim();
+        if (!url) { return; }
+        if (/^javascript:/i.test(url)) { window.location.href = url; } else { apex.navigation.redirect(url); }
+    }
+    function init(item, regionId) {
+        var $r = $("#fin_vrsta_izbor"), $s = $("#" + item), $skl, $cilj, zapamceno = null;
+        if (!$r.length || !$s.length) { return; }
+        $skl = $("#finSkl");
+        $cilj = $(".t-Body-title .t-BreadcrumbRegion-buttons").first();
+        if ($skl.length && $skl.parent().length) { $r.insertAfter($skl); } else if ($cilj.length) { $cilj.prepend($r); }
+        $r.addClass("is-ready");
+        function osvjezi() {
+            try { localStorage.setItem(KLJUC, $s.val()); } catch (e) { /* ništa */ }
+            if (regionId && apex.region(regionId)) { apex.region(regionId).refresh(); }
+        }
+        $s.on("change", osvjezi);
+        /* zapamćena vrsta: ako postoji u listi i razlikuje se od trenutne - izaberi i osvježi */
+        try { zapamceno = localStorage.getItem(KLJUC); } catch (e) { zapamceno = null; }
+        if (zapamceno && zapamceno !== $s.val() && $s.find('option[value="' + zapamceno + '"]').length) {
+            apex.item(item).setValue(zapamceno, null, true);
+            osvjezi();
+        }
+        $(document).on("click", "[data-novi-dokument]", function (e) {
+            e.preventDefault();
+            if (!$s.val() || $s.val() === "0") {
+                apex.message.clearErrors();
+                apex.message.showErrors([{ type: "error", location: "page", unsafe: false,
+                    message: "Za novi dokument izaberite vrstu dokumenta (pored skladišta)." }]);
+                return;
+            }
+            apex.server.process("NOVI_DOKUMENT_URL", { x01: $s.val() }, { dataType: "text" }).done(function (url) {
+                url = String(url || "").trim();
+                if (url.indexOf("ERR:") === 0) {
+                    apex.message.clearErrors();
+                    apex.message.showErrors([{ type: "error", location: "page", unsafe: false, message: url.substring(4) }]);
+                    return;
+                }
+                otvori(url);
+            });
+        });
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Izvještaji materijalnog / robnog modula (str. 371): katalog kartica.
+   Klik na karticu bira izvještaj (P371_IZV) i ponovo učitava stranicu.
+   Poziv: finRmIzvjestaji.init('P371')
+   ===================================================================== */
+window.finRmIzvjestaji = (function ($) {
+    "use strict";
+    function init(p) {
+        var izv = $v(p + "_IZV");
+        $(".fin-izv-kartica").each(function () {
+            $(this).toggleClass("is-active", String($(this).data("izv")) === String(izv));
+        });
+        $(document).on("click", ".fin-izv-kartica", function () {
+            var kod = String($(this).data("izv")), set = {};
+            set[p + "_IZV"] = kod;
+            apex.page.submit({ request: "IZV", set: set, showWait: true });
+        });
+    }
     return { init: init };
 })(apex.jQuery);
 
@@ -841,7 +1002,12 @@ apex.jQuery(function ($) {
 
 /* =====================================================================
    Kalkulacija (str. 341)
-   - fakture: izbor fakture / sa-bez PDV-a -> raspoloživo i predlog iznosa (KUF_INFO)
+   - prijemnice: izbor prijemnice odmah popunjava datum, dobavljača i vrijednost (PRI_INFO)
+   - fakture i zavisni troškovi kroz fakturu: izbor fakture / sa-bez PDV-a -> raspoloživo
+     i predlog iznosa (KUF_INFO)
+   - načini raspodjele: ručno - ukupan iznos (R), ručno - jedinična cijena (J) i ručno - cijena sa
+     prijemnice (P: kao J, jedinične cijene se predlažu sa prijemnice; unose se
+     cijene, iznos se preračunava), automatski po vrijednosti / količini / linearno
    - raspodjela: izbor fakture / troška učitava samo panel raspodjele (RASP_IZVOR);
      raspodjela po artiklima (zbirno iz svih prijemnica), čuvanje bez ponovnog
      učitavanja stranice (RASP_SNIMI), automatski svi izvori (RASP_SVE)
@@ -864,8 +1030,8 @@ window.finRmKalk = (function ($) {
         apex.message.showErrors([{ type: "error", location: "page", message: poruka, unsafe: false }]);
     }
 
-    /* ---------- fakture */
-    function initKuf(regionId) {
+    /* ---------- fakture i zavisni troškovi (trošak = true: red KALKULACIJA_TROSKOVI, faktura nije obavezna) */
+    function initKuf(regionId, trosak) {
         var g = I.grid(regionId), model;
         if (!g) { return; }
         model = g.model;
@@ -873,18 +1039,25 @@ window.finRmKalk = (function ($) {
         I.samoCitanje(regionId, ["RASPOLOZIVO", "STANJE"]);
         model.subscribe({
             onChange: function (type, ch) {
-                var rec, kuf, id, sa;
+                var rec, kuf, id, sa, red;
                 if (type !== "set" || !ch || (ch.field !== "KUF_ID" && ch.field !== "SA_PDV")) { return; }
                 rec = ch.record;
                 kuf = I.val(model.getValue(rec, "KUF_ID"));
-                if (!kuf) { return; }
+                if (!kuf) {
+                    if (trosak) { I.postavi(model, rec, "RASPOLOZIVO", ""); }
+                    return;
+                }
                 id = model.getRecordId(rec);
+                red = /^[0-9]+$/.test(String(id)) ? id : "";
                 sa = model.getFieldMetadata("SA_PDV") ? I.val(model.getValue(rec, "SA_PDV")) : "Y";
-                apex.server.process("KUF_INFO", { x01: kuf, x02: sa || "N", x03: /^[0-9]+$/.test(String(id)) ? id : "" },
+                apex.server.process("KUF_INFO", { x01: kuf, x02: sa || "N", x03: trosak ? "" : red, x04: trosak ? red : "" },
                     { dataType: "json" }).done(function (d) {
-                        var rasp = Number(d.rasp || 0), izn = I.num(model.getValue(rec, "IZNOS"));
+                        var rasp = Number(d.rasp || 0);
                         I.postavi(model, rec, "RASPOLOZIVO", f2(rasp));
-                        if (!izn || izn > rasp) { I.postavi(model, rec, "IZNOS", f2(rasp)); }
+                        /* nova faktura ili promjena sa / bez PDV-a: prijedlog je cijeli raspoloživi iznos
+                           (korisnik ga poslije može smanjiti) */
+                        I.postavi(model, rec, "IZNOS", f2(rasp));
+                        if (trosak && d.naziv && !I.val(model.getValue(rec, "OPIS"))) { I.postavi(model, rec, "OPIS", d.naziv); }
                     });
             }
         });
@@ -899,8 +1072,12 @@ window.finRmKalk = (function ($) {
             var $a = $('.fin-kalk-izvor[data-izvor="' + x.izvor + '"]');
             $a.attr("data-r", x.r).find(".fin-kalk-dot").removeClass("fin-kalk-dot--Y fin-kalk-dot--N").addClass("fin-kalk-dot--" + x.r);
             $a.find("[data-ras]").text("raspoređeno " + x.ras);
+            if (x.iz !== undefined) { $a.find(".fin-kalk-izvor__iznos b").text(x.iz); }
         });
-        if (sveNaPocetku !== "Y" && d.sve === "Y") {
+        if (sveNaPocetku === "Y" && d.sve === "N") {
+            /* poništena raspodjela: tab cijena se zaključava ponovnim učitavanjem */
+            setTimeout(function () { window.location.reload(); }, 900);
+        } else if (sveNaPocetku !== "Y" && d.sve === "Y") {
             /* sve je raspoređeno: tab cijena se otključava ponovnim učitavanjem */
             apex.message.showPageSuccess("Sve fakture i troškovi su raspoređeni - učitavam cijene...");
             setTimeout(function () { window.location.reload(); }, 900);
@@ -909,46 +1086,100 @@ window.finRmKalk = (function ($) {
 
     /* ---------- panel raspodjele */
     function zbirPanela($p) {
-        var s = 0, cilj = Number($p.data("iznos")) || 0, raz;
+        var s = 0, cilj = Number($p.data("iznos")) || 0, raz, rasp = $p.data("rasp");
         $p.find("[data-iznos-red]").each(function () {
             s += I.num($(this).is("input") ? $(this).val() : $(this).text());
         });
         s = I.r2(s);
-        raz = I.r2(cilj - s);
         $p.find(".fin-kalk-rasp__suma").text(f2(s));
+        if ($p.data("nacin") === "J" || $p.data("nacin") === "P") {
+            /* jedinična cijena: ukupan iznos se preračunava; granica je raspoloživo fakture */
+            $p.find(".fin-kalk-rasp__ukupno").text(f2(s));
+            if (rasp !== undefined && rasp !== null && rasp !== "") {
+                raz = I.r2(Number(rasp) - s);
+                $p.find(".fin-kalk-rasp__razlika").text("raspoloživo " + f2(Number(rasp))).toggleClass("is-greska", raz < 0);
+            } else {
+                $p.find(".fin-kalk-rasp__razlika").text("").removeClass("is-greska");
+            }
+            return;
+        }
+        raz = I.r2(cilj - s);
         $p.find(".fin-kalk-rasp__razlika").text(f2(raz)).toggleClass("is-greska", Math.abs(raz) >= 0.005);
     }
     function crtaj(d) {
-        var $p = $("#finKalkRasp"), rucno = d.nacin === "R" && d.izmjenjiva === "Y", html, redovi = "";
+        var $p = $("#finKalkRasp"), izm = d.izmjenjiva === "Y", jed = d.nacin === "J" || d.nacin === "P", rucno = d.nacin === "R" && izm,
+            html, redovi = "", uputa;
         (d.stavke || []).forEach(function (s) {
-            var izn = s.iznos ? f2(I.num(s.iznos)) : "";
+            var izn = s.iznos ? f2(I.num(s.iznos)) : "", cij = s.cijena ? f4(I.num(s.cijena)) : "";
             redovi += '<tr data-artikal="' + esc(s.id) + '"><td><span class="fin-doc"><span class="fin-doc__no">' + esc(s.sifra) +
                 '</span><span class="fin-sub">' + esc(s.naziv) + '</span></span></td><td>' + esc(s.jm || "") +
-                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.osn) + '</td><td class="u-tR">' +
-                (rucno ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-iznos-red value="' + esc(izn) + '">'
-                       : '<span data-iznos-red>' + esc(izn) + "</span>") +
-                '</td><td class="u-tR fin-kalk-rasp__jed" data-kol="' + esc(s.kol) + '"></td></tr>';
+                '</td><td class="u-tR">' + esc(s.kol) + '</td><td class="u-tR">' + esc(s.pret || "0.00") + '</td>';
+            if (jed) {
+                /* ručno - jedinična cijena: unosi se cijena, iznos = cijena x količina */
+                redovi += '<td class="u-tR">' + (izm ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-cijena-red value="' +
+                    esc(cij) + '">' : esc(cij)) + '</td><td class="u-tR"><span data-iznos-red data-kol="' + esc(s.kol) + '">' +
+                    esc(izn) + '</span></td></tr>';
+            } else {
+                redovi += '<td class="u-tR">' +
+                    (rucno ? '<input type="text" class="fin-kalk-in" inputmode="decimal" data-iznos-red value="' + esc(izn) + '">'
+                           : '<span data-iznos-red>' + esc(izn) + "</span>") +
+                    '</td><td class="u-tR fin-kalk-rasp__jed" data-kol="' + esc(s.kol) + '"></td></tr>';
+            }
         });
+        if (d.nacin === "P") {
+            uputa = "Jedinične cijene su prekopirane sa prijemnice - po potrebi ih promijenite i sačuvajte; iznos i ukupan iznos se preračunavaju (cijena × količina)." +
+                (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
+        } else if (jed) {
+            uputa = "Upišite jediničnu cijenu po artiklu; iznos i ukupan iznos se preračunavaju (cijena × količina)." +
+                (d.raspolozivo ? " Ukupan iznos ne može preći raspoloživo fakture (" + d.raspolozivo + " KM)." : "");
+        } else if (d.nacin === "R") {
+            uputa = "Upišite iznos po artiklu; zbir mora biti jednak iznosu.";
+        } else {
+            uputa = "Iznosi su izračunati " + d.nacinNaziv + (d.nacin === "V"
+                ? (String(d.izvor).indexOf("F:") === 0
+                    ? " - srazmjerno vrijednosti prijemnice (količina × cijena prijemnice)"
+                    : " - srazmjerno vrijednosti artikla raspoređenoj iz faktura robe; dok fakture nisu raspoređene, srazmjerno vrijednosti prijemnice")
+                : "") + ". Za ručni unos promijenite način raspodjele na prvom tabu.";
+        }
         html = '<div class="fin-kalk-rasp__zaglavlje"><div><div class="fin-kalk-rasp__naziv">' + esc(d.naziv) + '</div>' +
             '<div class="fin-kalk-rasp__meta"><span class="fin-chip fin-chip--info"><span class="fa fa-random" aria-hidden="true"></span> raspodjela: ' +
             esc(d.nacinNaziv) + '</span><span class="fin-chip fin-kalk-stanje fin-kalk-stanje--' + esc(d.rasporedjen) + '"></span>' +
-            (d.sacuvano === "N" && d.nacin !== "R" ? '<span class="fin-sub">prijedlog - nije sačuvano</span>' : "") +
-            '</div></div><div class="fin-kalk-rasp__iznos"><span>Iznos</span><b>' + esc(d.iznos) + ' KM</b></div></div>' +
-            (d.nacin !== "R" ? '<p class="fin-kalk-uputa">Iznosi su izračunati ' + esc(d.nacinNaziv) +
-                '. Za ručni unos promijenite način raspodjele na prvom tabu.</p>' : '<p class="fin-kalk-uputa">Upišite iznos po artiklu; zbir mora biti jednak iznosu.</p>') +
+            (d.sacuvano === "N" && d.nacin !== "R" && d.nacin !== "J"
+                ? '<span class="fin-sub">' + (d.nacin === "P" ? "cijene sa prijemnice - nije sačuvano" : "prijedlog - nije sačuvano") + '</span>' : "") +
+            '</div></div><div class="fin-kalk-rasp__iznos"><span>' + (jed ? "Ukupan iznos" : "Iznos") + '</span><b>' +
+            (jed ? '<span class="fin-kalk-rasp__ukupno">' + esc(d.iznos) + '</span>' : esc(d.iznos)) + ' KM</b></div></div>' +
+            '<p class="fin-kalk-uputa">' + esc(uputa) + '</p>' +
             '<table class="fin-kalk-rasp__tabela"><thead><tr><th>Artikal</th><th>JM</th><th class="u-tR">Količina</th>' +
-            '<th class="u-tR">Vrijednost prijemnica</th><th class="u-tR">Raspoređeno (KM)</th><th class="u-tR">Po jedinici</th></tr></thead><tbody>' +
-            redovi + '</tbody><tfoot><tr><td colspan="4">Ukupno / razlika</td><td class="u-tR"><b class="fin-kalk-rasp__suma"></b></td>' +
-            '<td class="u-tR"><span class="fin-kalk-rasp__razlika"></span></td></tr></tfoot></table>' +
+            '<th class="u-tR">Raspoređeno iz ostalih izvora</th>' +
+            (jed ? '<th class="u-tR">Jedinična cijena</th><th class="u-tR">Iznos (KM)</th>'
+                 : '<th class="u-tR">Raspoređeno (KM)</th><th class="u-tR">Po jedinici</th>') + '</tr></thead><tbody>' +
+            redovi + '</tbody><tfoot><tr><td colspan="4">' + (jed ? "Ukupno" : "Ukupno / razlika") + '</td>' +
+            (jed ? '<td></td><td class="u-tR"><b class="fin-kalk-rasp__suma"></b><br><span class="fin-kalk-rasp__razlika"></span></td>'
+                 : '<td class="u-tR"><b class="fin-kalk-rasp__suma"></b></td><td class="u-tR"><span class="fin-kalk-rasp__razlika"></span></td>') +
+            '</tr></tfoot></table>' +
             (d.izmjenjiva === "Y" ? '<div class="fin-kalk-rasp__dugmad"><button type="button" class="t-Button t-Button--hot t-Button--iconLeft fin-kalk-sacuvaj">' +
                 '<span class="t-Icon t-Icon--left fa fa-save" aria-hidden="true"></span>Sačuvaj raspodjelu</button>' +
                 '<button type="button" class="t-Button t-Button--simple t-Button--iconLeft fin-kalk-sve">' +
-                '<span class="t-Icon t-Icon--left fa fa-random" aria-hidden="true"></span>Raspodijeli sve automatske</button></div>' : "");
-        $p.html(html).data("iznos", d.iznosBroj).data("izvor", d.izvor);
+                '<span class="t-Icon t-Icon--left fa fa-random" aria-hidden="true"></span>Raspodijeli sve automatske</button>' +
+                (d.sacuvano === "Y" ? '<button type="button" class="t-Button t-Button--simple t-Button--danger t-Button--iconLeft fin-kalk-ponisti">' +
+                    '<span class="t-Icon t-Icon--left fa fa-undo" aria-hidden="true"></span>Poništi raspodjelu</button>' : "") +
+                '<button type="button" class="t-Button t-Button--simple t-Button--danger t-Button--iconLeft fin-kalk-ponisti-sve">' +
+                '<span class="t-Icon t-Icon--left fa fa-trash-o" aria-hidden="true"></span>Poništi sve raspodjele</button></div>' : "");
+        $p.html(html).data("iznos", d.iznosBroj).data("izvor", d.izvor).data("nacin", d.nacin)
+            .data("rasp", d.raspolozivoBroj === undefined ? "" : d.raspolozivoBroj);
         osvjeziJedinicno($p);
         zbirPanela($p);
     }
     function osvjeziJedinicno($p) {
+        if ($p.data("nacin") === "J" || $p.data("nacin") === "P") {
+            /* iznos = jedinična cijena x količina (kao u bazi: zaokruženo na 2 decimale) */
+            $p.find("tbody tr").each(function () {
+                var $r = $(this), $c = $r.find("[data-cijena-red]"), $i = $r.find("[data-iznos-red]");
+                if (!$c.length) { return; }
+                $i.text($c.val() === "" ? "" : f2(I.num($c.val()) * I.num($i.data("kol"))));
+            });
+            return;
+        }
         $p.find("tbody tr").each(function () {
             var $r = $(this), $i = $r.find("[data-iznos-red]"), izn = I.num($i.is("input") ? $i.val() : $i.text()),
                 kol = I.num($r.find(".fin-kalk-rasp__jed").data("kol"));
@@ -970,9 +1201,10 @@ window.finRmKalk = (function ($) {
     function sacuvaj() {
         var $p = $("#finKalkRasp"), ids = [], izn = [];
         $p.find("tbody tr").each(function () {
-            var $i = $(this).find("[data-iznos-red]");
+            var $i = $(this).find("[data-iznos-red]"), $c = $(this).find("[data-cijena-red]");
             ids.push(String($(this).data("artikal")));
-            izn.push($i.is("input") ? $i.val() : $i.text());
+            /* kod jedinične cijene šalju se cijene (iznos računa baza) */
+            izn.push($c.length ? $c.val() : ($i.is("input") ? $i.val() : $i.text()));
         });
         apex.server.process("RASP_SNIMI", { x01: $p.data("izvor"), f01: ids, f02: izn }, { dataType: "json" })
             .done(function (d) {
@@ -981,7 +1213,14 @@ window.finRmKalk = (function ($) {
                 apex.message.showPageSuccess("Raspodjela je sačuvana.");
                 stanje(d);
                 ucitaj(trenutni);
+                osvjeziTabele();
             });
+    }
+    /* iznosi izvora se mijenjaju (jedinična cijena) - osvježiti tabele prvog taba */
+    function osvjeziTabele() {
+        ["kalk_kuf", "kalk_troskovi"].forEach(function (r) {
+            try { if (apex.region(r)) { apex.region(r).refresh(); } } catch (e) { /* ništa */ }
+        });
     }
     function rasporediSve() {
         apex.server.process("RASP_SVE", {}, { dataType: "json" }).done(function (d) {
@@ -990,6 +1229,23 @@ window.finRmKalk = (function ($) {
             apex.message.showPageSuccess("Automatski izvori su raspoređeni.");
             stanje(d);
             if (trenutni) { ucitaj(trenutni); }
+        });
+    }
+    /* poništavanje raspodjele izvora ili svih; ručni izvor / faktura robe poništava i automatske */
+    function ponisti(sve) {
+        var $p = $("#finKalkRasp"), izvor = sve ? "SVE" : $p.data("izvor"),
+            pitanje = sve ? "Poništiti raspodjele svih faktura i troškova?"
+                : "Poništiti raspodjelu izvora?" + ($p.data("nacin") === "R" || $p.data("nacin") === "J" || $p.data("nacin") === "P" || String(izvor).indexOf("F:") === 0
+                    ? " Poništiće se i automatske raspodjele koje od nje zavise." : "");
+        apex.message.confirm(pitanje, function (ok) {
+            if (!ok) { return; }
+            apex.server.process("RASP_PONISTI", { x01: izvor }, { dataType: "json" }).done(function (d) {
+                if (d.greska) { greska(d.greska); return; }
+                apex.message.clearErrors();
+                apex.message.showPageSuccess(sve ? "Sve raspodjele su poništene." : "Raspodjela je poništena.");
+                stanje(d);
+                if (trenutni) { ucitaj(trenutni); }
+            });
         });
     }
     function initRaspodjela() {
@@ -1003,6 +1259,8 @@ window.finRmKalk = (function ($) {
         });
         $(document).on("click", "#finKalkRasp .fin-kalk-sacuvaj", sacuvaj);
         $(document).on("click", "#finKalkRasp .fin-kalk-sve", rasporediSve);
+        $(document).on("click", "#finKalkRasp .fin-kalk-ponisti", function () { ponisti(false); });
+        $(document).on("click", "#finKalkRasp .fin-kalk-ponisti-sve", function () { ponisti(true); });
         $prvi = $('.fin-kalk-izvor[data-r="N"]').first();
         if (!$prvi.length) { $prvi = $(".fin-kalk-izvor").first(); }
         if ($prvi.length) { ucitaj($prvi.data("izvor")); }
@@ -1013,7 +1271,25 @@ window.finRmKalk = (function ($) {
         var g = I.grid(regionId);
         if (!g) { return; }
         try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
-        I.samoCitanje(regionId, ["DATUM", "DOBAVLJAC", "STAVKI", "VRIJEDNOST"]);
+        I.samoCitanje(regionId, ["DATUM", "DOBAVLJAC", "VRIJEDNOST"]);
+        /* izbor prijemnice odmah popunjava ostala polja reda (ranije tek poslije snimanja) */
+        g.model.subscribe({
+            onChange: function (type, ch) {
+                var rec, op;
+                if (type !== "set" || !ch || ch.field !== "OPERACIJA_ID") { return; }
+                rec = ch.record;
+                op = I.val(g.model.getValue(rec, "OPERACIJA_ID"));
+                if (!op) {
+                    ["DATUM", "DOBAVLJAC", "VRIJEDNOST"].forEach(function (f) { I.postavi(g.model, rec, f, ""); });
+                    return;
+                }
+                apex.server.process("PRI_INFO", { x01: op }, { dataType: "json" }).done(function (d) {
+                    I.postavi(g.model, rec, "DATUM", d.datum || "");
+                    I.postavi(g.model, rec, "DOBAVLJAC", d.dobavljac || "");
+                    I.postavi(g.model, rec, "VRIJEDNOST", d.vrijednost || "");
+                });
+            }
+        });
     }
 
     /* ---------- cijene po artiklu i sastav nabavne cijene */
@@ -1068,10 +1344,263 @@ window.finRmKalk = (function ($) {
     function init(p) {
         P = p || "P341";
         sveNaPocetku = $v(P + "_SVE_RASP");
-        initKuf("kalk_kuf");
+        initKuf("kalk_kuf", false);
+        initKuf("kalk_troskovi", true);
         initPrijemnice("kalk_prijemnice");
         initCijene("kalk_cijene");
         initRaspodjela();
     }
     return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Popis skladišta (str. 365): stavke u Interactive Grid-u.
+   - knjigovodstveno stanje, cijena i razlika su samo za čitanje; unosi se popisana količina
+   - razlika = popisano - knjigovodstveno; vrijednost razlike = razlika x prosječna cijena
+   - sažetak iznad tabele: artikala, nepopisano, višak, manjak
+   - ćelija Razlika: zelena (jednako), plava (višak), crvena (manjak); ćelije za unos bijele
+   - novi red (artikal koji nije na stanju): knjigovodstveno i cijena iz baze (ARTIKL_POPIS)
+   Poziv: finRmPopis.init('rm_popis_stavke', 'P365')
+   ===================================================================== */
+window.finRmPopis = (function ($) {
+    "use strict";
+    var I = window.finIg;
+    function bez(n, mask) {
+        var s = apex.locale.formatNumber ? apex.locale.formatNumber(n, mask) : String(n);
+        return String(s).replace(/[.,]$/, "");
+    }
+    function fq(n) { return bez(n, "FM999999999990D999999"); }
+    function fc(n) {
+        var x = Number(n) || 0;
+        if (Math.round(x * 100) / 100 === x) { return bez(x, "FM999G999G999G990D00"); }
+        return bez(x, "FM999G999G999G990D9999").replace(/0+$/, "");
+    }
+    function prazno(v) { v = I.val(v); return v === null || v === undefined || String(v).trim() === ""; }
+    function init(regionId, p) {
+        var g = I.grid(regionId), model, $z = $("#fin_popis_sazetak");
+        if (!g) { return; }
+        model = g.model;
+        try { g.view$.grid("option", "autoAddRecord", false); } catch (e) { /* ništa */ }
+        I.samoCitanje(regionId, ["JM_NAZIV", "KNJIGOVODSTVENO", "RAZLIKA", "CIJENA", "VRIJEDNOST_RAZLIKE"]);
+        /* boja ćelije Razlika (jednako / višak / manjak) i bijele ćelije za unos (Popisano, Napomena):
+           kolone se nalaze po naslovu u zaglavlju tabele, klase se dodaju ćelijama poslije svakog
+           iscrtavanja redova (MutationObserver) */
+        var unos = $v(p + "_IZMJENJIV") === "Y", tajmer = null, boji;
+        boji = function () {
+            var $hdr = g.view$.find(".a-GridView-hdr table"), $body = g.view$.find(".a-GridView-body table");
+            $hdr.each(function (i) {
+                var raz = -1, ul = [], $b = $body.eq(i);
+                $(this).find("tr").last().children("th").each(function (j) {
+                    var t = $.trim($(this).text());
+                    if (t.indexOf("Razlika") === 0) { raz = j; }
+                    if (unos && (t.indexOf("Popisano") === 0 || t.indexOf("Napomena") === 0)) { ul.push(j); }
+                });
+                if (raz < 0 && !ul.length) { return; }
+                $b.find("tbody > tr").each(function () {
+                    var $td = $(this).children("td"), $r, v;
+                    if (raz >= 0) {
+                        $r = $td.eq(raz);
+                        v = $.trim($r.text());
+                        $r.removeClass("fin-raz--ok fin-raz--visak fin-raz--manjak");
+                        if (v !== "") {
+                            $r.addClass(I.num(v) > 0 ? "fin-raz--visak" : (I.num(v) < 0 ? "fin-raz--manjak" : "fin-raz--ok"));
+                        }
+                    }
+                    ul.forEach(function (j) { $td.eq(j).addClass("fin-unos"); });
+                });
+            });
+        };
+        function planirajBoje() {
+            if (tajmer) { clearTimeout(tajmer); }
+            tajmer = setTimeout(function () { tajmer = null; boji(); }, 30);
+        }
+        if (window.MutationObserver && g.view$.find(".a-GridView-body").length) {
+            new MutationObserver(planirajBoje).observe(g.view$.find(".a-GridView-body")[0],
+                { childList: true, subtree: true, characterData: true });
+        }
+        planirajBoje();
+
+        function racun(rec) {
+            var pop = model.getValue(rec, "POPISANO"), raz;
+            if (prazno(pop)) {
+                I.postavi(model, rec, "RAZLIKA", "");
+                I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", "");
+                I.postavi(model, rec, "RAZLIKA_KLASA", "fin-raz");
+                return;
+            }
+            raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
+            raz = Math.round(raz * 1000000) / 1000000;
+            I.postavi(model, rec, "RAZLIKA_KLASA", "fin-raz " + (raz > 0 ? "fin-raz--visak" : (raz < 0 ? "fin-raz--manjak" : "fin-raz--ok")));
+            I.postavi(model, rec, "RAZLIKA", fq(raz));
+            I.postavi(model, rec, "VRIJEDNOST_RAZLIKE", I.fmt(I.r2(raz * I.num(model.getValue(rec, "CIJENA")))));
+        }
+        function sazetak() {
+            var n = 0, np = 0, v = 0, m = 0;
+            model.forEach(function (rec, idx, id) {
+                var meta = model.getRecordMetadata(id), pop, raz;
+                if (meta && meta.deleted) { return; }
+                n++;
+                pop = model.getValue(rec, "POPISANO");
+                if (prazno(pop)) { np++; return; }
+                raz = I.num(pop) - I.num(model.getValue(rec, "KNJIGOVODSTVENO"));
+                if (raz > 0.0000001) { v++; }
+                if (raz < -0.0000001) { m++; }
+            });
+            $z.find("[data-s=n]").text(n);
+            $z.find("[data-s=np]").text(np);
+            $z.find("[data-s=v]").text(v);
+            $z.find("[data-s=m]").text(m);
+            $z.find("[data-s=np]").closest(".fin-chip").toggleClass("is-nula", np === 0);
+        }
+        model.subscribe({
+            onChange: function (type, change) {
+                var rec, art;
+                if (type === "insert" && change && change.record) {
+                    I.postavi(model, change.record, "UNOS_KLASA", "fin-unos");
+                    I.postavi(model, change.record, "RAZLIKA_KLASA", "fin-raz");
+                }
+                if (type === "set" && change) {
+                    rec = change.record;
+                    if (change.field === "STAVKA_ID") {
+                        art = I.val(model.getValue(rec, "STAVKA_ID"));
+                        if (!art) { return; }
+                        apex.server.process("ARTIKL_POPIS", { x01: art, pageItems: "#" + p + "_ID" }, { dataType: "json" })
+                            .done(function (d) {
+                                I.postavi(model, rec, "JM_NAZIV", d.jm || "");
+                                I.postavi(model, rec, "KNJIGOVODSTVENO", fq(d.knj || 0));
+                                I.postavi(model, rec, "CIJENA", fc(d.c || 0));
+                                racun(rec);
+                                sazetak();
+                            });
+                    } else if (change.field === "POPISANO") {
+                        if (!prazno(model.getValue(rec, "POPISANO")) && I.num(model.getValue(rec, "POPISANO")) < 0) {
+                            I.greska("Popisana količina ne može biti negativna.");
+                        }
+                        racun(rec);
+                    }
+                }
+                if (type === "set" || type === "delete" || type === "insert" || type === "revert" ||
+                    type === "refresh" || type === "addData") { sazetak(); }
+            }
+        });
+        sazetak();
+        function sirine() { try { g.view$.grid("resize"); } catch (e) { /* ništa */ } }
+        setTimeout(sirine, 150);
+        setTimeout(sirine, 600);
+        $(window).on("load apexwindowresized", sirine);
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Novi popis skladišta (str. 366): izbor jednog, više ili svih skladišta
+   (kvačice u tabeli) -> skriveno polje <P>_SKLADISTA (":12:15:").
+   Skladišta koja se ne mogu popisati (nema stanja, otvoren / kasniji popis) su onemogućena.
+   Promjena datuma osvježava tabelu; izbor se čuva.
+   Poziv: finRmPopisNovi.init('P366', 'rm_popis_skladista') ili, za popis sitnog inventara,
+   finRmPopisNovi.init('P369', 'rm_popis_radnici', 'P369_RADNICI')
+   ===================================================================== */
+window.finRmPopisNovi = (function ($) {
+    "use strict";
+    function init(p, regionId, itemName) {
+        var izabrano = {}, item = itemName || (p + "_SKLADISTA"), filter = "";
+        String($v(item) || "").split(":").forEach(function (x) { if (x) { izabrano[x] = true; } });
+        function upisi() {
+            var ids = Object.keys(izabrano).filter(function (k) { return izabrano[k]; }), n;
+            $s(item, ids.length ? ":" + ids.join(":") + ":" : "");
+            n = ids.length;
+            $("#fin_popis_izabrano").text(n ? "izabrano: " + n : "");
+        }
+        /* pretraga: sakriva redove koji ne sadrže tekst (šifra, naziv, napomena) */
+        function filtriraj() {
+            $("#" + regionId + " .fin-popis-chk").each(function () {
+                var $tr = $(this).closest("tr");
+                $tr.toggle(!filter || $tr.text().toLowerCase().indexOf(filter) >= 0);
+            });
+        }
+        function primijeni() {
+            var $r = $("#" + regionId), sve = true, ima = false;
+            filtriraj();
+            $r.find(".fin-popis-chk").each(function () {
+                var $c = $(this);
+                if ($c.prop("disabled")) { delete izabrano[$c.val()]; $c.closest("tr").addClass("is-onemoguceno"); return; }
+                if (!$c.closest("tr").is(":visible")) { return; }
+                ima = true;
+                $c.prop("checked", !!izabrano[$c.val()]);
+                $c.closest("tr").toggleClass("is-izabran", !!izabrano[$c.val()]);
+                if (!izabrano[$c.val()]) { sve = false; }
+            });
+            $(".fin-popis-sva").prop("checked", ima && sve).prop("disabled", !ima);
+            upisi();
+        }
+        $(document).on("change", "#" + regionId + " .fin-popis-chk", function () {
+            izabrano[$(this).val()] = $(this).prop("checked");
+            primijeni();
+        });
+        /* klik bilo gdje u redu mijenja izbor */
+        $(document).on("click", "#" + regionId + " td", function (e) {
+            var $c;
+            if ($(e.target).is("input, a")) { return; }
+            $c = $(this).closest("tr").find(".fin-popis-chk");
+            if ($c.length && !$c.prop("disabled")) { $c.prop("checked", !$c.prop("checked")).trigger("change"); }
+        });
+        /* "sva": označava / skida sva vidljiva (filtrirana) skladišta koja se mogu popisati */
+        $(document).on("change", ".fin-popis-sva", function () {
+            var da = $(this).prop("checked");
+            $("#" + regionId + " .fin-popis-chk").each(function () {
+                if (!$(this).prop("disabled") && $(this).closest("tr").is(":visible")) { izabrano[$(this).val()] = da; }
+            });
+            primijeni();
+        });
+        $(document).on("input", ".fin-popis-trazi", function () {
+            filter = $.trim($(this).val()).toLowerCase();
+            primijeni();
+        });
+        /* Enter u pretrazi ne šalje formu */
+        $(document).on("keydown", ".fin-popis-trazi", function (e) { if (e.which === 13) { e.preventDefault(); } });
+        $("#" + regionId).on("apexafterrefresh", primijeni);
+        primijeni();
+    }
+    return { init: init };
+})(apex.jQuery);
+
+/* =====================================================================
+   Zatvaranje modalnog dijaloga (X, Esc ili zatvaranje iz procesa):
+   osvježavaju se izvještaji i tabele stranice koja je otvorila dijalog.
+   Regioni koje je stranica već sama osvježila (svoj dinamički događaj)
+   preskaču se; tabela sa nesnimljenim izmjenama se ne osvježava.
+   Radi na svim stranicama, bez podešavanja.
+   ===================================================================== */
+window.finDijalogOsvjezi = (function ($) {
+    "use strict";
+    var zadnje = {}, ceka = false, tip = /grid|report|cards|map|chart|tree/i;
+    function izmjene(r) {
+        var v;
+        try {
+            v = r.widget().interactiveGrid("getViews", "grid");
+            return !!(v && v.model && v.model.isChanged());
+        } catch (e) { return false; }
+    }
+    function osvjezi() {
+        var sad = Date.now();
+        $("[id]").each(function () {
+            var id = this.id, r, t;
+            if (!id || (zadnje[id] && sad - zadnje[id] < 1000) || !apex.region.isRegion || !apex.region.isRegion(id)) { return; }
+            r = apex.region(id);
+            t = String((r && r.type) || "");
+            if (!r || !tip.test(t) || /facet|smartfilter/i.test(t)) { return; }
+            if (/grid/i.test(t) && izmjene(r)) { return; }
+            try { r.refresh(); } catch (e) { /* ništa */ }
+        });
+    }
+    /* region koji je stranica upravo sama osvježila ne osvježava se ponovo */
+    $(document).on("apexbeforerefresh", function (e) {
+        if (e.target && e.target.id) { zadnje[e.target.id] = Date.now(); }
+    });
+    $(window).on("apexafterclosedialog apexafterclosecanceldialog", function () {
+        if (ceka) { return; }
+        ceka = true;
+        setTimeout(function () { ceka = false; osvjezi(); }, 80);
+    });
+    return { osvjezi: osvjezi };
 })(apex.jQuery);

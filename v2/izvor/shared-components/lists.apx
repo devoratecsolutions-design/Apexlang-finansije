@@ -197,7 +197,10 @@ list menu-dokumenti-ulaz (
                 vd.ooj_id = :APP_OOJ_ID
                 AND vd.valid = 'Y'
                 AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y'
+                AND rm_dokument_pkg.je_inventura(vd.sifra) = 'N'
             ORDER BY
+                CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END,
                 vd.naziv
             ```
     }
@@ -315,7 +318,6 @@ list menu-robno-materijalno-izvještaji (
         }
         layout {
             sequence: 10
-            subentriesList: @navigation-menu-materijalno-izvještaji
         }
         link {
             target: {
@@ -1059,7 +1061,7 @@ list navigation-menu (
     )
 
     entry klijenti (
-        label: Klijenti
+        label: Poslovni partneri
         icon {
             imageIconCssClasses: fa-users
         }
@@ -3056,7 +3058,7 @@ list navigation-menu-materijal-oprema (
     )
 
     entry popis (
-        label: Popis
+        label: Popis zaliha
         icon {
             imageIconCssClasses: fa-list-ol
         }
@@ -3066,16 +3068,46 @@ list navigation-menu-materijal-oprema (
         isCurrent {
             type: pages
             pages: [
-                360
-                361
-                362
-                363
+                364
+                365
+                366
             ]
         }
         link {
             target: {
                 type: url
-                url: javascript:finRm.idi('MAT', 360);
+                url: javascript:finRm.idi('MAT', 364);
+            }
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :A_RM_MODUL = 'MAT'
+        }
+        security {
+            authorizationScheme: @robno-materijalno-popis
+        }
+    )
+
+    entry popis-sitnog-inventara (
+        label: Popis sitnog inventara u upotrebi
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 41
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                367
+                368
+                369
+            ]
+        }
+        link {
+            target: {
+                type: url
+                url: javascript:finRm.idi('MAT', 367);
             }
         }
         serverSideCondition {
@@ -3126,7 +3158,6 @@ list navigation-menu-materijal-oprema (
         }
         layout {
             sequence: 60
-            subentriesList: @navigation-menu-materijalno-izvještaji
         }
         isCurrent {
             type: pages
@@ -3777,7 +3808,7 @@ list dashboard-moduli-poslovanje (
     )
 
     entry klijenti (
-        label: Klijenti
+        label: Poslovni partneri
         icon {
             imageIconCssClasses: fa-users
         }

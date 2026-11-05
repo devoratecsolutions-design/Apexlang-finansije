@@ -11,6 +11,12 @@ page 330 (
         cursorFocus: doNotFocusCursor
         warnOnUnsavedChanges: false
     }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript-browser
+            finRmVrsta.init('P330_NOVA_VRSTA', 'dokumenti_report');
+            ```
+    }
     security {
         authorizationScheme: @robno-materijalno-dokumenti
         pageAccessProtection: argumentsMustHaveChecksum
@@ -68,30 +74,24 @@ page 330 (
         }
     )
 
-    region menu-dokumenti-novi (
-        name: Menu - Dokumenti - Novi
-        type: list
-        source {
-            list: @menu-dokumenti-ulaz
-        }
+    region vrsta-izbor (
+        name: Izbor vrste dokumenta
+        type: staticContent
         layout {
-            sequence: 50
+            sequence: 4
             slot: body
         }
         appearance {
             template: @blank-with-attributes
             templateOptions: #DEFAULT#
+            cssClasses: fin-vrsta-izbor
         }
         advanced {
-            htmlDomId: novi
+            htmlDomId: fin_vrsta_izbor
         }
-        componentAppearance {
-            listTemplate: @menu-popup
-            templateOptions: [
-                #DEFAULT#
-                js-addActions
-                js-menu-callout
-            ]
+        serverSideCondition {
+            type: itemIsNotNull
+            item: A_SKLADISTE_ID
         }
     )
 
@@ -236,28 +236,31 @@ page 330 (
                     otpremnica_broj,
                     to_char(otpremnica_datum, 'DD.MM.YYYY') AS otpremnica_datum,
                     stavki,
-                    to_char(kolicina, 'FM999G999G999G990D999') AS kolicina,
+                    rtrim(to_char(kolicina, 'FM999G999G999G990D999999'), '.,') AS kolicina,
+                    to_char(iznos, 'FM999G999G999G990D00') AS iznos,
                     sb_nedostaje,
                     kalkulacija_naziv,
+                    ugovor_naziv,
                     opis,
                     vrsta_sifra,
                     status,
                     klijent_id,
                     CASE
-                        WHEN stornirano = 'Y' THEN 'storno'
+                        WHEN stornirano = 'Y' OR storniran_id IS NOT NULL THEN 'storno'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'proknjizena'
                         WHEN status = 'Z' THEN 'zakljucena'
                         ELSE 'priprema'
                     END AS dok_status,
                     CASE
                         WHEN stornirano = 'Y' THEN 'Storniran'
+                        WHEN storniran_id IS NOT NULL THEN 'Storno'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'Proknjižen'
                         WHEN status = 'Z' THEN 'Zaključen'
                         WHEN u_kalkulaciji_id IS NOT NULL THEN 'U kalkulaciji'
                         ELSE 'U pripremi'
                     END AS dok_status_naziv,
                     CASE
-                        WHEN stornirano = 'Y' THEN 'fa-ban'
+                        WHEN stornirano = 'Y' OR storniran_id IS NOT NULL THEN 'fa-ban'
                         WHEN glavna_knjiga_id IS NOT NULL THEN 'fa-book'
                         WHEN status = 'Z' THEN 'fa-lock'
                         WHEN u_kalkulaciji_id IS NOT NULL THEN 'fa-calculator'
@@ -267,16 +270,37 @@ page 330 (
                     CASE
                         WHEN v2 = 'Y' THEN apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => id, p_clear_cache => 331)
                         ELSE apex_page.get_url(p_page => 332, p_items => 'P332_ID', p_values => id)
-                    END AS url
+                    END AS url,
+                    mjesto_troska_naziv,
+                    TRIM(CASE vrsta_sifra
+                        WHEN 'MPR' THEN 'na skladište ' || skladiste_prenos_naziv
+                                        || CASE WHEN preuzeto_naziv IS NOT NULL THEN ' · preuzeto ' || preuzeto_naziv
+                                                WHEN status = 'Z' THEN ' · čeka prijem' END
+                        WHEN 'MPP' THEN 'sa skladišta ' || skladiste_prenos_naziv || ' · prenos ' || veza_naziv
+                        WHEN 'PSI' THEN 'prezaduženje sa ' || nvl(zaduzeni_radnik_naziv, '?') || ' na ' || nvl(radnik_prenos_naziv, '?')
+                        WHEN 'RSR' THEN 'razduženje radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'RUM' THEN 'manjak kod radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'RUV' THEN 'višak kod radnika ' || zaduzeni_radnik_naziv
+                        WHEN 'REVP' THEN 'povrat od radnika ' || zaduzeni_radnik_naziv
+                    END
+                    || CASE WHEN storniran_id IS NOT NULL THEN ' storno dokumenta ' || storniran_naziv
+                            WHEN storno_naziv IS NOT NULL THEN ' storniran dokumentom ' || storno_naziv END) AS prenos_info,
+                    CASE WHEN vrsta_sifra IN ('PSI', 'RSR', 'RUM', 'RUV', 'REVP') THEN NULL ELSE zaduzeni_radnik_naziv END AS zaduzeni_radnik_naziv,
+                    -- gramatika: 1 stavka, 2-4 stavke, 5+ stavki (21 stavka, 22 stavke, 11-14 stavki)
+                    CASE WHEN mod(stavki, 10) = 1 AND mod(stavki, 100) <> 11 THEN 'stavka'
+                         WHEN mod(stavki, 10) BETWEEN 2 AND 4 AND mod(stavki, 100) NOT BETWEEN 12 AND 14 THEN 'stavke'
+                         ELSE 'stavki' END AS stavki_rijec
                 FROM
                     vw_rm_dokumenti
                 WHERE
                     ooj_id = :APP_OOJ_ID
                     AND godina = :APP_GODINA
                     AND skladiste_id = :A_SKLADISTE_ID
+                    AND (nvl(:P330_NOVA_VRSTA, '0') = '0' OR vrsta_dokumenta_id = to_number(:P330_NOVA_VRSTA))
                 ORDER BY
                     datum DESC, id DESC
                 ```
+            pageItemsToSubmit: P330_NOVA_VRSTA
         }
         layout {
             sequence: 10
@@ -311,7 +335,10 @@ page 330 (
             maxRowsToProcess: 1000
         }
         messages {
-            whenNoDataFound: Nema dokumenata za izabrane filtere.
+            whenNoDataFound: Nema dokumenata izabrane vrste za izabrane filtere.
+        }
+        advanced {
+            htmlDomId: dokumenti_report
         }
 
         column ID (
@@ -390,7 +417,7 @@ page 330 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}
+                    #KLIJENT_NAZIV#{if OTPREMNICA_BROJ/}<span class="fin-sub">otpremnica #OTPREMNICA_BROJ#{if OTPREMNICA_DATUM/} od #OTPREMNICA_DATUM#{endif/}</span>{endif/}{if UGOVOR_NAZIV/}<span class="fin-sub"><span class="fa fa-file-text-o" aria-hidden="true"></span> ugovor #UGOVOR_NAZIV#</span>{endif/}{if KALKULACIJA_NAZIV/}<span class="fin-sub">kalkulacija #KALKULACIJA_NAZIV#</span>{endif/}{if MJESTO_TROSKA_NAZIV/}<span class="fin-sub">mjesto troška #MJESTO_TROSKA_NAZIV#</span>{endif/}{if ZADUZENI_RADNIK_NAZIV/}<span class="fin-sub">zadužen #ZADUZENI_RADNIK_NAZIV#</span>{endif/}{if PRENOS_INFO/}<span class="fin-sub"><span class="fa fa-exchange" aria-hidden="true"></span> #PRENOS_INFO#</span>{endif/}
                     ```
             }
             sorting {
@@ -419,23 +446,9 @@ page 330 (
         column STAVKI (
             reportColumnQueryId: 8
             derivedColumn: N
-            heading {
-                heading: Stavki
-                alignment: end
-            }
+            type: hidden
             layout {
-                sequence: 40
-                columnAlignment: end
-            }
-            columnFormatting {
-                cssClasses: fin-num
-                htmlExpression:
-                    ```html
-                    #STAVKI#<span class="fin-num-sub">kol. #KOLICINA#</span>
-                    ```
-            }
-            sorting {
-                sortable: false
+                sequence: 380
             }
         )
 
@@ -448,16 +461,30 @@ page 330 (
             }
         )
 
-        column SB_NEDOSTAJE (
+        column IZNOS (
             reportColumnQueryId: 10
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Iznos
+                alignment: end
+            }
             layout {
-                sequence: 400
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num fin-num--strong
+                htmlExpression:
+                    ```html
+                    #IZNOS#<span class="fin-num-sub">#STAVKI# #STAVKI_RIJEC# · kol. #KOLICINA#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column KALKULACIJA_NAZIV (
+        column SB_NEDOSTAJE (
             reportColumnQueryId: 11
             derivedColumn: N
             type: hidden
@@ -466,21 +493,16 @@ page 330 (
             }
         )
 
-        column OPIS (
+        column KALKULACIJA_NAZIV (
             reportColumnQueryId: 12
             derivedColumn: N
-            heading {
-                heading: Opis
-            }
+            type: hidden
             layout {
-                sequence: 60
-            }
-            sorting {
-                sortable: false
+                sequence: 420
             }
         )
 
-        column VRSTA_SIFRA (
+        column UGOVOR_NAZIV (
             reportColumnQueryId: 13
             derivedColumn: N
             type: hidden
@@ -489,16 +511,21 @@ page 330 (
             }
         )
 
-        column STATUS (
+        column OPIS (
             reportColumnQueryId: 14
             derivedColumn: N
-            type: hidden
+            heading {
+                heading: Opis
+            }
             layout {
-                sequence: 440
+                sequence: 35
+            }
+            sorting {
+                sortable: false
             }
         )
 
-        column KLIJENT_ID (
+        column VRSTA_SIFRA (
             reportColumnQueryId: 15
             derivedColumn: N
             type: hidden
@@ -507,7 +534,7 @@ page 330 (
             }
         )
 
-        column DOK_STATUS (
+        column STATUS (
             reportColumnQueryId: 16
             derivedColumn: N
             type: hidden
@@ -516,8 +543,26 @@ page 330 (
             }
         )
 
-        column DOK_STATUS_NAZIV (
+        column KLIJENT_ID (
             reportColumnQueryId: 17
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 470
+            }
+        )
+
+        column DOK_STATUS (
+            reportColumnQueryId: 18
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 480
+            }
+        )
+
+        column DOK_STATUS_NAZIV (
+            reportColumnQueryId: 19
             derivedColumn: N
             heading {
                 heading: Status
@@ -537,24 +582,6 @@ page 330 (
         )
 
         column DOK_STATUS_IKONA (
-            reportColumnQueryId: 18
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 480
-            }
-        )
-
-        column SB_UPOZORENJE (
-            reportColumnQueryId: 19
-            derivedColumn: N
-            type: hidden
-            layout {
-                sequence: 490
-            }
-        )
-
-        column URL (
             reportColumnQueryId: 20
             derivedColumn: N
             type: hidden
@@ -563,6 +590,98 @@ page 330 (
             }
         )
 
+        column SB_UPOZORENJE (
+            reportColumnQueryId: 21
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 510
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 22
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 520
+            }
+        )
+
+        column MJESTO_TROSKA_NAZIV (
+            reportColumnQueryId: 23
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 530
+            }
+        )
+
+        column PRENOS_INFO (
+            reportColumnQueryId: 24
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 540
+            }
+        )
+
+        column ZADUZENI_RADNIK_NAZIV (
+            reportColumnQueryId: 25
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 550
+            }
+        )
+
+        column STAVKI_RIJEC (
+            reportColumnQueryId: 26
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 560
+            }
+        )
+
+    )
+
+    pageItem P330_NOVA_VRSTA (
+        type: selectList
+        label {
+            label: Vrsta dokumenta
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT d, r
+                FROM (
+                    SELECT '— sve vrste —' AS d, 0 AS r, 0 AS red, null AS naziv FROM dual
+                    UNION ALL
+                    SELECT vd.naziv, vd.id,
+                           CASE WHEN rm_dokument_pkg.tip_kretanja(vd.sifra) = 'U' THEN 1 ELSE 2 END, vd.naziv
+                    FROM sif.vrste_dokumenata vd
+                    JOIN sif.acc_moduli m ON m.id = vd.acc_modul_id AND upper(m.sifra) = 'MAT'
+                    WHERE vd.ooj_id = :APP_OOJ_ID
+                      AND vd.valid = 'Y'
+                      AND rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                      AND rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y')
+                ORDER BY red, naziv
+                ```
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @vrsta-izbor
+            slot: regionBody
+        }
+        appearance {
+            template: @optional
+            templateOptions: #DEFAULT#
+        }
     )
 
     pageItem P330_SKLADISTE (
@@ -625,7 +744,7 @@ page 330 (
             action: definedByDynamicAction
         }
         advanced {
-            customAttributes: data-menu="novi_menu"
+            customAttributes: data-novi-dokument="Y"
         }
         serverSideCondition {
             type: itemIsNotNull
@@ -680,6 +799,62 @@ page 330 (
                 ```sql
                 SELECT sifra || ' - ' || naziv FROM skladista WHERE id = :A_SKLADISTE_ID
                 ```
+        }
+    )
+
+    process vrsta-podrazumijevana (
+        name: Vrsta dokumenta - podrazumijevana
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- izabrana vrsta mora pripadati firmi i modulu; inače prva po redu (ulazi pa izlazi)
+                if :P330_NOVA_VRSTA = '0' then
+                    return;                                   -- sve vrste
+                end if;
+                if :P330_NOVA_VRSTA is not null then
+                    for v in (select 1 from sif.vrste_dokumenata vd
+                               where vd.id = to_number(:P330_NOVA_VRSTA) and vd.ooj_id = :APP_OOJ_ID and vd.valid = 'Y'
+                                 and rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y') loop
+                        return;
+                    end loop;
+                end if;
+                select max(id) keep (dense_rank first order by case when rm_dokument_pkg.tip_kretanja(sifra) = 'U' then 1 else 2 end, naziv)
+                  into :P330_NOVA_VRSTA
+                  from sif.vrste_dokumenata vd
+                 where vd.ooj_id = :APP_OOJ_ID
+                   and vd.valid = 'Y'
+                   and vd.acc_modul_id = (select id from sif.acc_moduli where upper(sifra) = 'MAT')
+                   and rm_dokument_pkg.podrzana(vd.sifra) = 'Y'
+                   and rm_dokument_pkg.u_modulu(vd.sifra, nvl(:A_RM_MODUL, 'ROB')) = 'Y';
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process ajax-novi-url (
+        name: NOVI_DOKUMENT_URL
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- razlika inventure (RIV / RIM) nastaje samo zaključavanjem popisa skladišta
+                if rm_dokument_pkg.je_inventura(rm_dokument_pkg.vrsta_sifra(to_number(apex_application.g_x01))) = 'Y' then
+                    sys.htp.p('ERR:Dokument razlike inventure nastaje samo zaključavanjem popisa skladišta (meni Popis skladišta).');
+                else
+                    sys.htp.p(apex_page.get_url(p_page        => 331,
+                                                p_items       => 'P331_VRSTA_DOKUMENTA_ID',
+                                                p_values      => to_number(apex_application.g_x01),
+                                                p_clear_cache => 331));
+                end if;
+                ```
+        }
+        execution {
+            sequence: 20
+            point: ajaxCallback
         }
     )
 

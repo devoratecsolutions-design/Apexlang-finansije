@@ -63,3 +63,23 @@ Skripte 01–04 u ovom folderu su iste kao one pokrenute na DEV-u. Ako se do mig
 ## DDL trigger LOKI
 
 Na DEV-u je `ACCOUNTING.LOKI_BEFORE_DDL_TGR` pri prvom pokretanju skripte 08 zaustavio `comment on table` nad tek napravljenom tabelom (ORA-04088, LOKI_LOCK: no data found). Ako na produkciji postoji isti trigger, novi objekti moraju prvo biti registrovani u LOKI-ju (kao na DEV-u), pa se skripta pokreće ponovo. Skripte 08–10 se mogu pokretati više puta.
+
+## Materijal i oprema / zalihe – skripte 11–20 (koraci R10–R19)
+
+Pokreću se **poslije** skripti 00–10, redom, pa se tek onda importuje aplikacija:
+
+| Redoslijed | Fajl | Šema | Šta radi |
+|---|---|---|---|
+| 1 | `16_rm_vrste_izlaz.sql` | **SIF** | nove vrste dokumenata skladišta (IZD, IIN, IOS, ISI, MPR, MPP, REV, REVP, RSV, RSVP, RAS, RIV, RIM, PSI, RSZ, RSR, RUM, RUV, FDK, ZSA; ranija VSR se deaktivira) za svaku firmu sa PRI |
+| 2 | `18_core_error_manager.sql` | **CORE** | poruke grešaka u aplikaciji (poslovne sa stvarnim razlogom, sistemske prema vrsti greške + referentni broj); mijenja samo `F_APEX_ERROR_HANDLER` |
+| 3 | `11_rm_model.sql` | ACCOUNTING | kolone i indeksi dokumenata skladišta, kalkulacije i popisa (OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA / OPIS / SERIJSKI_BROJ, OPERACIJE.RADNIK_PRENOS_ID, POPISI.VRSTA / RADNIK_ID, OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID / SMJER / IZVOR_STAVKA_ID), brojači novih vrsta |
+| 4 | `12_rm_pkg.sql` | ACCOUNTING | RM_DOKUMENT_PKG (dokumenti, zaključavanje, prenosi, reversi, serijski brojevi, storniranje, rashod, razlike inventure, zabrana datuma prije popisa) |
+| 5 | `13_rm_views.sql` | ACCOUNTING | view-ovi dokumenata skladišta |
+| 6 | `14_rm_skladista.sql` | ACCOUNTING | RM_SKLADISTE_PKG i view-ovi skladišta |
+| 7 | `15_rm_kalkulacija.sql` | ACCOUNTING | kolone kalkulacije, RM_KALKULACIJA_PKG i view-ovi kalkulacije |
+| 8 | `10_kuf_pkg.sql` | ACCOUNTING | KUF_PKG (provjera brisanja fakture u kalkulaciji) – ako nije već pokrenut |
+| 9 | `17_rm_izvjestaji.sql` | ACCOUNTING | view-ovi izvještaja (VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU) |
+| 10 | `19_rm_popis.sql` | ACCOUNTING | popis zaliha i popis sitnog inventara u upotrebi: RM_POPIS_PKG, VW_RM_POPISI, VW_RM_POPIS_STAVKE, VW_RM_POPIS_DOKUMENTI, brojač POP (ako firma ima vrstu POP) |
+| 11 | `20_partneri_konta.sql` | ACCOUNTING | konta poslovnog partnera: SEC_KLIJENT_KONTA.PODRAZUMIJEVANO, jedinstveno konto po partneru, paket SEC_PARTNER_PKG; konto sa zaglavlja partnera prelazi u listu konta, u svakoj kontnoj grupi jedno podrazumijevano |
+
+**`18_core_error_manager.sql` mijenja postojeći paket u šemi CORE** koji koriste sve aplikacije. Tijelo paketa je preuzeto iz `ddl/core_ddl.sql`; prije pokretanja na produkciji uporediti tijelo `CORE.ERROR_MANAGER` u bazi sa tim DDL-om (npr. `select count(*), sum(ora_hash(text)) from all_source where owner = 'CORE' and name = 'ERROR_MANAGER' and type = 'PACKAGE BODY'` na obje baze) i sačuvati izvor iz baze. Ako se razlikuje – poslati izvor sa produkcije, pa se izmjena funkcije prenosi na tu verziju. Vraćanje: `18_core_error_manager_vracanje.sql`.

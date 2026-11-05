@@ -1,6 +1,38 @@
 breadcrumb breadcrumb (
     name: Breadcrumb
 
+    entry kalkulacija (
+        name: &P341_NAZIV.
+        pageNumber: 341
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @kalkulacije-robe
+        }
+        link {
+            target: {
+                page: 341
+            }
+        }
+    )
+
+    entry stanje-skladista (
+        name: Stanje skladišta
+        pageNumber: 313
+        execution {
+            sequence: 10
+        }
+        appearance {
+            parentEntry: @skladišta
+        }
+        link {
+            target: {
+                page: 313
+            }
+        }
+    )
+
     entry administracija (
         name: Administracija
         pageNumber: 10000
@@ -385,8 +417,40 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry popisi-si (
+        name: Popis sitnog inventara u upotrebi
+        pageNumber: 367
+        execution {
+            sequence: 16
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 367
+            }
+        }
+    )
+
+    entry popisi-skladista (
+        name: Popis zaliha
+        pageNumber: 364
+        execution {
+            sequence: 15
+        }
+        appearance {
+            parentEntry: @robno-materijalno
+        }
+        link {
+            target: {
+                page: 364
+            }
+        }
+    )
+
     entry kalkulacije-robe (
-        name: Kalkulacije robe
+        name: Kalkulacije
         pageNumber: 340
         execution {
             sequence: 10
@@ -434,7 +498,7 @@ breadcrumb breadcrumb (
     )
 
     entry klijenti (
-        name: Klijenti
+        name: Poslovni partneri
         pageNumber: 10
         execution {
             sequence: 90
@@ -879,7 +943,7 @@ breadcrumb breadcrumb (
     )
 
     entry robno-materijalno (
-        name: Robno - materijalno
+        name: &A_RM_NAZIV.
         pageNumber: 300
         execution {
             sequence: 10

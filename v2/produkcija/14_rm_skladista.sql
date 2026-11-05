@@ -176,10 +176,12 @@ select o.ooj_id,
   left join sif.acc_tipovi_stavki ts on ts.id = s.tip_stavke_id
   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
-  cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+  cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                       nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                  from dual) k
  where nvl(o.stornirano, 'N') = 'N'
+   and o.storniran_id is null
+   and nvl(k.tk, '-') <> 'Z'            -- R18: dokumenti zaduženja sitnog inventara ne mijenjaju stanje skladišta
  group by o.ooj_id, o.skladiste_id, os.stavka_id, s.sifra, s.naziv, jm.naziv, g.naziv, ts.naziv, s.serijski_broj;
 
 -- skladišta kojima korisnik ima pristup, sa modulom (ROB = Zalihe robe, MAT = Materijal i oprema)
@@ -318,7 +320,7 @@ create or replace package body rm_skladiste_pkg as
         l_n number;
     begin
         if ima_dokumenata(p_id) = 'Y' then
-            return 'Skladište ima dokumente (ulaz, izlaz, trebovanje, popis ili fakturu) i ne može se obrisati. Možete ga deaktivirati ako nema robe na stanju.';
+            return 'Skladište ima dokumente (ulaz, izlaz, trebovanje, popis ili fakturu) i ne može se obrisati. Možete ga deaktivirati ako nema artikala na stanju.';
         end if;
         select count(*) into l_n from skladista where nadredjeno_id = p_id;
         if l_n > 0 then
@@ -407,7 +409,7 @@ create or replace package body rm_skladiste_pkg as
                 end loop;
             end if;
             if nvl(p_valid, 'Y') = 'N' and ima_stanja(p_id) = 'Y' then
-                return 'Skladište ima robu na stanju i ne može se deaktivirati.';
+                return 'Skladište ima artikle na stanju i ne može se deaktivirati.';
             end if;
         end if;
         return null;

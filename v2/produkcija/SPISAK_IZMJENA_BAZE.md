@@ -68,3 +68,22 @@ Na produkciji moraju postojati sa **istim parametrima** (imena i redoslijed).
 2. Izmjene iz `*_izmjene.diff` prenosim na verziju sa produkcije, pa za produkciju dobijate posebnu skriptu (npr. `04_stavke_prod.sql`).
 3. Na produkciji pokrenite `00_provjera_prije.sql`. Skripta poredi otisak paketa i prava, a provjerava i da postoje tabele i kolone koje novi objekti koriste.
 4. Aplikacija: ako je aplikacija 290 na produkciji mijenjana poslije exporta koji smo koristili, pošaljite i njen export. Te izmjene treba prenijeti u v2 prije importa, jer import zamjenjuje cijelu aplikaciju.
+
+## 5. Materijal i oprema / zalihe, poslovni partneri (koraci R10–R19, skripte 11–20)
+
+| Skripta | Objekat | Vrsta izmjene |
+|---|---|---|
+| 11_rm_model.sql | OPERACIJE (MJESTO_TROSKA_ID, ZADUZENI_RADNIK_ID, POPIS_ID, RADNIK_PRENOS_ID), POPISI (VRSTA, RADNIK_ID), POPIS_STAVKE (CIJENA, OPIS, SERIJSKI_BROJ), OPERACIJA_STAVKE (ZAMJENA_STAVKA_ID, SMJER + check, IZVOR_STAVKA_ID + indeks; R21), indeksi, brojači novih vrsta u CORE.PROTOKOLI | nove kolone / indeksi / podaci brojača |
+| 12_rm_pkg.sql | paket RM_DOKUMENT_PKG | novi objekat (v2) |
+| 13_rm_views.sql | VW_RM_ARTIKLI, VW_RM_DOKUMENTI, VW_RM_DOKUMENT_STAVKE, VW_RM_SB, VW_RM_SB_STANJE, VW_RM_PRENOSI_CEKANJE, VW_RM_REVERS_PREOSTALO, VW_RM_SI_ZADUZENJA, VW_RM_SI_PROMET | novi objekti |
+| 14_rm_skladista.sql | paket RM_SKLADISTE_PKG, VW_RM_SKLADISTE_STANJE, VW_RM_KORISNIK_SKLADISTA, VW_RM_SKLADISTA | novi objekti |
+| 15_rm_kalkulacija.sql | kolone KALKULACIJA_RASPODJELA.CIJENA, KALKULACIJA_TROSKOVI.KUF_ID / SA_PDV; paket RM_KALKULACIJA_PKG, VW_RM_KALKULACIJE, VW_RM_KALK_FAKTURE, VW_RM_KALKULACIJA_STAVKE, VW_RM_KALKULACIJA_IZVORI, VW_RM_KALKULACIJA_RASPODJELA | novi objekti |
+| 16_rm_vrste_izlaz.sql (SIF) | SIF.VRSTE_DOKUMENATA | podaci: nove vrste po firmi (R17: RAS, RIV, RIM; R18: PSI, RSZ, RSR; R19: RUM, RUV – VSR iz R18 se deaktivira; R21: FDK, ZSA) |
+| 17_rm_izvjestaji.sql | VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU | novi objekti |
+| 18_core_error_manager.sql (CORE) | **CORE.ERROR_MANAGER – tijelo paketa (F_APEX_ERROR_HANDLER)** | **izmijenjen postojeći objekat** – spojiti sa verzijom sa produkcije |
+| 19_rm_popis.sql | paket RM_POPIS_PKG, VW_RM_POPISI, VW_RM_POPIS_STAVKE, VW_RM_POPIS_DOKUMENTI; brojač POP u CORE.PROTOKOLI (ako postoji vrsta POP) | novi objekti (koristi postojeće tabele POPISI i POPIS_STAVKE) |
+| 20_partneri_konta.sql | **SEC_KLIJENT_KONTA – nova kolona PODRAZUMIJEVANO (Y/N, default N), check SEC_KLIJENT_KONTA_PODR_CK, unique indeks SEC_KLIJENT_KONTA_UK (partner, konto)**; paket SEC_PARTNER_PKG; podaci: konto sa SEC_KLIJENTI.KONTNA_KLASA_ID dodat u SEC_KLIJENT_KONTA, SEC_KLIJENTI.KONTNA_KLASA_ID = podrazumijevano konto najniže grupe | **izmijenjena postojeća tabela** + novi paket |
+
+Storniranje dokumenata skladišta (R16) koristi postojeće kolone OPERACIJE.STORNIRANO i STORNIRAN_ID (kao stari FINANSIJE_PKG.storniraj_operacija): storniran dokument i storno dokument se ne računaju u stanje.
+
+Popis skladišta (R17) koristi postojeće tabele POPISI i POPIS_STAVKE (PRETHODNA_KOLICINA = knjigovodstveno stanje, POPIS_KOLICINA = popisano). Dokumenti razlike inventure RIV / RIM su obični dokumenti skladišta (OPERACIJE) sa vezom POPIS_ID.

@@ -163,3 +163,17 @@ appItem A_PROFIL_URL (
 appItem A_SKLADISTE_ID (
 )
 
+appItem A_RM_MODUL (
+)
+
+appItem A_SKL_ROB (
+)
+
+appItem A_SKL_MAT (
+)
+
+appItem A_SKLADISTE_NAZIV (
+)
+
+appItem A_RM_NAZIV (
+)

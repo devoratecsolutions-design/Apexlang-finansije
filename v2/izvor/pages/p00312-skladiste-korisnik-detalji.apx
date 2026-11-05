@@ -1,23 +1,22 @@
 page 312 (
-    name: Skladiste / Korisnik / Detalji
+    name: Korisnici skladišta
     alias: SKLADISTE-KORISNIK-DETALJI
-    title: Skladiste / Korisnik / Detalji
+    title: Dodaj korisnike skladišta
     pageGroup: @robno-materijalno
     appearance {
         pageMode: modalDialog
-        dialogTemplate: @drawer
-        templateOptions: [
-            #DEFAULT#
-            js-dialog-class-t-Drawer--pullOutEnd
-        ]
+        dialogTemplate: @modal-dialog
+        templateOptions: #DEFAULT#
     }
     dialog {
+        width: 640
         chained: false
     }
     navigation {
         cursorFocus: doNotFocusCursor
     }
     security {
+        authorizationScheme: @robno-materijalno-konfiguracija-skladišta
         pageAccessProtection: argumentsMustHaveChecksum
         formAutoComplete: false
     }
@@ -38,131 +37,39 @@ page 312 (
         }
     )
 
-    region korisnik (
-        name: Korisnik
-        type: classicReport
-        source {
-            location: localDatabase
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                SELECT
-                    skladiste_naziv,
-                    skladiste_sifra,
-                    korisnik_naziv,
-                    korisnicko_ime
-                FROM
-                    vw_skladiste_korisnici
-                WHERE
-                    id = :P312_ID
-                ```
-        }
-        layout {
-            sequence: 30
-            slot: contentBody
-        }
-        appearance {
-            template: @standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--removeHeader js-removeLandmark
-                t-Region--scrollBody
-            ]
-        }
-        serverSideCondition {
-            type: itemIsNotNull
-            item: P312_ID
-        }
-        componentAppearance {
-            template: @contextual-info
-            templateOptions: [
-                #DEFAULT#
-                t-ContextualInfo--hideNulls
-                t-ContextualInfo-item--stacked
-                t-ContextualInfo-label--stacked
-                t-Report--hideNoPagination
-            ]
-        }
-        pagination {
-            type: nextAndPreviousLinks
-        }
-
-        column KORISNICKO_IME (
-            reportColumnQueryId: 4
-            derivedColumn: N
-            heading {
-                heading: Korisničko ime
-            }
-            layout {
-                sequence: 40
-            }
-        )
-
-        column KORISNIK_NAZIV (
-            reportColumnQueryId: 3
-            derivedColumn: N
-            heading {
-                heading: Korisnik
-            }
-            layout {
-                sequence: 30
-            }
-        )
-
-        column SKLADISTE_NAZIV (
-            reportColumnQueryId: 1
-            derivedColumn: N
-            heading {
-                heading: Naziv
-            }
-            layout {
-                sequence: 10
-            }
-        )
-
-        column SKLADISTE_SIFRA (
-            reportColumnQueryId: 2
-            derivedColumn: N
-            heading {
-                heading: Šifra
-            }
-            layout {
-                sequence: 20
-            }
-        )
-
-    )
-
-    region skladiste-korisnici (
-        name: Skladiste Korisnici
+    region korisnici-detalji (
+        name: Korisnici
         type: staticContent
         layout {
-            sequence: 20
+            sequence: 10
             slot: contentBody
         }
         appearance {
             template: @blank-with-attributes
-            templateOptions: #DEFAULT#
-        }
-        serverSideCondition {
-            type: itemIsNull
-            item: P312_ID
+            templateOptions: [
+                #DEFAULT#
+                t-Form--stretchInputs
+            ]
+            cssClasses: fin-form
         }
     )
 
-    pageItem P312_ID (
+    pageItem P312_SKLADISTE_ID (
         type: hidden
         layout {
-            sequence: 10
-            region: @korisnik
+            sequence: 1
+            region: @korisnici-detalji
             slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
         }
     )
 
     pageItem P312_KORISNIK_ID (
         type: selectMany
         label {
-            label: Korisnik
+            label: Korisnici
             alignment: left
         }
         settings {
@@ -172,41 +79,26 @@ page 312 (
             type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT
-                    ime || ' ' || prezime AS d,
-                    id AS r
-                FROM
-                    core.korisnici
-                WHERE
-                    id NOT IN (
-                        SELECT
-                            korisnik_id
-                        FROM
-                            skladiste_korisnici
-                        WHERE
-                            skladiste_id = :P312_SKLADISTE_ID
-                    )
-                    AND firma_id = :APP_FIRMA_ID
+                SELECT ime || ' ' || prezime AS d,
+                       id AS r
+                FROM core.korisnici
+                WHERE firma_id = :APP_FIRMA_ID
+                  AND id NOT IN (SELECT korisnik_id FROM skladiste_korisnici WHERE skladiste_id = :P312_SKLADISTE_ID)
+                ORDER BY ime, prezime
                 ```
         }
         layout {
-            sequence: 40
-            region: @skladiste-korisnici
+            sequence: 10
+            region: @korisnici-detalji
             slot: regionBody
-            alignment: left
+            columnSpan: 12
         }
         appearance {
-            template: @required-floating
+            template: @required-above
             templateOptions: #DEFAULT#
-            width: 30
         }
-    )
-
-    pageItem P312_SKLADISTE_ID (
-        type: hidden
-        layout {
-            sequence: 10
-            slot: contentBody
+        help {
+            helpText: Korisnici koji će vidjeti skladište i raditi sa njegovim dokumentima. Može se izabrati više korisnika.
         }
     )
 
@@ -223,21 +115,21 @@ page 312 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
+                t-Button--simple
                 t-Button--iconLeft
             ]
-            icon: fa-box-arrow-in-west
+            icon: fa-times
         }
         behavior {
             action: definedByDynamicAction
         }
     )
 
-    button create (
-        buttonName: CREATE
-        label: Kreiraj
+    button dodaj (
+        buttonName: DODAJ
+        label: Dodaj
         layout {
-            sequence: 40
+            sequence: 20
             region: @buttons
             slot: next
         }
@@ -247,56 +139,35 @@ page 312 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--mobileHideLabel
-                t-Button--large
                 t-Button--iconLeft
             ]
-            icon: fa-plus-circle-o
+            icon: fa-user-plus
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
-        }
-        serverSideCondition {
-            type: itemIsNull
-            item: P312_ID
         }
     )
 
-    button delete (
-        buttonName: DELETE
-        label: Obriši
-        layout {
-            sequence: 20
-            region: @buttons
-            slot: delete
+    validation korisnik-obavezno (
+        name: Korisnik obavezno
+        execution {
+            sequence: 10
         }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--mobileHideLabel
-                t-Button--large
-                t-Button--iconLeft
-            ]
-            cssClasses: u-color-9
-            icon: fa-trash-o
+        validation {
+            type: itemIsNotNull
+            item: P312_KORISNIK_ID
         }
-        behavior {
-            executeValidations: false
-            warnOnUnsavedChanges: doNotCheck
-            requiresConfirmation: true
-        }
-        confirmation {
-            message: &APP_TEXT$DELETE_MSG!RAW.
-            style: danger
+        error {
+            errorMessage: Izaberite bar jednog korisnika.
+            associatedItem: @P312_KORISNIK_ID
         }
         serverSideCondition {
-            type: itemIsNotNull
-            item: P312_ID
+            whenButtonPressed: @dodaj
         }
     )
 
     dynamicAction cancel-dialog (
-        name: Cancel Dialog
+        name: Odustani
         execution {
             sequence: 10
         }
@@ -316,83 +187,32 @@ page 312 (
 
     )
 
-    validation korisnik-not-null (
-        name: KORISNIK NOT NULL
+    process dodaj (
+        name: Dodaj korisnike
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                rm_skladiste_pkg.dodaj_korisnike(p_skladiste_id => :P312_SKLADISTE_ID, p_korisnici => :P312_KORISNIK_ID);
+                ```
+        }
         execution {
             sequence: 10
         }
-        validation {
-            type: itemIsNotNull
-            item: P312_KORISNIK_ID
-        }
-        error {
-            errorMessage: #LABEL# je obavezno polje za unos.
-            associatedItem: @P312_KORISNIK_ID
+        serverSideCondition {
+            whenButtonPressed: @dodaj
         }
     )
 
     process close-dialog (
-        name: Close Dialog
+        name: Zatvori dijalog
         type: closeDialog
-        settings {
-            itemsToReturn: REQUEST
-        }
         execution {
             sequence: 90
         }
-        advanced {
-            executionMappingIdentifier: 188985748095391194
-        }
         serverSideCondition {
-            type: requestIsContainedInValue
-            value: CREATE,SAVE,DELETE
-        }
-    )
-
-    process delete (
-        name: Delete
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                skladista_pkg.delete_skladiste_korisnik (
-                    p_id => :P312_ID
-                );
-                ```
-        }
-        execution {
-            sequence: 80
-        }
-        advanced {
-            executionMappingIdentifier: 188719219534453047
-        }
-        serverSideCondition {
-            whenButtonPressed: @delete
-        }
-    )
-
-    process insert (
-        name: Insert
-        type: executeCode
-        source {
-            plsqlCode:
-                ```plsql
-                skladista_pkg.insert_skladiste_korisnici (
-                    p_skladiste_id => :P312_SKLADISTE_ID,
-                    p_korisnik_id  => :P312_KORISNIK_ID
-                );
-                ```
-        }
-        execution {
-            sequence: 60
-        }
-        advanced {
-            executionMappingIdentifier: 188719127867453046
-        }
-        serverSideCondition {
-            whenButtonPressed: @create
+            whenButtonPressed: @dodaj
         }
     )
 
 )
-

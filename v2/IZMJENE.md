@@ -446,3 +446,192 @@ Testirano na DEV 1290 (firma 219): pregled, izbor skladišta i modula, dokumenti
 **Napomene (nije greška):** filteri liste dokumenata se pojavljuju kao prijedlozi pri kucanju u pretragu (isto kao ostale liste); izbor modula i skladišta je vezan za sesiju – dva taba iste prijave dijele izabrani modul.
 
 **SQL ponovo:** `14_rm_skladista.sql` (view VW_RM_SKLADISTA – nadređeno), `03_dashboard_pkg.sql` (poslije 14, kao i ranije), `15_rm_kalkulacija.sql` (zaokruživanje marže/VPC). Zatim import aplikacije.
+
+## Kalkulacija – korak R10: prijemnice, načini raspodjele, zavisni troškovi kroz fakturu (02.11.2026)
+- **Lista prijemnica** (izbor u tabeli prijemnica): šifra skladišta · broj · datum · dobavljač (bez broja stavki i vrijednosti). Kolona „Stavki“ uklonjena iz tabele.
+- **Izbor prijemnice odmah popunjava red** (datum, dobavljač, vrijednost) – ranije su polja ostajala prazna do snimanja (AJAX `PRI_INFO`, `RM_KALKULACIJA_PKG.prijemnica_info`).
+- **Načini raspodjele:** Ručno – ukupan iznos (R, kao do sada), **Ručno – jedinična cijena (J, novo)**, Automatski – po vrijednosti / po količini / linearno.
+  - Jedinična cijena: na tabu Raspodjela unosi se cijena po artiklu, iznos reda = cijena × količina, a ukupan iznos izvora (fakture / troška) se sam preračunava i upisuje u izvor (ne može preći raspoloživo fakture). Iznos u tabeli fakture / troška kod ovog načina nije obavezan. Unesena cijena se čuva (KALKULACIJA_RASPODJELA.cijena).
+- **Automatski po vrijednosti** raspoređuje srazmjerno vrijednosti stavke do tada raspoređenoj iz ostalih izvora (ručni, po količini, linearno), a ne vrijednosti prijemnice (koja je najčešće 0). Ako ništa nije raspoređeno – po vrijednosti prijemnice, pa po količini. „Raspodijeli sve automatske“ ide redom: po količini / linearno, pa po vrijednosti; poslije snimanja ručne raspodjele izvori po vrijednosti se automatski preračunavaju. U panelu raspodjele kolona „Do sada raspoređeno“ (umjesto „Vrijednost prijemnica“).
+- Dodavanje novog izvora više ne briše ručno upisane raspodjele drugih izvora – poništava se samo raspodjela izvora po vrijednosti (njihov ključ se mijenja). Dodavanje/uklanjanje prijemnice i dalje poništava sve.
+- **Zavisni troškovi kroz fakturu:** sekcija „Zavisni troškovi“ ima kolonu „Ulazna faktura (opciono)“ – izabrana zaključena UF (prevoz, carina...) sa raspoloživim iznosom, sa/bez PDV-a, kao kod faktura; bez fakture ostaje ručni unos (opis + iznos). Opis se popunjava brojem fakture i dobavljačem ako se ne upiše. Raspoloživo fakture uzima u obzir i fakture i zavisne troškove svih kalkulacija; ista faktura ne može dva puta u istu kalkulaciju. Nove kolone KALKULACIJA_TROSKOVI.kuf_id (FK na KUF), sa_pdv.
+- KUF_PKG: faktura vezana za kalkulaciju kao zavisni trošak ne može se obrisati (provjera dinamičkim SQL-om, da 10 ne zavisi od 15).
+- JS `finansije-ui.js` (finRmKalk) i `.min.js`, verzija u application.apx.
+- **SQL ponovo:** `15_rm_kalkulacija.sql`, zatim `10_kuf_pkg.sql` (samo paket). Zatim import aplikacije.
+- **Git:** `v2/izvor` u Git-u je bio stariji od službenog `v2/import/finansije-v2.zip` (01.11.2026) – stranice 0, 1, 311, 312, 330, 340, app-items, app-processes, breadcrumbs, ikone. Na ovoj grani izvor je usklađen sa zip-om (zip je osnova), pa su na to dodate R10 izmjene. Dorade se ubuduće rade na sadržaju službenog zip-a.
+
+## Kalkulacija – ispravke poslije testa R10 i izlazni dokumenti – korak R11 (02.11.2026)
+**Kalkulacija (ispravke)**
+- Promjena „Iznos“ (sa / bez PDV-a) ili fakture odmah upisuje raspoloživi iznos u kolonu „Raspoređuje se“ (ranije se mijenjalo samo raspoloživo).
+- Ručno upisan iznos se više ne snima kao 0: kod načina „Ručno – jedinična cijena“ upisani iznos ostaje (početni), a preračunava se tek kad se unesu cijene na tabu Raspodjela. Podrazumijevani način raspodjele novog reda je „Automatski – po vrijednosti“, a iznos „Bez PDV-a“.
+- Lista kalkulacija (340): ispod broja je prikazivan tekst „{if OPIS/}“ umjesto opisa – ispravljeno.
+
+**Izlazni dokumenti materijalnog skladišta (R11)**
+- Nove vrste dokumenata (modul MAT): **IZD – Izdatnica** i **IIN – Izlaz na investiciju u toku** (`16_rm_vrste_izlaz.sql`, kao SIF: dodaje vrste svakoj firmi koja ima vrstu PRI), brojači IZD- / IIN- (`11_rm_model.sql`).
+- Samo u materijalnom modulu: meni „Novi dokument“ ih prikazuje samo u modulu Materijal i oprema, a paket odbija dokument na robnom skladištu.
+- **Mjesto troška** (SIF.ACC_MJESTA_TROSKA, nova kolona OPERACIJE.MJESTO_TROSKA_ID): za firme sa dvojnim knjigovodstvom (doo, a.d., SP dvojno) obavezno polje; ostalima se ne prikazuje. Na listi dokumenata se vidi u koloni „Dobavljač / mjesto troška“.
+- Cijena stavke je prosječna cijena skladišta na datum dokumenta i ne može se mijenjati (računa paket; ponovo se računa pri izmjeni datuma i pri zaključavanju). Količina najviše do raspoloživog.
+- Forma dokumenta (331): kod izlaza nema sekcije „Dobavljač i ugovor“ (ni obaveznog dobavljača); „Datum prijema“ → „Datum dokumenta“. Novo dugme **Zaključaj** za izlazne dokumente (provjera stavki i serijskih brojeva, mjesta troška i obrađenog stanja na datum dokumenta; cijene po prosjeku na datum) i **Otključaj** (samo administrator, dok dokument nije proknjižen). Prijemnicu i dalje zaključava kalkulacija.
+- **SQL (redoslijed):** `16_rm_vrste_izlaz.sql` (SIF) → `11_rm_model.sql` → `12_rm_pkg.sql` → `13_rm_views.sql` → `15_rm_kalkulacija.sql` (ACCOUNTING). Zatim import aplikacije.
+
+## Dokumenti skladišta – korak R12 (02.11.2026)
+- **Mjesto troška se nije prikazivalo:** forma je zavisila od `APP_TIP_PREDUZETNIKA_SIFRA` (puni ga glavna aplikacija 200 pri prijavi; u aplikaciji 1290 bez prijave preko 200 je prazan). Dvojno knjigovodstvo se sada čita iz firme u bazi (`RM_DOKUMENT_PKG.dvojno`: CORE.FIRME + SIF.SIF_TIPOVI_PREDUZETNIKA – doo, ad, vsp sa dvojnim knjigovodstvom); stavka aplikacije je samo rezerva, a ako se tip firme ne može utvrditi, mjesto troška se traži.
+- **Izlaz na osnovno sredstvo (IOS)** i **Izlaz na sitni inventar (ISI)** – samo materijalna skladišta, mjesto troška kao kod izdatnice, **zaduženi radnik** (SIF.ACC_RADNICI, nova kolona OPERACIJE.ZADUZENI_RADNIK_ID) obavezan.
+- **Međuskladišni prenos (MPR)** – izlaz sa skladišta na drugo skladište firme (polje „Na skladište“, obavezno; cijena = prosječna cijena na datum). Zaključavanjem prenos postaje „na čekanju“ za prijem; preuzet prenos se ne može otključati.
+- **Međuskladišni prijem (MPP)** – ne unosi se ručno: izborom „Međuskladišni prijem“ u meniju Novi dokument prikazuju se zaključeni prenosi upućeni na izabrano skladište koji još nisu preuzeti, sa svim stavkama (količina × cijena). „Preuzmi“ pravi prijem sa količinama, cijenama i serijskim brojevima iz prenosa (datum = danas, ne prije datuma prenosa), veza na prenos (OPERACIJE.VEZA_ID) i odmah je zaključen – izmjene, brisanje i otključavanje nisu mogući. Na dokumentu se vidi „Sa skladišta“ i veza na prenos. Nema mjesta troška ni zaduženog radnika.
+- Lista dokumenata (330): kolona „Dobavljač / veza“ prikazuje i zaduženog radnika i prenos (na / sa skladišta, preuzeto / čeka prijem).
+- Novi view VW_RM_PRENOSI_CEKANJE; VW_RM_DOKUMENTI: zaduženi radnik, skladište prenosa, veza, preuzeto.
+- **SQL (redoslijed):** `16_rm_vrste_izlaz.sql` (SIF) → `11_rm_model.sql` → `12_rm_pkg.sql` → `13_rm_views.sql` (ACCOUNTING). Zatim import aplikacije.
+
+## Dokumenti skladišta – korak R13: reversi, unos po serijskom broju, ispravka zaključavanja (02.11.2026)
+- **Greška pri „Zaključaj“:** paket je cijene stavki računao funkcijom koja čita OPERACIJA_STAVKE unutar UPDATE iste tabele (ORA-04091 – mutating table); isto i pri izmjeni datuma izlaznog dokumenta. Sada se cijena računa u petlji, pa upisuje. Procesi Zaključaj / Otključaj / Obriši prikazuju poslovnu poruku umjesto opšte greške.
+- **Revers (REV)** i **Revers – povrat (REVP)** – obavezan zaduženi radnik. **Revers servis (RSV)** i **Revers servis – povrat (RSVP)** – obavezan komitent (SEC_KLIJENTI, OPERACIJE.KLIJENT_ID). Svi moduli.
+- **Povrat:** dostupno za povrat = zaključeni reversi tog radnika / komitenta – svi povrati (bez tekućeg dokumenta), po artiklu; veća količina se odbija (stavka i zaključavanje). Cijena povrata = prosječna cijena sa reversa partnera (ne mijenja se). Kolona „Raspoloživo“ prikazuje dostupno za povrat; izbor artikla (poslije snimanja zaglavlja) nudi samo artikle dostupne za povrat. Dugme **Preuzmi dostupno za povrat** dodaje / dopunjava sve dostupne artikle. Serijski broj na povratu mora biti zadužen reversom kod istog partnera. Radnik / komitent se ne mijenja dok povrat ima stavke. Povrat se zaključava dugmetom Zaključaj; revers na koji postoji povrat se ne može otključati.
+- **Unos izlaza po serijskom broju** (snimljen izlazni dokument u pripremi): polje „Serijski broj (barkod / QR)“ iznad stavki – skeniranje / Enter (ili Dodaj). Artikal se prepoznaje po serijskom broju raspoloživom na skladištu; postojećoj stavci se povećava količina, inače se dodaje nova stavka (količina 1), i upisuje se serijski broj. QR kod može sadržati više brojeva (razdjelnici razmak, novi red, ; , : /). Neraspoloživ, dupli ili višeznačan broj se prijavljuje.
+- **SQL (redoslijed):** `16_rm_vrste_izlaz.sql` (SIF) → `11_rm_model.sql` → `12_rm_pkg.sql` (ACCOUNTING). Zatim import aplikacije (`13_rm_views.sql` nije mijenjan od R12).
+
+## Dokumenti skladišta – korak R14 (02.11.2026)
+- Reversi (REV, REVP, RSV, RSVP) samo u materijalnom modulu (meni i paket).
+- **Međuskladišni prijem:** dvije forme – gore zaglavlja prenosa na čekanju (klik na prenos ga bira, „Preuzmi“ pravi prijem), dolje stavke izabranog prenosa (šifra, artikal, JM, količina, cijena, iznos, serijski brojevi).
+- **Povrati reversa:** region „Preostalo za povrat po reversima“ – svaki zaključeni revers radnika / komitenta sa izdatom i preostalom količinom po artiklu (povrati se raspoređuju na najstarije reverse); osvježava se pri promjeni radnika / komitenta. Novi view VW_RM_REVERS_PREOSTALO.
+- **Lista dokumenata (330):** pored izbora skladišta je izbor vrste dokumenta; „Novi dokument“ odmah otvara izabranu vrstu (bez menija sa svim vrstama; izbor se pamti u pregledaču). Kolona „Opis“ je odmah iza kolone „Dobavljač / veza“.
+- **Izbor skladišta:** meni se otvara udesno (ranije se dio sa šiframa skrivao ispod raširenog navigacionog menija), šire polje, šifra se ne lomi.
+- **SQL:** `12_rm_pkg.sql`, `13_rm_views.sql` (ACCOUNTING). Zatim import aplikacije.
+
+## Dokumenti i izvještaji skladišta – korak R15 (02.11.2026)
+- **Lista dokumenata (330):** promjena vrste dokumenta odmah osvježava listu i prikazuje samo dokumente te vrste; „Novi dokument“ otvara izabranu vrstu (URL sa kontrolnom sumom daje proces NOVI_DOKUMENT_URL). Podrazumijevana vrsta je prva po redu (ulazi, pa izlazi), izbor se pamti u pregledaču.
+- **Tabelarne popup liste** (novi dijeljeni LOV-ovi `rm-*` u lovs.apx): prijemnice u kalkulaciji (skladište, broj, datum, dobavljač), fakture u kalkulaciji i zavisnim troškovima (broj, dobavljač, broj fakture, datum, raspoloživo), artikli na dokumentu (artikal, JM, serijski broj), dobavljač, mjesto troška (šifra, naziv, OJ), zaduženi radnik (ime, interni broj, email), komitent (naziv, JIB, PIB, grad), skladište prenosa (šifra, naziv, vrsta).
+- **Međuskladišni prenos:** lista skladišta na koja se prenosi više ne sadrži skladište sa kog se prenosi (i za novi dokument).
+- **Izvještaji (371) – nova stranica.** Ranije: izbor iz liste (zavisila od tipa firme iz glavne aplikacije, pa je u 1290 bila prazna), stari pogledi bez novih vrsta dokumenata, dva prazna izvještaja (popisne liste, zaduženja sitnog inventara). Sada katalog po grupama (po uzoru na Odoo / Business Central: stanje, kretanje, vrednovanje, starost zaliha) i zajednički parametri (skladište ili sva skladišta modula, datum / period, artikal, mjesto troška, vrsta):
+  - Stanje i vrijednost: **Stanje zaliha na dan** (količina, prosječna cijena, vrijednost), **Popisna lista** (umjesto praznog izvještaja; polja Popisano / Razlika za štampu), **Starost zaliha** (novo: artikli na stanju bez izlaza duže od N dana).
+  - Promet: **Kartica artikla** (početno stanje, hronološki ulazi / izlazi sa stanjem količine i vrijednosti), **Promet po artiklima** (novo: početno, ulaz, izlaz, krajnje – količina i vrijednost), **Pregled dokumenata** (sve vrste v2, status, partner / MT / radnik, otvaranje dokumenta).
+  - Potrošnja i zaduženja: **Potrošnja po mjestu troška** (izdatnice, investicija, OS, sitni inventar – zamjenjuje stari „finansijski promet po kontima i mjestu troška“), **Zaduženja** (otvoreni reversi po radniku / komitentu i zaduženja OS / sitnog inventara – zamjenjuje prazan „Pregled zaduženja sitnog inventara“).
+  - Kontrola: **Dokumenti na čekanju** (dokumenti u pripremi, prijemnice bez kalkulacije ili sa nezaključenom kalkulacijom, prenosi koji čekaju prijem – zamjenjuje stari pregled trebovanja).
+  - Izvještaji koriste zaključene dokumente (knjigovodstveno stanje). Štampa preko Jasper servera (dugme sa stare stranice, radila samo za KP) nije prenesena.
+- Novi view-ovi (`17_rm_izvjestaji.sql`): VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU.
+- **SQL:** `17_rm_izvjestaji.sql` (ACCOUNTING, poslije 12 i 13). Zatim import aplikacije.
+
+## Dorade poslije testa Materijalnog modula – korak R16 (03.11.2026)
+Po testu iz R15 i odgovorima korisnika (K = kritično, V = važno, S = sitnije, N = novi zahtjev).
+- **Poruke grešaka (V5) – `CORE.ERROR_MANAGER.F_APEX_ERROR_HANDLER` (`18_core_error_manager.sql`, šema CORE):**
+  - poslovne poruke iz paketa (`raise_application_error` -20000 … -20999, npr. „Za povrat je dostupno 2 – količina ne može biti veća“, „Na revers postoji povrat…“, „Iznos troška je veći od raspoloživog…“) prikazuju se sa stvarnim tekstom – bez ORA- koda, prefiksa „Greška CORP-RM:“ i steka; ne loguju se kao sistemske. Uzrok ranije opšte poruke: kad proces pozove `apex_error.add_error` u exception bloku, APEX grešci dodijeli i SQL kod (-20201), pa je handler takvu poruku tretirao kao sistemsku.
+  - sistemske greške se i dalje loguju u ERROR_LOG, a korisnik dobija poruku prema vrsti greške (obavezno polje, preduga vrijednost, format broja / datuma, zapis ne postoji, zapis zaključan od drugog korisnika, povezani zapisi, nedostupan paket, nema prava…) uz referentni broj CORP-<id>.
+  - vraćanje: `18_core_error_manager_vracanje.sql` (tijelo paketa iz ddl/core_ddl.sql).
+- **Kalkulacija:**
+  - **K3 – „Automatski – po vrijednosti“:** faktura robe se raspoređuje po vrijednosti prijemnice (količina × cijena prijemnice); zavisni trošak po vrijednosti – po vrijednosti koju su artiklima rasporedile fakture robe (dok one nisu raspoređene – po vrijednosti prijemnice). „Raspodijeli sve automatske“: prvo fakture robe, pa zavisni troškovi (po vrijednosti zadnji). Promjena raspodjele fakture robe preračunava već raspoređene zavisne troškove po vrijednosti.
+  - **Novi način „Automatski – cijene sa prijemnice“ (P, samo za fakturu robe):** iznos po artiklu = vrijednost sa prijemnice; iznos fakture u kalkulaciji = zbir vrijednosti prijemnica (ne smije preći raspoloživo fakture).
+  - **Poništavanje raspodjele:** dugmad „Poništi raspodjelu“ (izabrani izvor) i „Poništi sve raspodjele“. Poništavanje ručne raspodjele (ili fakture robe) poništava i automatske raspodjele koje od nje zavise; dodavanje, brisanje ili izmjena izvora poništava sve automatske raspodjele (ponovo „Raspodijeli sve automatske“).
+  - **S3:** kolona „Raspoređeno iz ostalih izvora“ (ranije „Do sada raspoređeno“) ne uključuje izabrani izvor.
+  - **V9:** zaključena kalkulacija koja se ne može otključati prikazuje razlog (npr. roba je već izdavana).
+  - **S15:** tab „Nabavne cijene“ u materijalnom modulu („Nabavne i prodajne cijene“ ostaje u robnom).
+- **Dokumenti skladišta:**
+  - **K4:** izlaz se provjerava i na datum dokumenta (raspoloživo tog dana) i ukupno; stavka izlaza i zaključavanje se odbijaju kad artikal na datum dokumenta nema nabavnu cijenu (ranije snimljeno sa 0,00).
+  - **N3 – datum:** datum bira korisnik samo na prijemnici; svi ostali dokumenti imaju današnji datum (datum unosa) koji se ne mijenja (polje je samo za čitanje, provjera i u paketu).
+  - **N3 – storniranje:** dugme „Storniraj“ na zaključenom izlaznom dokumentu (IZD, IIN, IOS, ISI, MPR, REV, RSV) bez veznog dokumenta (prenos nije preuzet, na revers nema povrata, nije proknjižen). Pravi se storno dokument iste vrste sa današnjim datumom (količine sa suprotnim predznakom, zaključen), original dobija status „Storniran“. Storniran dokument i storno se ne računaju u stanje, prosječnu cijenu, raspoloživo, serijske brojeve i izvještaje (kao do sada za storno; dopunjeno da storno dokument ni u jednom proračunu ne utiče na stanje). RM_DOKUMENT_PKG: `razlog_zabrane_storna`, `storniraj`, `datum_slobodan`.
+  - **V6:** unos po serijskom broju samo Enterom (dugme uklonjeno); stavke, serijski brojevi i zbir se osvježavaju bez ponovnog učitavanja stranice, polje se prazni (ranije se poslije ponovnog učitavanja nova stavka nije vidjela). Region serijskih brojeva postoji na svakom izlazu u pripremi.
+  - **V8:** mjesto troška se prikazuje za sve tipove firme na IZD / IIN / IOS / ISI; obavezno ostaje samo za dvojno knjigovodstvo.
+  - **P2:** međuskladišni prenos samo na skladište istog modula (lista i provjera u paketu); prenos materijal ↔ roba dolazi kroz posebne dokumente.
+  - **S1 / S2:** jedinstven format brojeva 123,000.00 (početni zbir više nije „0,00“); cijene na 4 decimale (prosječna cijena, cijena povrata, nabavna cijena kalkulacije, prikaz); iznos dokumenta = zbir zaokruženih iznosa redova.
+  - **S4 / S5:** lista – „1 stavka / 3 stavke / 5 stavki“; izbor „— sve vrste —“ (lista svih dokumenata skladišta; za novi dokument treba izabrati vrstu); lista prikazuje i storno / storniran.
+  - **S6:** kolona „Stanje“ na ulazima, „Raspoloživo“ na izlazima, „Dostupno za povrat“ na povratima; na zaključenom dokumentu se ne prikazuje.
+  - **S7:** povrat – „Nema preostalih količina za povrat kod izabranog radnika / komitenta…“.
+  - **S13:** serijski broj – „ne postoji na skladištu“ / „nije raspoloživ (već je izdat ili prijem nije zaključen)“; poruka bez vodećeg razmaka.
+  - **S14:** naslov regiona: „Mjesto troška“ (IZD, IIN), „Mjesto troška i zaduženje“ (IOS, ISI), „Zaduženje“ (reversi).
+  - **S17:** tabela stavki u dijalogu preračunava širine kolona poslije otvaranja (prazna tabela više nema skupljene kolone).
+- **Izvještaji (371):**
+  - **K1:** parametri bez fiksnih širina (automatski raspored) – „Potrošnja po mjestu troška“ više ne ruši stranicu; nepoznat izbor izvještaja vodi na prvi u katalogu.
+  - **K2:** stari izvještaji uklonjeni iz menija (Materijal i oprema → Izvještaji otvara katalog).
+  - **N1:** svi izvještaji su interaktivni (pretraga, filter, sortiranje, grupisanje, zbirovi, preuzimanje Excel / PDF preko „Akcije → Preuzmi“) + dugme „Štampaj“ (štampa samo izvještaj sa nazivom i parametrima).
+  - **N2:** „— sva skladišta modula —“ se pamti (ranije se poslije Prikaži vraćalo trenutno skladište).
+  - **S8 / S9:** izbor drugog izvještaja briše filtere prethodnog (artikal, mjesto troška, vrsta) i postavlja trenutno skladište.
+  - **S10:** skladišta samo ona na koja korisnik ima pravo (i u „sva skladišta modula“).
+  - **S11:** brojač redova „1 - 4“ bez engleskog teksta; prevedeni tekstovi interaktivnih izvještaja (text messages APEXIR_*: Akcije, Preuzmi / štampaj, Kolone, Filter, …).
+  - **S12:** kartica artikla – za prenos / prijem kolona partnera prikazuje skladište („na skladište …“ / „sa skladišta …“). VW_RM_PROMET: nove kolone SKLADISTE_PRENOS_ID, SKLADISTE_PRENOS_NAZIV.
+- **V7** (stavke izabranog prenosa na MPP): poslije V5 region prikazuje razlog greške i referentni broj – uzrok se ispravlja u sljedećem koraku.
+- **SQL (redom):** `18_core_error_manager.sql` (CORE), pa kao ACCOUNTING `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`. Zatim import aplikacije.
+
+## Popis skladišta i rashod – korak R17 (03.11.2026)
+- **Nova forma Popis skladišta** (meni Materijal i oprema → Popis; stranice 364 lista, 365 popis, 366 novi popis). Stari popis (360–363) ostaje u robnom modulu.
+  - **Novi popis (366):** datum popisa i izbor jednog, više ili svih skladišta modula kojima korisnik ima pristup (kvačice, „Sva skladišta koja se mogu popisati“). Za svako skladište se vidi broj artikala na stanju i da li se može popisati (nema stanja, već otvoren popis, kasniji popis). Otvara se po jedan popis za svako izabrano skladište (sve ili ništa); poruka navodi otvorene popise.
+  - **Knjigovodstveno stanje** = svi ulazi (zaključani ili ne) − zaključani izlazi do datuma popisa, uključivo (`RM_DOKUMENT_PKG.knjigovodstveno`). Stavke se kreiraju sa tim količinama i prosječnom cijenom na datum popisa.
+  - **Popis (365):** tabela stavki – knjigovodstveno (samo čitanje), **Popisano** (unosi knjigovođa), razlika, prosječna cijena, vrijednost razlike, napomena; sažetak (artikala, nepopisano, višak, manjak, vrijednost manjka) se računa odmah. „Dodaj artikal (nije na stanju)“ za višak artikla bez stanja. Dugmad: „Prepiši knjigovodstveno“ (gdje popisano nije uneseno), „Osvježi stanje“ (ponovo računa knjigovodstveno stanje, dodaje nove artikle, čuva popisane količine), Snimi, Zaključaj popis, Obriši popis, Otključaj popis (administrator).
+  - **Na jednom skladištu samo jedan aktivan (otvoren) popis.**
+  - **Zaključavanje:** sve popisane količine unesene; knjigovodstveno stanje nepromijenjeno od otvaranja / osvježavanja; nema izlaza u pripremi do datuma popisa; manjak mora biti na zaključenom stanju i imati prosječnu cijenu. Razlike se knjiže automatskim dokumentima sa datumom popisa:
+    - **RIV – Razlika inventure - višak** (popisano > knjigovodstveno): ulaz u pripremi; knjigovođa na dokumentu unosi samo cijene i zaključuje ga (artikli i količine se ne mijenjaju, nema dodavanja / brisanja stavki ni brisanja dokumenta);
+    - **RIM – Razlika inventure - manjak** (popisano < knjigovodstveno): izlaz po prosječnoj cijeni na datum popisa, odmah zaključen.
+    Poslije zaključavanja poruka i region „Dokumenti razlike inventure“ prikazuju kreirane dokumente (sa linkom na dokument). RIV / RIM se ne prave ručno („Novi dokument“ javlja da nastaju iz popisa), ne otključavaju se i ne storniraju.
+  - **Otključavanje popisa** (administrator): dok dokument viška nije zaključen, nije proknjižen i nema kasnijeg / otvorenog popisa; dokumenti razlike se brišu.
+  - **Datum prije popisa:** kad na skladištu postoji popis, nijedan dokument (novi, promjena datuma prijemnice, međuskladišni prijem) ne može imati datum prije datuma posljednjeg popisa. Ulazi sa datumom prije popisa ne mijenjaju količine / stavke i ne brišu se (cijena da); izlazi sa datumom prije popisa se ne zaključavaju, ne otključavaju i ne storniraju.
+- **Rashod (RAS):** nova izlazna vrsta u materijalnom modulu – ponaša se kao izdatnica (mjesto troška, prosječna cijena, raspoloživo, zaključavanje, storno); uključen u izvještaj „Potrošnja po mjestu troška“.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
+- **R17 – dorade poslije prvog pregleda (03.11.2026):**
+  - **Broj dokumenta po skladištu:** dokumenti skladišta (robno i materijalno), kalkulacije i popisi se numerišu po skladištu i godini (ranije po firmi): broj = najveći broj iste vrste na skladištu + 1, naziv = prefiks i dužina iz brojača vrste + `/šifra skladišta` (npr. `IZD-000001/MAG1`). `RM_DOKUMENT_PKG.novi_broj` (koriste ga snimanje dokumenta, storno, međuskladišni prijem, kalkulacija, popis i dokumenti razlike); brojač u CORE.PROTOKOLI se više ne uvećava, služi samo za format.
+  - **Novi popis (366):** polja u istom rasporedu i stilu kao ostale forme (sekcije „Popis“ i „Skladišta za popis“).
+  - **Popis (365):** uklonjena „vrijednost manjka“ iz sažetka; veći sažetak i tekst tabele; ćelija Razlika obojena – zelena (jednako), plava (višak), crvena (manjak); ćelije za unos (Popisano, Napomena) bijele, ostale sive.
+  - **Lista popisa (364)** se osvježava kad se zatvori popis ili novi popis (i tasterom Esc).
+  - Boje ćelije Razlika i bijele ćelije za unos se postavljaju direktno na ćelije tabele (prva verzija preko opcije kolone nije radila).
+  - Novi popis: pretraga skladišta (šifra, naziv) iznad liste; „Sva prikazana skladišta…“ označava samo filtrirana skladišta.
+
+## Sitni inventar kod radnika – korak R18 (04.11.2026)
+Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na nivou firme (kao reversi): **zaduženje = Izlaz na sitni inventar (ISI) + prezaduženje na radnika + višak iz popisa − prezaduženje sa radnika − rashod kod radnika**. Serije i rokovi upotrebe se još ne uvode.
+- **Nove vrste dokumenata** (16_rm_vrste_izlaz.sql, samo materijalni modul):
+  - **PSI – Prezaduženje sitnog inventara:** sa radnika na radnika. Bira se radnik „sa“ i radnik „na“; region „Zaduženje radnika – sitni inventar“ prikazuje šta radnik ima (količina, raspoloživo, serijski brojevi). Stavke: dugme „Preuzmi zaduženja radnika“ (sve količine i serijski brojevi; višak se briše), izbor artikla iz liste zaduženog, ili unos / skeniranje tačnog serijskog broja (artikal se prepoznaje). Količina najviše do zaduženog; serijski broj mora biti kod radnika. Ne mijenja stanje skladišta i ne knjiži se (tip kretanja „Z“).
+  - **RSZ – Rashod sitnog inventara sa zaliha:** izlaz sa skladišta, kao rashod (mjesto troška, prosječna cijena, raspoloživo, storno).
+  - **RSR – Rashod sitnog inventara kod radnika:** razduženje radnika, isti unos kao prezaduženje; ne mijenja stanje skladišta. Cijena = prosječna cijena zaduženja radnika.
+  - **VSR – Višak sitnog inventara kod radnika:** nastaje samo zaključavanjem popisa SI.
+- **Zaštita zaduženja:** storno i otključavanje izlaza na SI ili prezaduženja nisu dozvoljeni ako je radnik taj inventar već prezadužio ili rashodovao; dokumenti iz popisa se ne otključavaju i ne storniraju; prezaduženje i rashod se mogu stornirati.
+- **Popis sitnog inventara kod radnika** (meni Materijal i oprema → Popis sitnog inventara; stranice 367 lista, 368 popis, 369 novi popis), po uzoru na popis skladišta:
+  - novi popis: datum + jedan, više ili svi radnici sa zaduženjem (pretraga, kvačice); jedan otvoren popis po radniku; broj POPSI-000001;
+  - stavke: zaduženje radnika na datum popisa (zaključeni dokumenti); artikal sa serijskim brojem – jedan red po komadu (popisano 1 = pronađen, 0 = nije); „Dodaj pronađen artikal / serijski broj“ za višak;
+  - zaključavanje: manjak → **RSR**, višak → **VSR** (zaključeni, sa serijskim brojevima, datum popisa); provjera da se zaduženje nije promijenilo i da nema dokumenata zaduženja u pripremi; otključavanje (administrator) briše te dokumente.
+- **Izvještaj zaduženja** (VW_RM_ZADUZENJA): sitni inventar po stvarnom zaduženju (poslije prezaduženja i rashoda), ne više po izlaznim dokumentima.
+- **Baza:** OPERACIJE.RADNIK_PRENOS_ID, POPISI.VRSTA / RADNIK_ID, POPIS_STAVKE.SERIJSKI_BROJ; VW_RM_SI_ZADUZENJA; RM_DOKUMENT_PKG (si_saldo, si_sb, si_cijena, si_popis_blokada), RM_POPIS_PKG (kreiraj_si i popis SI). Popis skladišta i zabrana datuma prije popisa uzimaju samo popise skladišta.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
+
+## Dorade poslije testa R18, poslovni partneri – korak R19 (04.11.2026)
+- **Izlazni dokumenti skladišta:** unos količine veće od raspoložive – uz poruku se količina stavke vraća na 0.
+- **Modalne forme:** zatvaranje bilo kog dijaloga (X, Esc ili snimanje) osvježava preglednu formu ispod (opšte rješenje u `finansije-ui.js` – `finDijalogOsvjezi`; tabela sa nesnimljenim izmjenama se ne osvježava). Dugmad „Zatvori / Odustani“ uklonjena, a X vraćen na formama dokumenta skladišta (331), skladišta (311), popisa zaliha (365, 366), popisa SI (368, 369) i poslovnog partnera (11).
+- **Prezaduženje sitnog inventara (PSI):** izborom radnika sa kojeg se prezadužuje stavke se odmah pune svim njegovim zaduženjima sa količinom 0; korisnik u koloni Količina unosi koliko prenosi. Stavke sa količinom 0 se ne prenose (brišu se pri zaključavanju). Region „Zaduženje radnika – sitni inventar“ i dugme „Preuzmi“ za PSI uklonjeni. Na listi dokumenata piše „prezaduženje sa radnik1 na radnik2“. Poruke potvrde bez cijena i skladišta.
+- **Materijalni modul – nazivi:** poruke i pomoć govore o materijalu / artiklima, ne o robi (potvrde zaključavanja, otključavanja i storna zavise od modula skladišta; prenosi, kalkulacija, deaktivacija skladišta).
+- **Popis SI – „Popis ne postoji“ pri snimanju:** stranica 368 je poslije snimanja preusmjeravala na stranicu 365 (popis zaliha) – ispravljeno na 368.
+- **Razlike popisa SI:** dokumenti VSR (višak) / RSR (rashod) iz popisa zamijenjeni novim vrstama **RUM – Razlika inventure sitnog inventara u upotrebi – manjak** i **RUV – … – višak**; nastaju samo kad se popisane i knjigovodstvene količine ne slažu. VSR se deaktivira (16). Tekstovi na listi i popisu SI ispravljeni.
+- **Meni:** „Popis“ → **Popis zaliha**, „Popis sitnog inventara“ → **Popis sitnog inventara u upotrebi**; „Klijenti“ → **Poslovni partneri** (meni, naslov, putanja).
+- **Izvještaji (371) – nova grupa Sitni inventar:** SI u upotrebi po radniku (radnik, materijal, količina, vrijednost, zadnje zaduženje), SI u upotrebi po materijalu (ukupno, broj radnika), Kartica SI radnika (početno stanje, zaduženja, prezaduženja, rashodi, razlike popisa, serijski brojevi, tekuće stanje po materijalu). Novi view **VW_RM_SI_PROMET** (13).
+- **Poslovni partneri (10, 11):** lista i forma u stilu ostalih modula (sekcije Osnovni podaci, Adresa i kontakt, Konta za knjiženje; status, kontakt i konta na listi). **Šablon za knjiženje ukinut** na formi i listi – nikad nije obavezan (kolona u bazi ostaje). Dvojno knjigovodstvo: partner može imati više konta; u svakoj kontnoj grupi (prva cifra) jedno je **podrazumijevano** (označavanjem novog ranije se isključuje; bez oznake – prvo po šifri). `SEC_KLIJENTI.KONTNA_KLASA_ID` se puni podrazumijevanim kontom (stari kod ga čita).
+- **Baza:** `20_partneri_konta.sql` – SEC_KLIJENT_KONTA.PODRAZUMIJEVANO, jedinstveno konto po partneru, paket **SEC_PARTNER_PKG** (snimi_konto, uskladi, konto(partner, grupa), konta_opis).
+- **Otvoreno:** postojeće procedure knjiženja (uparivanje po kontu partnera traži tačno jedno konto u grupi; konto dobavljača uzima prvo iz grupe 4) treba prebaciti na `sec_partner_pkg.konto(partner, grupa)` da bi više konta po grupi radilo – to su postojeći paketi van v2, rade se posebnim korakom.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`, `20_partneri_konta.sql`. Zatim import aplikacije.
+
+## Izgled izvještaja, cijena na ulazu – korak R20 (05.11.2026)
+- **Izvještaji materijalnog modula (371):**
+  - parametri u posebnoj kartici „Parametri izvještaja“: labela iznad polja, polja u jednom redu sa širinom prema sadržaju (skladište, artikal, mjesto troška šira; datumi uži), na telefonu jedno ispod drugog; dugme **Prikaži izvještaj** na kraju reda;
+  - ispod parametara opis izvještaja i prikazani parametri (npr. „sva skladišta modula · period 01.01. – 05.11.“);
+  - tabele (interaktivni izvještaji) u stilu aplikacije: kartica sa okvirom, mirnije zaglavlje, blago prugasti redovi, isticanje reda, istaknuti zbirovi i prelomi grupa, uredna paginacija;
+  - dugme **Štampaj** ukinuto (štampa preko Actions → Download PDF / Excel).
+- **Ulazni dokumenti sa ručnom cijenom:** izborom artikla cijena se predlaže kao 0 (ne prosječna). Dokument Razlika inventure – višak (RIV) iz popisa nastaje sa cijenom 0 na stavkama; zaključavanje i dalje traži cijenu veću od nule.
+- **Međuskladišni prijem – greška u „Stavke izabranog prenosa“ (ORA-01722):** veza za izbor prenosa je u `data-id` dobijala HTML kolone ID (dugme Preuzmi) umjesto broja prenosa, pa je izvještaj stavki pucao. Dodate čiste skrivene kolone PRENOS_ID / PRENOS_NAZIV za veze i dugme, a upit stavki pretvara vrijednost sigurno (`kuf_pkg.broj`). Ista vrsta greške uklonjena i u oznaci kvačice na novom popisu (366, 369).
+- **SQL:** samo `19_rm_popis.sql` (cijena 0 na RIV). Zatim import aplikacije.
+
+## Finansijsko doknjiženje, zamjena šifara, kartica serijskog broja – korak R21 (05.11.2026)
+- **FDK – Finansijsko doknjiženje** (robna i materijalna skladišta, Novi dokument): mijenja samo vrijednost zaliha, ne količinu – time se povećava / smanjuje prosječna cijena artikla na skladištu.
+  - stavka: artikal i **iznos doknjiženja** (+ povećava, − smanjuje); kolona količine se ne prikazuje, uz artikal se vidi stanje i trenutna vrijednost zaliha;
+  - pravila: artikal mora imati zaključeno stanje na datum dokumenta; smanjenje ne smije biti veće od vrijednosti zaliha; ne može se zaključiti ako poslije datuma doknjiženja postoji zaključen izlaz tog artikla (izlaz bi ostao po staroj cijeni); datum ne može biti prije popisa;
+  - zaključava se dugmetom Zaključaj; otključavanje (administrator) i storno nisu dozvoljeni ako je artikal poslije datuma dokumenta izdavan;
+  - u izvještajima: povećanje je ulaz vrijednosti, smanjenje izlaz vrijednosti (kartica artikla, promet, stanje).
+- **ZSA – Zamjena šifara artikla:** izlaz jednog artikla i ulaz drugog u istoj količini po istoj (prosječnoj) cijeni.
+  - stavka: artikal koji se skida sa stanja, **zamjenski artikal** (dodaje se) i količina (najviše do raspoloživog);
+  - **serijski brojevi** (unose se na stavci, kao i do sada; broj brojeva = količina):
+    - oba artikla se prate po SB: unose se raspoloživi brojevi artikla koji se skida, a zaključavanjem **isti brojevi prelaze na zamjenski artikal** (broj ne smije već postojati na stanju zamjenskog);
+    - prati se samo artikal koji se skida: brojevi se skidaju sa stanja, zamjenski artikal ulazi bez brojeva;
+    - prati se samo zamjenski artikal: unose se **novi brojevi zamjenskog artikla** (kao na ulazu); zaključavanjem prelaze na ulaz, otključavanjem se vraćaju na stavku;
+    - skeniranje serijskog broja na dokumentu se za zamjenu šifara ne koristi (artikal i zamjenski artikal se biraju u tabeli);
+  - zaključavanjem se artikal skida po prosječnoj cijeni, a za svaku stavku nastaje (skrivena) stavka ulaza zamjenskog artikla sa istom cijenom; otključavanje je briše;
+  - otključavanje / storno nisu dozvoljeni ako je zamjenski artikal u međuvremenu izdat; zaključavanje nije dozvoljeno ako zamjenski artikal ima zaključen izlaz poslije datuma zamjene.
+- **Baza:** OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER (U / I – smjer stavke kada se razlikuje od vrste dokumenta), IZVOR_STAVKA_ID; svi proračuni stanja, vrijednosti, prosječne cijene, popisa i serijskih brojeva uzimaju smjer stavke. RM_DOKUMENT_PKG: VRIJEDNOST_ZALIHA, IZLAZ_POSLIJE, pravila FDK / ZSA. VW_RM_DOKUMENT_STAVKE prikazuje zamjenski artikal (bez generisanih stavki).
+- **Izvještaji – Kartica serijskog broja** (grupa Promet): sva kretanja serijskog broja (ili dijela broja, najmanje 3 znaka) – ulazi, izlazi, prenosi, reversi, zaduženja i prezaduženja radnika, rashodi i popisi SI u upotrebi, sa statusom dokumenta (u pripremi, zaključen, storniran) i vezom na dokument; filter i po artiklu.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF – vrste FDK, ZSA), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije.
+- **Kalkulacija – način raspodjele „cijena sa prijemnice“:**
+  - na tabu Raspodjela se kod fakture sada vidi izabrani način (ranije je pisalo „ručno – ukupan iznos“);
+  - način je preimenovan u **Ručno – cijena sa prijemnice** i radi kao Ručno – jedinična cijena: jedinične cijene se predlažu (prekopiraju) sa prijemnice, korisnik ih po potrebi mijenja i snima; iznos fakture u kalkulaciji = zbir (cijena × količina), najviše do raspoloživog fakture. Više se ne raspoređuje dugmetom „Raspodijeli sve automatske“.
+  - SQL: `15_rm_kalkulacija.sql`.
+- **Ispravka importa (ORA-00001 WWV_FLOW_WORKSHEET_RPTS_UK):** nova kartica serijskog broja je pomjerila identifikatore sačuvanih izvještaja na str. 371; APEX po njima čuva izvještaje korisnika pri ponovnom importu. Identifikatori su sada stalni po izvještaju (generator `gen_p371_izvjestaji.py`, tabela RID), nova kartica dobija sljedeći slobodan broj.
