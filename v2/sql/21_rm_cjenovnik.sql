@@ -132,6 +132,12 @@ create or replace package rm_cjenovnik_pkg as
     -- PDV stopa artikla: pun iznos -> 17 %, poseban indikator -> stopa indikatora
     function pdv_stopa (p_stavka_id in number) return number;
 
+    -- R24: prijem u maloprodaju (UVM) u pripremi - MPC artikala koji nisu imali cijenu u cjenovniku se unosi na
+    -- samom prijemu (kao na kalkulaciji); vraća JSON {"ok","poruka","mpc","marza"}
+    function uvm_mpc_json (p_stavka_dok_id in number, p_mpc in varchar2) return varchar2;
+    -- R24: zaključavanje UVM: nova MPC u cjenovnik (ostala maloprodajna skladišta se niveliraju), prijem zaključen
+    procedure zakljucaj_uvm (p_id in number);
+
     -- otključavanje kalkulacije: provjera (null = može) i vraćanje cjenovnika i brisanje FDK / NIVM iz kalkulacije
     function razlog_zabrane_vracanja (p_kalkulacija_id in number) return varchar2;
     procedure vrati_kalkulaciju (p_kalkulacija_id in number);
@@ -444,6 +450,105 @@ create or replace package body rm_cjenovnik_pkg as
         end if;
         return 'Cijena je snimljena.';
     end rucna_izmjena;
+
+    function uvm_mpc_json (p_stavka_dok_id in number, p_mpc in varchar2) return varchar2 is
+        l_mpc number;
+        l_pdv number;
+        l_nmp number;
+        l_mar number;
+        l_ok  varchar2(5) := 'true';
+        l_por varchar2(4000);
+    begin
+        begin
+            for d in (select os.id, os.nabavna_mp, os.porez_procenat, os.stavka_id, o.id as dok,
+                             nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st,
+                             upper(vd.sifra) as vrs
+                        from operacija_stavke os
+                        join operacije o on o.id = os.operacija_id
+                        join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                       where os.id = p_stavka_dok_id) loop
+                if d.vrs <> 'UVM' or d.st = 'Z' then
+                    greska('MPC se na dokumentu unosi samo na prijemu u maloprodaju u pripremi.');
+                end if;
+                l_mpc := kuf_pkg.broj(p_mpc);
+                if nvl(l_mpc, 0) <= 0 then
+                    greska('MPC mora biti veća od nule.');
+                end if;
+                l_mpc := round(l_mpc, 2);
+                l_pdv := nvl(d.porez_procenat, pdv_stopa(d.stavka_id));
+                l_nmp := d.nabavna_mp;
+                l_mar := case when l_nmp is not null then round(l_mpc / (1 + l_pdv / 100) - l_nmp, 4) end;
+                update operacija_stavke
+                   set mpc = l_mpc, nabavna_cijena = l_mpc, porez_procenat = l_pdv, marza = l_mar
+                 where id = d.id;
+                l_por := 'MPC je upisana.';
+            end loop;
+            if l_por is null then
+                greska('Stavka ne postoji.');
+            end if;
+        exception
+            when others then
+                l_ok  := 'false';
+                l_por := regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', '');
+        end;
+        return '{"ok":' || l_ok || ',"poruka":"' || apex_escape.json(l_por) || '","mpc":"'
+               || case when l_ok = 'true' then to_char(l_mpc, 'FM999G999G990D00') end || '","marza":"'
+               || case when l_ok = 'true' and l_nmp > 0 then to_char(round(l_mar / l_nmp * 100, 2), 'FM999G990D00') end || '"}';
+    end uvm_mpc_json;
+
+    procedure zakljucaj_uvm (p_id in number) is
+        l_cj    number;
+        l_tip   varchar2(1);
+        l_naziv varchar2(255);
+        l_red   number;
+        l_n     number;
+        l_nab   number;
+        l_dat   date;
+        l_god   number;
+    begin
+        for o in (select o.id, o.naziv, o.skladiste_id, o.datum, o.godina,
+                         nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st,
+                         upper(vd.sifra) as vrs
+                    from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
+                   where o.id = p_id) loop
+            if o.vrs <> 'UVM' or o.st = 'Z' then
+                greska('Dokument nije prijem u maloprodaju u pripremi.');
+            end if;
+            for s in (select st.sifra, st.naziv from operacija_stavke os join sec_stavke st on st.id = os.stavka_id
+                       where os.operacija_id = p_id and nvl(os.mpc, 0) <= 0 order by os.redni_broj) loop
+                greska('Artikal ' || s.sifra || ' ' || s.naziv || ' nema MPC - unesite MPC pa zaključite prijem.');
+            end loop;
+            l_cj := cjenovnik_skladista(o.skladiste_id);
+            l_tip := tip(l_cj);
+            if l_cj is null or l_tip <> 'M' then
+                greska('Skladište prijema nema maloprodajni cjenovnik.');
+            end if;
+            -- datum zaključavanja (bez retroaktivnog preračuna), u istoj godini
+            l_dat := greatest(trunc(o.datum), trunc(sysdate));
+            if extract(year from l_dat) <> o.godina then
+                l_dat := trunc(o.datum);
+            end if;
+            l_naziv := o.naziv;
+            nova_akcija;
+            -- nova / promijenjena MPC: prvo nivelacija postojećih zaliha ostalih skladišta (prijem je još u pripremi
+            -- i ne ulazi u stanje), zatim novi red cjenovnika
+            for a in (select os.stavka_id, max(os.mpc) as mpc, max(os.porez_procenat) as pdv, max(os.nabavna_mp) as nmp
+                        from operacija_stavke os where os.operacija_id = p_id group by os.stavka_id) loop
+                if nvl(mpc(l_cj, a.stavka_id), -1) <> a.mpc then
+                    l_n := nivelisi(l_cj, a.stavka_id, a.mpc, null, 'Nivelacija na MPC sa prijema ' || l_naziv, p_id);
+                    l_nab := nvl(nullif(nabavna(l_cj, a.stavka_id), 0), a.nmp);
+                    l_red := postavi_cijenu(l_cj, a.stavka_id, l_nab,
+                                            round(a.mpc / (1 + nvl(a.pdv, pdv_stopa(a.stavka_id)) / 100), 4), a.mpc,
+                                            'MPC sa prijema ' || l_naziv, 'U', null, p_id);
+                end if;
+            end loop;
+            update operacije set status = 'Z', zakljucano = 'Y', datum = l_dat where id = p_id;
+            -- kontrola: zalihe skladišta prijema na važeću MPC (bez razlike, osim ako je MPC u međuvremenu promijenjena)
+            poslije_prijema(p_id);
+            return;
+        end loop;
+        greska('Dokument ne postoji.');
+    end zakljucaj_uvm;
 
     function razlog_zabrane_vracanja (p_kalkulacija_id in number) return varchar2 is
         l_izl varchar2(255);

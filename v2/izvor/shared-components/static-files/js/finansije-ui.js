@@ -128,6 +128,14 @@ window.finCijena = (function ($) {
     function postaviMpc(p, vpc) {
         if (apex.item(p + "_MPC").node) { apex.item(p + "_MPC").setValue(fmt(r2(vpc * (1 + stopa(p) / 100))), null, true); }
     }
+    /* R24: marža (%) = (VPC - nabavna) / nabavna * 100, preračunava se pri izmjeni bilo koje cijene */
+    function postaviMarzu(p) {
+        var nab = num(p + "_NABAVNA_CIJENA"), vpc = num(p + "_VPC");
+        if (!apex.item(p + "_MARZA").node) { return; }
+        if (nab !== null && nab !== 0 && vpc !== null) {
+            apex.item(p + "_MARZA").setValue(fmt(r2((vpc - nab) / nab * 100)), null, true);
+        }
+    }
     // vrijednosti se postavljaju bez "change" događaja, da račun ne krene
     // ukrug i ne prepravi cijenu koju je korisnik upravo upisao
     return {
@@ -148,6 +156,13 @@ window.finCijena = (function ($) {
             if (window.finCijenaUcitava) { return; }
             var vpc = num(p + "_VPC");
             if (vpc !== null) { postaviMpc(p, vpc); }
+            postaviMarzu(p);
+            upozori(p);
+        },
+        izmjenaNabavne: function (p) {
+            /* R24: nova nabavna - VPC/MPC ostaju, preračunava se marža */
+            if (window.finCijenaUcitava) { return; }
+            postaviMarzu(p);
             upozori(p);
         },
         izMpc: function (p) {
@@ -155,6 +170,7 @@ window.finCijena = (function ($) {
             if (window.finCijenaUcitava) { return; }
             var mpc = num(p + "_MPC");
             if (mpc !== null) { apex.item(p + "_VPC").setValue(fmt(r2(mpc / (1 + stopa(p) / 100))), null, true); }
+            postaviMarzu(p);
             upozori(p);
         }
     };
@@ -940,12 +956,38 @@ window.finRmSb = (function ($) {
                     osvjezi();
                 });
         });
+        /* R24: pretraga na serveru (cijela lista), označavanje više brojeva i dodavanje označenih */
+        var tTrazi;
+        function oznaceno() {
+            var n = $("#" + raspId + " .fin-sb-cb:checked").length;
+            $("#finSbOznaceno").text(n);
+            $(".fin-sb-dodaj-oznacene").prop("disabled", n === 0);
+        }
         $("#" + p + "_TRAZI").on("input", function () {
-            var f = this.value.toLowerCase();
-            $("#" + raspId + " tbody tr").each(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(f) >= 0);
-            });
+            clearTimeout(tTrazi);
+            tTrazi = setTimeout(function () { if (apex.region(raspId)) { apex.region(raspId).refresh(); } }, 350);
         }).on("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); return false; } });
+        $(document).on("change", "#" + raspId + " .fin-sb-cb", oznaceno);
+        $("#" + raspId).on("apexafterrefresh", oznaceno);
+        $(document).on("click", ".fin-sb-svi", function (e) {
+            var $cb = $("#" + raspId + " .fin-sb-cb"), sve = $cb.length && $cb.filter(":checked").length === $cb.length;
+            e.preventDefault();
+            $cb.prop("checked", !sve);
+            oznaceno();
+        });
+        $(document).on("click", ".fin-sb-dodaj-oznacene", function (e) {
+            var lista = $("#" + raspId + " .fin-sb-cb:checked").map(function () { return this.value; }).get();
+            e.preventDefault();
+            if (!lista.length || radi) { return; }
+            radi = true;
+            apex.server.process("DODAJ_SB_VISE", { x01: lista.join("\n") }, { dataType: "json" })
+                .done(function (d) {
+                    if (d.ok) { apex.message.clearErrors(); apex.message.showPageSuccess(d.poruka); } else { greska(d.poruka); }
+                    stanje(d);
+                    osvjezi();
+                })
+                .always(function () { radi = false; });
+        });
         function dodaj() {
             var v = $.trim($sb.val());
             if (!v || radi) { return; }

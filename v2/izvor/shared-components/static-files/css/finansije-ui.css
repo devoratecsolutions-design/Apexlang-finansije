@@ -1398,4 +1398,7 @@ body .t-TreeNav .a-TreeView-node--topLevel.is-collapsible > .a-TreeView-row:not(
     .a-IRR-tableContainer, .t-fht-wrapper, .t-fht-tbody { overflow: visible !important; max-height: none !important; height: auto !important; }
     tr { page-break-inside: avoid; }
 }
-
+/* R24: izbor više serijskih brojeva */
+.fin-sb-akcije { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+.fin-sb-oznaka { display: inline-flex; align-items: center; margin-right: 8px; }
+.fin-sb-oznaka input { width: 16px; height: 16px; cursor: pointer; }

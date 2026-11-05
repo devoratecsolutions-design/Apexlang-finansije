@@ -109,6 +109,7 @@ select o.id,
                       sum(os.kolicina)  as kolicina,
                       sum(round(os.kolicina * os.nabavna_cijena, 2)) as iznos,
                       sum(case when (s.serijski_broj = 'Y' or zs.serijski_broj = 'Y') and o.popis_id is null
+                                and nvl(vd.sifra, '-') not in ('FDK', 'NIVM')   -- R24: vrijednosni dokumenti bez SB
                                 and nvl(os.kolicina, 0) <> (select count(*) from operacija_stavke_sb sb
                                                              where sb.operacija_stavka_id = os.id)
                                then 1 else 0 end) as sb_nedostaje
@@ -128,13 +129,15 @@ select os.id,
        a.naziv,
        a.jm_naziv,
        -- R21: stavka zamjene šifara traži serijske brojeve i kada se prati samo zamjenski artikal
-       case when a.prati_sb = 'Y' or z.prati_sb = 'Y' then 'Y' else 'N' end as prati_sb,
+       -- R24: finansijsko doknjiženje i nivelacija (samo vrijednost) - bez serijskih brojeva
+       case when vd.sifra in ('FDK', 'NIVM') then 'N'
+            when a.prati_sb = 'Y' or z.prati_sb = 'Y' then 'Y' else 'N' end as prati_sb,
        os.kolicina,
        os.opis,
        os.nabavna_cijena                                                as cijena,
        round(os.kolicina * os.nabavna_cijena, 2)                         as iznos,
        nvl(sb.n, 0)                                                     as sb_uneseno,
-       case when (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
+       case when nvl(vd.sifra, '-') not in ('FDK', 'NIVM') and (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
        -- serijski brojevi stavke pripadaju zamjenskom artiklu (novi brojevi, kao na ulazu)
        case when nvl(a.prati_sb, 'N') <> 'Y' and z.prati_sb = 'Y' then 'Y' else 'N' end as sb_zamjenskog,
        os.mpc_stara,                                                    -- R23: nivelacija (stara / nova MPC)
@@ -146,6 +149,7 @@ select os.id,
        z.naziv                                                          as zamjena_naziv
   from operacija_stavke os
   join operacije o on o.id = os.operacija_id
+  left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   join vw_rm_artikli a on a.id = os.stavka_id
   left join vw_rm_artikli z on z.id = os.zamjena_stavka_id
   outer apply (select count(*) as n from operacija_stavke_sb x where x.operacija_stavka_id = os.id) sb

@@ -76,7 +76,7 @@ Pokreću se **poslije** skripti 00–10, redom, pa se tek onda importuje aplikac
 | 4 | `12_rm_pkg.sql` | ACCOUNTING | RM_DOKUMENT_PKG (dokumenti, zaključavanje, prenosi, reversi, serijski brojevi, storniranje, rashod, razlike inventure, zabrana datuma prije popisa) |
 | 5 | `13_rm_views.sql` | ACCOUNTING | view-ovi dokumenata skladišta |
 | 6 | `14_rm_skladista.sql` | ACCOUNTING | RM_SKLADISTE_PKG i view-ovi skladišta |
-| 7a | `21_rm_cjenovnik.sql` | ACCOUNTING | **prije 15**: cjenovnik robnih skladišta – kolone CJENOVNIK_STAVKE (napomena, izvor, kalkulacija, dokument, prethodni red), jedan aktivan red po artiklu, RM_CJENOVNIK_PKG (zajednička prosječna cijena veleprodaje, usklađivanje FDK) |
+| 7a | `21_rm_cjenovnik.sql` | ACCOUNTING | **prije 15**: cjenovnik robnih skladišta – kolone CJENOVNIK_STAVKE (napomena, izvor, kalkulacija, dokument, prethodni red), jedan aktivan red po artiklu, RM_CJENOVNIK_PKG (zajednička prosječna cijena veleprodaje, usklađivanje FDK, nivelacija maloprodaje, MPC na prijemu u maloprodaju – R24) |
 | 7 | `15_rm_kalkulacija.sql` | ACCOUNTING | kolone kalkulacije, RM_KALKULACIJA_PKG i view-ovi kalkulacije |
 | 8 | `10_kuf_pkg.sql` | ACCOUNTING | KUF_PKG (provjera brisanja fakture u kalkulaciji) – ako nije već pokrenut |
 | 9 | `17_rm_izvjestaji.sql` | ACCOUNTING | view-ovi izvještaja (VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU) |

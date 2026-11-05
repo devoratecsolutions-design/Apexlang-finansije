@@ -42,10 +42,30 @@ page 331 (
                 }
                 if (apex.region("rm_revers_preostalo")) { apex.region("rm_revers_preostalo").refresh(); }
             });
+            /* R24: prijem u maloprodaju - unos MPC na dokumentu (artikli bez MPC u cjenovniku) */
+            apex.jQuery(document).on("change", ".fin-uvm-mpc", function () {
+                var i$ = apex.jQuery(this), id = String(i$.data("id"));
+                apex.server.process("UVM_MPC", { x01: id, x02: i$.val() }, { dataType: "json" })
+                    .done(function (d) {
+                        if (d.ok) {
+                            apex.message.clearErrors();
+                            i$.val(d.mpc).removeClass("is-error");
+                            apex.jQuery(".fin-uvm-marza[data-id='" + id + "']").text(d.marza || "");
+                            if (apex.region("rm_stavke")) { apex.region("rm_stavke").refresh(); }
+                        } else {
+                            i$.addClass("is-error");
+                            apex.message.clearErrors();
+                            apex.message.showErrors([{ type: "error", location: "page", message: d.poruka, unsafe: false }]);
+                        }
+                    });
+            }).on("keydown", ".fin-uvm-mpc", function (e) {
+                if (e.key === "Enter") { e.preventDefault(); apex.jQuery(this).trigger("change"); return false; }
+            });
             /* međuskladišni prijem: preuzimanje prenosa na čekanju */
             apex.jQuery(document).on("click", ".fin-preuzmi", function () {
                 var b$ = apex.jQuery(this);
-                apex.page.confirm("Preuzeti prenos " + b$.data("naziv") + "? Prijem se pravi sa količinama i cijenama iz prenosa i odmah se zaključuje (bez mogućnosti izmjena).",
+                apex.page.confirm("Preuzeti prenos " + b$.data("naziv") + "? Prijem se pravi sa količinama i cijenama iz prenosa i odmah se zaključuje (bez mogućnosti izmjena)."
+                    + ($v("P331_VRSTA_SIFRA") === "UVM" ? " Ako neki artikal nema MPC u cjenovniku maloprodaje, prijem ostaje u pripremi dok na njemu ne unesete MPC." : ""),
                     { request: "PREUZMI", set: { "P331_PRENOS_ID": String(b$.data("id")) } });
             });
             ```
@@ -121,6 +141,228 @@ page 331 (
             type: expression
             plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'N'
         }
+    )
+
+    region uvm-mpc (
+        name: MPC za prijem u maloprodaju
+        title: MPC za prijem u maloprodaju
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                -- R24: artikli bez MPC u cjenovniku maloprodaje - MPC se definiše na prijemu (kao na kalkulaciji)
+                SELECT
+                    s.redni_broj,
+                    s.sifra,
+                    s.naziv,
+                    rtrim(to_char(s.kolicina, 'FM999G999G999G990D999999'), '.,') AS kolicina,
+                    to_char(s.nabavna_mp, 'FM999G999G999G990D0000') AS nabavna,
+                    to_char(rm_cjenovnik_pkg.mpc(rm_cjenovnik_pkg.cjenovnik_skladista(:P331_SKLADISTE_ID), s.stavka_id), 'FM999G999G999G990D00') AS mpc_cjenovnik,
+                    to_char(s.mpc, 'FM999G999G999G990D00') AS mpc,
+                    CASE WHEN s.nabavna_mp > 0 AND s.mpc > 0
+                         THEN to_char(round((s.mpc / (1 + nvl(s.porez_procenat, 17) / 100) / s.nabavna_mp - 1) * 100, 2), 'FM999G990D00') END AS marza,
+                    s.id AS stavka_dok_id
+                FROM vw_rm_dokument_stavke s
+                WHERE s.operacija_id = :P331_ID
+                ORDER BY s.redni_broj, s.id
+                ```
+            pageItemsToSubmit: [
+                P331_ID
+                P331_SKLADISTE_ID
+            ]
+        }
+        layout {
+            sequence: 9
+            slot: contentBody
+        }
+        appearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+            cssClasses: fin-section
+        }
+        reportLayout {
+            numberOfRows: 1000
+        }
+        componentAppearance {
+            template: @standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+            ]
+        }
+        pagination {
+            type: rowRangesXToYNoPagination
+        }
+        messages {
+            whenNoDataFound: Prijem nema stavki.
+        }
+        advanced {
+            htmlDomId: rm_uvm_mpc
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_VRSTA_SIFRA = 'UVM' and nvl(:P331_STATUS, 'P') <> 'Z'
+        }
+
+        column REDNI_BROJ (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: R.br.
+                alignment: center
+            }
+            layout {
+                sequence: 10
+                columnAlignment: center
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column SIFRA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 20
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NAZIV (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Naziv
+            }
+            layout {
+                sequence: 30
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column KOLICINA (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Količina
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column NABAVNA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Nabavna (izlaz VP)
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MPC_CJENOVNIK (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: MPC u cjenovniku
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            columnFormatting {
+                cssClasses: fin-num
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MPC (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: MPC na prijemu
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <input type="text" class="text_field apex-item-text fin-num fin-uvm-mpc" data-id="#STAVKA_DOK_ID#" value="#MPC#" inputmode="decimal" size="10" aria-label="MPC #SIFRA#">
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column MARZA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Marža (%)
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            columnFormatting {
+                htmlExpression:
+                    ```html
+                    <span class="fin-uvm-marza" data-id="#STAVKA_DOK_ID#">#MARZA#</span>
+                    ```
+            }
+            sorting {
+                sortable: false
+            }
+        )
+
+        column STAVKA_DOK_ID (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 300
+            }
+        )
+
     )
 
     region dokument-detalji (
@@ -836,7 +1078,7 @@ page 331 (
                     CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
                          ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
                     s.iznos,
-                    CASE WHEN s.prati_sb = 'Y' AND :P331_VRSTA_SIFRA <> 'FDK' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb,
+                    CASE WHEN s.prati_sb = 'Y' AND :P331_VRSTA_SIFRA NOT IN ('FDK', 'NIVM') THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb,
                     s.zamjena_stavka_id,
                     -- R23 nivelacija: stara / nova MPC i PDV u razlici
                     to_char(s.mpc_stara, 'FM999G999G999G990D00') AS mpc_stara,
@@ -1387,6 +1629,10 @@ page 331 (
                 -- izlaz u pripremi: region uvijek postoji (osvježava se poslije unosa po serijskom broju)
                 if :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_VRSTA_SIFRA in ('PSI', 'RSR')) and :P331_VRSTA_SIFRA <> 'ZSA' and :P331_IZMJENJIVA = 'Y' then
                     return true;
+                end if;
+                -- R24: finansijsko doknjiženje i nivelacija ne mijenjaju količine - bez serijskih brojeva
+                if :P331_VRSTA_SIFRA in ('FDK', 'NIVM') then
+                    return false;
                 end if;
                 for s in (select 1 from vw_rm_dokument_stavke where operacija_id = :P331_ID and prati_sb = 'Y' fetch first 1 row only) loop
                     return true;
@@ -2275,7 +2521,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and :P331_IZMJENJIVA = 'Y' and rm_dokument_pkg.je_inventura(:P331_VRSTA_SIFRA) = 'N'
+            plsqlExpression: :P331_ID is not null and (:P331_IZMJENJIVA = 'Y' or (:P331_VRSTA_SIFRA = 'UVM' and nvl(:P331_STATUS, 'P') <> 'Z')) and rm_dokument_pkg.je_inventura(:P331_VRSTA_SIFRA) = 'N'
         }
     )
 
@@ -2334,6 +2580,38 @@ page 331 (
         serverSideCondition {
             type: expression
             plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y' or :P331_VRSTA_SIFRA in ('RIV', 'FDK')) and :P331_IZMJENJIVA = 'Y'
+        }
+    )
+
+    button zakljucaj-uvm (
+        buttonName: ZAKLJUCAJ_UVM
+        label: Zaključaj prijem
+        layout {
+            sequence: 41
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--mobileHideLabel
+                t-Button--iconLeft
+            ]
+            icon: fa-lock
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Zaključiti prijem? Nova ili promijenjena MPC se upisuje u cjenovnik maloprodaje, a zalihe ostalih maloprodajnih skladišta tog cjenovnika se niveliraju.
+            style: danger
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P331_ID is not null and :P331_VRSTA_SIFRA = 'UVM' and nvl(:P331_STATUS, 'P') <> 'Z'
         }
     )
 
@@ -2696,6 +2974,7 @@ page 331 (
                                                      when d.glavna_knjiga_id is not null then 'Proknjižen'
                                                      when d.status = 'Z' then 'Zaključen'
                                                      when d.u_kalkulaciji_id is not null then 'U kalkulaciji'
+                                                     when d.vrsta_sifra = 'UVM' then 'Čeka MPC'
                                                      else 'U pripremi' end;
                     :P331_STATUS_IKONA       := case when d.stornirano = 'Y' or d.storniran_id is not null then 'fa-ban'
                                                      when d.glavna_knjiga_id is not null then 'fa-book'
@@ -2716,7 +2995,8 @@ page 331 (
                                           when :P331_TIP_KRETANJA = 'I' then 'Raspoloživo'
                                           when :P331_VRSTA_SIFRA = 'FDK' then 'Stanje · vrijednost' else 'Stanje' end;
                 :P331_NASLOV_CIJENA := case when :P331_VRSTA_SIFRA = 'FDK' then 'Iznos doknjiženja (+/-)'
-                                             when :P331_VRSTA_SIFRA = 'NIVM' then 'Razlika po jedinici' else 'Jed. cijena' end;
+                                             when :P331_VRSTA_SIFRA = 'NIVM' then 'Razlika po jedinici'
+                                             when :P331_VRSTA_SIFRA = 'UVM' then 'MPC' else 'Jed. cijena' end;
                 :P331_NASLOV_RADNIK := case when :P331_VRSTA_SIFRA = 'PSI' then 'Sa radnika'
                                             when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Radnik' else 'Zaduženi radnik' end;
                 :P331_NASLOV_POVRAT := case when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Preuzmi zaduženja radnika'
@@ -2988,7 +3268,7 @@ page 331 (
             sequence: 35
         }
         successMessage {
-            successMessage: Prenos je preuzet - međuskladišni prijem je napravljen i zaključen.
+            successMessage: Prenos je preuzet - međuskladišni prijem je napravljen.
         }
         serverSideCondition {
             type: requestIsContainedInValue
@@ -3024,6 +3304,62 @@ page 331 (
         }
         serverSideCondition {
             whenButtonPressed: @zakljucaj
+        }
+    )
+
+    process zakljucaj-uvm (
+        name: Zaključaj prijem u maloprodaju (MPC)
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                begin
+                    rm_cjenovnik_pkg.zakljucaj_uvm(p_id => :P331_ID);
+                exception
+                    when others then
+                        if sqlcode between -20999 and -20000 then
+                            apex_error.add_error(
+                                p_message          => regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-[A-Z]+: )?', ''),
+                                p_display_location => apex_error.c_inline_in_notification);
+                        else
+                            raise;
+                        end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 41
+        }
+        successMessage {
+            successMessage: Prijem je zaključen - MPC je upisana u cjenovnik.
+        }
+        serverSideCondition {
+            whenButtonPressed: @zakljucaj-uvm
+        }
+    )
+
+    process ajax-uvm-mpc (
+        name: UVM_MPC
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_n number;
+                begin
+                    select count(*) into l_n from operacija_stavke
+                     where id = kuf_pkg.broj(apex_application.g_x01) and operacija_id = kuf_pkg.broj(:P331_ID);
+                    if l_n = 0 then
+                        sys.htp.p('{"ok":false,"poruka":"Stavka ne pripada dokumentu."}');
+                    else
+                        sys.htp.p(rm_cjenovnik_pkg.uvm_mpc_json(kuf_pkg.broj(apex_application.g_x01), apex_application.g_x02));
+                    end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 32
+            point: ajaxCallback
         }
     )
 
@@ -3177,7 +3513,7 @@ page 331 (
         }
         serverSideCondition {
             type: requestIsContainedInValue
-            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,PREUZMI,POVRAT
+            value: SAVE,ZAKLJUCAJ,OTKLJUCAJ,PREUZMI,POVRAT,ZAKLJUCAJ_UVM
         }
     )
 

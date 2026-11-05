@@ -184,6 +184,8 @@ create or replace package rm_dokument_pkg as
     procedure obrisi_sve_sb (p_stavka_dok_id in number);
     -- barkod / ručni unos jednog broja i stanje unosa: JSON {"ok":bool,"poruka":"..","n":uneseno,"k":količina}
     function dodaj_sb_json (p_stavka_dok_id in number, p_sb in varchar2) return varchar2;
+    -- R24: više serijskih brojeva odjednom (označeni u listi raspoloživih; jedan po redu)
+    function dodaj_sb_vise_json (p_stavka_dok_id in number, p_tekst in varchar2) return varchar2;
     function sb_stanje_json (p_stavka_dok_id in number) return varchar2;
     -- izlaz: serijski broj raspoloživ na skladištu (zaključeni ulazi - svi izlazi), bez zadatog dokumenta
     function sb_raspoloziv (p_skladiste_id in number, p_stavka_id in number, p_sb in varchar2, p_bez_dok in number default null) return number;
@@ -516,6 +518,9 @@ create or replace package body rm_dokument_pkg as
             end if;
             if nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z' then
                 return 'Dokument je zaključen.';
+            end if;
+            if tip_dokumenta_sifra(p_id) = 'UVM' then
+                return 'Prijem u maloprodaju čeka MPC: unesite MPC za artikle koji je nemaju u cjenovniku i zaključite prijem (količine se ne mijenjaju).';
             end if;
             if je_prijem_prenosa(tip_dokumenta_sifra(p_id)) = 'Y' then
                 return 'Prijem po prenosu se ne može mijenjati.';
@@ -1275,8 +1280,14 @@ create or replace package body rm_dokument_pkg as
 
     procedure obrisi (p_id in number) is
         l_r varchar2(4000);
+        l_n number;
     begin
-        provjeri_izmjenu(p_id);
+        -- R24: prijem u maloprodaju koji čeka MPC se može obrisati (prenos se vraća na čekanje)
+        select count(*) into l_n from operacije
+         where id = p_id and nvl(status, 'P') <> 'Z' and glavna_knjiga_id is null;
+        if not (tip_dokumenta_sifra(p_id) = 'UVM' and l_n = 1) then
+            provjeri_izmjenu(p_id);
+        end if;
         if je_inventura(tip_dokumenta_sifra(p_id)) = 'Y' then
             greska('Dokument razlike inventure nastaje iz popisa i ne briše se ručno.');
         end if;
@@ -1776,6 +1787,32 @@ create or replace package body rm_dokument_pkg as
                || substr(l_st, 2);
     end dodaj_sb_json;
 
+    function dodaj_sb_vise_json (p_stavka_dok_id in number, p_tekst in varchar2) return varchar2 is
+        l_poruka varchar2(4000);
+        l_ok     varchar2(5);
+        l_st     varchar2(400);
+        l_lista  apex_t_varchar2 := apex_t_varchar2();
+    begin
+        for b in (select trim(column_value) as sb from table(apex_string.split(p_tekst, chr(10))) where trim(column_value) is not null) loop
+            l_lista.extend;
+            l_lista(l_lista.count) := b.sb;
+        end loop;
+        if l_lista.count = 0 then
+            return '{"ok":false,"poruka":"Označite serijske brojeve u listi."}';
+        end if;
+        begin
+            l_poruka := dodaj_sb_lista(p_stavka_dok_id, l_lista);
+            l_ok := case when l_poruka like 'Dodato: 0 %' then 'false' else 'true' end;
+        exception
+            when others then
+                l_ok := 'false';
+                l_poruka := regexp_replace(sqlerrm, '^ORA-[0-9]+: (Greška CORP-RM: )?', '');
+        end;
+        l_st := sb_stanje_json(p_stavka_dok_id);
+        return '{"ok":' || l_ok || ',"poruka":"' || apex_escape.json(l_poruka) || '",'
+               || substr(l_st, 2);
+    end dodaj_sb_vise_json;
+
     procedure obrisi_sb (p_id in number) is
         l_dok number;
     begin
@@ -1824,7 +1861,7 @@ create or replace package body rm_dokument_pkg as
                     left join sec_stavke z on z.id = os.zamjena_stavka_id
                    where os.operacija_id = p_id
                      and (a.serijski_broj = 'Y' or (l_vrs = 'ZSA' and z.serijski_broj = 'Y'))
-                     and l_inv = 'N' and l_vrs <> 'FDK' and os.smjer is null) loop
+                     and l_inv = 'N' and l_vrs not in ('FDK', 'NIVM') and os.smjer is null) loop
             if s.n <> s.kolicina then
                 return 'Artikal ' || s.sifra || ' ' || s.naziv || ': uneseno ' || s.n || ' serijskih brojeva, a količina je '
                        || s.kolicina || '.';
@@ -2478,6 +2515,7 @@ create or replace package body rm_dokument_pkg as
         l_nmp    number;
         l_cj     number;
         l_scj    number;
+        l_ceka   boolean := false;               -- R24: UVM - artikal bez MPC u cjenovniku, prijem ostaje u pripremi
     begin
         for pr in (select o.id, o.naziv, o.datum, o.skladiste_id, o.skladiste_prenos_id, o.ooj_id,
                           nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
@@ -2549,12 +2587,14 @@ create or replace package body rm_dokument_pkg as
                 if l_pri = 'UVM' then
                     select max(cs.mpc) into l_mpc from cjenovnik_stavke cs
                      where cs.cjenovnik_id = l_cj and cs.stavka_id = s.stavka_id and cs.valid = 'Y' and nvl(cs.mpc, 0) > 0;
-                    if l_mpc is null then
-                        greska('Artikal ' || s.sifra || ' ' || s.naziv || ' nema MPC u cjenovniku maloprodajnog skladišta - unesite MPC u cjenovnik pa preuzmite prenos.');
-                    end if;
                     l_nmp := s.nabavna_cijena;
                     l_pdv := s.pdv;
                     l_cij := l_mpc;
+                    if l_mpc is null then
+                        -- R24: MPC se definiše na samom prijemu (kao na kalkulaciji); do tada je prijem u pripremi
+                        l_ceka := true;
+                        l_cij  := 0;
+                    end if;
                 elsif l_pri = 'UMV' then
                     l_cij := cijena_izlaza(p_skladiste_id, s.stavka_id, l_datum, null);
                     if nvl(l_cij, 0) <= 0 then
@@ -2570,11 +2610,16 @@ create or replace package body rm_dokument_pkg as
                                               mpc, nabavna_mp, porez_procenat, marza)
                 values (l_id, s.stavka_id, s.kolicina, round(l_cij, 4), s.opis, s.redni_broj,
                         l_mpc, l_nmp, l_pdv,
-                        case when l_pri = 'UVM' then round(l_mpc / (1 + l_pdv / 100) - l_nmp, 4) end)
+                        case when l_pri = 'UVM' and l_mpc is not null then round(l_mpc / (1 + l_pdv / 100) - l_nmp, 4) end)
                 returning id into l_st;
                 insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
                 select l_st, sb.serijski_broj from operacija_stavke_sb sb where sb.operacija_stavka_id = s.id;
             end loop;
+            if l_ceka then
+                -- R24: prijem u maloprodaju čeka MPC (unos na dokumentu, zatim rm_cjenovnik_pkg.zakljucaj_uvm)
+                update operacije set status = 'P', zakljucano = 'N' where id = l_id;
+                return l_id;
+            end if;
             -- cjenovnik odredišta: veleprodaja - novi zajednički prosjek i doknjiženja; maloprodaja - nivelacija na MPC
             -- (dinamički poziv: RM_CJENOVNIK_PKG se instalira poslije ovog paketa, 21_rm_cjenovnik.sql)
             execute immediate 'begin rm_cjenovnik_pkg.poslije_prijema(:1); end;' using l_id;

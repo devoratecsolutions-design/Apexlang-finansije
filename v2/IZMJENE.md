@@ -687,3 +687,17 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
   - maloprodaja: izmjena MPC nivelira zalihe svih maloprodajnih skladišta cjenovnika (NIVM) – isto služi i za početnu nivelaciju starih zaliha na MPC;
   - promjena VPC (veleprodaja) ili nabavne (maloprodaja) mijenja samo cjenovnik.
 - **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije. (Uključuje i R22.)
+
+## Serijski brojevi, marža u cjenovniku, MPC na prijemu u maloprodaju – korak R24 (05.11.2026)
+- **Izbor serijskih brojeva iz liste** (dijalog serijskih brojeva stavke, način „Iz liste“):
+  - pretraga po dijelu broja ide na server – pretražuje se cijela lista raspoloživih brojeva (ne samo prikazani redovi), prikaz do 1000 redova;
+  - kvadratić uz svaki broj, dugmad **Označi sve prikazane** i **Dodaj označene (n)** – više brojeva se dodaje odjednom (`RM_DOKUMENT_PKG.DODAJ_SB_VISE_JSON`), „+“ za pojedinačni broj ostaje.
+- **Cjenovnik → artikal:** marža (%) se preračunava pri svakoj izmjeni nabavne cijene, VPC ili MPC (= (VPC − nabavna) / nabavna × 100); izmjena marže i dalje računa VPC i MPC; marža se prikazuje i pri otvaranju postojeće cijene. Nabavna cijena iz cjenovnika se učitava sa 4 decimale.
+- **Finansijsko doknjiženje (FDK) i nivelacija (NIVM):** bez serijskih brojeva – nema kolone SB, regiona serijskih brojeva, upozorenja „SB“ na listi dokumenata ni provjere pri zaključavanju (dokumenti mijenjaju samo vrijednost).
+- **Prijem u maloprodaju (UVM) za artikle bez MPC u cjenovniku:** preuzimanje prenosa više ne javlja grešku – prijem nastaje **u pripremi** (status „Čeka MPC“), količine i serijski brojevi su iz prenosa i ne mijenjaju se:
+  - region **MPC za prijem u maloprodaju**: nabavna (cijena izlaza iz veleprodaje), MPC iz cjenovnika, polje **MPC na prijemu** i marža (%) – MPC se snima pri izlasku iz polja / Enter;
+  - **Zaključaj prijem**: provjera da sve stavke imaju MPC, nova ili promijenjena MPC se upisuje u cjenovnik maloprodaje (VPC = MPC / (1 + PDV), napomena „MPC sa prijema …“), postojeće zalihe ostalih maloprodajnih skladišta tog cjenovnika se prethodno niveliraju (NIVM), prijem se zaključuje sa datumom zaključavanja;
+  - prijem koji čeka MPC se može obrisati – prenos se vraća na listu „Prenosi na čekanju“;
+  - kada svi artikli imaju MPC u cjenovniku, prijem se kao i do sada odmah zaključuje.
+- **Baza:** RM_DOKUMENT_PKG (DODAJ_SB_VISE_JSON, PREUZMI_PRENOS, RAZLOG_ZABRANE, OBRISI, PROVJERI_KOMPLETNOST), RM_CJENOVNIK_PKG (UVM_MPC_JSON, ZAKLJUCAJ_UVM), pogledi VW_RM_DOKUMENTI i VW_RM_DOKUMENT_STAVKE. Bez novih kolona.
+- **SQL (redom, kao ACCOUNTING):** `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`. Zatim import aplikacije.
