@@ -155,6 +155,11 @@ create or replace package rm_dokument_pkg as
     -- R21: vrijednost zaliha artikla na datum (zaključeni dokumenti, bez zadatog dokumenta)
     function vrijednost_zaliha (p_skladiste_id in number, p_stavka_id in number, p_datum in date default null,
                                 p_bez_dok in number default null) return number;
+    -- R22: jedinična cijena izlaza: veleprodajno robno skladište - zajednička prosječna cijena iz cjenovnika
+    -- (kada je red cjenovnika iz v2); ostala skladišta - prosječna cijena skladišta. Izlaz cijele preostale
+    -- količine uzima tačno preostalu vrijednost (bez ostatka vrijednosti bez količine).
+    function cijena_izlaza (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_kolicina in number,
+                            p_bez_dok in number default null) return number;
     -- R21: prvi zaključen izlaz artikla poslije datuma (naziv dokumenta) ili null
     function izlaz_poslije (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_bez_dok in number default null) return varchar2;
     function artikl_info (p_stavka_id in number, p_dokument_id in number, p_skladiste_id in number, p_datum in date,
@@ -802,6 +807,32 @@ create or replace package body rm_dokument_pkg as
         return l_naziv;
     end izlaz_poslije;
 
+    function cijena_izlaza (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_kolicina in number,
+                            p_bez_dok in number default null) return number is
+        l_c   number;
+        l_obr number;
+    begin
+        -- veleprodajni cjenovnik robnog skladišta, red iz v2 (kalkulacija / usklađivanje / ručno)
+        select max(cs.nabavna_cijena)
+          into l_c
+          from skladista s
+          join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id and upper(ts.sifra) = 'ROB'
+          join cjenovnici cj on cj.id = s.cjenovnik_id and cj.tip = 'V'
+          join cjenovnik_stavke cs on cs.cjenovnik_id = cj.id and cs.stavka_id = p_stavka_id and cs.valid = 'Y'
+         where s.id = p_skladiste_id
+           and cs.izvor is not null
+           and nvl(cs.nabavna_cijena, 0) > 0;
+        if l_c is null then
+            l_c := prosjecna_cijena(p_skladiste_id, p_stavka_id, p_datum);
+        end if;
+        -- izlaz cijele preostale (zaključene) količine: cijena = preostala vrijednost / količina
+        l_obr := obradjeno(p_skladiste_id, p_stavka_id, null, p_bez_dok);
+        if nvl(p_kolicina, 0) > 0 and l_obr > 0 and p_kolicina >= l_obr then
+            l_c := vrijednost_zaliha(p_skladiste_id, p_stavka_id, null, p_bez_dok) / l_obr;
+        end if;
+        return round(l_c, 4);
+    end cijena_izlaza;
+
     -- R21: FDK / ZSA - zaključen dokument se ne poništava (otključavanje, storno) ako su poslije njega
     -- izdavani artikli čija je vrijednost / količina zavisila od njega
     function razlog_fdk_zsa (p_id in number) return varchar2 is
@@ -1300,7 +1331,7 @@ create or replace package body rm_dokument_pkg as
             -- izlaz: prosječna cijena na datum dokumenta, količina najviše do raspoloživog
             -- raspoloživo i na datum dokumenta (ne može se izdati roba koja tog dana nije bila na stanju)
             -- i ukupno (izlaz ne smije ugroziti kasnije izlaze)
-            l_cijena := prosjecna_cijena(l_skl, p_stavka_id, l_datum);
+            l_cijena := cijena_izlaza(l_skl, p_stavka_id, l_datum, l_kol, p_dokument_id);
             l_rasp := raspolozivo(l_skl, p_stavka_id, l_datum, p_dokument_id);
             if l_kol > l_rasp then
                 greska('Na datum dokumenta (' || to_char(l_datum, 'DD.MM.YYYY') || ') raspoloživo je ' || fkol(l_rasp)
@@ -1866,13 +1897,13 @@ create or replace package body rm_dokument_pkg as
         -- (petlja, ne UPDATE sa funkcijom koja čita OPERACIJA_STAVKE: ORA-04091)
         for o in (select skladiste_id, datum, ooj_id, vrsta_dokumenta_id, zaduzeni_radnik_id, klijent_id
                     from operacije where id = p_id) loop
-            for st in (select id, stavka_id from operacija_stavke
+            for st in (select id, stavka_id, kolicina from operacija_stavke
                         where operacija_id = p_id and smjer is null
                           and vrsta_sifra(o.vrsta_dokumenta_id) not in ('RIV', 'FDK')) loop
                 if je_povrat(vrsta_sifra(o.vrsta_dokumenta_id)) = 'Y' then
                     l_cij := cijena_povrata(o.ooj_id, vrsta_sifra(o.vrsta_dokumenta_id), o.zaduzeni_radnik_id, o.klijent_id, st.stavka_id);
                 else
-                    l_cij := prosjecna_cijena(o.skladiste_id, st.stavka_id, o.datum);
+                    l_cij := cijena_izlaza(o.skladiste_id, st.stavka_id, o.datum, st.kolicina, p_id);
                 end if;
                 update operacija_stavke set nabavna_cijena = round(l_cij, 4) where id = st.id;
             end loop;

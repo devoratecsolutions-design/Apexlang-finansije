@@ -82,6 +82,7 @@ Na produkciji moraju postojati sa **istim parametrima** (imena i redoslijed).
 | 17_rm_izvjestaji.sql | VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU | novi objekti |
 | 18_core_error_manager.sql (CORE) | **CORE.ERROR_MANAGER – tijelo paketa (F_APEX_ERROR_HANDLER)** | **izmijenjen postojeći objekat** – spojiti sa verzijom sa produkcije |
 | 19_rm_popis.sql | paket RM_POPIS_PKG, VW_RM_POPISI, VW_RM_POPIS_STAVKE, VW_RM_POPIS_DOKUMENTI; brojač POP u CORE.PROTOKOLI (ako postoji vrsta POP) | novi objekti (koristi postojeće tabele POPISI i POPIS_STAVKE) |
+| 21_rm_cjenovnik.sql | **CJENOVNIK_STAVKE – nove kolone NAPOMENA, IZVOR, KALKULACIJA_ID, OPERACIJA_ID, PRETHODNI_ID (dodaje ih već 11_rm_model.sql), unique indeks CJENOVNIK_STAVKE_AKTIVAN_UK (jedan aktivan red po artiklu); podaci: stariji duplikati aktivnih redova se deaktiviraju**; indeksi CJENOVNIK_STAVKE_CJ_ART_I, _KALK_I; paket RM_CJENOVNIK_PKG | **izmijenjena postojeća tabela** + novi paket |
 | 20_partneri_konta.sql | **SEC_KLIJENT_KONTA – nova kolona PODRAZUMIJEVANO (Y/N, default N), check SEC_KLIJENT_KONTA_PODR_CK, unique indeks SEC_KLIJENT_KONTA_UK (partner, konto)**; paket SEC_PARTNER_PKG; podaci: konto sa SEC_KLIJENTI.KONTNA_KLASA_ID dodat u SEC_KLIJENT_KONTA, SEC_KLIJENTI.KONTNA_KLASA_ID = podrazumijevano konto najniže grupe | **izmijenjena postojeća tabela** + novi paket |
 
 Storniranje dokumenata skladišta (R16) koristi postojeće kolone OPERACIJE.STORNIRANO i STORNIRAN_ID (kao stari FINANSIJE_PKG.storniraj_operacija): storniran dokument i storno dokument se ne računaju u stanje.

@@ -16,6 +16,7 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R22 (05.11.2026): CJENOVNIK_STAVKE.NAPOMENA, IZVOR, KALKULACIJA_ID, OPERACIJA_ID, PRETHODNI_ID.
   R21 (05.11.2026): OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER, IZVOR_STAVKA_ID (zamjena šifara artikla);
   brojači FDK (finansijsko doknjiženje) i ZSA (zamjena šifara artikla).
   R18 (04.11.2026): sitni inventar - OPERACIJE.RADNIK_PRENOS_ID (prezaduženje: na radnika),
@@ -91,6 +92,12 @@ begin
     kolona('OPERACIJA_STAVKE', 'zamjena_stavka_id', 'number');
     kolona('OPERACIJA_STAVKE', 'smjer', 'varchar2(1 char)');
     kolona('OPERACIJA_STAVKE', 'izvor_stavka_id', 'number');
+    -- R22: cjenovnik robnih skladišta (detalji i paket u 21_rm_cjenovnik.sql; kolone ovdje jer ih čita RM_DOKUMENT_PKG)
+    kolona('CJENOVNIK_STAVKE', 'napomena', 'varchar2(1000 char)');
+    kolona('CJENOVNIK_STAVKE', 'izvor', 'varchar2(1 char)');
+    kolona('CJENOVNIK_STAVKE', 'kalkulacija_id', 'number');
+    kolona('CJENOVNIK_STAVKE', 'operacija_id', 'number');
+    kolona('CJENOVNIK_STAVKE', 'prethodni_id', 'number');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
