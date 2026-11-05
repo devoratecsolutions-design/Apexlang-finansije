@@ -2814,7 +2814,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_ksb
-            savedReportMappingIdentifier: 371000000000000010
+            savedReportMappingIdentifier: 371000000000000013
         }
 
         column SERIJSKI_BROJ (
@@ -3132,7 +3132,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_siu
-            savedReportMappingIdentifier: 371000000000000011
+            savedReportMappingIdentifier: 371000000000000010
         }
 
         column RADNIK_NAZIV (
@@ -3433,7 +3433,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_sim
-            savedReportMappingIdentifier: 371000000000000012
+            savedReportMappingIdentifier: 371000000000000011
         }
 
         column ARTIKAL_SIFRA (
@@ -3694,7 +3694,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_sik
-            savedReportMappingIdentifier: 371000000000000013
+            savedReportMappingIdentifier: 371000000000000012
         }
 
         column ARTIKAL_SIFRA (

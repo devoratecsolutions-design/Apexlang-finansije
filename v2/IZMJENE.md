@@ -634,3 +634,4 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
   - na tabu Raspodjela se kod fakture sada vidi izabrani način (ranije je pisalo „ručno – ukupan iznos“);
   - način je preimenovan u **Ručno – cijena sa prijemnice** i radi kao Ručno – jedinična cijena: jedinične cijene se predlažu (prekopiraju) sa prijemnice, korisnik ih po potrebi mijenja i snima; iznos fakture u kalkulaciji = zbir (cijena × količina), najviše do raspoloživog fakture. Više se ne raspoređuje dugmetom „Raspodijeli sve automatske“.
   - SQL: `15_rm_kalkulacija.sql`.
+- **Ispravka importa (ORA-00001 WWV_FLOW_WORKSHEET_RPTS_UK):** nova kartica serijskog broja je pomjerila identifikatore sačuvanih izvještaja na str. 371; APEX po njima čuva izvještaje korisnika pri ponovnom importu. Identifikatori su sada stalni po izvještaju (generator `gen_p371_izvjestaji.py`, tabela RID), nova kartica dobija sljedeći slobodan broj.

@@ -48,7 +48,14 @@ def alias(i):
         s = chr(65 + r) + s
     return s
 
+# R21: identifikator sačuvanog izvještaja je STALAN po izvještaju (APEX po njemu pri ponovnom importu
+# preslikava sačuvane izvještaje korisnika - pomjeranje brojeva daje ORA-00001 WWV_FLOW_WORKSHEET_RPTS_UK).
+# Novi izvještaj dobija SLJEDEĆI SLOBODAN broj; postojeći brojevi se nikad ne mijenjaju.
+RID = {'sd': 1, 'pl': 2, 'sz': 3, 'km': 4, 'pp': 5, 'dok': 6, 'pmt': 7, 'zad': 8, 'dc': 9,
+       'siu': 10, 'sim': 11, 'sik': 12, 'ksb': 13}
+
 def report(slug, name, codes, sql, cols, items, nodata, seq, rid, breaks=None):
+    rid = 371000000000000000 + RID[codes[0]]
     L = [f"    region {slug} (", f"        name: {name}", f"        title: {name}", "        type: interactiveReport", "        source {",
          "            location: localDatabase", "            type: sqlQuery", "            sqlQuery:", "                ```sql", ind(sql, 16), "                ```",
          "            pageItemsToSubmit: ["]
