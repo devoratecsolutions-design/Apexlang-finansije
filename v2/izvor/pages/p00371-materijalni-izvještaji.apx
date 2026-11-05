@@ -63,7 +63,7 @@ page 371 (
         name: Katalog izvještaja
         type: staticContent
         source {
-            htmlCode: <div class="fin-izv-katalog"><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-cubes" aria-hidden="true"></span>Stanje i vrijednost</div><button type="button" class="fin-izv-kartica" data-izv="sd"><span class="fin-izv-kartica__naziv">Stanje zaliha na dan</span><span class="fin-izv-kartica__opis">Količina, prosječna cijena i vrijednost po artiklu</span></button><button type="button" class="fin-izv-kartica" data-izv="pl"><span class="fin-izv-kartica__naziv">Popisna lista</span><span class="fin-izv-kartica__opis">Knjigovodstveno stanje sa poljima za popis</span></button><button type="button" class="fin-izv-kartica" data-izv="sz"><span class="fin-izv-kartica__naziv">Starost zaliha</span><span class="fin-izv-kartica__opis">Artikli na stanju bez izlaza duže od N dana</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-exchange" aria-hidden="true"></span>Promet</div><button type="button" class="fin-izv-kartica" data-izv="km"><span class="fin-izv-kartica__naziv">Kartica artikla</span><span class="fin-izv-kartica__opis">Hronološki ulazi, izlazi i stanje jednog artikla</span></button><button type="button" class="fin-izv-kartica" data-izv="pp"><span class="fin-izv-kartica__naziv">Promet po artiklima</span><span class="fin-izv-kartica__opis">Početno, ulaz, izlaz i krajnje stanje za period</span></button><button type="button" class="fin-izv-kartica" data-izv="dok"><span class="fin-izv-kartica__naziv">Pregled dokumenata</span><span class="fin-izv-kartica__opis">Svi dokumenti skladišta za period</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-users" aria-hidden="true"></span>Potrošnja i zaduženja</div><button type="button" class="fin-izv-kartica" data-izv="pmt"><span class="fin-izv-kartica__naziv">Potrošnja po mjestu troška</span><span class="fin-izv-kartica__opis">Izdatnice i izlazi na investiciju, OS i sitni inventar</span></button><button type="button" class="fin-izv-kartica" data-izv="zad"><span class="fin-izv-kartica__naziv">Zaduženja</span><span class="fin-izv-kartica__opis">Otvoreni reversi i zaduženja radnika / komitenata</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-bell-o" aria-hidden="true"></span>Kontrola</div><button type="button" class="fin-izv-kartica" data-izv="dc"><span class="fin-izv-kartica__naziv">Dokumenti na čekanju</span><span class="fin-izv-kartica__opis">Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-wrench" aria-hidden="true"></span>Sitni inventar</div><button type="button" class="fin-izv-kartica" data-izv="siu"><span class="fin-izv-kartica__naziv">SI u upotrebi po radniku</span><span class="fin-izv-kartica__opis">Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu</span></button><button type="button" class="fin-izv-kartica" data-izv="sim"><span class="fin-izv-kartica__naziv">SI u upotrebi po materijalu</span><span class="fin-izv-kartica__opis">Ukupno u upotrebi po materijalu i broj radnika</span></button><button type="button" class="fin-izv-kartica" data-izv="sik"><span class="fin-izv-kartica__naziv">Kartica SI radnika</span><span class="fin-izv-kartica__opis">Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika</span></button></div></div>
+            htmlCode: <div class="fin-izv-katalog"><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-cubes" aria-hidden="true"></span>Stanje i vrijednost</div><button type="button" class="fin-izv-kartica" data-izv="sd"><span class="fin-izv-kartica__naziv">Stanje zaliha na dan</span><span class="fin-izv-kartica__opis">Količina, prosječna cijena i vrijednost po artiklu</span></button><button type="button" class="fin-izv-kartica" data-izv="pl"><span class="fin-izv-kartica__naziv">Popisna lista</span><span class="fin-izv-kartica__opis">Knjigovodstveno stanje sa poljima za popis</span></button><button type="button" class="fin-izv-kartica" data-izv="sz"><span class="fin-izv-kartica__naziv">Starost zaliha</span><span class="fin-izv-kartica__opis">Artikli na stanju bez izlaza duže od N dana</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-exchange" aria-hidden="true"></span>Promet</div><button type="button" class="fin-izv-kartica" data-izv="km"><span class="fin-izv-kartica__naziv">Kartica artikla</span><span class="fin-izv-kartica__opis">Hronološki ulazi, izlazi i stanje jednog artikla</span></button><button type="button" class="fin-izv-kartica" data-izv="ksb"><span class="fin-izv-kartica__naziv">Kartica serijskog broja</span><span class="fin-izv-kartica__opis">Sva kretanja jednog serijskog broja: ulazi, izlazi, reversi, zaduženja radnika, popisi</span></button><button type="button" class="fin-izv-kartica" data-izv="pp"><span class="fin-izv-kartica__naziv">Promet po artiklima</span><span class="fin-izv-kartica__opis">Početno, ulaz, izlaz i krajnje stanje za period</span></button><button type="button" class="fin-izv-kartica" data-izv="dok"><span class="fin-izv-kartica__naziv">Pregled dokumenata</span><span class="fin-izv-kartica__opis">Svi dokumenti skladišta za period</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-users" aria-hidden="true"></span>Potrošnja i zaduženja</div><button type="button" class="fin-izv-kartica" data-izv="pmt"><span class="fin-izv-kartica__naziv">Potrošnja po mjestu troška</span><span class="fin-izv-kartica__opis">Izdatnice i izlazi na investiciju, OS i sitni inventar</span></button><button type="button" class="fin-izv-kartica" data-izv="zad"><span class="fin-izv-kartica__naziv">Zaduženja</span><span class="fin-izv-kartica__opis">Otvoreni reversi i zaduženja radnika / komitenata</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-bell-o" aria-hidden="true"></span>Kontrola</div><button type="button" class="fin-izv-kartica" data-izv="dc"><span class="fin-izv-kartica__naziv">Dokumenti na čekanju</span><span class="fin-izv-kartica__opis">Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema</span></button></div><div class="fin-izv-grupa"><div class="fin-izv-grupa__naslov"><span class="fa fa-wrench" aria-hidden="true"></span>Sitni inventar</div><button type="button" class="fin-izv-kartica" data-izv="siu"><span class="fin-izv-kartica__naziv">SI u upotrebi po radniku</span><span class="fin-izv-kartica__opis">Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu</span></button><button type="button" class="fin-izv-kartica" data-izv="sim"><span class="fin-izv-kartica__naziv">SI u upotrebi po materijalu</span><span class="fin-izv-kartica__opis">Ukupno u upotrebi po materijalu i broj radnika</span></button><button type="button" class="fin-izv-kartica" data-izv="sik"><span class="fin-izv-kartica__naziv">Kartica SI radnika</span><span class="fin-izv-kartica__opis">Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika</span></button></div></div>
         }
         layout {
             sequence: 10
@@ -2694,6 +2694,377 @@ page 371 (
 
     )
 
+    region izv-kartica-sb (
+        name: Kartica serijskog broja
+        title: Kartica serijskog broja
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                WITH d AS (
+                    SELECT o.datum,
+                           o.id AS operacija_id,
+                           os.id AS stavka_dok_id,
+                           o.naziv AS dokument,
+                           coalesce(vd.naziv, t.naziv) AS vrsta_naziv,
+                           upper(vd.sifra) AS vrsta_sifra,
+                           nvl2(sk.id, sk.sifra || ' - ' || sk.naziv, NULL) AS skladiste,
+                           a.sifra AS artikal_sifra,
+                           a.naziv AS artikal_naziv,
+                           sb.serijski_broj,
+                           CASE coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja)
+                                WHEN 'U' THEN 'Ulaz' WHEN 'I' THEN 'Izlaz' WHEN 'Z' THEN 'Zaduženje radnika' ELSE '-' END AS smjer,
+                           CASE WHEN upper(vd.sifra) = 'PSI' THEN 'sa ' || r.ime || ' ' || r.prezime || ' na ' || rp.ime || ' ' || rp.prezime
+                                ELSE coalesce(r.ime || ' ' || r.prezime, kl.naziv, nvl2(mt.id, mt.sifra || ' - ' || mt.naziv, NULL),
+                                              nvl2(skp.id, 'skladište ' || skp.sifra || ' - ' || skp.naziv, NULL)) END AS partner,
+                           CASE WHEN o.storniran_id IS NOT NULL THEN 'Storno dokument'
+                                WHEN nvl(o.stornirano, 'N') = 'Y' THEN 'Storniran'
+                                WHEN nvl(o.status, CASE WHEN o.zakljucano = 'Y' THEN 'Z' ELSE 'P' END) = 'Z' THEN 'Zaključen'
+                                ELSE 'U pripremi' END AS status,
+                           apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => o.id, p_clear_cache => 331) AS url
+                      FROM operacija_stavke_sb sb
+                      JOIN operacija_stavke os ON os.id = sb.operacija_stavka_id
+                      JOIN operacije o ON o.id = os.operacija_id
+                      JOIN sec_stavke a ON a.id = os.stavka_id
+                      LEFT JOIN sif.vrste_dokumenata vd ON vd.id = o.vrsta_dokumenta_id
+                      LEFT JOIN sif.acc_tipovi_kretanja_robe t ON t.id = o.tip_kretanja_id
+                      LEFT JOIN skladista sk ON sk.id = o.skladiste_id
+                      LEFT JOIN skladista skp ON skp.id = o.skladiste_prenos_id
+                      LEFT JOIN sec_klijenti kl ON kl.id = o.klijent_id
+                      LEFT JOIN sif.acc_mjesta_troska mt ON mt.id = o.mjesto_troska_id
+                      LEFT JOIN sif.acc_radnici r ON r.id = o.zaduzeni_radnik_id
+                      LEFT JOIN sif.acc_radnici rp ON rp.id = o.radnik_prenos_id
+                     WHERE o.ooj_id = :APP_OOJ_ID
+                       AND (o.skladiste_id IS NULL OR o.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k WHERE k.korisnik_id = :APP_USER_ID))
+                       AND (:P371_ARTIKL IS NULL OR os.stavka_id = to_number(:P371_ARTIKL))
+                       AND upper(sb.serijski_broj) LIKE '%' || upper(trim(:P371_SB)) || '%'
+                    UNION ALL
+                    SELECT p.datum, 0, ps.id, p.naziv, 'Popis sitnog inventara u upotrebi', 'POPSI', CAST(NULL AS VARCHAR2(300)),
+                           a.sifra, a.naziv, ps.serijski_broj,
+                           CASE WHEN ps.popis_kolicina IS NULL THEN 'Popis - nije uneseno'
+                                WHEN ps.popis_kolicina > 0 THEN 'Popis - pronađen' ELSE 'Popis - nije pronađen' END,
+                           r.ime || ' ' || r.prezime,
+                           CASE WHEN nvl(p.zakljucano, 'N') = 'Y' THEN 'Zaključen' ELSE 'U pripremi' END,
+                           apex_page.get_url(p_page => 368, p_items => 'P368_ID', p_values => p.id, p_clear_cache => 368)
+                      FROM popis_stavke ps
+                      JOIN popisi p ON p.id = ps.popis_id
+                      JOIN sec_stavke a ON a.id = ps.stavka_id
+                      LEFT JOIN sif.acc_radnici r ON r.id = p.radnik_id
+                     WHERE p.ooj_id = :APP_OOJ_ID
+                       AND ps.serijski_broj IS NOT NULL
+                       AND (:P371_ARTIKL IS NULL OR ps.stavka_id = to_number(:P371_ARTIKL))
+                       AND upper(ps.serijski_broj) LIKE '%' || upper(trim(:P371_SB)) || '%'
+                )
+                SELECT d.serijski_broj,
+                       d.artikal_sifra,
+                       d.artikal_naziv,
+                       d.datum,
+                       d.operacija_id AS id,
+                       d.dokument,
+                       d.vrsta_naziv,
+                       d.smjer,
+                       d.skladiste,
+                       d.partner,
+                       d.status,
+                       d.url
+                FROM d
+                WHERE length(trim(:P371_SB)) >= 3
+                ORDER BY d.serijski_broj, d.datum, d.operacija_id, d.stavka_dok_id
+                ```
+            pageItemsToSubmit: [
+                P371_SB
+                P371_ARTIKL
+            ]
+        }
+        layout {
+            sequence: 45
+            parentRegion: @izvjestaj
+            slot: subRegions
+        }
+        appearance {
+            template: @interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+            cssClasses: fin-ir fin-izv-tabela
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',ksb,', ',' || :P371_IZV || ',') > 0
+        }
+        componentAppearance {
+            showNullValuesAs: -
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 100000
+        }
+        messages {
+            whenNoDataFound: Upišite serijski broj (najmanje 3 znaka; može i dio broja).
+        }
+        actionsMenu {
+            chart: false
+            flashback: false
+            subscription: false
+        }
+        advanced {
+            htmlDomId: izv_ksb
+            savedReportMappingIdentifier: 371000000000000010
+        }
+
+        column SERIJSKI_BROJ (
+            type: plainText
+            heading {
+                heading: Serijski broj
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column ARTIKAL_SIFRA (
+            type: plainText
+            heading {
+                heading: Šifra
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column ARTIKAL_NAZIV (
+            type: plainText
+            heading {
+                heading: Artikal
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column DATUM (
+            type: plainText
+            heading {
+                heading: Datum
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: DD.MM.YYYY
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column ID (
+            type: link
+            heading {
+                heading: Dokument
+            }
+            layout {
+                sequence: 50
+            }
+            link {
+                target: {
+                    type: url
+                    url: #URL#
+                }
+                linkText: <span class="fin-doc"><span class="fin-doc__no">#DOKUMENT#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column DOKUMENT (
+            type: hidden
+            heading {
+                heading: Broj
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column VRSTA_NAZIV (
+            type: hidden
+            heading {
+                heading: Vrsta
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column SMJER (
+            type: plainText
+            heading {
+                heading: Kretanje
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column SKLADISTE (
+            type: plainText
+            heading {
+                heading: Skladište
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+        )
+
+        column PARTNER (
+            type: plainText
+            heading {
+                heading: Radnik / komitent / MT / skladište
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: J
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 110
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: K
+            }
+        )
+
+        column URL (
+            type: hidden
+            heading {
+                heading: Url
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: L
+            }
+        )
+
+        savedReport primary (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 100
+            }
+
+            displayColumn SERIJSKI_BROJ (
+                sequence: 1
+            )
+
+            displayColumn ARTIKAL_SIFRA (
+                sequence: 2
+            )
+
+            displayColumn ARTIKAL_NAZIV (
+                sequence: 3
+            )
+
+            displayColumn DATUM (
+                sequence: 4
+            )
+
+            displayColumn ID (
+                sequence: 5
+            )
+
+            displayColumn SMJER (
+                sequence: 6
+            )
+
+            displayColumn SKLADISTE (
+                sequence: 7
+            )
+
+            displayColumn PARTNER (
+                sequence: 8
+            )
+
+            displayColumn STATUS (
+                sequence: 9
+            )
+
+        )
+
+    )
+
     region izv-si-radnik (
         name: Sitni inventar u upotrebi po radniku
         title: Sitni inventar u upotrebi po radniku
@@ -2761,7 +3132,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_siu
-            savedReportMappingIdentifier: 371000000000000010
+            savedReportMappingIdentifier: 371000000000000011
         }
 
         column RADNIK_NAZIV (
@@ -3062,7 +3433,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_sim
-            savedReportMappingIdentifier: 371000000000000011
+            savedReportMappingIdentifier: 371000000000000012
         }
 
         column ARTIKAL_SIFRA (
@@ -3323,7 +3694,7 @@ page 371 (
         }
         advanced {
             htmlDomId: izv_sik
-            savedReportMappingIdentifier: 371000000000000012
+            savedReportMappingIdentifier: 371000000000000013
         }
 
         column ARTIKAL_SIFRA (
@@ -3806,7 +4177,7 @@ page 371 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: instr(',sd,pl,sz,km,pp,pmt,zad,siu,sim,sik,', ',' || :P371_IZV || ',') > 0
+            plsqlExpression: instr(',sd,pl,sz,km,pp,pmt,zad,siu,sim,sik,ksb,', ',' || :P371_IZV || ',') > 0
         }
     )
 
@@ -3917,6 +4288,29 @@ page 371 (
         }
     )
 
+    pageItem P371_SB (
+        type: textField
+        label {
+            label: Serijski broj
+            alignment: left
+        }
+        layout {
+            sequence: 15
+            region: @parametri
+            slot: regionBody
+            startNewRow: false
+        }
+        appearance {
+            template: @optional-above
+            templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--sb
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: instr(',ksb,', ',' || :P371_IZV || ',') > 0
+        }
+    )
+
     pageItem P371_DANA (
         type: numberField
         label {
@@ -3970,7 +4364,7 @@ page 371 (
             plsqlCode:
                 ```plsql
                 -- nepoznat izvještaj (npr. stara veza): prvi u katalogu
-                if :P371_IZV is not null and instr(',sd,pl,sz,km,pp,dok,pmt,zad,dc,siu,sim,sik,', ',' || :P371_IZV || ',') = 0 then
+                if :P371_IZV is not null and instr(',sd,pl,sz,km,ksb,pp,dok,pmt,zad,dc,siu,sim,sik,', ',' || :P371_IZV || ',') = 0 then
                     :P371_IZV := 'sd';
                 end if;
                 -- period: radna godina do danas; skladište: trenutno skladište ('0' = sva skladišta modula)
@@ -3979,11 +4373,12 @@ page 371 (
                 :P371_DATUM := nvl(:P371_DATUM, :P371_DO);
                 :P371_DANA  := nvl(:P371_DANA, '90');
                 :P371_SKLADISTE_ID := nvl(:P371_SKLADISTE_ID, :A_SKLADISTE_ID);
-                :P371_NAZIV := case :P371_IZV when 'sd' then 'Stanje zaliha na dan' when 'pl' then 'Popisna lista' when 'sz' then 'Starost zaliha' when 'km' then 'Kartica artikla' when 'pp' then 'Promet po artiklima' when 'dok' then 'Pregled dokumenata' when 'pmt' then 'Potrošnja po mjestu troška' when 'zad' then 'Zaduženja' when 'dc' then 'Dokumenti na čekanju' when 'siu' then 'SI u upotrebi po radniku' when 'sim' then 'SI u upotrebi po materijalu' when 'sik' then 'Kartica SI radnika' end;
-                :P371_OPIS  := case :P371_IZV when 'sd' then 'Količina, prosječna cijena i vrijednost po artiklu' when 'pl' then 'Knjigovodstveno stanje sa poljima za popis' when 'sz' then 'Artikli na stanju bez izlaza duže od N dana' when 'km' then 'Hronološki ulazi, izlazi i stanje jednog artikla' when 'pp' then 'Početno, ulaz, izlaz i krajnje stanje za period' when 'dok' then 'Svi dokumenti skladišta za period' when 'pmt' then 'Izdatnice i izlazi na investiciju, OS i sitni inventar' when 'zad' then 'Otvoreni reversi i zaduženja radnika / komitenata' when 'dc' then 'Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema' when 'siu' then 'Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu' when 'sim' then 'Ukupno u upotrebi po materijalu i broj radnika' when 'sik' then 'Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika' end;
+                :P371_NAZIV := case :P371_IZV when 'sd' then 'Stanje zaliha na dan' when 'pl' then 'Popisna lista' when 'sz' then 'Starost zaliha' when 'km' then 'Kartica artikla' when 'ksb' then 'Kartica serijskog broja' when 'pp' then 'Promet po artiklima' when 'dok' then 'Pregled dokumenata' when 'pmt' then 'Potrošnja po mjestu troška' when 'zad' then 'Zaduženja' when 'dc' then 'Dokumenti na čekanju' when 'siu' then 'SI u upotrebi po radniku' when 'sim' then 'SI u upotrebi po materijalu' when 'sik' then 'Kartica SI radnika' end;
+                :P371_OPIS  := case :P371_IZV when 'sd' then 'Količina, prosječna cijena i vrijednost po artiklu' when 'pl' then 'Knjigovodstveno stanje sa poljima za popis' when 'sz' then 'Artikli na stanju bez izlaza duže od N dana' when 'km' then 'Hronološki ulazi, izlazi i stanje jednog artikla' when 'ksb' then 'Sva kretanja jednog serijskog broja: ulazi, izlazi, reversi, zaduženja radnika, popisi' when 'pp' then 'Početno, ulaz, izlaz i krajnje stanje za period' when 'dok' then 'Svi dokumenti skladišta za period' when 'pmt' then 'Izdatnice i izlazi na investiciju, OS i sitni inventar' when 'zad' then 'Otvoreni reversi i zaduženja radnika / komitenata' when 'dc' then 'Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema' when 'siu' then 'Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu' when 'sim' then 'Ukupno u upotrebi po materijalu i broj radnika' when 'sik' then 'Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika' end;
                 -- opis parametara (zaglavlje pri štampi)
                 -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
-                select case when :P371_IZV like 'si%' then
+                select case when :P371_IZV = 'ksb' then 'serijski broj ' || nvl(trim(:P371_SB), '-')
+                            when :P371_IZV like 'si%' then
                                 'sitni inventar u upotrebi · ' || nvl((select max('radnik ' || r.ime || ' ' || r.prezime) from sif.acc_radnici r
                                                                        where r.id = to_number(:P371_RADNIK)), 'svi radnici')
                             when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'

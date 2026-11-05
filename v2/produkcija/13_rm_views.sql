@@ -114,7 +114,8 @@ select o.id,
                                then 1 else 0 end) as sb_nedostaje
                  from operacija_stavke os
                  join sec_stavke s on s.id = os.stavka_id
-                where os.operacija_id = o.id) st;
+                where os.operacija_id = o.id
+                  and os.smjer is null) st;            -- R21: bez generisanih stavki ulaza zamjene šifara
 
 create or replace force view vw_rm_dokument_stavke as
 select os.id,
@@ -131,11 +132,16 @@ select os.id,
        os.nabavna_cijena                                                as cijena,
        round(os.kolicina * os.nabavna_cijena, 2)                         as iznos,
        nvl(sb.n, 0)                                                     as sb_uneseno,
-       case when a.prati_sb = 'Y' and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok
+       case when a.prati_sb = 'Y' and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
+       os.zamjena_stavka_id,                                            -- R21: zamjena šifara (ZSA)
+       z.sifra                                                          as zamjena_sifra,
+       z.naziv                                                          as zamjena_naziv
   from operacija_stavke os
   join operacije o on o.id = os.operacija_id
   join vw_rm_artikli a on a.id = os.stavka_id
-  outer apply (select count(*) as n from operacija_stavke_sb x where x.operacija_stavka_id = os.id) sb;
+  left join vw_rm_artikli z on z.id = os.zamjena_stavka_id
+  outer apply (select count(*) as n from operacija_stavke_sb x where x.operacija_stavka_id = os.id) sb
+ where os.smjer is null;          -- R21: generisane stavke ulaza zamjenskog artikla se ne prikazuju (vide se kroz ZAMJENA_*)
 
 create or replace force view vw_rm_sb as
 select sb.id,
@@ -161,7 +167,7 @@ select o.ooj_id,
   join operacije o on o.id = os.operacija_id
   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
-  cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+  cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                       nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                  from dual) k
  where nvl(o.stornirano, 'N') = 'N'

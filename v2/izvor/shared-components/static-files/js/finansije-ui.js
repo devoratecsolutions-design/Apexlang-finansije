@@ -606,16 +606,22 @@ window.finRmStavke = (function ($) {
             $("#" + regionId).find("button[data-action='selection-add-row']").hide();
         }
         I.samoCitanje(regionId, ro);
+        /* finansijsko doknjiženje (FDK): stavka nema količinu - iznos stavke je uneseni iznos doknjiženja */
+        var fdk = ($v(p + "_VRSTA_SIFRA") === "FDK");
+        function kol(rec) {
+            if (fdk) { return 1; }
+            try { return I.num(model.getValue(rec, "KOLICINA")); } catch (e) { return 0; }
+        }
 
         function racun(rec) {
-            I.postavi(model, rec, "IZNOS", I.fmt(I.r2(I.num(model.getValue(rec, "KOLICINA")) * I.num(model.getValue(rec, "CIJENA")))));
+            I.postavi(model, rec, "IZNOS", I.fmt(I.r2(kol(rec) * I.num(model.getValue(rec, "CIJENA")))));
         }
         function zbir() {
             var s = 0;
             model.forEach(function (rec, idx, id) {
                 var meta = model.getRecordMetadata(id);
                 if (meta && meta.deleted) { return; }
-                s += I.r2(I.num(model.getValue(rec, "KOLICINA")) * I.num(model.getValue(rec, "CIJENA")));
+                s += I.r2(kol(rec) * I.num(model.getValue(rec, "CIJENA")));
             });
             $s(p + "_ZBIR", I.fmt(I.r2(s)));
         }
@@ -633,7 +639,8 @@ window.finRmStavke = (function ($) {
                             { dataType: "json" })
                             .done(function (d) {
                                 I.postavi(model, rec, "JM_NAZIV", d.jm || "");
-                                I.postavi(model, rec, "RASPOLOZIVO", fq(izlaz ? (d.rasp || 0) : (d.stanje || 0)));
+                                I.postavi(model, rec, "RASPOLOZIVO", fdk ? fq(d.obr || 0) + " · " + fc(d.vr || 0) + " KM"
+                                                                          : fq(izlaz ? (d.rasp || 0) : (d.stanje || 0)));
                                 /* izlaz: prosječna cijena (računa baza); ulaz sa ručnom cijenom: predlog je 0 -
                                    korisnik unosi cijenu, prosječna se ne nudi */
                                 if (izlaz) {

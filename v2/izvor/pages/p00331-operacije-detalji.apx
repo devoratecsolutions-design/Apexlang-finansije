@@ -820,17 +820,23 @@ page 331 (
                     s.redni_broj,
                     s.stavka_id,
                     s.jm_naziv,
-                    rtrim(to_char(CASE WHEN :P331_POVRAT = 'Y'
+                    CASE WHEN :P331_VRSTA_SIFRA = 'FDK'
+                         THEN rtrim(to_char(rm_dokument_pkg.obradjeno(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id),
+                                            'FM999G999G999G990D999999'), '.,')
+                              || ' · ' || to_char(rm_dokument_pkg.vrijednost_zaliha(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id),
+                                                  'FM999G999G999G990D00') || ' KM'
+                         ELSE rtrim(to_char(CASE WHEN :P331_POVRAT = 'Y'
                          THEN rm_dokument_pkg.dostupno_za_povrat_dok(s.operacija_id, s.stavka_id)
                          WHEN :P331_TIP_KRETANJA = 'I'
                          THEN rm_dokument_pkg.raspolozivo(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id)
                          ELSE rm_dokument_pkg.stanje(:P331_SKLADISTE_ID, s.stavka_id, null, s.operacija_id) END,
-                         'FM999G999G999G990D999999'), '.,') AS raspolozivo,
+                         'FM999G999G999G990D999999'), '.,') END AS raspolozivo,
                     rtrim(to_char(s.kolicina, 'FM999999999990D999999'), '.,') AS kolicina,
                     CASE WHEN s.cijena = round(s.cijena, 2) THEN to_char(s.cijena, 'FM999G999G999G990D00')
                          ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
                     s.iznos,
-                    CASE WHEN s.prati_sb = 'Y' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb
+                    CASE WHEN s.prati_sb = 'Y' AND :P331_VRSTA_SIFRA <> 'FDK' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb,
+                    s.zamjena_stavka_id
                 FROM vw_rm_dokument_stavke s
                 WHERE s.operacija_id = :P331_ID
                 ORDER BY s.redni_broj, s.id
@@ -840,6 +846,7 @@ page 331 (
                 P331_TIP_KRETANJA
                 P331_SKLADISTE_ID
                 P331_POVRAT
+                P331_VRSTA_SIFRA
             ]
         }
         layout {
@@ -924,9 +931,17 @@ page 331 (
             )
 
             displayColumn (
-                column: @JM_NAZIV
+                column: @ZAMJENA_STAVKA_ID
                 layout {
                     sequence: 3
+                    width: 320
+                }
+            )
+
+            displayColumn (
+                column: @JM_NAZIV
+                layout {
+                    sequence: 4
                     width: 55
                 }
             )
@@ -934,7 +949,7 @@ page 331 (
             displayColumn (
                 column: @RASPOLOZIVO
                 layout {
-                    sequence: 4
+                    sequence: 5
                     width: 100
                 }
             )
@@ -942,7 +957,7 @@ page 331 (
             displayColumn (
                 column: @KOLICINA
                 layout {
-                    sequence: 5
+                    sequence: 6
                     width: 100
                 }
             )
@@ -950,7 +965,7 @@ page 331 (
             displayColumn (
                 column: @CIJENA
                 layout {
-                    sequence: 6
+                    sequence: 7
                     width: 110
                 }
             )
@@ -958,7 +973,7 @@ page 331 (
             displayColumn (
                 column: @IZNOS
                 layout {
-                    sequence: 7
+                    sequence: 8
                     width: 110
                 }
             )
@@ -966,7 +981,7 @@ page 331 (
             displayColumn (
                 column: @SB
                 layout {
-                    sequence: 8
+                    sequence: 9
                     width: 80
                 }
             )
@@ -1077,6 +1092,34 @@ page 331 (
             }
         )
 
+        column ZAMJENA_STAVKA_ID (
+            type: popupLov
+            heading {
+                heading: Zamjenski artikal (dodaje se)
+            }
+            settings {
+                popupWidth: 640
+            }
+            lov {
+                type: sharedComponent
+                lov: @rm-dokument-artikli
+                displayExtraValues: true
+                displayNullValue: true
+                nullDisplayValue: - izaberite zamjenski artikal -
+            }
+            layout {
+                sequence: 45
+            }
+            source {
+                databaseColumn: ZAMJENA_STAVKA_ID
+                dataType: number
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P331_VRSTA_SIFRA = 'ZSA'
+            }
+        )
+
         column KOLICINA (
             type: textField
             heading {
@@ -1094,12 +1137,16 @@ page 331 (
             validation {
                 valueRequired: true
             }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: nvl(:P331_VRSTA_SIFRA, '-') <> 'FDK'
+            }
         )
 
         column CIJENA (
             type: textField
             heading {
-                heading: Jed. cijena
+                heading: &P331_NASLOV_CIJENA.
                 alignment: end
             }
             layout {
@@ -1169,7 +1216,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_VRSTA_SIFRA in ('PSI', 'RSR')) and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_VRSTA_SIFRA in ('PSI', 'RSR')) and :P331_VRSTA_SIFRA <> 'ZSA' and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -1246,7 +1293,7 @@ page 331 (
             plsqlFunctionBody:
                 ```plsql
                 -- izlaz u pripremi: region uvijek postoji (osvježava se poslije unosa po serijskom broju)
-                if :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_VRSTA_SIFRA in ('PSI', 'RSR')) and :P331_IZMJENJIVA = 'Y' then
+                if :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_VRSTA_SIFRA in ('PSI', 'RSR')) and :P331_VRSTA_SIFRA <> 'ZSA' and :P331_IZMJENJIVA = 'Y' then
                     return true;
                 end if;
                 for s in (select 1 from vw_rm_dokument_stavke where operacija_id = :P331_ID and prati_sb = 'Y' fetch first 1 row only) loop
@@ -2037,6 +2084,18 @@ page 331 (
         }
     )
 
+    pageItem P331_NASLOV_CIJENA (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 19
+            region: @dokument-detalji
+            slot: regionBody
+        }
+    )
+
     pageItem P331_NASLOV_RASP (
         type: hidden
         settings {
@@ -2182,7 +2241,7 @@ page 331 (
         }
         serverSideCondition {
             type: expression
-            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y' or :P331_VRSTA_SIFRA = 'RIV') and :P331_IZMJENJIVA = 'Y'
+            plsqlExpression: :P331_ID is not null and (:P331_TIP_KRETANJA = 'I' or :P331_POVRAT = 'Y' or :P331_VRSTA_SIFRA in ('RIV', 'FDK')) and :P331_IZMJENJIVA = 'Y'
         }
     )
 
@@ -2562,7 +2621,9 @@ page 331 (
                                         else 'Mjesto troška' end;
                 :P331_NASLOV_RASP := case when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Zaduženo kod radnika'
                                           when :P331_POVRAT = 'Y' then 'Dostupno za povrat'
-                                          when :P331_TIP_KRETANJA = 'I' then 'Raspoloživo' else 'Stanje' end;
+                                          when :P331_TIP_KRETANJA = 'I' then 'Raspoloživo'
+                                          when :P331_VRSTA_SIFRA = 'FDK' then 'Stanje · vrijednost' else 'Stanje' end;
+                :P331_NASLOV_CIJENA := case when :P331_VRSTA_SIFRA = 'FDK' then 'Iznos doknjiženja (+/-)' else 'Jed. cijena' end;
                 :P331_NASLOV_RADNIK := case when :P331_VRSTA_SIFRA = 'PSI' then 'Sa radnika'
                                             when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Radnik' else 'Zaduženi radnik' end;
                 :P331_NASLOV_POVRAT := case when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Preuzmi zaduženja radnika'
@@ -2572,6 +2633,8 @@ page 331 (
                     when :P331_VRSTA_SIFRA = 'PSI' then 'Zaključiti prezaduženje? Zaduženje se prenosi na izabranog radnika (stavke sa količinom 0 se ne prenose).'
                     when :P331_VRSTA_SIFRA = 'RSR' then 'Zaključiti rashod? Radnik se razdužuje za navedene količine.'
                     when :P331_VRSTA_SIFRA = 'RIV' then 'Zaključiti dokument? Višak iz popisa se zadužuje po unesenim cijenama.'
+                    when :P331_VRSTA_SIFRA = 'FDK' then 'Zaključiti doknjiženje? Vrijednost zaliha artikala se mijenja za unesene iznose (količina ostaje ista), pa se mijenja i prosječna cijena.'
+                    when :P331_VRSTA_SIFRA = 'ZSA' then 'Zaključiti zamjenu šifara? Artikli se skidaju sa stanja po prosječnoj cijeni, a zamjenski artikli se dodaju na stanje u istoj količini i po istoj cijeni.'
                     when :P331_POVRAT = 'Y' then 'Zaključiti povrat? Vraćene količine se zadužuju na skladištu.'
                     else 'Zaključiti dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a '
                          || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'roba' else 'materijal' end
@@ -2634,7 +2697,9 @@ page 331 (
                                                 else 'Preuzmi dostupno za povrat' end;
                     :P331_NASLOV_RASP := case when rm_dokument_pkg.je_si(v.sifra) = 'Y' then 'Zaduženo kod radnika'
                                               when rm_dokument_pkg.je_povrat(v.sifra) = 'Y' then 'Dostupno za povrat'
-                                              when rm_dokument_pkg.tip_kretanja(v.sifra) = 'I' then 'Raspoloživo' else 'Stanje' end;
+                                              when rm_dokument_pkg.tip_kretanja(v.sifra) = 'I' then 'Raspoloživo'
+                                              when upper(v.sifra) = 'FDK' then 'Stanje · vrijednost' else 'Stanje' end;
+                    :P331_NASLOV_CIJENA := case when upper(v.sifra) = 'FDK' then 'Iznos doknjiženja (+/-)' else 'Jed. cijena' end;
                     :P331_VRSTA_NAZIV := v.naziv;
                     :P331_NAZIV       := case when upper(v.sifra) = 'PRI' then 'Nova prijemnica' when upper(v.sifra) = 'IZD' then 'Nova izdatnica' else 'Novi dokument: ' || v.naziv end;
                 end loop;
@@ -2643,6 +2708,8 @@ page 331 (
                     when :P331_VRSTA_SIFRA = 'PSI' then 'Zaključiti prezaduženje? Zaduženje se prenosi na izabranog radnika (stavke sa količinom 0 se ne prenose).'
                     when :P331_VRSTA_SIFRA = 'RSR' then 'Zaključiti rashod? Radnik se razdužuje za navedene količine.'
                     when :P331_VRSTA_SIFRA = 'RIV' then 'Zaključiti dokument? Višak iz popisa se zadužuje po unesenim cijenama.'
+                    when :P331_VRSTA_SIFRA = 'FDK' then 'Zaključiti doknjiženje? Vrijednost zaliha artikala se mijenja za unesene iznose (količina ostaje ista), pa se mijenja i prosječna cijena.'
+                    when :P331_VRSTA_SIFRA = 'ZSA' then 'Zaključiti zamjenu šifara? Artikli se skidaju sa stanja po prosječnoj cijeni, a zamjenski artikli se dodaju na stanje u istoj količini i po istoj cijeni.'
                     when :P331_POVRAT = 'Y' then 'Zaključiti povrat? Vraćene količine se zadužuju na skladištu.'
                     else 'Zaključiti dokument? Cijene stavki se upisuju po prosječnoj cijeni skladišta na datum dokumenta, a '
                          || case when rm_skladiste_pkg.modul(:P331_SKLADISTE_ID) = 'ROB' then 'roba' else 'materijal' end
@@ -2723,7 +2790,8 @@ page 331 (
                                 p_dokument_id => :P331_ID,
                                 p_stavka_id   => kuf_pkg.broj(:STAVKA_ID),
                                 p_kolicina    => kuf_pkg.broj(:KOLICINA),
-                                p_cijena      => kuf_pkg.broj(:CIJENA)
+                                p_cijena      => kuf_pkg.broj(:CIJENA),
+                                p_zamjena_stavka_id => kuf_pkg.broj(:ZAMJENA_STAVKA_ID)
                             );
                             :ID := l_id;
                         end if;

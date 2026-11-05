@@ -28,6 +28,9 @@
       RUM  Razlika inventure sitnog inventara u upotrebi - manjak (nastaje zaključavanjem popisa SI u upotrebi)
       RUV  Razlika inventure sitnog inventara u upotrebi - višak  (nastaje zaključavanjem popisa SI u upotrebi)
       (VSR iz prve verzije R18 se ne koristi - deaktivira se ako nema dokumenata)
+    R21 (robna i materijalna skladišta):
+      FDK  Finansijsko doknjiženje        (mijenja samo vrijednost zaliha / prosječnu cijenu, ne količinu)
+      ZSA  Zamjena šifara artikla         (izlaz jednog artikla i ulaz drugog po istoj prosječnoj cijeni)
   Tip kretanja u šifarniku: PSI, RSR, RUM i RUV nemaju tip (ne mijenjaju stanje skladišta, samo zaduženje
   radnika); pravila su u RM_DOKUMENT_PKG.
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
@@ -82,6 +85,8 @@ begin
     dodaj('RUV', 'Razlika inventure sitnog inventara u upotrebi - višak', 'Višak sitnog inventara kod radnika utvrđen popisom - nastaje zaključavanjem popisa (v2)', null);
     -- VSR (prva verzija R18) zamijenjen sa RUV: deaktivira se ako nema dokumenata
     -- (dinamički: SIF možda nema pravo čitanja ACCOUNTING.OPERACIJE - tada se VSR ostavlja)
+    dodaj('FDK', 'Finansijsko doknjiženje', 'Povećanje / smanjenje vrijednosti zaliha artikla bez promjene količine - mijenja prosječnu cijenu (v2)', null);
+    dodaj('ZSA', 'Zamjena šifara artikla', 'Skidanje jednog artikla sa stanja i dodavanje drugog po istoj prosječnoj cijeni (v2)');
     begin
         execute immediate q'[update sif.vrste_dokumenata vd set vd.valid = 'N'
                               where vd.acc_modul_id = :1 and upper(vd.sifra) = 'VSR' and vd.valid = 'Y'
@@ -100,5 +105,5 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUM', 'RUV')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUM', 'RUV', 'FDK', 'ZSA')
  order by vd.ooj_id, vd.sifra;

@@ -981,7 +981,7 @@ create or replace package body rm_kalkulacija_pkg as
                and nvl(o.stornirano, 'N') = 'N'
                and o.storniran_id is null
                and o.datum >= l_datum
-               and coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) = 'I'
+               and coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) = 'I'
                and os.stavka_id in (select ks.stavka_id from kalkulacija_stavke ks where ks.kalkulacija_id = p_id);
             if l_n > 0 then
                 return 'Artikli iz kalkulacije su već izdavani sa skladišta - kalkulacija se ne može otključati.';

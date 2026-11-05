@@ -176,7 +176,7 @@ select o.ooj_id,
   left join sif.acc_tipovi_stavki ts on ts.id = s.tip_stavke_id
   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
-  cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+  cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                       nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                  from dual) k
  where nvl(o.stornirano, 'N') = 'N'

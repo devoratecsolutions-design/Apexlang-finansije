@@ -611,3 +611,17 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
 - **Ulazni dokumenti sa ručnom cijenom:** izborom artikla cijena se predlaže kao 0 (ne prosječna). Dokument Razlika inventure – višak (RIV) iz popisa nastaje sa cijenom 0 na stavkama; zaključavanje i dalje traži cijenu veću od nule.
 - **Međuskladišni prijem – greška u „Stavke izabranog prenosa“ (ORA-01722):** veza za izbor prenosa je u `data-id` dobijala HTML kolone ID (dugme Preuzmi) umjesto broja prenosa, pa je izvještaj stavki pucao. Dodate čiste skrivene kolone PRENOS_ID / PRENOS_NAZIV za veze i dugme, a upit stavki pretvara vrijednost sigurno (`kuf_pkg.broj`). Ista vrsta greške uklonjena i u oznaci kvačice na novom popisu (366, 369).
 - **SQL:** samo `19_rm_popis.sql` (cijena 0 na RIV). Zatim import aplikacije.
+
+## Finansijsko doknjiženje, zamjena šifara, kartica serijskog broja – korak R21 (05.11.2026)
+- **FDK – Finansijsko doknjiženje** (robna i materijalna skladišta, Novi dokument): mijenja samo vrijednost zaliha, ne količinu – time se povećava / smanjuje prosječna cijena artikla na skladištu.
+  - stavka: artikal i **iznos doknjiženja** (+ povećava, − smanjuje); kolona količine se ne prikazuje, uz artikal se vidi stanje i trenutna vrijednost zaliha;
+  - pravila: artikal mora imati zaključeno stanje na datum dokumenta; smanjenje ne smije biti veće od vrijednosti zaliha; ne može se zaključiti ako poslije datuma doknjiženja postoji zaključen izlaz tog artikla (izlaz bi ostao po staroj cijeni); datum ne može biti prije popisa;
+  - zaključava se dugmetom Zaključaj; otključavanje (administrator) i storno nisu dozvoljeni ako je artikal poslije datuma dokumenta izdavan;
+  - u izvještajima: povećanje je ulaz vrijednosti, smanjenje izlaz vrijednosti (kartica artikla, promet, stanje).
+- **ZSA – Zamjena šifara artikla:** izlaz jednog artikla i ulaz drugog u istoj količini po istoj (prosječnoj) cijeni.
+  - stavka: artikal koji se skida sa stanja, **zamjenski artikal** (dodaje se) i količina (najviše do raspoloživog); artikli koji se prate po serijskom broju nisu podržani;
+  - zaključavanjem se artikal skida po prosječnoj cijeni, a za svaku stavku nastaje (skrivena) stavka ulaza zamjenskog artikla sa istom cijenom; otključavanje je briše;
+  - otključavanje / storno nisu dozvoljeni ako je zamjenski artikal u međuvremenu izdat; zaključavanje nije dozvoljeno ako zamjenski artikal ima zaključen izlaz poslije datuma zamjene.
+- **Baza:** OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER (U / I – smjer stavke kada se razlikuje od vrste dokumenta), IZVOR_STAVKA_ID; svi proračuni stanja, vrijednosti, prosječne cijene, popisa i serijskih brojeva uzimaju smjer stavke. RM_DOKUMENT_PKG: VRIJEDNOST_ZALIHA, IZLAZ_POSLIJE, pravila FDK / ZSA. VW_RM_DOKUMENT_STAVKE prikazuje zamjenski artikal (bez generisanih stavki).
+- **Izvještaji – Kartica serijskog broja** (grupa Promet): sva kretanja serijskog broja (ili dijela broja, najmanje 3 znaka) – ulazi, izlazi, prenosi, reversi, zaduženja i prezaduženja radnika, rashodi i popisi SI u upotrebi, sa statusom dokumenta (u pripremi, zaključen, storniran) i vezom na dokument; filter i po artiklu.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF – vrste FDK, ZSA), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije.

@@ -47,8 +47,12 @@ select o.id                                                             as opera
        os.nabavna_cijena                                                as cijena,
        case when k.tk = 'U' then os.kolicina else 0 end                 as ulaz_kolicina,
        case when k.tk = 'I' then os.kolicina else 0 end                 as izlaz_kolicina,
-       case when k.tk in ('U', 'N') then round(os.kolicina * nvl(os.nabavna_cijena, 0), 2) else 0 end as ulaz_vrijednost,
-       case when k.tk = 'I' then round(os.kolicina * nvl(os.nabavna_cijena, 0), 2) else 0 end         as izlaz_vrijednost
+       -- R21: finansijsko doknjiženje / nivelacija (tip N): povećanje vrijednosti je ulaz, smanjenje izlaz vrijednosti
+       case when k.tk = 'U' or (k.tk = 'N' and os.kolicina * nvl(os.nabavna_cijena, 0) > 0)
+            then round(abs(os.kolicina * nvl(os.nabavna_cijena, 0)), 2) else 0 end                   as ulaz_vrijednost,
+       case when k.tk = 'I' then round(os.kolicina * nvl(os.nabavna_cijena, 0), 2)
+            when k.tk = 'N' and os.kolicina * nvl(os.nabavna_cijena, 0) < 0
+            then round(-os.kolicina * nvl(os.nabavna_cijena, 0), 2) else 0 end                        as izlaz_vrijednost
   from operacija_stavke os
   join operacije o on o.id = os.operacija_id
   join sec_stavke st on st.id = os.stavka_id
@@ -60,7 +64,7 @@ select o.id                                                             as opera
   left join sif.acc_mjesta_troska mt on mt.id = o.mjesto_troska_id
   left join sif.acc_radnici rad on rad.id = o.zaduzeni_radnik_id
   left join skladista skp on skp.id = o.skladiste_prenos_id
- cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+ cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                      nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                 from dual) k
  where nvl(o.stornirano, 'N') = 'N'

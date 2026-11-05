@@ -1325,6 +1325,7 @@ body .t-TreeNav .a-TreeView-node--topLevel.is-collapsible > .a-TreeView-row:not(
 .fin-izv-p--radnik select, .fin-izv-p--vrsta select { width: 260px; }
 .fin-izv-p--datum .t-Form-itemWrapper, .fin-izv-p--od .t-Form-itemWrapper, .fin-izv-p--do .t-Form-itemWrapper { width: 165px; }
 .fin-izv-p--dana input { width: 120px; }
+.fin-izv-p--sb input { width: 240px; }
 .fin-izv-param .t-Button.fin-izv-prikazi { min-height: 38px; border-radius: 8px; padding: 0 18px; font-weight: 600; margin: 0 0 0 auto; }
 @media (max-width: 640px) {
     .fin-izv-param .col, .fin-izv-param [class*="fin-izv-p--"] .t-Form-itemWrapper,

@@ -177,7 +177,7 @@ create or replace package body rm_popis_pkg as
                   join operacije o on o.id = os.operacija_id
                   left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
                   left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
-                 cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+                 cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                                      nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                                 from dual) k
                  where o.skladiste_id = p_skladiste_id
@@ -217,7 +217,7 @@ create or replace package body rm_popis_pkg as
                             join operacije o on o.id = os.operacija_id
                             left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
                             left join sif.acc_tipovi_kretanja_robe t on t.id = o.tip_kretanja_id
-                           cross apply (select coalesce(rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
+                           cross apply (select coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja) as tk,
                                                nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as st
                                           from dual) k
                            where o.skladiste_id = l_skl

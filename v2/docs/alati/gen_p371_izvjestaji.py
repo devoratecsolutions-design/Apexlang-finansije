@@ -318,6 +318,85 @@ cols_dc = [c("ID", "Dokument", "NUMBER", link='<span class="fin-doc"><span class
            c("DANA", "Dana", "NUMBER", None, "end"), c("RAZLOG", "Šta čeka"), c("IZNOS", "Iznos (KM)", "NUMBER", VM, "end"), c("URL", "Url", hidden=True)]
 R.append(report("izv-cekanje", "Dokumenti na čekanju", ["dc"], sql_dc, cols_dc, ["P371_SKLADISTE_ID"], "Nema dokumenata koji čekaju.", 90, rid)); rid += 1
 
+# R21: kartica serijskog broja - sva kretanja jednog serijskog broja (skladište, reversi, zaduženja radnika, popisi SI)
+sql_ksb = f"""
+WITH d AS (
+    SELECT o.datum,
+           o.id AS operacija_id,
+           os.id AS stavka_dok_id,
+           o.naziv AS dokument,
+           coalesce(vd.naziv, t.naziv) AS vrsta_naziv,
+           upper(vd.sifra) AS vrsta_sifra,
+           nvl2(sk.id, sk.sifra || ' - ' || sk.naziv, NULL) AS skladiste,
+           a.sifra AS artikal_sifra,
+           a.naziv AS artikal_naziv,
+           sb.serijski_broj,
+           CASE coalesce(os.smjer, rm_dokument_pkg.tip_kretanja(vd.sifra), t.tip_kretanja)
+                WHEN 'U' THEN 'Ulaz' WHEN 'I' THEN 'Izlaz' WHEN 'Z' THEN 'Zaduženje radnika' ELSE '-' END AS smjer,
+           CASE WHEN upper(vd.sifra) = 'PSI' THEN 'sa ' || r.ime || ' ' || r.prezime || ' na ' || rp.ime || ' ' || rp.prezime
+                ELSE coalesce(r.ime || ' ' || r.prezime, kl.naziv, nvl2(mt.id, mt.sifra || ' - ' || mt.naziv, NULL),
+                              nvl2(skp.id, 'skladište ' || skp.sifra || ' - ' || skp.naziv, NULL)) END AS partner,
+           CASE WHEN o.storniran_id IS NOT NULL THEN 'Storno dokument'
+                WHEN nvl(o.stornirano, 'N') = 'Y' THEN 'Storniran'
+                WHEN nvl(o.status, CASE WHEN o.zakljucano = 'Y' THEN 'Z' ELSE 'P' END) = 'Z' THEN 'Zaključen'
+                ELSE 'U pripremi' END AS status,
+           apex_page.get_url(p_page => 331, p_items => 'P331_ID', p_values => o.id, p_clear_cache => 331) AS url
+      FROM operacija_stavke_sb sb
+      JOIN operacija_stavke os ON os.id = sb.operacija_stavka_id
+      JOIN operacije o ON o.id = os.operacija_id
+      JOIN sec_stavke a ON a.id = os.stavka_id
+      LEFT JOIN sif.vrste_dokumenata vd ON vd.id = o.vrsta_dokumenta_id
+      LEFT JOIN sif.acc_tipovi_kretanja_robe t ON t.id = o.tip_kretanja_id
+      LEFT JOIN skladista sk ON sk.id = o.skladiste_id
+      LEFT JOIN skladista skp ON skp.id = o.skladiste_prenos_id
+      LEFT JOIN sec_klijenti kl ON kl.id = o.klijent_id
+      LEFT JOIN sif.acc_mjesta_troska mt ON mt.id = o.mjesto_troska_id
+      LEFT JOIN sif.acc_radnici r ON r.id = o.zaduzeni_radnik_id
+      LEFT JOIN sif.acc_radnici rp ON rp.id = o.radnik_prenos_id
+     WHERE o.ooj_id = :APP_OOJ_ID
+       AND (o.skladiste_id IS NULL OR o.skladiste_id IN (SELECT k.skladiste_id FROM skladiste_korisnici k WHERE k.korisnik_id = :APP_USER_ID))
+       AND (:P371_ARTIKL IS NULL OR os.stavka_id = to_number(:P371_ARTIKL))
+       AND upper(sb.serijski_broj) LIKE '%' || upper(trim(:P371_SB)) || '%'
+    UNION ALL
+    SELECT p.datum, 0, ps.id, p.naziv, 'Popis sitnog inventara u upotrebi', 'POPSI', CAST(NULL AS VARCHAR2(300)),
+           a.sifra, a.naziv, ps.serijski_broj,
+           CASE WHEN ps.popis_kolicina IS NULL THEN 'Popis - nije uneseno'
+                WHEN ps.popis_kolicina > 0 THEN 'Popis - pronađen' ELSE 'Popis - nije pronađen' END,
+           r.ime || ' ' || r.prezime,
+           CASE WHEN nvl(p.zakljucano, 'N') = 'Y' THEN 'Zaključen' ELSE 'U pripremi' END,
+           apex_page.get_url(p_page => 368, p_items => 'P368_ID', p_values => p.id, p_clear_cache => 368)
+      FROM popis_stavke ps
+      JOIN popisi p ON p.id = ps.popis_id
+      JOIN sec_stavke a ON a.id = ps.stavka_id
+      LEFT JOIN sif.acc_radnici r ON r.id = p.radnik_id
+     WHERE p.ooj_id = :APP_OOJ_ID
+       AND ps.serijski_broj IS NOT NULL
+       AND (:P371_ARTIKL IS NULL OR ps.stavka_id = to_number(:P371_ARTIKL))
+       AND upper(ps.serijski_broj) LIKE '%' || upper(trim(:P371_SB)) || '%'
+)
+SELECT d.serijski_broj,
+       d.artikal_sifra,
+       d.artikal_naziv,
+       d.datum,
+       d.operacija_id AS id,
+       d.dokument,
+       d.vrsta_naziv,
+       d.smjer,
+       d.skladiste,
+       d.partner,
+       d.status,
+       d.url
+FROM d
+WHERE length(trim(:P371_SB)) >= 3
+ORDER BY d.serijski_broj, d.datum, d.operacija_id, d.stavka_dok_id"""
+cols_ksb = [c("SERIJSKI_BROJ", "Serijski broj"), c("ARTIKAL_SIFRA", "Šifra"), c("ARTIKAL_NAZIV", "Artikal"), c("DATUM", "Datum", "DATE", DM),
+            c("ID", "Dokument", "NUMBER", link='<span class="fin-doc"><span class="fin-doc__no">#DOKUMENT#</span><span class="fin-sub">#VRSTA_NAZIV#</span></span>'),
+            c("DOKUMENT", "Broj", hidden=True), c("VRSTA_NAZIV", "Vrsta", hidden=True),
+            c("SMJER", "Kretanje"), c("SKLADISTE", "Skladište"), c("PARTNER", "Radnik / komitent / MT / skladište"),
+            c("STATUS", "Status"), c("URL", "Url", hidden=True)]
+R.append(report("izv-kartica-sb", "Kartica serijskog broja", ["ksb"], sql_ksb, cols_ksb, ["P371_SB", "P371_ARTIKL"],
+                "Upišite serijski broj (najmanje 3 znaka; može i dio broja).", 45, rid)); rid += 1
+
 # R19: sitni inventar u upotrebi (zaduženja radnika na nivou firme - bez filtera skladišta)
 RAD = "(:P371_RADNIK IS NULL OR z.radnik_id = to_number(:P371_RADNIK))"
 ARTZ = "(:P371_ARTIKL IS NULL OR z.stavka_id = to_number(:P371_ARTIKL))"
@@ -416,6 +495,7 @@ KATALOG = [
                                          ("pl", "Popisna lista", "Knjigovodstveno stanje sa poljima za popis"),
                                          ("sz", "Starost zaliha", "Artikli na stanju bez izlaza duže od N dana")]),
     ("Promet", "fa-exchange", [("km", "Kartica artikla", "Hronološki ulazi, izlazi i stanje jednog artikla"),
+                               ("ksb", "Kartica serijskog broja", "Sva kretanja jednog serijskog broja: ulazi, izlazi, reversi, zaduženja radnika, popisi"),
                                ("pp", "Promet po artiklima", "Početno, ulaz, izlaz i krajnje stanje za period"),
                                ("dok", "Pregled dokumenata", "Svi dokumenti skladišta za period")]),
     ("Potrošnja i zaduženja", "fa-users", [("pmt", "Potrošnja po mjestu troška", "Izdatnice i izlazi na investiciju, OS i sitni inventar"),
@@ -465,7 +545,7 @@ def item(name, typ, label, seq, codes, extra=""):
 """
 
 items = []
-items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, [k for k in ALL if not k.startswith("si")], extra="""        lov {
+items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, [k for k in ALL if not k.startswith("si") and k != "ksb"], extra="""        lov {
             type: sqlQuery
             sqlQuery:
                 ```sql
@@ -488,7 +568,7 @@ items.append(item("P371_SKLADISTE_ID", "selectList", "Skladište", 10, [k for k 
 items.append(item("P371_DATUM", "datePicker", "Na dan", 20, ["sd", "pl"]))
 items.append(item("P371_OD", "datePicker", "Od", 30, ["km", "pp", "dok", "pmt", "sik"]))
 items.append(item("P371_DO", "datePicker", "Do", 40, ["km", "pp", "dok", "pmt", "sik"]))
-items.append(item("P371_ARTIKL", "popupLov", "Artikal", 50, ["sd", "pl", "sz", "km", "pp", "pmt", "zad", "siu", "sim", "sik"], extra="""        settings {
+items.append(item("P371_ARTIKL", "popupLov", "Artikal", 50, ["sd", "pl", "sz", "km", "pp", "pmt", "zad", "siu", "sim", "sik", "ksb"], extra="""        settings {
             popupWidth: 720
         }
         lov {
@@ -538,6 +618,7 @@ items.append(item("P371_RADNIK", "selectList", "Radnik", 45, ["siu", "sim", "sik
             nullDisplayValue: - svi radnici -
         }
 """))
+items.append(item("P371_SB", "textField", "Serijski broj", 15, ["ksb"]))
 items.append(item("P371_DANA", "numberField", "Dana bez izlaza (najmanje)", 60, ["sz"]))
 
 page = f"""page 371 (
@@ -792,7 +873,8 @@ page = f"""page 371 (
                 :P371_OPIS  := {case_opis};
                 -- opis parametara (zaglavlje pri štampi)
                 -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
-                select case when :P371_IZV like 'si%' then
+                select case when :P371_IZV = 'ksb' then 'serijski broj ' || nvl(trim(:P371_SB), '-')
+                            when :P371_IZV like 'si%' then
                                 'sitni inventar u upotrebi · ' || nvl((select max('radnik ' || r.ime || ' ' || r.prezime) from sif.acc_radnici r
                                                                        where r.id = to_number(:P371_RADNIK)), 'svi radnici')
                             when nvl(:P371_SKLADISTE_ID, '0') = '0' then 'sva skladišta modula'
