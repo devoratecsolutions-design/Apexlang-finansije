@@ -164,7 +164,9 @@ page 331 (
                     p.sa_skladista,
                     p.opis,
                     p.stavki,
-                    to_char(p.iznos, 'FM999G999G999G990D00') AS iznos
+                    to_char(p.iznos, 'FM999G999G999G990D00') AS iznos,
+                    p.id    AS prenos_id,
+                    p.naziv AS prenos_naziv
                 FROM vw_rm_prenosi_cekanje p
                 WHERE p.ooj_id = :APP_OOJ_ID
                   AND p.skladiste_prenos_id = :A_SKLADISTE_ID
@@ -216,7 +218,7 @@ page 331 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    <button type="button" class="t-Button t-Button--hot t-Button--small t-Button--iconLeft fin-preuzmi" data-id="#ID#" data-naziv="#NAZIV#"><span class="t-Icon t-Icon--left fa fa-download" aria-hidden="true"></span>Preuzmi</button>
+                    <button type="button" class="t-Button t-Button--hot t-Button--small t-Button--iconLeft fin-preuzmi" data-id="#PRENOS_ID#" data-naziv="#PRENOS_NAZIV#"><span class="t-Icon t-Icon--left fa fa-download" aria-hidden="true"></span>Preuzmi</button>
                     ```
             }
             sorting {
@@ -236,7 +238,7 @@ page 331 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    <a href="javascript:void(0)" class="fin-doc fin-prenos-izbor" data-id="#ID#"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#DATUM# · sa skladišta #SA_SKLADISTA#</span><span class="fin-sub">#OPIS#</span></a>
+                    <a href="javascript:void(0)" class="fin-doc fin-prenos-izbor" data-id="#PRENOS_ID#"><span class="fin-doc__no">#NAZIV#</span><span class="fin-sub">#DATUM# · sa skladišta #SA_SKLADISTA#</span><span class="fin-sub">#OPIS#</span></a>
                     ```
             }
             sorting {
@@ -306,6 +308,23 @@ page 331 (
             }
         )
 
+        column PRENOS_ID (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 340
+            }
+        )
+
+        column PRENOS_NAZIV (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 350
+            }
+        )
 
     )
 
@@ -328,7 +347,7 @@ page 331 (
                     to_char(s.iznos, 'FM999G999G999G990D00') AS iznos,
                     CASE WHEN s.prati_sb = 'Y' THEN to_char(s.sb_uneseno) END AS sb
                 FROM vw_rm_dokument_stavke s
-                WHERE s.operacija_id = :P331_PRENOS_ID
+                WHERE s.operacija_id = kuf_pkg.broj(:P331_PRENOS_ID)
                   AND EXISTS (SELECT 1 FROM vw_rm_prenosi_cekanje p
                                WHERE p.id = s.operacija_id AND p.ooj_id = :APP_OOJ_ID AND p.skladiste_prenos_id = :A_SKLADISTE_ID)
                 ORDER BY s.redni_broj, s.id

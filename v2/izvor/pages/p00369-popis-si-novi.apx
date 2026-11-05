@@ -207,7 +207,7 @@ page 369 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    <input type="checkbox" class="fin-popis-chk" value="#ID#" #DIS# aria-label="#SKLADISTE#">
+                    <input type="checkbox" class="fin-popis-chk" value="#ID#" #DIS# aria-label="Izaberi">
                     ```
             }
             sorting {

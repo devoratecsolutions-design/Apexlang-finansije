@@ -609,4 +609,5 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
   - tabele (interaktivni izvještaji) u stilu aplikacije: kartica sa okvirom, mirnije zaglavlje, blago prugasti redovi, isticanje reda, istaknuti zbirovi i prelomi grupa, uredna paginacija;
   - dugme **Štampaj** ukinuto (štampa preko Actions → Download PDF / Excel).
 - **Ulazni dokumenti sa ručnom cijenom:** izborom artikla cijena se predlaže kao 0 (ne prosječna). Dokument Razlika inventure – višak (RIV) iz popisa nastaje sa cijenom 0 na stavkama; zaključavanje i dalje traži cijenu veću od nule.
+- **Međuskladišni prijem – greška u „Stavke izabranog prenosa“ (ORA-01722):** veza za izbor prenosa je u `data-id` dobijala HTML kolone ID (dugme Preuzmi) umjesto broja prenosa, pa je izvještaj stavki pucao. Dodate čiste skrivene kolone PRENOS_ID / PRENOS_NAZIV za veze i dugme, a upit stavki pretvara vrijednost sigurno (`kuf_pkg.broj`). Ista vrsta greške uklonjena i u oznaci kvačice na novom popisu (366, 369).
 - **SQL:** samo `19_rm_popis.sql` (cijena 0 na RIV). Zatim import aplikacije.
