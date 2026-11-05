@@ -1232,9 +1232,6 @@ create or replace package body rm_dokument_pkg as
         end if;
         -- zamjena šifara: zamjenski artikal (bez serijskih brojeva)
         if l_vrs = 'ZSA' then
-            if l_sb = 'Y' then
-                greska('Artikal se prati po serijskom broju - zamjena šifara za takve artikle nije podržana.');
-            end if;
             l_zam := p_zamjena_stavka_id;
             if l_zam is null then
                 greska('Izaberite zamjenski artikal (artikal koji se dodaje na stanje).');
@@ -1249,8 +1246,9 @@ create or replace package body rm_dokument_pkg as
                 if z.tip_stavke_id = 3 then
                     greska('Zamjenski artikal je usluga - usluga se ne vodi na skladištu.');
                 end if;
+                -- serijski brojevi: unose se na stavci; ako se prati zamjenski artikal, količina mora biti cijeli broj
                 if z.serijski_broj = 'Y' then
-                    greska('Zamjenski artikal ' || z.sifra || ' se prati po serijskom broju - zamjena šifara za takve artikle nije podržana.');
+                    l_sb := 'Y';
                 end if;
                 l_n := -1;
             end loop;
@@ -1330,6 +1328,14 @@ create or replace package body rm_dokument_pkg as
             end if;
             if l_n > l_kol and l_vrs <> 'FDK' then
                 greska('Uneseno je ' || l_n || ' serijskih brojeva - prvo obrišite višak pa smanjite količinu.');
+            end if;
+            -- zamjena šifara: drugi zamjenski artikal mijenja značenje unesenih serijskih brojeva
+            if l_vrs = 'ZSA' and l_n > 0 then
+                select count(*) into l_skol from operacija_stavke
+                 where id = p_id and nvl(zamjena_stavka_id, -1) <> nvl(l_zam, -1);
+                if l_skol > 0 then
+                    greska('Stavka ima serijske brojeve - zamjenski artikal se ne može promijeniti. Obrišite serijske brojeve ili stavku.');
+                end if;
             end if;
             update operacija_stavke
                set stavka_id         = p_stavka_id,
@@ -1491,11 +1497,21 @@ create or replace package body rm_dokument_pkg as
           join sec_stavke s on s.id = os.stavka_id
          where os.id = p_stavka_dok_id;
         provjeri_izmjenu(l_dok);
+        l_tk := tip_dokumenta(l_dok);
+        -- R21 zamjena šifara: artikal stavke se ne prati po SB, a zamjenski da -> unose se novi serijski brojevi
+        -- zamjenskog artikla (provjera kao na ulazu: broj ne smije biti već na stanju tog artikla)
+        if l_prati = 'N' and tip_dokumenta_sifra(l_dok) = 'ZSA' then
+            for z in (select z.id from operacija_stavke os join sec_stavke z on z.id = os.zamjena_stavka_id
+                       where os.id = p_stavka_dok_id and z.serijski_broj = 'Y') loop
+                l_prati  := 'Y';
+                l_stavka := z.id;
+                l_tk     := 'U';
+            end loop;
+        end if;
         if l_prati = 'N' then
             greska('Artikal se ne prati po serijskom broju.');
         end if;
         select count(*) into l_imamo from operacija_stavke_sb where operacija_stavka_id = p_stavka_dok_id;
-        l_tk := tip_dokumenta(l_dok);
 
         for i in 1 .. p_lista.count loop
             l_sb := trim(p_lista(i));
@@ -1655,7 +1671,9 @@ create or replace package body rm_dokument_pkg as
                          (select count(*) from operacija_stavke_sb x where x.operacija_stavka_id = os.id) as n
                     from operacija_stavke os
                     join sec_stavke a on a.id = os.stavka_id
-                   where os.operacija_id = p_id and a.serijski_broj = 'Y'
+                    left join sec_stavke z on z.id = os.zamjena_stavka_id
+                   where os.operacija_id = p_id
+                     and (a.serijski_broj = 'Y' or (l_vrs = 'ZSA' and z.serijski_broj = 'Y'))
                      and l_inv = 'N' and l_vrs <> 'FDK' and os.smjer is null) loop
             if s.n <> s.kolicina then
                 return 'Artikal ' || s.sifra || ' ' || s.naziv || ': uneseno ' || s.n || ' serijskih brojeva, a količina je '
@@ -1815,6 +1833,16 @@ create or replace package body rm_dokument_pkg as
                                || izlaz_poslije(o.skladiste_id, z.art, o.datum, p_id) || ') - promijenite datum zamjene.';
                     end if;
                 end loop;
+                -- serijski brojevi koji prelaze na zamjenski artikal ne smiju već biti u upotrebi za taj artikal
+                for b in (select sb.serijski_broj, z.id as art, z.sifra
+                            from operacija_stavke os
+                            join operacija_stavke_sb sb on sb.operacija_stavka_id = os.id
+                            join sec_stavke z on z.id = os.zamjena_stavka_id and z.serijski_broj = 'Y'
+                           where os.operacija_id = p_id and os.smjer is null) loop
+                    if sb_u_upotrebi(o.ooj_id, b.art, b.serijski_broj, p_id) > 0 then
+                        return 'Serijski broj ' || b.serijski_broj || ' već postoji na stanju zamjenskog artikla ' || b.sifra || '.';
+                    end if;
+                end loop;
             end if;
         end loop;
         return null;
@@ -1823,6 +1851,7 @@ create or replace package body rm_dokument_pkg as
     procedure zakljucaj (p_id in number, p_tip_preduzetnika in varchar2 default null) is
         l_poruka varchar2(4000) := provjeri_zakljucavanje(p_id, p_tip_preduzetnika);
         l_cij    number;
+        l_novi   number;
     begin
         if l_poruka is not null then
             greska(l_poruka);
@@ -1850,12 +1879,29 @@ create or replace package body rm_dokument_pkg as
         end loop;
         -- zamjena šifara: za svaku stavku izlaza ulaz zamjenskog artikla iste količine po istoj (prosječnoj) cijeni
         if tip_dokumenta_sifra(p_id) = 'ZSA' then
+            delete from operacija_stavke_sb
+             where operacija_stavka_id in (select id from operacija_stavke where operacija_id = p_id and smjer is not null);
             delete from operacija_stavke where operacija_id = p_id and smjer is not null;
-            for st in (select id, zamjena_stavka_id, kolicina, nabavna_cijena, opis, redni_broj
-                         from operacija_stavke where operacija_id = p_id and smjer is null
-                        order by redni_broj, id) loop
+            for st in (select os.id, os.zamjena_stavka_id, os.kolicina, os.nabavna_cijena, os.opis, os.redni_broj,
+                              case when a.serijski_broj = 'Y' then 'Y' else 'N' end as a_sb,
+                              case when z.serijski_broj = 'Y' then 'Y' else 'N' end as z_sb
+                         from operacija_stavke os
+                         join sec_stavke a on a.id = os.stavka_id
+                         join sec_stavke z on z.id = os.zamjena_stavka_id
+                        where os.operacija_id = p_id and os.smjer is null
+                        order by os.redni_broj, os.id) loop
                 insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj, smjer, izvor_stavka_id)
-                values (p_id, st.zamjena_stavka_id, st.kolicina, st.nabavna_cijena, st.opis, st.redni_broj, 'U', st.id);
+                values (p_id, st.zamjena_stavka_id, st.kolicina, st.nabavna_cijena, st.opis, st.redni_broj, 'U', st.id)
+                returning id into l_novi;
+                -- serijski brojevi: isti brojevi prelaze na zamjenski artikal (ako se on prati po SB);
+                -- ako se artikal stavke ne prati po SB, brojevi su uneseni samo za zamjenski artikal i sele se na ulaz
+                if st.z_sb = 'Y' then
+                    insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
+                    select l_novi, sb.serijski_broj from operacija_stavke_sb sb where sb.operacija_stavka_id = st.id;
+                end if;
+                if st.a_sb = 'N' then
+                    delete from operacija_stavke_sb where operacija_stavka_id = st.id;
+                end if;
             end loop;
         end if;
         update operacije set status = 'Z', zakljucano = 'Y' where id = p_id;
@@ -1920,7 +1966,21 @@ create or replace package body rm_dokument_pkg as
         if l_poruka is not null then
             greska(l_poruka);
         end if;
-        -- zamjena šifara: generisane stavke ulaza zamjenskog artikla nastaju ponovo zaključavanjem
+        -- zamjena šifara: generisane stavke ulaza zamjenskog artikla nastaju ponovo zaključavanjem;
+        -- serijski brojevi zamjenskog artikla (artikal stavke bez SB) vraćaju se na stavku
+        for g in (select os.id, os.izvor_stavka_id
+                    from operacija_stavke os
+                    join operacija_stavke izv on izv.id = os.izvor_stavka_id
+                    join sec_stavke a on a.id = izv.stavka_id
+                   where os.operacija_id = p_id and os.smjer is not null and nvl(a.serijski_broj, 'N') <> 'Y') loop
+            insert into operacija_stavke_sb (operacija_stavka_id, serijski_broj)
+            select g.izvor_stavka_id, sb.serijski_broj from operacija_stavke_sb sb
+             where sb.operacija_stavka_id = g.id
+               and not exists (select 1 from operacija_stavke_sb x
+                                where x.operacija_stavka_id = g.izvor_stavka_id and x.serijski_broj = sb.serijski_broj);
+        end loop;
+        delete from operacija_stavke_sb
+         where operacija_stavka_id in (select id from operacija_stavke where operacija_id = p_id and smjer is not null);
         delete from operacija_stavke where operacija_id = p_id and smjer is not null;
         update operacije set status = 'P', zakljucano = 'N' where id = p_id;
     end otkljucaj;

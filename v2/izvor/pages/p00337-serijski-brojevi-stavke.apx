@@ -706,11 +706,18 @@ page 337 (
         source {
             plsqlCode:
                 ```plsql
-                for s in (select s.sifra, s.naziv, s.kolicina, s.sb_uneseno, s.sb_ok, d.naziv as dok, s.operacija_id, d.tip_kretanja as tip
+                for s in (select s.sifra, s.naziv, s.kolicina, s.sb_uneseno, s.sb_ok, d.naziv as dok, s.operacija_id,
+                                 -- zamjena šifara: brojevi zamjenskog artikla (artikal stavke se ne prati po SB) unose se kao na ulazu
+                                 case when s.sb_zamjenskog = 'Y' then 'U' else d.tip_kretanja end as tip,
+                                 s.sb_zamjenskog, s.zamjena_sifra, s.zamjena_naziv
                             from vw_rm_dokument_stavke s
                             join vw_rm_dokumenti d on d.id = s.operacija_id
                            where s.id = :P337_STAVKA_DOK_ID and s.ooj_id = :APP_OOJ_ID) loop
-                    :P337_ARTIKAL  := s.sifra || ' - ' || s.naziv;
+                    :P337_ARTIKAL  := case when s.sb_zamjenskog = 'Y'
+                                           then s.zamjena_sifra || ' - ' || s.zamjena_naziv || ' (zamjenski artikal, novi serijski brojevi)'
+                                           when s.zamjena_sifra is not null
+                                           then s.sifra || ' - ' || s.naziv || ' → ' || s.zamjena_sifra || ' (isti brojevi prelaze na zamjenski artikal)'
+                                           else s.sifra || ' - ' || s.naziv end;
                     :P337_KOLICINA := rtrim(to_char(s.kolicina, 'FM999G999G990D999'), '.,');
                     :P337_UNESENO  := s.sb_uneseno;
                     :P337_KLASA    := case when s.sb_ok = 'Y' then 'is-ok' else 'is-nok' end;

@@ -619,7 +619,12 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
   - zaključava se dugmetom Zaključaj; otključavanje (administrator) i storno nisu dozvoljeni ako je artikal poslije datuma dokumenta izdavan;
   - u izvještajima: povećanje je ulaz vrijednosti, smanjenje izlaz vrijednosti (kartica artikla, promet, stanje).
 - **ZSA – Zamjena šifara artikla:** izlaz jednog artikla i ulaz drugog u istoj količini po istoj (prosječnoj) cijeni.
-  - stavka: artikal koji se skida sa stanja, **zamjenski artikal** (dodaje se) i količina (najviše do raspoloživog); artikli koji se prate po serijskom broju nisu podržani;
+  - stavka: artikal koji se skida sa stanja, **zamjenski artikal** (dodaje se) i količina (najviše do raspoloživog);
+  - **serijski brojevi** (unose se na stavci, kao i do sada; broj brojeva = količina):
+    - oba artikla se prate po SB: unose se raspoloživi brojevi artikla koji se skida, a zaključavanjem **isti brojevi prelaze na zamjenski artikal** (broj ne smije već postojati na stanju zamjenskog);
+    - prati se samo artikal koji se skida: brojevi se skidaju sa stanja, zamjenski artikal ulazi bez brojeva;
+    - prati se samo zamjenski artikal: unose se **novi brojevi zamjenskog artikla** (kao na ulazu); zaključavanjem prelaze na ulaz, otključavanjem se vraćaju na stavku;
+    - skeniranje serijskog broja na dokumentu se za zamjenu šifara ne koristi (artikal i zamjenski artikal se biraju u tabeli);
   - zaključavanjem se artikal skida po prosječnoj cijeni, a za svaku stavku nastaje (skrivena) stavka ulaza zamjenskog artikla sa istom cijenom; otključavanje je briše;
   - otključavanje / storno nisu dozvoljeni ako je zamjenski artikal u međuvremenu izdat; zaključavanje nije dozvoljeno ako zamjenski artikal ima zaključen izlaz poslije datuma zamjene.
 - **Baza:** OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER (U / I – smjer stavke kada se razlikuje od vrste dokumenta), IZVOR_STAVKA_ID; svi proračuni stanja, vrijednosti, prosječne cijene, popisa i serijskih brojeva uzimaju smjer stavke. RM_DOKUMENT_PKG: VRIJEDNOST_ZALIHA, IZLAZ_POSLIJE, pravila FDK / ZSA. VW_RM_DOKUMENT_STAVKE prikazuje zamjenski artikal (bez generisanih stavki).

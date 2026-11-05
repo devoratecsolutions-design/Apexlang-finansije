@@ -108,12 +108,13 @@ select o.id,
   outer apply (select count(*)          as stavki,
                       sum(os.kolicina)  as kolicina,
                       sum(round(os.kolicina * os.nabavna_cijena, 2)) as iznos,
-                      sum(case when s.serijski_broj = 'Y' and o.popis_id is null
+                      sum(case when (s.serijski_broj = 'Y' or zs.serijski_broj = 'Y') and o.popis_id is null
                                 and nvl(os.kolicina, 0) <> (select count(*) from operacija_stavke_sb sb
                                                              where sb.operacija_stavka_id = os.id)
                                then 1 else 0 end) as sb_nedostaje
                  from operacija_stavke os
                  join sec_stavke s on s.id = os.stavka_id
+                 left join sec_stavke zs on zs.id = os.zamjena_stavka_id
                 where os.operacija_id = o.id
                   and os.smjer is null) st;            -- R21: bez generisanih stavki ulaza zamjene šifara
 
@@ -126,13 +127,16 @@ select os.id,
        a.sifra,
        a.naziv,
        a.jm_naziv,
-       a.prati_sb,
+       -- R21: stavka zamjene šifara traži serijske brojeve i kada se prati samo zamjenski artikal
+       case when a.prati_sb = 'Y' or z.prati_sb = 'Y' then 'Y' else 'N' end as prati_sb,
        os.kolicina,
        os.opis,
        os.nabavna_cijena                                                as cijena,
        round(os.kolicina * os.nabavna_cijena, 2)                         as iznos,
        nvl(sb.n, 0)                                                     as sb_uneseno,
-       case when a.prati_sb = 'Y' and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
+       case when (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
+       -- serijski brojevi stavke pripadaju zamjenskom artiklu (novi brojevi, kao na ulazu)
+       case when nvl(a.prati_sb, 'N') <> 'Y' and z.prati_sb = 'Y' then 'Y' else 'N' end as sb_zamjenskog,
        os.zamjena_stavka_id,                                            -- R21: zamjena šifara (ZSA)
        z.sifra                                                          as zamjena_sifra,
        z.naziv                                                          as zamjena_naziv
