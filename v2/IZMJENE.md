@@ -601,3 +601,12 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
 - **Baza:** `20_partneri_konta.sql` – SEC_KLIJENT_KONTA.PODRAZUMIJEVANO, jedinstveno konto po partneru, paket **SEC_PARTNER_PKG** (snimi_konto, uskladi, konto(partner, grupa), konta_opis).
 - **Otvoreno:** postojeće procedure knjiženja (uparivanje po kontu partnera traži tačno jedno konto u grupi; konto dobavljača uzima prvo iz grupe 4) treba prebaciti na `sec_partner_pkg.konto(partner, grupa)` da bi više konta po grupi radilo – to su postojeći paketi van v2, rade se posebnim korakom.
 - **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `14_rm_skladista.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`, `20_partneri_konta.sql`. Zatim import aplikacije.
+
+## Izgled izvještaja, cijena na ulazu – korak R20 (05.11.2026)
+- **Izvještaji materijalnog modula (371):**
+  - parametri u posebnoj kartici „Parametri izvještaja“: labela iznad polja, polja u jednom redu sa širinom prema sadržaju (skladište, artikal, mjesto troška šira; datumi uži), na telefonu jedno ispod drugog; dugme **Prikaži izvještaj** na kraju reda;
+  - ispod parametara opis izvještaja i prikazani parametri (npr. „sva skladišta modula · period 01.01. – 05.11.“);
+  - tabele (interaktivni izvještaji) u stilu aplikacije: kartica sa okvirom, mirnije zaglavlje, blago prugasti redovi, isticanje reda, istaknuti zbirovi i prelomi grupa, uredna paginacija;
+  - dugme **Štampaj** ukinuto (štampa preko Actions → Download PDF / Excel).
+- **Ulazni dokumenti sa ručnom cijenom:** izborom artikla cijena se predlaže kao 0 (ne prosječna). Dokument Razlika inventure – višak (RIV) iz popisa nastaje sa cijenom 0 na stavkama; zaključavanje i dalje traži cijenu veću od nule.
+- **SQL:** samo `19_rm_popis.sql` (cijena 0 na RIV). Zatim import aplikacije.

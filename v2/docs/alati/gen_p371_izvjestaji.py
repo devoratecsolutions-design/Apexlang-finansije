@@ -57,7 +57,7 @@ def report(slug, name, codes, sql, cols, items, nodata, seq, rid, breaks=None):
     L += ["            ]", "        }",
           "        layout {", f"            sequence: {seq}", "            parentRegion: @izvjestaj", "            slot: subRegions", "        }",
           "        appearance {", "            template: @interactive-report", "            templateOptions: [", "                #DEFAULT#",
-          "                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc", "            ]", "            cssClasses: fin-izv-tabela", "        }",
+          "                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc", "            ]", "            cssClasses: fin-ir fin-izv-tabela", "        }",
           "        serverSideCondition {", "            type: expression", f"            plsqlExpression: {cond(codes)}", "        }",
           "        componentAppearance {", "            showNullValuesAs: -", "        }",
           "        pagination {", "            type: rowRangesXToY", "        }",
@@ -433,6 +433,8 @@ for g, ic, its in KATALOG:
     kat_html += '</div>'
 kat_html += '</div>'
 NAZIVI = {code: n for g, ic, its in KATALOG for code, n, o in its}
+OPISI = {code: o for g, ic, its in KATALOG for code, n, o in its}
+case_opis = "case :P371_IZV " + " ".join(f"when '{k}' then '{o}'" for k, o in OPISI.items()) + " end"
 ALL = list(NAZIVI.keys())
 case_naziv = "case :P371_IZV " + " ".join(f"when '{k}' then '{n}'" for k, n in NAZIVI.items()) + " end"
 lista_kodova = ",".join(ALL)
@@ -451,8 +453,9 @@ def item(name, typ, label, seq, codes, extra=""):
             startNewRow: false
         }}
         appearance {{
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--{name[5:].lower()}
         }}
         serverSideCondition {{
             type: expression
@@ -566,8 +569,8 @@ page = f"""page 371 (
             ```html
             Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola, sitni inventar),
             podesite parametre (skladište, period, artikal...) i kliknite <b>Prikaži</b>.
-            Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>), preuzeti kao Excel / PDF
-            (<b>Actions &gt; Download</b>) ili odštampati dugmetom <b>Štampaj</b>.
+            Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>) i preuzeti kao Excel / PDF
+            (<b>Actions &gt; Download</b>) za štampu.
             Izvještaji koriste zaključene dokumente skladišta (knjigovodstveno stanje); storniran dokument i njegov storno
             se ne računaju. <b>Dokumenti na čekanju</b> prikazuju ono što još nije zaključeno.
             ```
@@ -654,15 +657,15 @@ page = f"""page 371 (
                 #DEFAULT#
                 t-Form--stretchInputs
             ]
-            cssClasses: fin-toolbar fin-izv-parametri fin-izv-bez-stampe
+            cssClasses: fin-izv-param fin-izv-bez-stampe
         }}
     )
 
-    region stampa-zaglavlje (
-        name: Zaglavlje za štampu
+    region izv-info (
+        name: Opis i parametri izvještaja
         type: staticContent
         source {{
-            htmlCode: <div class="fin-izv-stampa"><b>&P371_NAZIV.</b> · &P371_PARAMETRI.</div>
+            htmlCode: <div class="fin-izv-info"><span class="fin-izv-info__opis">&P371_OPIS.</span><span class="fin-izv-info__param"><span class="fa fa-sliders" aria-hidden="true"></span>&P371_PARAMETRI.</span></div>
         }}
         layout {{
             sequence: 6
@@ -723,6 +726,17 @@ page = f"""page 371 (
         }
     )
 
+    pageItem P371_OPIS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            slot: body
+        }
+    )
+
     pageItem P371_PARAMETRI (
         type: hidden
         settings {
@@ -737,7 +751,7 @@ page = f"""page 371 (
 """ + "\n".join(items) + f"""
     button prikazi (
         buttonName: PRIKAZI
-        label: Prikaži
+        label: Prikaži izvještaj
         layout {{
             sequence: 90
             region: @parametri
@@ -750,34 +764,11 @@ page = f"""page 371 (
                 #DEFAULT#
                 t-Button--iconLeft
             ]
-            icon: fa-play
+            cssClasses: fin-izv-prikazi
+            icon: fa-search
         }}
         behavior {{
             warnOnUnsavedChanges: doNotCheck
-        }}
-    )
-
-    button stampaj (
-        buttonName: STAMPAJ
-        label: Štampaj
-        layout {{
-            sequence: 95
-            region: @parametri
-            slot: regionBody
-        }}
-        appearance {{
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--iconLeft
-            ]
-            icon: fa-print
-        }}
-        behavior {{
-            action: definedByDynamicAction
-        }}
-        advanced {{
-            customAttributes: data-izv-stampaj="1"
         }}
     )
 
@@ -798,6 +789,7 @@ page = f"""page 371 (
                 :P371_DANA  := nvl(:P371_DANA, '90');
                 :P371_SKLADISTE_ID := nvl(:P371_SKLADISTE_ID, :A_SKLADISTE_ID);
                 :P371_NAZIV := {case_naziv};
+                :P371_OPIS  := {case_opis};
                 -- opis parametara (zaglavlje pri štampi)
                 -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
                 select case when :P371_IZV like 'si%' then

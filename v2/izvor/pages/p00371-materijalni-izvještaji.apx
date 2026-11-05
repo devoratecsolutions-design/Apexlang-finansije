@@ -27,8 +27,8 @@ page 371 (
             ```html
             Izaberite izvještaj u katalogu (grupe: stanje i vrijednost, promet, potrošnja i zaduženja, kontrola, sitni inventar),
             podesite parametre (skladište, period, artikal...) i kliknite <b>Prikaži</b>.
-            Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>), preuzeti kao Excel / PDF
-            (<b>Actions &gt; Download</b>) ili odštampati dugmetom <b>Štampaj</b>.
+            Izvještaj se može filtrirati, sortirati i grupisati (meni <b>Actions</b>) i preuzeti kao Excel / PDF
+            (<b>Actions &gt; Download</b>) za štampu.
             Izvještaji koriste zaključene dokumente skladišta (knjigovodstveno stanje); storniran dokument i njegov storno
             se ne računaju. <b>Dokumenti na čekanju</b> prikazuju ono što još nije zaključeno.
             ```
@@ -115,15 +115,15 @@ page 371 (
                 #DEFAULT#
                 t-Form--stretchInputs
             ]
-            cssClasses: fin-toolbar fin-izv-parametri fin-izv-bez-stampe
+            cssClasses: fin-izv-param fin-izv-bez-stampe
         }
     )
 
-    region stampa-zaglavlje (
-        name: Zaglavlje za štampu
+    region izv-info (
+        name: Opis i parametri izvještaja
         type: staticContent
         source {
-            htmlCode: <div class="fin-izv-stampa"><b>&P371_NAZIV.</b> · &P371_PARAMETRI.</div>
+            htmlCode: <div class="fin-izv-info"><span class="fin-izv-info__opis">&P371_OPIS.</span><span class="fin-izv-info__param"><span class="fa fa-sliders" aria-hidden="true"></span>&P371_PARAMETRI.</span></div>
         }
         layout {
             sequence: 6
@@ -207,7 +207,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -427,7 +427,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -696,7 +696,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -981,7 +981,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -1349,7 +1349,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -1697,7 +1697,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -1989,7 +1989,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -2220,7 +2220,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -2491,7 +2491,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -2736,7 +2736,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -3037,7 +3037,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -3298,7 +3298,7 @@ page 371 (
                 #DEFAULT#
                 t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
             ]
-            cssClasses: fin-izv-tabela
+            cssClasses: fin-ir fin-izv-tabela
         }
         serverSideCondition {
             type: expression
@@ -3646,6 +3646,17 @@ page 371 (
         }
     )
 
+    pageItem P371_OPIS (
+        type: hidden
+        settings {
+            valueProtected: false
+        }
+        layout {
+            sequence: 4
+            slot: body
+        }
+    )
+
     pageItem P371_PARAMETRI (
         type: hidden
         settings {
@@ -3689,8 +3700,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--skladiste_id
         }
         serverSideCondition {
             type: expression
@@ -3711,8 +3723,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--datum
         }
         serverSideCondition {
             type: expression
@@ -3733,8 +3746,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--od
         }
         serverSideCondition {
             type: expression
@@ -3755,8 +3769,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--do
         }
         serverSideCondition {
             type: expression
@@ -3785,8 +3800,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--artikl
         }
         serverSideCondition {
             type: expression
@@ -3815,8 +3831,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--mt
         }
         serverSideCondition {
             type: expression
@@ -3853,8 +3870,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--vrsta
         }
         serverSideCondition {
             type: expression
@@ -3889,8 +3907,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--radnik
         }
         serverSideCondition {
             type: expression
@@ -3911,8 +3930,9 @@ page 371 (
             startNewRow: false
         }
         appearance {
-            template: @optional-floating
+            template: @optional-above
             templateOptions: #DEFAULT#
+            cssClasses: fin-izv-p fin-izv-p--dana
         }
         serverSideCondition {
             type: expression
@@ -3922,7 +3942,7 @@ page 371 (
 
     button prikazi (
         buttonName: PRIKAZI
-        label: Prikaži
+        label: Prikaži izvještaj
         layout {
             sequence: 90
             region: @parametri
@@ -3935,34 +3955,11 @@ page 371 (
                 #DEFAULT#
                 t-Button--iconLeft
             ]
-            icon: fa-play
+            cssClasses: fin-izv-prikazi
+            icon: fa-search
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
-        }
-    )
-
-    button stampaj (
-        buttonName: STAMPAJ
-        label: Štampaj
-        layout {
-            sequence: 95
-            region: @parametri
-            slot: regionBody
-        }
-        appearance {
-            buttonTemplate: @text-with-icon
-            templateOptions: [
-                #DEFAULT#
-                t-Button--iconLeft
-            ]
-            icon: fa-print
-        }
-        behavior {
-            action: definedByDynamicAction
-        }
-        advanced {
-            customAttributes: data-izv-stampaj="1"
         }
     )
 
@@ -3983,6 +3980,7 @@ page 371 (
                 :P371_DANA  := nvl(:P371_DANA, '90');
                 :P371_SKLADISTE_ID := nvl(:P371_SKLADISTE_ID, :A_SKLADISTE_ID);
                 :P371_NAZIV := case :P371_IZV when 'sd' then 'Stanje zaliha na dan' when 'pl' then 'Popisna lista' when 'sz' then 'Starost zaliha' when 'km' then 'Kartica artikla' when 'pp' then 'Promet po artiklima' when 'dok' then 'Pregled dokumenata' when 'pmt' then 'Potrošnja po mjestu troška' when 'zad' then 'Zaduženja' when 'dc' then 'Dokumenti na čekanju' when 'siu' then 'SI u upotrebi po radniku' when 'sim' then 'SI u upotrebi po materijalu' when 'sik' then 'Kartica SI radnika' end;
+                :P371_OPIS  := case :P371_IZV when 'sd' then 'Količina, prosječna cijena i vrijednost po artiklu' when 'pl' then 'Knjigovodstveno stanje sa poljima za popis' when 'sz' then 'Artikli na stanju bez izlaza duže od N dana' when 'km' then 'Hronološki ulazi, izlazi i stanje jednog artikla' when 'pp' then 'Početno, ulaz, izlaz i krajnje stanje za period' when 'dok' then 'Svi dokumenti skladišta za period' when 'pmt' then 'Izdatnice i izlazi na investiciju, OS i sitni inventar' when 'zad' then 'Otvoreni reversi i zaduženja radnika / komitenata' when 'dc' then 'Dokumenti u pripremi, prijemnice bez kalkulacije, prenosi bez prijema' when 'siu' then 'Količina i vrijednost sitnog inventara kod svakog radnika, po materijalu' when 'sim' then 'Ukupno u upotrebi po materijalu i broj radnika' when 'sik' then 'Zaduženja, prezaduženja, rashodi i razlike popisa jednog radnika' end;
                 -- opis parametara (zaglavlje pri štampi)
                 -- (podupiti su u SQL naredbi - u PL/SQL izrazu nisu dozvoljeni, PLS-00405)
                 select case when :P371_IZV like 'si%' then

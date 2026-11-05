@@ -634,12 +634,12 @@ window.finRmStavke = (function ($) {
                             .done(function (d) {
                                 I.postavi(model, rec, "JM_NAZIV", d.jm || "");
                                 I.postavi(model, rec, "RASPOLOZIVO", fq(izlaz ? (d.rasp || 0) : (d.stanje || 0)));
-                                /* izlaz: prosječna cijena; ulaz: predlog samo kad postoji prosječna cijena
-                                   (inače polje ostaje prazno za unos, bez "0.00" preko kojeg se kuca) */
+                                /* izlaz: prosječna cijena (računa baza); ulaz sa ručnom cijenom: predlog je 0 -
+                                   korisnik unosi cijenu, prosječna se ne nudi */
                                 if (izlaz) {
                                     I.postavi(model, rec, "CIJENA", fc(d.cijena || 0));
-                                } else if (!I.num(model.getValue(rec, "CIJENA")) && Number(d.cijena) > 0) {
-                                    I.postavi(model, rec, "CIJENA", fc(d.cijena));
+                                } else if (!I.num(model.getValue(rec, "CIJENA"))) {
+                                    I.postavi(model, rec, "CIJENA", fc(0));
                                 }
                                 racun(rec);
                                 zbir();
@@ -873,11 +873,6 @@ window.finRmIzvjestaji = (function ($) {
             var kod = String($(this).data("izv")), set = {};
             set[p + "_IZV"] = kod;
             apex.page.submit({ request: "IZV", set: set, showWait: true });
-        });
-        /* štampa: samo izvještaj (katalog, meni i parametri se ne štampaju - vidi @media print) */
-        $(document).on("click", "[data-izv-stampaj]", function (e) {
-            e.preventDefault();
-            window.print();
         });
     }
     return { init: init };
