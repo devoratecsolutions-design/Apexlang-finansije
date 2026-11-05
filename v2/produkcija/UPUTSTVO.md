@@ -70,7 +70,7 @@ Pokreću se **poslije** skripti 00–10, redom, pa se tek onda importuje aplikac
 
 | Redoslijed | Fajl | Šema | Šta radi |
 |---|---|---|---|
-| 1 | `16_rm_vrste_izlaz.sql` | **SIF** | nove vrste dokumenata skladišta (IZD, IIN, IOS, ISI, MPR, MPP, REV, REVP, RSV, RSVP, RAS, RIV, RIM, PSI, RSZ, RSR, RUM, RUV, FDK, ZSA; ranija VSR se deaktivira) za svaku firmu sa PRI |
+| 1 | `16_rm_vrste_izlaz.sql` | **SIF** | nove vrste dokumenata skladišta (IZD, IIN, IOS, ISI, MPR, MPP, REV, REVP, RSV, RSVP, RAS, RIV, RIM, PSI, RSZ, RSR, RUM, RUV, FDK, ZSA, NIVM; ranija VSR se deaktivira) za svaku firmu sa PRI |
 | 2 | `18_core_error_manager.sql` | **CORE** | poruke grešaka u aplikaciji (poslovne sa stvarnim razlogom, sistemske prema vrsti greške + referentni broj); mijenja samo `F_APEX_ERROR_HANDLER` |
 | 3 | `11_rm_model.sql` | ACCOUNTING | kolone i indeksi dokumenata skladišta, kalkulacije i popisa (OPERACIJE.POPIS_ID, POPIS_STAVKE.CIJENA / OPIS / SERIJSKI_BROJ, OPERACIJE.RADNIK_PRENOS_ID, POPISI.VRSTA / RADNIK_ID, OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID / SMJER / IZVOR_STAVKA_ID), brojači novih vrsta |
 | 4 | `12_rm_pkg.sql` | ACCOUNTING | RM_DOKUMENT_PKG (dokumenti, zaključavanje, prenosi, reversi, serijski brojevi, storniranje, rashod, razlike inventure, zabrana datuma prije popisa) |

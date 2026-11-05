@@ -16,6 +16,7 @@
     Brojač PRI (Prijemnica) za svaku firmu koja ima vrstu dokumenta PRI.
   Postojeći podaci: STATUS iz ZAKLJUCANO; stare prijemnice (tip kretanja PR)
   dobijaju vrstu PRI. Ostali stari dokumenti ostaju na starom tipu kretanja.
+  R23 (05.11.2026): OPERACIJA_STAVKE.NABAVNA_MP, MPC_STARA (maloprodaja po MPC, nivelacija); brojač NIVM.
   R22 (05.11.2026): CJENOVNIK_STAVKE.NAPOMENA, IZVOR, KALKULACIJA_ID, OPERACIJA_ID, PRETHODNI_ID.
   R21 (05.11.2026): OPERACIJA_STAVKE.ZAMJENA_STAVKA_ID, SMJER, IZVOR_STAVKA_ID (zamjena šifara artikla);
   brojači FDK (finansijsko doknjiženje) i ZSA (zamjena šifara artikla).
@@ -98,6 +99,10 @@ begin
     kolona('CJENOVNIK_STAVKE', 'kalkulacija_id', 'number');
     kolona('CJENOVNIK_STAVKE', 'operacija_id', 'number');
     kolona('CJENOVNIK_STAVKE', 'prethodni_id', 'number');
+    -- R23: maloprodaja - zaliha po MPC (NABAVNA_CIJENA = MPC), stvarna nabavna cijena za kasniji obračun RUC;
+    -- nivelacija: stara MPC (MPC = nova)
+    kolona('OPERACIJA_STAVKE', 'nabavna_mp', 'number');
+    kolona('OPERACIJA_STAVKE', 'mpc_stara', 'number');
 
     ogranicenje('OPERACIJE_STATUS_CK',
         q'[alter table operacije add constraint operacije_status_ck check (status in ('P', 'Z'))]');
@@ -136,6 +141,8 @@ comment on column popisi.vrsta is 'S (ili prazno) = popis skladišta, I = popis 
 comment on column popisi.radnik_id is 'Popis sitnog inventara: zaduženi radnik (SIF.ACC_RADNICI) (v2)';
 comment on column popis_stavke.serijski_broj is 'Popis sitnog inventara: serijski broj (artikli koji se prate po SB - jedan red po komadu) (v2)';
 comment on column popis_stavke.cijena is 'Prosječna cijena artikla na skladištu na datum popisa (v2)';
+comment on column operacija_stavke.nabavna_mp is 'Maloprodajno skladište: stvarna nabavna cijena (zaliha se vodi po MPC u NABAVNA_CIJENA) - za obračun RUC (v2)';
+comment on column operacija_stavke.mpc_stara is 'Nivelacija (NIVM): MPC prije promjene; MPC = nova, NABAVNA_CIJENA = razlika po jedinici (v2)';
 comment on column operacija_stavke.zamjena_stavka_id is 'Zamjena šifara (ZSA): artikal koji se dodaje na stanje umjesto artikla stavke (v2)';
 comment on column operacija_stavke.smjer is 'U / I = smjer stavke kada se razlikuje od vrste dokumenta (ZSA: generisana stavka ulaza zamjenskog artikla) (v2)';
 comment on column operacija_stavke.izvor_stavka_id is 'ZSA: stavka izlaza iz koje je nastala generisana stavka ulaza (v2)';
@@ -150,7 +157,7 @@ begin
     for v in (select vd.id, vd.ooj_id, upper(vd.sifra) as sifra
                 from sif.vrste_dokumenata vd
                where vd.acc_modul_id = l_modul
-                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV', 'FDK', 'ZSA')
+                 and upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'RUM', 'RUV', 'FDK', 'ZSA', 'NIVM')
                  and vd.ooj_id is not null
                  and vd.valid = 'Y') loop
         for g in 2024 .. extract(year from sysdate) loop

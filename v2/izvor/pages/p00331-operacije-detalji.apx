@@ -836,7 +836,11 @@ page 331 (
                          ELSE rtrim(to_char(s.cijena, 'FM999G999G999G990D9999'), '0') END AS cijena,
                     s.iznos,
                     CASE WHEN s.prati_sb = 'Y' AND :P331_VRSTA_SIFRA <> 'FDK' THEN s.sb_uneseno || ' / ' || s.kolicina || CASE WHEN s.sb_ok = 'N' THEN '  ⚠' END END AS sb,
-                    s.zamjena_stavka_id
+                    s.zamjena_stavka_id,
+                    -- R23 nivelacija: stara / nova MPC i PDV u razlici
+                    to_char(s.mpc_stara, 'FM999G999G999G990D00') AS mpc_stara,
+                    to_char(s.mpc, 'FM999G999G999G990D00') AS mpc_nova,
+                    to_char(round(s.iznos * nvl(s.porez_procenat, 0) / (100 + nvl(s.porez_procenat, 0)), 2), 'FM999G999G999G990D00') AS pdv_razlika
                 FROM vw_rm_dokument_stavke s
                 WHERE s.operacija_id = :P331_ID
                 ORDER BY s.redni_broj, s.id
@@ -963,17 +967,41 @@ page 331 (
             )
 
             displayColumn (
-                column: @CIJENA
+                column: @MPC_STARA
                 layout {
                     sequence: 7
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @MPC_NOVA
+                layout {
+                    sequence: 8
+                    width: 100
+                }
+            )
+
+            displayColumn (
+                column: @CIJENA
+                layout {
+                    sequence: 9
                     width: 110
+                }
+            )
+
+            displayColumn (
+                column: @PDV_RAZLIKA
+                layout {
+                    sequence: 10
+                    width: 100
                 }
             )
 
             displayColumn (
                 column: @IZNOS
                 layout {
-                    sequence: 8
+                    sequence: 11
                     width: 110
                 }
             )
@@ -981,7 +1009,7 @@ page 331 (
             displayColumn (
                 column: @SB
                 layout {
-                    sequence: 9
+                    sequence: 12
                     width: 80
                 }
             )
@@ -1089,6 +1117,69 @@ page 331 (
             serverSideCondition {
                 type: expression
                 plsqlExpression: nvl(:P331_IZMJENJIVA, 'Y') = 'Y'
+            }
+        )
+
+        column MPC_STARA (
+            type: textField
+            heading {
+                heading: Stara MPC
+                alignment: end
+            }
+            layout {
+                sequence: 56
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: MPC_STARA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P331_VRSTA_SIFRA = 'NIVM'
+            }
+        )
+
+        column MPC_NOVA (
+            type: textField
+            heading {
+                heading: Nova MPC
+                alignment: end
+            }
+            layout {
+                sequence: 58
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: MPC_NOVA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P331_VRSTA_SIFRA = 'NIVM'
+            }
+        )
+
+        column PDV_RAZLIKA (
+            type: textField
+            heading {
+                heading: PDV u razlici
+                alignment: end
+            }
+            layout {
+                sequence: 66
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: PDV_RAZLIKA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P331_VRSTA_SIFRA = 'NIVM'
             }
         )
 
@@ -2623,7 +2714,8 @@ page 331 (
                                           when :P331_POVRAT = 'Y' then 'Dostupno za povrat'
                                           when :P331_TIP_KRETANJA = 'I' then 'Raspoloživo'
                                           when :P331_VRSTA_SIFRA = 'FDK' then 'Stanje · vrijednost' else 'Stanje' end;
-                :P331_NASLOV_CIJENA := case when :P331_VRSTA_SIFRA = 'FDK' then 'Iznos doknjiženja (+/-)' else 'Jed. cijena' end;
+                :P331_NASLOV_CIJENA := case when :P331_VRSTA_SIFRA = 'FDK' then 'Iznos doknjiženja (+/-)'
+                                             when :P331_VRSTA_SIFRA = 'NIVM' then 'Razlika po jedinici' else 'Jed. cijena' end;
                 :P331_NASLOV_RADNIK := case when :P331_VRSTA_SIFRA = 'PSI' then 'Sa radnika'
                                             when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Radnik' else 'Zaduženi radnik' end;
                 :P331_NASLOV_POVRAT := case when rm_dokument_pkg.je_si(:P331_VRSTA_SIFRA) = 'Y' then 'Preuzmi zaduženja radnika'
@@ -2699,7 +2791,8 @@ page 331 (
                                               when rm_dokument_pkg.je_povrat(v.sifra) = 'Y' then 'Dostupno za povrat'
                                               when rm_dokument_pkg.tip_kretanja(v.sifra) = 'I' then 'Raspoloživo'
                                               when upper(v.sifra) = 'FDK' then 'Stanje · vrijednost' else 'Stanje' end;
-                    :P331_NASLOV_CIJENA := case when upper(v.sifra) = 'FDK' then 'Iznos doknjiženja (+/-)' else 'Jed. cijena' end;
+                    :P331_NASLOV_CIJENA := case when upper(v.sifra) = 'FDK' then 'Iznos doknjiženja (+/-)'
+                                                 when upper(v.sifra) = 'NIVM' then 'Razlika po jedinici' else 'Jed. cijena' end;
                     :P331_VRSTA_NAZIV := v.naziv;
                     :P331_NAZIV       := case when upper(v.sifra) = 'PRI' then 'Nova prijemnica' when upper(v.sifra) = 'IZD' then 'Nova izdatnica' else 'Novi dokument: ' || v.naziv end;
                 end loop;

@@ -137,6 +137,10 @@ select os.id,
        case when (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
        -- serijski brojevi stavke pripadaju zamjenskom artiklu (novi brojevi, kao na ulazu)
        case when nvl(a.prati_sb, 'N') <> 'Y' and z.prati_sb = 'Y' then 'Y' else 'N' end as sb_zamjenskog,
+       os.mpc_stara,                                                    -- R23: nivelacija (stara / nova MPC)
+       os.mpc,
+       os.porez_procenat,
+       os.nabavna_mp,
        os.zamjena_stavka_id,                                            -- R21: zamjena šifara (ZSA)
        z.sifra                                                          as zamjena_sifra,
        z.naziv                                                          as zamjena_naziv

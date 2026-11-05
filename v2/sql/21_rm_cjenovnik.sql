@@ -21,8 +21,9 @@
         prosječnu cijenu:  nova = (vrijednost svih skladišta + ulaz) / (količina svih skladišta + ulaz),
         a vrijednost svakog skladišta sa stanjem se usklađuje automatskim, zaključenim dokumentom
         Finansijsko doknjiženje (FDK) na datum usklađivanja (zbir doknjiženja = 0).
-      Maloprodajni cjenovnik (tip M): cijene se upisuju u cjenovnik, usklađivanja nabavne vrijednosti
-      nema (maloprodaja se vodi po MP cijeni; nivelacija je sljedeći korak).
+      Maloprodajni cjenovnik (tip M): zaliha se vodi po MPC. Promjena MPC nivelira zalihe svih
+      maloprodajnih skladišta cjenovnika automatskim zaključenim dokumentom Nivelacija cijena (NIVM) -
+      R23. Usklađivanja nabavne vrijednosti nema (obračun RUC je kasnije).
   Skripta se može pokrenuti više puta.
 ================================================================================
 */
@@ -113,7 +114,14 @@ create or replace package rm_cjenovnik_pkg as
     function uskladi (p_cjenovnik_id in number, p_stavka_id in number, p_cijena in number,
                       p_kalkulacija_id in number, p_opis in varchar2) return number;
 
-    -- otključavanje kalkulacije: provjera (null = može) i vraćanje cjenovnika i brisanje FDK iz kalkulacije
+    -- R23 maloprodaja: nivelacija zaliha svih maloprodajnih skladišta cjenovnika na novu MPC automatskim,
+    -- zaključenim dokumentima NIVM (jedan po skladištu u okviru iste kalkulacije); vraća broj stavki
+    function nivelisi (p_cjenovnik_id in number, p_stavka_id in number, p_nova_mpc in number,
+                       p_kalkulacija_id in number, p_opis in varchar2) return number;
+    -- PDV stopa artikla: pun iznos -> 17 %, poseban indikator -> stopa indikatora
+    function pdv_stopa (p_stavka_id in number) return number;
+
+    -- otključavanje kalkulacije: provjera (null = može) i vraćanje cjenovnika i brisanje FDK / NIVM iz kalkulacije
     function razlog_zabrane_vracanja (p_kalkulacija_id in number) return varchar2;
     procedure vrati_kalkulaciju (p_kalkulacija_id in number);
 
@@ -221,7 +229,7 @@ create or replace package body rm_cjenovnik_pkg as
     end postavi_cijenu;
 
     -- FDK dokument skladišta za kalkulaciju (jedan po skladištu): postojeći ili novi (zaključen, današnji datum)
-    function fdk_dokument (p_skladiste_id in number, p_kalkulacija_id in number, p_opis in varchar2) return number is
+    function auto_dokument (p_sifra in varchar2, p_skladiste_id in number, p_kalkulacija_id in number, p_opis in varchar2) return number is
         l_id    number;
         l_vrsta number;
         l_ooj   number;
@@ -231,7 +239,7 @@ create or replace package body rm_cjenovnik_pkg as
         l_naziv varchar2(255);
     begin
         select max(o.id) into l_id
-          from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'FDK'
+          from operacije o join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = p_sifra
          where o.kalkulacija_id = p_kalkulacija_id and o.skladiste_id = p_skladiste_id;
         if l_id is not null then
             return l_id;
@@ -239,21 +247,21 @@ create or replace package body rm_cjenovnik_pkg as
         select ooj_id, oj_id into l_ooj, l_oj from skladista where id = p_skladiste_id;
         select max(vd.id) into l_vrsta
           from sif.vrste_dokumenata vd join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
-         where vd.ooj_id = l_ooj and upper(vd.sifra) = 'FDK' and vd.valid = 'Y';
+         where vd.ooj_id = l_ooj and upper(vd.sifra) = p_sifra and vd.valid = 'Y';
         if l_vrsta is null then
-            greska('Firma nema vrstu dokumenta FDK (Finansijsko doknjiženje) - pokrenite skriptu 16_rm_vrste_izlaz.sql.');
+            greska('Firma nema vrstu dokumenta ' || p_sifra || ' - pokrenite skriptu 16_rm_vrste_izlaz.sql.');
         end if;
-        if not core.protokoli_pkg.check_brojac(l_ooj, 'fdk', l_god) then
-            greska('Nije definisan brojač za Finansijsko doknjiženje (FDK) u ' || l_god || '. godini.');
+        if not core.protokoli_pkg.check_brojac(l_ooj, lower(p_sifra), l_god) then
+            greska('Nije definisan brojač za vrstu dokumenta ' || p_sifra || ' u ' || l_god || '. godini.');
         end if;
-        rm_dokument_pkg.novi_broj(l_ooj, l_god, 'fdk', p_skladiste_id, l_broj, l_naziv);
+        rm_dokument_pkg.novi_broj(l_ooj, l_god, lower(p_sifra), p_skladiste_id, l_broj, l_naziv);
         insert into operacije (ooj_id, godina, vrsta_dokumenta_id, skladiste_id, oj_id, datum, opis, broj, naziv,
                                status, zakljucano, stornirano, kalkulacija_id)
         values (l_ooj, l_god, l_vrsta, p_skladiste_id, l_oj, trunc(sysdate), substr(p_opis, 1, 1000), l_broj, l_naziv,
                 'Z', 'Y', 'N', p_kalkulacija_id)
         returning id into l_id;
         return l_id;
-    end fdk_dokument;
+    end auto_dokument;
 
     function uskladi (p_cjenovnik_id in number, p_stavka_id in number, p_cijena in number,
                       p_kalkulacija_id in number, p_opis in varchar2) return number is
@@ -293,7 +301,7 @@ create or replace package body rm_cjenovnik_pkg as
         end if;
         for i in 1 .. l_r.count loop
             continue when l_r(i).razlika = 0;
-            l_dok := fdk_dokument(l_r(i).skl, p_kalkulacija_id, p_opis);
+            l_dok := auto_dokument('FDK', l_r(i).skl, p_kalkulacija_id, p_opis);
             insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, opis, redni_broj)
             values (l_dok, p_stavka_id, 1, l_r(i).razlika, 'Usklađivanje sa prosječnom cijenom ' || to_char(round(p_cijena, 4), 'FM999G999G990D0000'),
                     (select nvl(max(redni_broj), 0) + 1 from operacija_stavke where operacija_id = l_dok));
@@ -301,6 +309,47 @@ create or replace package body rm_cjenovnik_pkg as
         end loop;
         return l_n;
     end uskladi;
+
+    function pdv_stopa (p_stavka_id in number) return number is
+        l_v number;
+    begin
+        select max(case when nvl(st.pdv_indikator, 'Y') = 'Y' then 17 else nvl(pi.vrijednost, 0) end)
+          into l_v
+          from sec_stavke st left join sif.acc_pdv_indikatori pi on pi.id = st.pdv_indikator_id
+         where st.id = p_stavka_id;
+        return nvl(l_v, 17);
+    end pdv_stopa;
+
+    function nivelisi (p_cjenovnik_id in number, p_stavka_id in number, p_nova_mpc in number,
+                       p_kalkulacija_id in number, p_opis in varchar2) return number is
+        l_kol  number;
+        l_vr   number;
+        l_stara number;
+        l_dok  number;
+        l_n    number := 0;
+        l_pdv  number := pdv_stopa(p_stavka_id);
+    begin
+        if tip(p_cjenovnik_id) <> 'M' or nvl(p_nova_mpc, 0) <= 0 then
+            return 0;
+        end if;
+        for s in (select s.id from skladista s join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id
+                   where s.cjenovnik_id = p_cjenovnik_id and upper(ts.sifra) = 'ROB' order by s.sifra) loop
+            l_kol := nvl(rm_dokument_pkg.obradjeno(s.id, p_stavka_id), 0);
+            continue when l_kol <= 0;
+            l_vr := nvl(rm_dokument_pkg.vrijednost_zaliha(s.id, p_stavka_id), 0);
+            -- stara MPC = trenutna vrijednost zalihe po jedinici (zaliha se vodi po MPC)
+            l_stara := round(l_vr / l_kol, 4);
+            continue when round(p_nova_mpc, 4) = l_stara;
+            l_dok := auto_dokument('NIVM', s.id, p_kalkulacija_id, p_opis);
+            insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, mpc_stara, mpc, porez_procenat,
+                                          opis, redni_broj)
+            values (l_dok, p_stavka_id, l_kol, round(p_nova_mpc, 4) - l_stara, l_stara, round(p_nova_mpc, 4), l_pdv,
+                    'Nivelacija MPC ' || to_char(l_stara, 'FM999G999G990D00') || ' -> ' || to_char(p_nova_mpc, 'FM999G999G990D00'),
+                    (select nvl(max(redni_broj), 0) + 1 from operacija_stavke where operacija_id = l_dok));
+            l_n := l_n + 1;
+        end loop;
+        return l_n;
+    end nivelisi;
 
     function razlog_zabrane_vracanja (p_kalkulacija_id in number) return varchar2 is
         l_izl varchar2(255);
@@ -315,7 +364,7 @@ create or replace package body rm_cjenovnik_pkg as
         -- poslije usklađivanja je artikal izdavan sa nekog skladišta (izlaz je prošao po novoj cijeni)
         for f in (select o.id, o.skladiste_id, o.datum, os.stavka_id, st.sifra
                     from operacije o
-                    join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'FDK'
+                    join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) in ('FDK', 'NIVM')
                     join operacija_stavke os on os.operacija_id = o.id
                     join sec_stavke st on st.id = os.stavka_id
                    where o.kalkulacija_id = p_kalkulacija_id) loop
@@ -342,14 +391,14 @@ create or replace package body rm_cjenovnik_pkg as
         if l_r is not null then
             greska(l_r);
         end if;
-        -- automatska doknjiženja iz kalkulacije
+        -- automatska doknjiženja i nivelacije iz kalkulacije
         delete from operacija_stavke
          where operacija_id in (select o.id from operacije o
-                                  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'FDK'
+                                  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) in ('FDK', 'NIVM')
                                  where o.kalkulacija_id = p_kalkulacija_id);
         delete from operacije o
          where o.kalkulacija_id = p_kalkulacija_id
-           and o.vrsta_dokumenta_id in (select vd.id from sif.vrste_dokumenata vd where upper(vd.sifra) = 'FDK');
+           and o.vrsta_dokumenta_id in (select vd.id from sif.vrste_dokumenata vd where upper(vd.sifra) in ('FDK', 'NIVM'));
         -- cjenovnik: vraća se red koji je kalkulacija zamijenila
         for c in (select id, prethodni_id from cjenovnik_stavke where kalkulacija_id = p_kalkulacija_id and valid = 'Y') loop
             delete from cjenovnik_stavke where id = c.id;

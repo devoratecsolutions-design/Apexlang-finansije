@@ -654,3 +654,19 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
 - **Baza:** CJENOVNIK_STAVKE.NAPOMENA, IZVOR (K / R / U), KALKULACIJA_ID, OPERACIJA_ID, PRETHODNI_ID; jedan aktivan red po artiklu i cjenovniku (stari duplikati se deaktiviraju – ostaje najnoviji); paket **RM_CJENOVNIK_PKG**; RM_DOKUMENT_PKG.CIJENA_IZLAZA; RM_KALKULACIJA_PKG.PDV_STOPA, NOVA_PROSJECNA.
 - **SQL (redom, kao ACCOUNTING):** `11_rm_model.sql`, `12_rm_pkg.sql`, **`21_rm_cjenovnik.sql`**, `15_rm_kalkulacija.sql` (15 koristi paket iz 21). Zatim import aplikacije.
 - **Sljedeći koraci:** ostali ulazi u veleprodaji (višak iz popisa, povrat, zamjena šifara, prijem sa drugog cjenovnika) kroz isti mehanizam; maloprodaja po MP cijeni i nivelacija; ručna izmjena cjenovnika sa napomenom.
+
+## Maloprodaja po MP cijeni i nivelacija – korak R23 (05.11.2026)
+- **Maloprodajna robna skladišta (cjenovnik tip M) vode zalihu po MPC:**
+  - kalkulacija upisuje u prijemnicu MPC kao cijenu zalihe (`NABAVNA_CIJENA`), a stvarnu nabavnu cijenu u novu kolonu `NABAVNA_MP` (uz maržu i PDV) – za kasniji obračun RUC;
+  - izlazi i povrat dobavljaču idu po važećoj MPC iz cjenovnika (izlaz cijele preostale količine – preostala vrijednost);
+  - višak iz popisa na maloprodajnom skladištu predlaže važeću MPC;
+  - stanje, vrijednost, kartice i popisi maloprodaje su po MPC;
+  - zamjena šifara u maloprodaji samo između artikala iste MPC (razlika bi bila RUC / PDV).
+- **Nivelacija cijena (NIVM)** – nova vrsta (samo robna skladišta, nastaje automatski):
+  - pri zaključavanju kalkulacije maloprodajnog skladišta, za svaki artikal kojem se MPC mijenja, postojeće zalihe **svih maloprodajnih skladišta tog cjenovnika** se niveliraju na novu MPC – prije prijema nove robe;
+  - jedan zaključen dokument po skladištu, današnji datum, vezan za kalkulaciju; stavka: količina, stara MPC, nova MPC, razlika po jedinici i ukupno, PDV u razlici (razlika × stopa / (100 + stopa));
+  - otključavanje kalkulacije briše nivelacije (ako artikli poslije nisu izdavani) i vraća cjenovnik.
+- Cjenovnik maloprodaje dobija nabavnu cijenu iz kalkulacije (zajednička prosječna nabavna je samo za veleprodaju).
+- **Baza:** OPERACIJA_STAVKE.NABAVNA_MP, MPC_STARA; vrsta NIVM i brojač; RM_CJENOVNIK_PKG.NIVELISI, PDV_STOPA; RM_DOKUMENT_PKG.JE_MP i MP grana u CIJENA_IZLAZA.
+- **Napomena:** postojeće (stare) zalihe maloprodajnih skladišta su vođene po nabavnoj cijeni – prije stvarnog rada u maloprodaji treba ih jednom nivelisati na MPC (alat za to dolazi sa ručnom izmjenom cjenovnika).
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`, `15_rm_kalkulacija.sql`, `19_rm_popis.sql`. Zatim import aplikacije. (Uključuje i R22.)

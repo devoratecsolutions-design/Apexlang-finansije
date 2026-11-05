@@ -160,6 +160,8 @@ create or replace package rm_dokument_pkg as
     -- količine uzima tačno preostalu vrijednost (bez ostatka vrijednosti bez količine).
     function cijena_izlaza (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_kolicina in number,
                             p_bez_dok in number default null) return number;
+    -- R23: maloprodajno robno skladište (cjenovnik tip M): zaliha se vodi po MPC - Y / N
+    function je_mp (p_skladiste_id in number) return varchar2;
     -- R21: prvi zaključen izlaz artikla poslije datuma (naziv dokumenta) ili null
     function izlaz_poslije (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_bez_dok in number default null) return varchar2;
     function artikl_info (p_stavka_id in number, p_dokument_id in number, p_skladiste_id in number, p_datum in date,
@@ -272,6 +274,7 @@ create or replace package body rm_dokument_pkg as
                    when 'RUM'  then 'Z'
                    when 'FDK'  then 'N'          -- R21: finansijsko doknjiženje (samo vrijednost)
                    when 'ZSA'  then 'I'          -- R21: zamjena šifara (izlaz; ulaz zamjenskog artikla po stavci)
+                   when 'NIVM' then 'N'          -- R23: nivelacija MPC (samo vrijednost zalihe maloprodaje)
                    when 'PRRO' then 'U'
                    when 'POV'  then 'U'
                    when 'IZRO' then 'I'
@@ -285,7 +288,7 @@ create or replace package body rm_dokument_pkg as
     function podrzana (p_vrsta_sifra in varchar2) return varchar2 is
     begin
         return case when upper(p_vrsta_sifra) in ('PRI', 'IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP',
-                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM', 'FDK', 'ZSA')
+                                            'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM', 'FDK', 'ZSA', 'NIVM')
                     then 'Y' else 'N' end;
     end podrzana;
 
@@ -296,7 +299,7 @@ create or replace package body rm_dokument_pkg as
 
     function rucni_unos (p_vrsta_sifra in varchar2) return varchar2 is
     begin
-        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM', 'MPP') then 'N' else 'Y' end;
+        return case when upper(p_vrsta_sifra) in ('RIV', 'RIM', 'VSR', 'RUV', 'RUM', 'MPP', 'NIVM') then 'N' else 'Y' end;
     end rucni_unos;
 
     function je_inventura (p_vrsta_sifra in varchar2) return varchar2 is
@@ -308,7 +311,10 @@ create or replace package body rm_dokument_pkg as
     begin
         return case when upper(p_vrsta_sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS',
                                                  'PSI', 'RSZ', 'RSR', 'VSR', 'RUV', 'RUM')
-                         and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N' else 'Y' end;
+                         and nvl(upper(p_modul), 'ROB') <> 'MAT' then 'N'
+                    -- R23: samo robna skladišta
+                    when upper(p_vrsta_sifra) in ('NIVM') and nvl(upper(p_modul), 'ROB') = 'MAT' then 'N'
+                    else 'Y' end;
     end u_modulu;
 
     function ima_mjesto_troska (p_vrsta_sifra in varchar2) return varchar2 is
@@ -807,11 +813,38 @@ create or replace package body rm_dokument_pkg as
         return l_naziv;
     end izlaz_poslije;
 
+    function je_mp (p_skladiste_id in number) return varchar2 is
+        l_n number;
+    begin
+        select count(*) into l_n
+          from skladista s
+          join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id and upper(ts.sifra) = 'ROB'
+          join cjenovnici cj on cj.id = s.cjenovnik_id and cj.tip = 'M'
+         where s.id = p_skladiste_id;
+        return case when l_n > 0 then 'Y' else 'N' end;
+    end je_mp;
+
     function cijena_izlaza (p_skladiste_id in number, p_stavka_id in number, p_datum in date, p_kolicina in number,
                             p_bez_dok in number default null) return number is
         l_c   number;
         l_obr number;
     begin
+        -- R23 maloprodaja: zaliha i izlaz po važećoj MPC iz cjenovnika (promjena MPC ide nivelacijom)
+        select max(cs.mpc)
+          into l_c
+          from skladista s
+          join sif.acc_tipovi_skladista ts on ts.id = s.tip_skladista_id and upper(ts.sifra) = 'ROB'
+          join cjenovnici cj on cj.id = s.cjenovnik_id and cj.tip = 'M'
+          join cjenovnik_stavke cs on cs.cjenovnik_id = cj.id and cs.stavka_id = p_stavka_id and cs.valid = 'Y'
+         where s.id = p_skladiste_id
+           and nvl(cs.mpc, 0) > 0;
+        if l_c is not null then
+            l_obr := obradjeno(p_skladiste_id, p_stavka_id, null, p_bez_dok);
+            if nvl(p_kolicina, 0) > 0 and l_obr > 0 and p_kolicina >= l_obr then
+                l_c := vrijednost_zaliha(p_skladiste_id, p_stavka_id, null, p_bez_dok) / l_obr;
+            end if;
+            return round(l_c, 4);
+        end if;
         -- veleprodajni cjenovnik robnog skladišta, red iz v2 (kalkulacija / usklađivanje / ručno)
         select max(cs.nabavna_cijena)
           into l_c
@@ -1855,6 +1888,22 @@ create or replace package body rm_dokument_pkg as
                 end if;
             end loop;
             -- zamjena šifara: zamjenski artikal ulazi po prosječnoj cijeni; kasniji zaključeni izlazi bi imali staru cijenu
+            -- R23 maloprodaja (zaliha po MPC): zamjena samo između artikala iste MPC (razlika bi bila RUC / PDV)
+            if l_vrs = 'ZSA' and je_mp(o.skladiste_id) = 'Y' then
+                for z in (select a.sifra as a_sifra, b.sifra as b_sifra,
+                                 cijena_izlaza(o.skladiste_id, os.stavka_id, o.datum, null) as a_mpc,
+                                 cijena_izlaza(o.skladiste_id, os.zamjena_stavka_id, o.datum, null) as b_mpc
+                            from operacija_stavke os
+                            join sec_stavke a on a.id = os.stavka_id
+                            join sec_stavke b on b.id = os.zamjena_stavka_id
+                           where os.operacija_id = p_id and os.smjer is null) loop
+                    if nvl(z.a_mpc, -1) <> nvl(z.b_mpc, -2) then
+                        return 'Maloprodaja: zamjena šifara je moguća samo između artikala iste MPC (' || z.a_sifra || ' '
+                               || to_char(z.a_mpc, 'FM999G999G990D00') || ', ' || z.b_sifra || ' ' || to_char(z.b_mpc, 'FM999G999G990D00')
+                               || ') - prvo uskladite MPC u cjenovniku.';
+                    end if;
+                end loop;
+            end if;
             if l_vrs = 'ZSA' then
                 for z in (select distinct os.zamjena_stavka_id as art, a.sifra, a.naziv
                             from operacija_stavke os join sec_stavke a on a.id = os.zamjena_stavka_id
