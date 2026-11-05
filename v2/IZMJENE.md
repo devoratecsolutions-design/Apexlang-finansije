@@ -635,3 +635,5 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
   - način je preimenovan u **Ručno – cijena sa prijemnice** i radi kao Ručno – jedinična cijena: jedinične cijene se predlažu (prekopiraju) sa prijemnice, korisnik ih po potrebi mijenja i snima; iznos fakture u kalkulaciji = zbir (cijena × količina), najviše do raspoloživog fakture. Više se ne raspoređuje dugmetom „Raspodijeli sve automatske“.
   - SQL: `15_rm_kalkulacija.sql`.
 - **Ispravka importa (ORA-00001 WWV_FLOW_WORKSHEET_RPTS_UK):** nova kartica serijskog broja je pomjerila identifikatore sačuvanih izvještaja na str. 371; APEX po njima čuva izvještaje korisnika pri ponovnom importu. Identifikatori su sada stalni po izvještaju (generator `gen_p371_izvjestaji.py`, tabela RID), nova kartica dobija sljedeći slobodan broj.
+
+**Službeni import (05.11.2026):** `v2/import/finansije-v2.zip` regenerisan na `main` iz `v2/izvor` poslije spajanja PR #1 (materijalni modul R10–R21, poslovni partneri); isti sadržaj kao provjereni import R21 na DEV-u.
