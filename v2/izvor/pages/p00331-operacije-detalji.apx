@@ -3158,8 +3158,6 @@ page 331 (
         }
     )
 
-    -- R24: kolone ZAMJENA_STAVKA_ID (samo ZSA) i KOLICINA (nema na FDK) postoje samo uslovno; proces koji ih
-    -- navodi kao :KOLONA javlja ERR-1002 kad kolona nije na stranici - zato poseban proces po vrsti dokumenta
     process stavke-snimi (
         name: Stavke - snimi redove
         type: executeCode
