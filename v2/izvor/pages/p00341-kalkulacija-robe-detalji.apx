@@ -1413,10 +1413,19 @@ page 341 (
                     rtrim(rtrim(to_char(max(ks.nabavna_cijena), 'FM999G999G999G990D000000'), '0'), '.,') AS nabavna_cijena,
                     to_char(sum(ks.nabavna_vrijednost), 'FM999G999G999G990D00') AS nabavna_vrijednost,
                     rtrim(rtrim(to_char(max(ks.marza_procenat), 'FM999G990D9999'), '0'), '.,') AS marza_procenat,
+                    to_char(max(ks.marza_iznos), 'FM999G999G999G990D00') AS marza_iznos,
                     rtrim(rtrim(to_char(max(ks.vpc), 'FM999G999G999G990D0000'), '0'), '.,') AS vpc,
                     rtrim(rtrim(to_char(max(ks.pdv_stopa), 'FM990D99'), '0'), '.,') AS pdv_stopa,
-                    to_char(max(ks.mpc), 'FM999G999G999G990D00') AS mpc
+                    to_char(max(ks.mpc), 'FM999G999G999G990D00') AS mpc,
+                    -- R22: prosječna nabavna cijena u cjenovniku (prije) i nova zajednička prosječna poslije kalkulacije
+                    rtrim(rtrim(to_char(max(rm_cjenovnik_pkg.nabavna(rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id), ks.stavka_id)),
+                                        'FM999G999G999G990D0000'), '0'), '.,') AS cj_nabavna,
+                    rtrim(rtrim(to_char(max(rm_kalkulacija_pkg.nova_prosjecna(ks.kalkulacija_id, ks.stavka_id)),
+                                        'FM999G999G999G990D0000'), '0'), '.,') AS nova_prosjecna,
+                    to_char(max(rm_cjenovnik_pkg.vpc(rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id), ks.stavka_id)), 'FM999G999G999G990D00')
+                      || ' / ' || to_char(max(rm_cjenovnik_pkg.mpc(rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id), ks.stavka_id)), 'FM999G999G999G990D00') AS cj_cijene
                 FROM kalkulacija_stavke ks
+                JOIN kalkulacije k ON k.id = ks.kalkulacija_id
                 JOIN sec_stavke st ON st.id = ks.stavka_id
                 LEFT JOIN sif.acc_jedinice_mjere jm ON jm.id = st.jm_id
                 WHERE ks.kalkulacija_id = :P341_ID
@@ -1541,17 +1550,41 @@ page 341 (
             )
 
             displayColumn (
-                column: @MARZA_PROCENAT
+                column: @CJ_NABAVNA
                 layout {
                     sequence: 7
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @NOVA_PROSJECNA
+                layout {
+                    sequence: 8
+                    width: 110
+                }
+            )
+
+            displayColumn (
+                column: @MARZA_PROCENAT
+                layout {
+                    sequence: 9
                     width: 85
+                }
+            )
+
+            displayColumn (
+                column: @MARZA_IZNOS
+                layout {
+                    sequence: 10
+                    width: 100
                 }
             )
 
             displayColumn (
                 column: @VPC
                 layout {
-                    sequence: 8
+                    sequence: 11
                     width: 100
                 }
             )
@@ -1559,7 +1592,7 @@ page 341 (
             displayColumn (
                 column: @PDV_STOPA
                 layout {
-                    sequence: 9
+                    sequence: 12
                     width: 60
                 }
             )
@@ -1567,8 +1600,16 @@ page 341 (
             displayColumn (
                 column: @MPC
                 layout {
-                    sequence: 10
+                    sequence: 13
                     width: 100
+                }
+            )
+
+            displayColumn (
+                column: @CJ_CIJENE
+                layout {
+                    sequence: 14
+                    width: 150
                 }
             )
 
@@ -1697,6 +1738,89 @@ page 341 (
             source {
                 databaseColumn: MARZA_PROCENAT
                 dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column MARZA_IZNOS (
+            type: textField
+            heading {
+                heading: Marža (KM)
+                alignment: end
+            }
+            layout {
+                sequence: 95
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: MARZA_IZNOS
+                dataType: varchar2
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column CJ_NABAVNA (
+            type: textField
+            heading {
+                heading: Prosječna (cjenovnik)
+                alignment: end
+            }
+            layout {
+                sequence: 72
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: CJ_NABAVNA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column NOVA_PROSJECNA (
+            type: textField
+            heading {
+                heading: Nova prosječna
+                alignment: end
+            }
+            layout {
+                sequence: 74
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: NOVA_PROSJECNA
+                dataType: varchar2
+                queryOnly: true
+            }
+            serverSideCondition {
+                type: expression
+                plsqlExpression: :P341_ROBNO = 'Y'
+            }
+        )
+
+        column CJ_CIJENE (
+            type: textField
+            heading {
+                heading: VPC / MPC (cjenovnik)
+                alignment: end
+            }
+            layout {
+                sequence: 125
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: CJ_CIJENE
+                dataType: varchar2
+                queryOnly: true
             }
             serverSideCondition {
                 type: expression
@@ -2346,7 +2470,7 @@ page 341 (
             requiresConfirmation: true
         }
         confirmation {
-            message: Zaključati kalkulaciju? Cijene se upisuju u prijemnice, prijemnice se zaključavaju i roba postaje raspoloživa.
+            message: Zaključati kalkulaciju? Cijene se upisuju u prijemnice, prijemnice se zaključavaju i roba postaje raspoloživa. Robno skladište: nova prosječna nabavna cijena, VPC i MPC upisuju se u cjenovnik; kod veleprodajnog cjenovnika vrijednost svih skladišta tog cjenovnika usklađuje se automatskim finansijskim doknjiženjem (današnji datum).
             style: danger
         }
         serverSideCondition {
@@ -2494,7 +2618,8 @@ page 341 (
                         p_stavka_id      => kuf_pkg.broj(:ID),
                         p_marza_procenat => kuf_pkg.broj(:MARZA_PROCENAT),
                         p_vpc            => kuf_pkg.broj(:VPC),
-                        p_mpc            => kuf_pkg.broj(:MPC)
+                        p_mpc            => kuf_pkg.broj(:MPC),
+                        p_marza_iznos    => kuf_pkg.broj(:MARZA_IZNOS)
                     );
                 exception
                     when others then

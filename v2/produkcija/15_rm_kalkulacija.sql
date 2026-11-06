@@ -231,8 +231,13 @@ create or replace package rm_kalkulacija_pkg as
     function ponisti_json (p_id in number, p_izvor in varchar2) return clob;
     function stanje_json (p_id in number) return clob;
     -- cijene po artiklu (svi redovi artikla u kalkulaciji)
+    -- R22: unosi se jedno od: marža %, marža (iznos), VPC ili MPC - ostalo se izračuna (MPC = VPC + PDV)
     procedure snimi_cijene_artikla (p_id in number, p_stavka_id in number, p_marza_procenat in number,
-                                    p_vpc in number, p_mpc in number);
+                                    p_vpc in number, p_mpc in number, p_marza_iznos in number default null);
+    -- R22: PDV stopa artikla za MP cijenu: pun iznos -> 17 %, poseban indikator -> stopa indikatora
+    function pdv_stopa (p_stavka_id in number) return number;
+    -- R22: prosječna nabavna cijena poslije kalkulacije (zajednička za skladišta cjenovnika)
+    function nova_prosjecna (p_id in number, p_stavka_id in number) return number;
 
     -- cijene stavki (tek kad je sve raspoređeno) i zbirovi
     procedure snimi_stavku (p_red_id in number, p_marza_procenat in number, p_vpc in number, p_mpc in number);
@@ -432,7 +437,7 @@ create or replace package body rm_kalkulacija_pkg as
                                         kolicina, ulazna_cijena, osnovica, pdv_stopa, vpc, mpc)
         select p_id, os.id, os.operacija_id, os.stavka_id, os.redni_broj,
                os.kolicina, os.nabavna_cijena, round(os.kolicina * nvl(os.nabavna_cijena, 0), 2),
-               nvl(pi.vrijednost, 17),
+               case when nvl(st.pdv_indikator, 'Y') = 'Y' then 17 else nvl(pi.vrijednost, 0) end,
                cs.vpc, cs.mpc
           from operacija_stavke os
           join sec_stavke st on st.id = os.stavka_id
@@ -924,6 +929,35 @@ create or replace package body rm_kalkulacija_pkg as
             if l_n > 0 then
                 return 'Robno skladište: unesite veleprodajnu i maloprodajnu cijenu za sve stavke.';
             end if;
+            -- R22 veleprodaja: usklađivanje prosječne cijene pravi dokumente FDK na današnji datum
+            for k in (select k.ooj_id, rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id) as cj from kalkulacije k where k.id = p_id) loop
+                if k.cj is null then
+                    return 'Robno skladište nema cjenovnik - izaberite cjenovnik na skladištu.';
+                end if;
+                -- R23 maloprodaja: promjena MPC nivelira zalihe dokumentom NIVM
+                if rm_cjenovnik_pkg.tip(k.cj) = 'M' then
+                    select count(*) into l_n
+                      from sif.vrste_dokumenata vd join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
+                     where vd.ooj_id = k.ooj_id and upper(vd.sifra) = 'NIVM' and vd.valid = 'Y';
+                    if l_n = 0 then
+                        return 'Firma nema vrstu dokumenta NIVM (Nivelacija cijena) - potrebna je za maloprodaju (skripta 16_rm_vrste_izlaz.sql).';
+                    end if;
+                    if not core.protokoli_pkg.check_brojac(k.ooj_id, 'nivm', extract(year from sysdate)) then
+                        return 'Nije definisan brojač za Nivelaciju cijena (NIVM) u ' || extract(year from sysdate) || '. godini.';
+                    end if;
+                end if;
+                if rm_cjenovnik_pkg.tip(k.cj) = 'V' then
+                    select count(*) into l_n
+                      from sif.vrste_dokumenata vd join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
+                     where vd.ooj_id = k.ooj_id and upper(vd.sifra) = 'FDK' and vd.valid = 'Y';
+                    if l_n = 0 then
+                        return 'Firma nema vrstu dokumenta FDK (Finansijsko doknjiženje) - potrebna je za usklađivanje prosječne cijene (skripta 16_rm_vrste_izlaz.sql).';
+                    end if;
+                    if not core.protokoli_pkg.check_brojac(k.ooj_id, 'fdk', extract(year from sysdate)) then
+                        return 'Nije definisan brojač za Finansijsko doknjiženje (FDK) u ' || extract(year from sysdate) || '. godini.';
+                    end if;
+                end if;
+            end loop;
         end if;
         return null;
     end provjeri_zakljucavanje;
@@ -931,6 +965,17 @@ create or replace package body rm_kalkulacija_pkg as
     procedure zakljucaj (p_id in number) is
         l_poruka varchar2(4000);
         l_robno  boolean;
+        l_cj     number;
+        l_tip    varchar2(1);
+        l_naziv  varchar2(255);
+        l_cjn    varchar2(600);
+        l_red    number;
+        l_n      number;
+        type t_cij is table of number index by pls_integer;
+        l_art    t_cij;
+        l_avg    t_cij;
+        l_vpc    t_cij;
+        l_mpc    t_cij;
     begin
         preracunaj(p_id);
         l_poruka := provjeri_zakljucavanje(p_id);
@@ -938,10 +983,35 @@ create or replace package body rm_kalkulacija_pkg as
             greska(l_poruka);
         end if;
         l_robno := robno(p_id);
+        -- R22: nova prosječna cijena po artiklu (zajednička za skladišta cjenovnika) - prije zaključavanja prijemnica
+        if l_robno then
+            rm_cjenovnik_pkg.nova_akcija;                -- novi skup automatskih dokumenata (FDK / NIVM) za ovu kalkulaciju
+            select k.naziv, rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id) into l_naziv, l_cj from kalkulacije k where k.id = p_id;
+            l_tip := rm_cjenovnik_pkg.tip(l_cj);
+            select max(sifra || ' - ' || naziv) into l_cjn from cjenovnici where id = l_cj;
+            for a in (select stavka_id, max(vpc) as vpc, max(mpc) as mpc from kalkulacija_stavke
+                       where kalkulacija_id = p_id group by stavka_id order by stavka_id) loop
+                l_art(l_art.count + 1) := a.stavka_id;
+                l_avg(l_art.count) := nova_prosjecna(p_id, a.stavka_id);
+                l_vpc(l_art.count) := a.vpc;
+                l_mpc(l_art.count) := a.mpc;
+            end loop;
+            -- R23 maloprodaja: postojeće zalihe svih maloprodajnih skladišta cjenovnika se niveliraju na novu MPC
+            -- (prije prijema - nova roba ulazi po novoj MPC)
+            if l_tip = 'M' then
+                select max(sifra || ' - ' || naziv) into l_cjn from cjenovnici where id = l_cj;
+                for i in 1 .. l_art.count loop
+                    l_n := rm_cjenovnik_pkg.nivelisi(l_cj, l_art(i), l_mpc(i), p_id,
+                                                     'Nivelacija maloprodajnih cijena (cjenovnik ' || l_cjn || ') - kalkulacija ' || l_naziv);
+                end loop;
+            end if;
+        end if;
         -- cijene u prijemnice; ulazna cijena prijemnice ostaje sačuvana u kalkulaciji (za otključavanje)
+        -- maloprodaja (R23): zaliha se vodi po MPC - NABAVNA_CIJENA = MPC, stvarna nabavna u NABAVNA_MP
         for s in (select * from kalkulacija_stavke where kalkulacija_id = p_id) loop
             update operacija_stavke
-               set nabavna_cijena     = s.nabavna_cijena,
+               set nabavna_cijena     = case when l_tip = 'M' then s.mpc else s.nabavna_cijena end,
+                   nabavna_mp         = case when l_tip = 'M' then s.nabavna_cijena end,
                    obradjena_kolicina = kolicina,
                    marza              = case when l_robno then s.marza_iznos end,
                    marza_procenat     = case when l_robno then s.marza_procenat end,
@@ -952,6 +1022,18 @@ create or replace package body rm_kalkulacija_pkg as
         update operacije o
            set o.status = 'Z', o.zakljucano = 'Y', o.kalkulacija_id = p_id
          where o.id in (select operacija_id from kalkulacija_operacije where kalkulacija_id = p_id);
+        -- R22: cjenovnik (nova prosječna nabavna, VPC, MPC) i, za veleprodaju, usklađivanje vrijednosti svih
+        -- skladišta cjenovnika automatskim dokumentima Finansijsko doknjiženje (današnji datum)
+        if l_robno and l_cj is not null then
+            for i in 1 .. l_art.count loop
+                l_red := rm_cjenovnik_pkg.postavi_cijenu(l_cj, l_art(i), l_avg(i), l_vpc(i), l_mpc(i),
+                                                         'Kalkulacija ' || l_naziv, 'K', p_id);
+                if l_tip = 'V' and l_avg(i) is not null then
+                    l_n := rm_cjenovnik_pkg.uskladi(l_cj, l_art(i), l_avg(i), p_id,
+                                                    'Usklađivanje sa prosječnom cijenom cjenovnika ' || l_cjn || ' - kalkulacija ' || l_naziv);
+                end if;
+            end loop;
+        end if;
         update kalkulacije set status = 'Z', zakljucano = 'Y' where id = p_id;
     end zakljucaj;
 
@@ -966,8 +1048,10 @@ create or replace package body rm_kalkulacija_pkg as
             if nvl(p_admin, 'N') <> 'Y' then
                 return 'Kalkulaciju može otključati samo administrator.';
             end if;
-            if robno(p_id) then
-                return 'Kalkulacija robnog skladišta se ne može otključati.';
+            -- R22 robno: cjenovnik i automatska doknjiženja iz kalkulacije se vraćaju (ako cijena nije ponovo
+            -- mijenjana i ako artikli poslije usklađivanja nisu izdavani)
+            if robno(p_id) and rm_cjenovnik_pkg.razlog_zabrane_vracanja(p_id) is not null then
+                return rm_cjenovnik_pkg.razlog_zabrane_vracanja(p_id);
             end if;
             select min(o.datum) into l_datum
               from kalkulacija_operacije ko join operacije o on o.id = ko.operacija_id
@@ -997,9 +1081,12 @@ create or replace package body rm_kalkulacija_pkg as
         if l_r is not null then
             greska(l_r);
         end if;
+        if robno(p_id) then
+            rm_cjenovnik_pkg.vrati_kalkulaciju(p_id);
+        end if;
         for s in (select * from kalkulacija_stavke where kalkulacija_id = p_id) loop
             update operacija_stavke
-               set nabavna_cijena = s.ulazna_cijena, obradjena_kolicina = null,
+               set nabavna_cijena = s.ulazna_cijena, obradjena_kolicina = null, nabavna_mp = null,
                    marza = null, marza_procenat = null, porez_procenat = null, mpc = null
              where id = s.operacija_stavka_id;
         end loop;
@@ -1426,8 +1513,57 @@ create or replace package body rm_kalkulacija_pkg as
         return stanje_json(p_id);
     end ponisti_json;
 
+    function pdv_stopa (p_stavka_id in number) return number is
+        l_v number;
+    begin
+        select max(case when nvl(st.pdv_indikator, 'Y') = 'Y' then 17 else nvl(pi.vrijednost, 0) end)
+          into l_v
+          from sec_stavke st left join sif.acc_pdv_indikatori pi on pi.id = st.pdv_indikator_id
+         where st.id = p_stavka_id;
+        return nvl(l_v, 17);
+    end pdv_stopa;
+
+    function nova_prosjecna (p_id in number, p_stavka_id in number) return number is
+        l_cj   number;
+        l_q    number;
+        l_v    number;
+        l_kq   number;
+        l_kv   number;
+    begin
+        select max(rm_cjenovnik_pkg.cjenovnik_skladista(k.skladiste_id)) into l_cj from kalkulacije k where k.id = p_id;
+        select sum(kolicina), sum(nabavna_vrijednost) into l_kq, l_kv
+          from kalkulacija_stavke where kalkulacija_id = p_id and stavka_id = p_stavka_id;
+        -- skladište materijala ili maloprodaja (zaliha po MPC): nabavna cijena iz ove kalkulacije
+        if l_cj is null or rm_cjenovnik_pkg.tip(l_cj) = 'M' then
+            return case when nvl(l_kq, 0) > 0 then l_kv / l_kq end;
+        end if;
+        l_q := rm_cjenovnik_pkg.grupa_kolicina(l_cj, p_stavka_id);
+        l_v := rm_cjenovnik_pkg.grupa_vrijednost(l_cj, p_stavka_id);
+        -- zaključena kalkulacija je već u stanju skladišta
+        for k in (select status from kalkulacije where id = p_id and nvl(status, 'P') = 'Z') loop
+            l_kq := 0;
+            l_kv := 0;
+        end loop;
+        if nvl(l_q, 0) + nvl(l_kq, 0) <= 0 or nvl(l_q, 0) <= 0 then
+            return case when nvl(l_kq, 0) > 0 then l_kv / l_kq when l_q > 0 then l_v / l_q end;
+        end if;
+        return (nvl(l_v, 0) + nvl(l_kv, 0)) / (l_q + nvl(l_kq, 0));
+    end nova_prosjecna;
+
     procedure snimi_cijene_artikla (p_id in number, p_stavka_id in number, p_marza_procenat in number,
-                                    p_vpc in number, p_mpc in number) is
+                                    p_vpc in number, p_mpc in number, p_marza_iznos in number default null) is
+        l_nab  number;
+        l_pdv  number;
+        l_omp  number;
+        l_omi  number;
+        l_ovpc number;
+        l_ompc number;
+        l_vpc  number;
+        l_mpc  number;
+        function razl (a in number, b in number, d in pls_integer) return boolean is
+        begin
+            return (a is null and b is not null) or (a is not null and b is null) or round(a, d) <> round(b, d);
+        end razl;
     begin
         provjeri_izmjenu(p_id);
         if sve_rasporedjeno(p_id) = 'N' then
@@ -1436,8 +1572,31 @@ create or replace package body rm_kalkulacija_pkg as
         if nvl(p_vpc, 0) < 0 or nvl(p_mpc, 0) < 0 then
             greska('Cijene ne mogu biti negativne.');
         end if;
+        select max(nabavna_cijena), max(nvl(pdv_stopa, 0)), max(marza_procenat), max(marza_iznos), max(vpc), max(mpc)
+          into l_nab, l_pdv, l_omp, l_omi, l_ovpc, l_ompc
+          from kalkulacija_stavke where kalkulacija_id = p_id and stavka_id = p_stavka_id;
+        -- šta je korisnik promijenio: MPC -> VPC iz MPC; VPC; marža (iznos); marža (%)
+        if p_mpc is not null and razl(p_mpc, l_ompc, 2) then
+            l_mpc := round(p_mpc, 2);
+            l_vpc := round(p_mpc / (1 + l_pdv / 100), 4);
+        elsif p_vpc is not null and razl(p_vpc, l_ovpc, 4) then
+            l_vpc := round(p_vpc, 4);
+        elsif p_marza_iznos is not null and razl(p_marza_iznos, l_omi, 2) then
+            l_vpc := round(nvl(l_nab, 0) + p_marza_iznos, 4);
+        elsif p_marza_procenat is not null and razl(p_marza_procenat, l_omp, 4) then
+            l_vpc := round(nvl(l_nab, 0) * (1 + p_marza_procenat / 100), 4);
+        else
+            l_vpc := nvl(p_vpc, l_ovpc);
+        end if;
+        if l_mpc is null and l_vpc is not null then
+            l_mpc := round(l_vpc * (1 + l_pdv / 100), 2);
+        end if;
         update kalkulacija_stavke
-           set marza_procenat = p_marza_procenat, vpc = round(p_vpc, 4), mpc = round(p_mpc, 2)
+           set vpc            = l_vpc,
+               mpc            = l_mpc,
+               marza_iznos    = case when l_vpc is not null then round(l_vpc - nvl(l_nab, 0), 4) end,
+               marza_procenat = case when l_vpc is not null and nvl(l_nab, 0) > 0
+                                     then round((l_vpc - l_nab) / l_nab * 100, 4) end
          where kalkulacija_id = p_id and stavka_id = p_stavka_id;
     end snimi_cijene_artikla;
 

@@ -637,3 +637,78 @@ Sitni inventar ostaje u materijalnom poslovanju. Zaduženje radnika se vodi na n
 - **Ispravka importa (ORA-00001 WWV_FLOW_WORKSHEET_RPTS_UK):** nova kartica serijskog broja je pomjerila identifikatore sačuvanih izvještaja na str. 371; APEX po njima čuva izvještaje korisnika pri ponovnom importu. Identifikatori su sada stalni po izvještaju (generator `gen_p371_izvjestaji.py`, tabela RID), nova kartica dobija sljedeći slobodan broj.
 
 **Službeni import (05.11.2026):** `v2/import/finansije-v2.zip` regenerisan na `main` iz `v2/izvor` poslije spajanja PR #1 (materijalni modul R10–R21, poslovni partneri); isti sadržaj kao provjereni import R21 na DEV-u.
+
+## Robni modul – kalkulacija cijena i cjenovnik – korak R22 (05.11.2026, grana claude/robno-cijene)
+Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna cijena po skladištu (bez promjene); veleprodajna robna skladišta – **jedna prosječna nabavna cijena za sva skladišta istog cjenovnika**; maloprodaja se vodi po MP cijeni, RUC kasnije; bez retroaktivnog preračuna – nova cijena i automatski dokumenti nastaju na datum zaključavanja; automatski dokumenti su zaključeni i vezani za kalkulaciju; PDV po indikatoru artikla (pun iznos 17 %, poseban – stopa indikatora).
+- **Kalkulacija – tab Cijene (robna skladišta):**
+  - unosi se jedno od: **marža %**, **marža (KM)**, **VPC** ili **MPC** – ostalo se izračuna (VPC = nabavna + marža; MPC = VPC + PDV; kod unosa MPC: VPC = MPC / (1 + PDV));
+  - nove kolone: **Prosječna (cjenovnik)** – trenutna prosječna nabavna u cjenovniku, **Nova prosječna** – zajednička prosječna poslije ove kalkulacije, **VPC / MPC (cjenovnik)** – važeće cijene;
+  - VPC i MPC se i dalje predlažu iz cjenovnika skladišta pri dodavanju prijemnice (marža se preračunava prema novoj nabavnoj cijeni); PDV po indikatoru artikla.
+- **Zaključavanje kalkulacije (robno skladište):**
+  - nova prosječna = (vrijednost svih skladišta cjenovnika + vrijednost kalkulacije) / (količina svih skladišta + količina kalkulacije), na stanje u trenutku zaključavanja;
+  - **cjenovnik**: stari red se deaktivira, novi (nova prosječna, VPC, MPC) se aktivira sa napomenom „Kalkulacija X“ i vezom na kalkulaciju;
+  - **veleprodajni cjenovnik**: vrijednost svakog skladišta cjenovnika koje ima stanje usklađuje se automatskim, zaključenim dokumentom **Finansijsko doknjiženje** (FDK, današnji datum, vezan za kalkulaciju; jedan po skladištu); zbir doknjiženja je 0 (razlika zaokruživanja na skladište sa najvećom količinom);
+  - maloprodajni cjenovnik: samo cjenovnik (nivelacija je sljedeći korak).
+- **Otključavanje kalkulacije robnog skladišta** (administrator) je sada moguće: briše automatska doknjiženja i vraća prethodne cijene u cjenovniku – samo ako cijena u cjenovniku nije u međuvremenu ponovo mijenjana i ako artikli poslije usklađivanja nisu izdavani.
+- **Izlazi veleprodajnih robnih skladišta** uzimaju jedinstvenu prosječnu cijenu iz cjenovnika (kad je red cjenovnika nastao u v2); ostala skladišta – prosječna cijena skladišta. Izlaz cijele preostale količine uzima tačno preostalu vrijednost.
+- **Baza:** CJENOVNIK_STAVKE.NAPOMENA, IZVOR (K / R / U), KALKULACIJA_ID, OPERACIJA_ID, PRETHODNI_ID; jedan aktivan red po artiklu i cjenovniku (stari duplikati se deaktiviraju – ostaje najnoviji); paket **RM_CJENOVNIK_PKG**; RM_DOKUMENT_PKG.CIJENA_IZLAZA; RM_KALKULACIJA_PKG.PDV_STOPA, NOVA_PROSJECNA.
+- **SQL (redom, kao ACCOUNTING):** `11_rm_model.sql`, `12_rm_pkg.sql`, **`21_rm_cjenovnik.sql`**, `15_rm_kalkulacija.sql` (15 koristi paket iz 21). Zatim import aplikacije.
+- **Sljedeći koraci:** ostali ulazi u veleprodaji (višak iz popisa, povrat, zamjena šifara, prijem sa drugog cjenovnika) kroz isti mehanizam; maloprodaja po MP cijeni i nivelacija; ručna izmjena cjenovnika sa napomenom.
+
+## Maloprodaja po MP cijeni i nivelacija – korak R23 (05.11.2026)
+- **Maloprodajna robna skladišta (cjenovnik tip M) vode zalihu po MPC:**
+  - kalkulacija upisuje u prijemnicu MPC kao cijenu zalihe (`NABAVNA_CIJENA`), a stvarnu nabavnu cijenu u novu kolonu `NABAVNA_MP` (uz maržu i PDV) – za kasniji obračun RUC;
+  - izlazi i povrat dobavljaču idu po važećoj MPC iz cjenovnika (izlaz cijele preostale količine – preostala vrijednost);
+  - višak iz popisa na maloprodajnom skladištu predlaže važeću MPC;
+  - stanje, vrijednost, kartice i popisi maloprodaje su po MPC;
+  - zamjena šifara u maloprodaji samo između artikala iste MPC (razlika bi bila RUC / PDV).
+- **Nivelacija cijena (NIVM)** – nova vrsta (samo robna skladišta, nastaje automatski):
+  - pri zaključavanju kalkulacije maloprodajnog skladišta, za svaki artikal kojem se MPC mijenja, postojeće zalihe **svih maloprodajnih skladišta tog cjenovnika** se niveliraju na novu MPC – prije prijema nove robe;
+  - jedan zaključen dokument po skladištu, današnji datum, vezan za kalkulaciju; stavka: količina, stara MPC, nova MPC, razlika po jedinici i ukupno, PDV u razlici (razlika × stopa / (100 + stopa));
+  - otključavanje kalkulacije briše nivelacije (ako artikli poslije nisu izdavani) i vraća cjenovnik.
+- Cjenovnik maloprodaje dobija nabavnu cijenu iz kalkulacije (zajednička prosječna nabavna je samo za veleprodaju).
+- **Baza:** OPERACIJA_STAVKE.NABAVNA_MP, MPC_STARA; vrsta NIVM i brojač; RM_CJENOVNIK_PKG.NIVELISI, PDV_STOPA; RM_DOKUMENT_PKG.JE_MP i MP grana u CIJENA_IZLAZA.
+- **Napomena:** postojeće (stare) zalihe maloprodajnih skladišta su vođene po nabavnoj cijeni – prije stvarnog rada u maloprodaji treba ih jednom nivelisati na MPC: snimiti važeću MPC u cjenovniku (ručna izmjena) – nivelacija nastaje automatski.
+- **Prenosi između tipova skladišta** (M = skladište materijala, V = veleprodaja, MP = maloprodaja) – vrsta dokumenta pokazuje prelaz između modula:
+
+  | Smjer | Izlaz | Prijem | Cijena |
+  |---|---|---|---|
+  | isti tip (M→M, V→V, MP→MP) | MPR Međuskladišni prenos | MPP Međuskladišni prijem | cijena izlaza; V/MP: cjenovnik odredišta |
+  | M → V | PIV Prenos materijala u veleprodaju | UIV Prijem materijala u veleprodaju | prosječna materijala → novi zajednički prosjek VP |
+  | V → M | PVI Prenos robe u skladište materijala | UVI Prijem robe u skladište materijala | prosječna VP |
+  | V → MP | PVM Prenos robe u maloprodaju | UVM Prijem u maloprodaju | zaliha po MPC cjenovnika MP, nabavna = cijena izlaza (bez MPC u cjenovniku prijem nije moguć) |
+  | MP → V | PMV Povrat iz maloprodaje u veleprodaju | UMV Prijem povrata iz maloprodaje | izlaz po MPC, prijem po prosječnoj VP (razlika = RUC / PDV za knjiženje) |
+
+  - M → MP nije predviđen (ide preko veleprodaje); prenos se nudi samo na skladišta čiji tip odgovara vrsti (pogrešna vrsta → poruka koju vrstu koristiti);
+  - prijem nastaje preuzimanjem prenosa sa liste „Prenosi na čekanju“ (Novi dokument → vrsta prijema), zaključen, kao i do sada;
+  - **promjena cijene dok je roba na putu:** poslije svakog prijema na veleprodajno skladište računa se zajednički prosjek iz stvarnih vrijednosti svih skladišta cjenovnika i vrijednost se usklađuje automatskim finansijskim doknjiženjem; na maloprodajno skladište – primljena roba se automatski nivelira na važeću MPC (dokumenti vezani za prijem, datum prijema).
+- **Ručna izmjena cijene u cjenovniku** (Cjenovnik → artikal): novo polje **Napomena** (u istoriji cjenovnika i u opisu automatskih dokumenata); **prosječna nabavna** se može ispraviti:
+  - veleprodaja: vrijednost zaliha svih skladišta cjenovnika se usklađuje sa (novom) prosječnom cijenom automatskim finansijskim doknjiženjem – isto služi i za početno usklađivanje skladišta;
+  - maloprodaja: izmjena MPC nivelira zalihe svih maloprodajnih skladišta cjenovnika (NIVM) – isto služi i za početnu nivelaciju starih zaliha na MPC;
+  - promjena VPC (veleprodaja) ili nabavne (maloprodaja) mijenja samo cjenovnik.
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`, `15_rm_kalkulacija.sql`, `17_rm_izvjestaji.sql`, `19_rm_popis.sql`. Zatim import aplikacije. (Uključuje i R22.)
+
+## Serijski brojevi, marža u cjenovniku, MPC na prijemu u maloprodaju – korak R24 (05.11.2026)
+- **Izbor serijskih brojeva iz liste** (dijalog serijskih brojeva stavke, način „Iz liste“):
+  - pretraga po dijelu broja ide na server – pretražuje se cijela lista raspoloživih brojeva (ne samo prikazani redovi), prikaz do 1000 redova;
+  - kvadratić uz svaki broj, dugmad **Označi sve prikazane** i **Dodaj označene (n)** – više brojeva se dodaje odjednom (`RM_DOKUMENT_PKG.DODAJ_SB_VISE_JSON`), „+“ za pojedinačni broj ostaje.
+- **Cjenovnik → artikal:** marža (%) se preračunava pri svakoj izmjeni nabavne cijene, VPC ili MPC (= (VPC − nabavna) / nabavna × 100); izmjena marže i dalje računa VPC i MPC; marža se prikazuje i pri otvaranju postojeće cijene. Nabavna cijena iz cjenovnika se učitava sa 4 decimale.
+- **Finansijsko doknjiženje (FDK) i nivelacija (NIVM):** bez serijskih brojeva – nema kolone SB, regiona serijskih brojeva, upozorenja „SB“ na listi dokumenata ni provjere pri zaključavanju (dokumenti mijenjaju samo vrijednost).
+- **Prijem u maloprodaju (UVM) za artikle bez MPC u cjenovniku:** preuzimanje prenosa više ne javlja grešku – prijem nastaje **u pripremi** (status „Čeka MPC“), količine i serijski brojevi su iz prenosa i ne mijenjaju se:
+  - region **MPC za prijem u maloprodaju**: nabavna (cijena izlaza iz veleprodaje), MPC iz cjenovnika, polje **MPC na prijemu** i marža (%) – MPC se snima pri izlasku iz polja / Enter;
+  - **Zaključaj prijem**: provjera da sve stavke imaju MPC, nova ili promijenjena MPC se upisuje u cjenovnik maloprodaje (VPC = MPC / (1 + PDV), napomena „MPC sa prijema …“), postojeće zalihe ostalih maloprodajnih skladišta tog cjenovnika se prethodno niveliraju (NIVM), prijem se zaključuje sa datumom zaključavanja;
+  - prijem koji čeka MPC se može obrisati – prenos se vraća na listu „Prenosi na čekanju“;
+  - kada svi artikli imaju MPC u cjenovniku, prijem se kao i do sada odmah zaključuje.
+- **Greška pri Snimi na dokumentima skladišta** (ERR-1002 Unable to find item ID for item "ZAMJENA_STAVKA_ID"): proces snimanja stavki je navodio kolonu zamjenskog artikla koja postoji samo na zamjeni šifara (R21), pa je snimanje izmijenjenih stavki na svim ostalim dokumentima javljalo grešku. Snimanje stavki je razdvojeno u tri procesa: opšti, zamjena šifara (ZSA) i finansijsko doknjiženje (FDK, bez kolone količine).
+- **Baza:** RM_DOKUMENT_PKG (DODAJ_SB_VISE_JSON, PREUZMI_PRENOS, RAZLOG_ZABRANE, OBRISI, PROVJERI_KOMPLETNOST), RM_CJENOVNIK_PKG (UVM_MPC_JSON, ZAKLJUCAJ_UVM), pogledi VW_RM_DOKUMENTI i VW_RM_DOKUMENT_STAVKE. Bez novih kolona.
+- **SQL (redom, kao ACCOUNTING):** `12_rm_pkg.sql`, `13_rm_views.sql`, `21_rm_cjenovnik.sql`. Zatim import aplikacije.
+
+## Povrat dobavljaču, pretraga izbora na listi dokumenata – korak R25 (05.11.2026, grana claude/robno-pdb)
+- **Povrat dobavljaču (PDB)** – nova vrsta dokumenta u oba modula (Zalihe robe i Materijal i oprema), izlazni dokument:
+  - dobavljač je obavezan (sekcija „Dobavljač i ugovor“ kao na prijemnici, bez broja i datuma otpremnice);
+  - izlaz po trenutnoj cijeni: skladište materijala – prosječna cijena skladišta; veleprodaja – zajednička prosječna cijena iz cjenovnika; maloprodaja – MPC;
+  - raspoloživo stanje, serijski brojevi, zaključavanje, otključavanje i storno kao kod ostalih izlaza;
+  - nudi se u meniju „Novi dokument“ i u izboru vrste na listi dokumenata.
+- **Lista dokumenata skladišta:** izbor vrste dokumenta je sada padajuća lista sa pretragom (isti izgled kao izbor skladišta; Enter bira prvi pronađeni); u izboru skladišta pretraga je uvijek vidljiva (ranije samo kod više od 7 skladišta).
+- **Baza:** vrsta PDB (16, SIF) i brojač (11); RM_DOKUMENT_PKG (tip kretanja, podržane vrste, provjera dobavljača).
+- **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`. Zatim import aplikacije.

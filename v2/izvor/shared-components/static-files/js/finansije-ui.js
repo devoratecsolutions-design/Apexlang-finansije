@@ -128,6 +128,14 @@ window.finCijena = (function ($) {
     function postaviMpc(p, vpc) {
         if (apex.item(p + "_MPC").node) { apex.item(p + "_MPC").setValue(fmt(r2(vpc * (1 + stopa(p) / 100))), null, true); }
     }
+    /* R24: marža (%) = (VPC - nabavna) / nabavna * 100, preračunava se pri izmjeni bilo koje cijene */
+    function postaviMarzu(p) {
+        var nab = num(p + "_NABAVNA_CIJENA"), vpc = num(p + "_VPC");
+        if (!apex.item(p + "_MARZA").node) { return; }
+        if (nab !== null && nab !== 0 && vpc !== null) {
+            apex.item(p + "_MARZA").setValue(fmt(r2((vpc - nab) / nab * 100)), null, true);
+        }
+    }
     // vrijednosti se postavljaju bez "change" događaja, da račun ne krene
     // ukrug i ne prepravi cijenu koju je korisnik upravo upisao
     return {
@@ -148,6 +156,13 @@ window.finCijena = (function ($) {
             if (window.finCijenaUcitava) { return; }
             var vpc = num(p + "_VPC");
             if (vpc !== null) { postaviMpc(p, vpc); }
+            postaviMarzu(p);
+            upozori(p);
+        },
+        izmjenaNabavne: function (p) {
+            /* R24: nova nabavna - VPC/MPC ostaju, preračunava se marža */
+            if (window.finCijenaUcitava) { return; }
+            postaviMarzu(p);
             upozori(p);
         },
         izMpc: function (p) {
@@ -155,6 +170,7 @@ window.finCijena = (function ($) {
             if (window.finCijenaUcitava) { return; }
             var mpc = num(p + "_MPC");
             if (mpc !== null) { apex.item(p + "_VPC").setValue(fmt(r2(mpc / (1 + stopa(p) / 100))), null, true); }
+            postaviMarzu(p);
             upozori(p);
         }
     };
@@ -774,7 +790,7 @@ window.finSkl = (function ($) {
         $m.find(".fin-skl__lista").html('<div class="fin-skl__prazno">Učitavanje…</div>');
         apex.server.process("RM_SKLADISTA", {}, { dataType: "json" }).done(function (d) {
             lista = d || [];
-            $m.find(".fin-skl__trazi").toggle(lista.length > 7);
+            /* R25: pretraga je uvijek vidljiva */
             crtaj($m);
             $m.find("input").trigger("focus");
         });
@@ -831,7 +847,58 @@ window.finRmVrsta = (function ($) {
         $cilj = $(".t-Body-title .t-BreadcrumbRegion-buttons").first();
         if ($skl.length && $skl.parent().length) { $r.insertAfter($skl); } else if ($cilj.length) { $cilj.prepend($r); }
         $r.addClass("is-ready");
+        /* R25: izbor vrste sa pretragom (isti izgled kao izbor skladišta); select ostaje nosilac vrijednosti */
+        (function () {
+            var $w, $m, $l;
+            function esc(x) { return apex.util.escapeHTML(String(x == null ? "" : x)); }
+            function naziv() { var t = $s.find("option:selected").text(); return t || "— sve vrste —"; }
+            function crtaj(f) {
+                var html = "", v = String($s.val());
+                f = (f || "").toLowerCase();
+                $s.find("option").each(function () {
+                    var o = this, t = $(o).text();
+                    if (f && t.toLowerCase().indexOf(f) < 0) { return; }
+                    html += '<button type="button" role="option" class="fin-skl__stavka fin-vrsta__stavka' + (String(o.value) === v ? " is-current" : "") +
+                        '" data-v="' + esc(o.value) + '"><span class="fin-skl__ime">' + esc(t) + "</span>" +
+                        (String(o.value) === v ? '<span class="fa fa-check" aria-hidden="true"></span>' : "") + "</button>";
+                });
+                $l.html(html || '<div class="fin-skl__prazno">Nema vrste za pretragu.</div>');
+            }
+            function zatvori() { $w.removeClass("is-open").find(".fin-skl__chip").attr("aria-expanded", "false"); $m.prop("hidden", true); }
+            $w = $('<div class="fin-skl fin-vrsta"><button type="button" class="fin-skl__chip" aria-haspopup="listbox" aria-expanded="false" title="Promijeni vrstu dokumenta">' +
+                '<span class="fin-skl__ikona"><span class="fa fa-file-text-o" aria-hidden="true"></span></span><span class="fin-skl__tekst"><span class="fin-skl__lbl">Vrsta dokumenta</span>' +
+                '<span class="fin-skl__naziv"></span></span><span class="fa fa-chevron-down fin-skl__strelica" aria-hidden="true"></span></button>' +
+                '<div class="fin-skl__meni" hidden><div class="fin-skl__trazi"><input type="search" placeholder="Pretraga vrste dokumenta…" aria-label="Pretraga vrste dokumenta"></div>' +
+                '<div class="fin-skl__lista" role="listbox"></div></div></div>');
+            $m = $w.find(".fin-skl__meni");
+            $l = $w.find(".fin-skl__lista");
+            $w.find(".fin-skl__naziv").text(naziv());
+            $s.closest(".t-Form-fieldContainer").hide();
+            $r.append($w);
+            $w.on("click", ".fin-skl__chip", function (e) {
+                e.stopPropagation();
+                if ($w.hasClass("is-open")) { zatvori(); return; }
+                $w.addClass("is-open").find(".fin-skl__chip").attr("aria-expanded", "true");
+                $m.prop("hidden", false);
+                crtaj("");
+                $m.find("input").val("").trigger("focus");
+            });
+            $w.on("input", "input", function () { crtaj(this.value); });
+            $w.on("keydown", "input", function (e) {
+                if (e.key === "Enter") { e.preventDefault(); $l.find(".fin-skl__stavka").first().trigger("click"); }
+            });
+            $w.on("click", ".fin-skl__meni", function (e) { e.stopPropagation(); });
+            $w.on("click", ".fin-skl__stavka", function () {
+                var v = String($(this).data("v"));
+                zatvori();
+                if (v !== String($s.val())) { apex.item(item).setValue(v); }
+            });
+            $s.on("change", function () { $w.find(".fin-skl__naziv").text(naziv()); });
+            $(document).on("click", zatvori);
+            $(document).on("keydown", function (e) { if (e.key === "Escape") { zatvori(); } });
+        })();
         function osvjezi() {
+            $r.find(".fin-vrsta .fin-skl__naziv").text($s.find("option:selected").text() || "— sve vrste —");
             try { localStorage.setItem(KLJUC, $s.val()); } catch (e) { /* ništa */ }
             if (regionId && apex.region(regionId)) { apex.region(regionId).refresh(); }
         }
@@ -940,12 +1007,38 @@ window.finRmSb = (function ($) {
                     osvjezi();
                 });
         });
+        /* R24: pretraga na serveru (cijela lista), označavanje više brojeva i dodavanje označenih */
+        var tTrazi;
+        function oznaceno() {
+            var n = $("#" + raspId + " .fin-sb-cb:checked").length;
+            $("#finSbOznaceno").text(n);
+            $(".fin-sb-dodaj-oznacene").prop("disabled", n === 0);
+        }
         $("#" + p + "_TRAZI").on("input", function () {
-            var f = this.value.toLowerCase();
-            $("#" + raspId + " tbody tr").each(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(f) >= 0);
-            });
+            clearTimeout(tTrazi);
+            tTrazi = setTimeout(function () { if (apex.region(raspId)) { apex.region(raspId).refresh(); } }, 350);
         }).on("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); return false; } });
+        $(document).on("change", "#" + raspId + " .fin-sb-cb", oznaceno);
+        $("#" + raspId).on("apexafterrefresh", oznaceno);
+        $(document).on("click", ".fin-sb-svi", function (e) {
+            var $cb = $("#" + raspId + " .fin-sb-cb"), sve = $cb.length && $cb.filter(":checked").length === $cb.length;
+            e.preventDefault();
+            $cb.prop("checked", !sve);
+            oznaceno();
+        });
+        $(document).on("click", ".fin-sb-dodaj-oznacene", function (e) {
+            var lista = $("#" + raspId + " .fin-sb-cb:checked").map(function () { return this.value; }).get();
+            e.preventDefault();
+            if (!lista.length || radi) { return; }
+            radi = true;
+            apex.server.process("DODAJ_SB_VISE", { x01: lista.join("\n") }, { dataType: "json" })
+                .done(function (d) {
+                    if (d.ok) { apex.message.clearErrors(); apex.message.showPageSuccess(d.poruka); } else { greska(d.poruka); }
+                    stanje(d);
+                    osvjezi();
+                })
+                .always(function () { radi = false; });
+        });
         function dodaj() {
             var v = $.trim($sb.val());
             if (!v || radi) { return; }

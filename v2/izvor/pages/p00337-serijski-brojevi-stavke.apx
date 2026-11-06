@@ -133,6 +133,33 @@ page 337 (
         }
     )
 
+    region sb-izbor-akcije (
+        name: Izbor - akcije
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="fin-sb-akcije">
+                  <button type="button" class="t-Button t-Button--small fin-sb-svi"><span class="fa fa-check-square-o" aria-hidden="true"></span> Označi sve prikazane</button>
+                  <button type="button" class="t-Button t-Button--small t-Button--hot fin-sb-dodaj-oznacene" disabled><span class="fa fa-plus" aria-hidden="true"></span> Dodaj označene (<span id="finSbOznaceno">0</span>)</button>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 15
+            parentRegion: @sb-izbor
+            slot: subRegions
+        }
+        appearance {
+            template: @blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P337_TIP = 'I'
+        }
+    )
+
     region sb-qr (
         name: QR kod (opseg serijskih brojeva)
         title: QR kod (opseg serijskih brojeva)
@@ -198,9 +225,14 @@ page 337 (
                   AND x.stavka_id = os.stavka_id
                   AND x.raspolozivo > 0
                   AND x.serijski_broj NOT IN (SELECT sb.serijski_broj FROM operacija_stavke_sb sb WHERE sb.operacija_stavka_id = os.id)
+                  -- R24: pretraga po dijelu broja (na serveru - sva lista, ne samo prikazana strana)
+                  AND (:P337_TRAZI IS NULL OR upper(x.serijski_broj) LIKE '%' || upper(trim(:P337_TRAZI)) || '%')
                 ORDER BY x.serijski_broj
                 ```
-            pageItemsToSubmit: P337_STAVKA_DOK_ID
+            pageItemsToSubmit: [
+                P337_STAVKA_DOK_ID
+                P337_TRAZI
+            ]
         }
         layout {
             sequence: 20
@@ -211,6 +243,9 @@ page 337 (
             template: @blank-with-attributes
             templateOptions: #DEFAULT#
             cssClasses: fin-sb-raspolozivi
+        }
+        reportLayout {
+            numberOfRows: 1000
         }
         componentAppearance {
             template: @standard
@@ -223,7 +258,7 @@ page 337 (
             type: rowRangesXToYNoPagination
         }
         messages {
-            whenNoDataFound: Nema raspoloživih serijskih brojeva ovog artikla na skladištu.
+            whenNoDataFound: Nema raspoloživih serijskih brojeva ovog artikla na skladištu (ili za upisanu pretragu).
         }
         advanced {
             htmlDomId: rm_sb_raspolozivi
@@ -245,7 +280,7 @@ page 337 (
             columnFormatting {
                 htmlExpression:
                     ```html
-                    <span class="fin-sb-red"><span><span class="fin-sb-red__broj">#SERIJSKI_BROJ#</span>{if DATUM_ULAZA/}<span class="fin-sub">primljen #DATUM_ULAZA#</span>{endif/}</span><a class="fin-act fin-sb-dodaj" href="javascript:void(0)" data-sb="#SERIJSKI_BROJ#" title="Dodaj" aria-label="Dodaj"><span class="fa fa-plus" aria-hidden="true"></span></a></span>
+                    <span class="fin-sb-red"><label class="fin-sb-oznaka"><input type="checkbox" class="fin-sb-cb" value="#SERIJSKI_BROJ#" aria-label="Označi #SERIJSKI_BROJ#"></label><span><span class="fin-sb-red__broj">#SERIJSKI_BROJ#</span>{if DATUM_ULAZA/}<span class="fin-sub">primljen #DATUM_ULAZA#</span>{endif/}</span><a class="fin-act fin-sb-dodaj" href="javascript:void(0)" data-sb="#SERIJSKI_BROJ#" title="Dodaj" aria-label="Dodaj"><span class="fa fa-plus" aria-hidden="true"></span></a></span>
                     ```
             }
             sorting {
@@ -744,6 +779,21 @@ page 337 (
         }
         execution {
             sequence: 10
+            point: ajaxCallback
+        }
+    )
+
+    process ajax-dodaj-sb-vise (
+        name: DODAJ_SB_VISE
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                sys.htp.p(rm_dokument_pkg.dodaj_sb_vise_json(p_stavka_dok_id => :P337_STAVKA_DOK_ID, p_tekst => apex_application.g_x01));
+                ```
+        }
+        execution {
+            sequence: 15
             point: ajaxCallback
         }
     )

@@ -63,7 +63,7 @@ select o.id,
        o.veza_id,
        vz.naziv                                                         as veza_naziv,
        (select max(p.naziv) from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
-         where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N') as preuzeto_naziv,
+         where p.veza_id = o.id and upper(pv.sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') and nvl(p.stornirano, 'N') = 'N') as preuzeto_naziv,
        o.opis,
        nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) as status,
        o.zakljucano,
@@ -109,6 +109,7 @@ select o.id,
                       sum(os.kolicina)  as kolicina,
                       sum(round(os.kolicina * os.nabavna_cijena, 2)) as iznos,
                       sum(case when (s.serijski_broj = 'Y' or zs.serijski_broj = 'Y') and o.popis_id is null
+                                and nvl(vd.sifra, '-') not in ('FDK', 'NIVM')   -- R24: vrijednosni dokumenti bez SB
                                 and nvl(os.kolicina, 0) <> (select count(*) from operacija_stavke_sb sb
                                                              where sb.operacija_stavka_id = os.id)
                                then 1 else 0 end) as sb_nedostaje
@@ -128,20 +129,27 @@ select os.id,
        a.naziv,
        a.jm_naziv,
        -- R21: stavka zamjene šifara traži serijske brojeve i kada se prati samo zamjenski artikal
-       case when a.prati_sb = 'Y' or z.prati_sb = 'Y' then 'Y' else 'N' end as prati_sb,
+       -- R24: finansijsko doknjiženje i nivelacija (samo vrijednost) - bez serijskih brojeva
+       case when vd.sifra in ('FDK', 'NIVM') then 'N'
+            when a.prati_sb = 'Y' or z.prati_sb = 'Y' then 'Y' else 'N' end as prati_sb,
        os.kolicina,
        os.opis,
        os.nabavna_cijena                                                as cijena,
        round(os.kolicina * os.nabavna_cijena, 2)                         as iznos,
        nvl(sb.n, 0)                                                     as sb_uneseno,
-       case when (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
+       case when nvl(vd.sifra, '-') not in ('FDK', 'NIVM') and (a.prati_sb = 'Y' or z.prati_sb = 'Y') and nvl(sb.n, 0) <> nvl(os.kolicina, 0) then 'N' else 'Y' end as sb_ok,
        -- serijski brojevi stavke pripadaju zamjenskom artiklu (novi brojevi, kao na ulazu)
        case when nvl(a.prati_sb, 'N') <> 'Y' and z.prati_sb = 'Y' then 'Y' else 'N' end as sb_zamjenskog,
+       os.mpc_stara,                                                    -- R23: nivelacija (stara / nova MPC)
+       os.mpc,
+       os.porez_procenat,
+       os.nabavna_mp,
        os.zamjena_stavka_id,                                            -- R21: zamjena šifara (ZSA)
        z.sifra                                                          as zamjena_sifra,
        z.naziv                                                          as zamjena_naziv
   from operacija_stavke os
   join operacije o on o.id = os.operacija_id
+  left join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id
   join vw_rm_artikli a on a.id = os.stavka_id
   left join vw_rm_artikli z on z.id = os.zamjena_stavka_id
   outer apply (select count(*) as n from operacija_stavke_sb x where x.operacija_stavka_id = os.id) sb
@@ -188,6 +196,8 @@ select o.id,
        sk.sifra || ' - ' || sk.naziv                                    as sa_skladista,
        o.skladiste_prenos_id,
        o.opis,
+       upper(vd.sifra)                                                  as prenos_sifra,     -- R23: MPR / PIV / PVI / PVM / PMV
+       rm_dokument_pkg.prijem_za(vd.sifra)                              as prijem_sifra,
        (select count(*) from operacija_stavke os where os.operacija_id = o.id) as stavki,
        (select sum(round(os.kolicina * os.nabavna_cijena, 2)) from operacija_stavke os where os.operacija_id = o.id) as iznos,
        (select listagg(st.sifra || ' ' || st.naziv || ': ' || rtrim(to_char(os.kolicina, 'FM999G999G990D999999'), '.,')
@@ -199,13 +209,13 @@ select o.id,
           left join sif.acc_jedinice_mjere jm on jm.id = st.jm_id
          where os.operacija_id = o.id)                                  as stavke_opis
   from operacije o
-  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) = 'MPR'
+  join sif.vrste_dokumenata vd on vd.id = o.vrsta_dokumenta_id and upper(vd.sifra) in ('MPR', 'PIV', 'PVI', 'PVM', 'PMV')
   left join skladista sk on sk.id = o.skladiste_id
  where nvl(o.status, case when o.zakljucano = 'Y' then 'Z' else 'P' end) = 'Z'
    and nvl(o.stornirano, 'N') = 'N'
    and o.storniran_id is null
    and not exists (select 1 from operacije p join sif.vrste_dokumenata pv on pv.id = p.vrsta_dokumenta_id
-                    where p.veza_id = o.id and upper(pv.sifra) = 'MPP' and nvl(p.stornirano, 'N') = 'N');
+                    where p.veza_id = o.id and upper(pv.sifra) in ('MPP', 'UIV', 'UVI', 'UVM', 'UMV') and nvl(p.stornirano, 'N') = 'N');
 
 -- R14: preostale količine po reversima (zaključeni reversi partnera; povrati se raspoređuju
 -- na najstarije reverse - FIFO). Partner: REV = zaduženi radnik, RSV = komitent.

@@ -670,9 +670,12 @@ create or replace package body rm_popis_pkg as
             l_rb := l_rb + 1;
             insert into operacija_stavke (operacija_id, stavka_id, kolicina, nabavna_cijena, redni_broj)
             values (l_id, s.stavka_id, s.kol,
-                    -- manjak: prosječna cijena; višak: 0 - cijenu unosi korisnik (prosječna se ne nudi)
+                    -- manjak: prosječna cijena; višak: 0 - cijenu unosi korisnik (prosječna se ne nudi);
+                    -- R23 maloprodaja: višak po važećoj MPC (zaliha se vodi po MPC)
                     case when p_sifra = 'RIM'
                          then round(rm_dokument_pkg.prosjecna_cijena(p_popis.skladiste_id, s.stavka_id, trunc(p_popis.datum)), 4)
+                         when rm_dokument_pkg.je_mp(p_popis.skladiste_id) = 'Y'
+                         then rm_dokument_pkg.cijena_izlaza(p_popis.skladiste_id, s.stavka_id, trunc(p_popis.datum), null)
                          else 0 end,
                     l_rb);
             l_n := l_n + 1;

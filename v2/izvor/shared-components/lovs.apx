@@ -4623,14 +4623,15 @@ lov rm-skladista-prenos (
             SELECT s.id,
                    s.sifra,
                    s.naziv,
-                   CASE WHEN rm_skladiste_pkg.modul(s.id) = 'ROB' THEN 'Robno' ELSE 'Materijalno' END AS vrsta
+                   CASE rm_dokument_pkg.kat_skladista(s.id) WHEN 'VP' THEN 'Veleprodaja' WHEN 'MP' THEN 'Maloprodaja' ELSE 'Materijal' END AS vrsta
             FROM skladista s
             WHERE s.ooj_id = :APP_OOJ_ID
               AND (s.valid = 'Y' OR s.id = :P331_SKLADISTE_PRENOS_ID)
               AND s.id <> coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID), -1)
               AND s.id <> nvl(to_number(:A_SKLADISTE_ID), -1)
-              -- prenos samo između skladišta istog modula (materijalno - materijalno)
-              AND rm_skladiste_pkg.modul(s.id) = rm_skladiste_pkg.modul(coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID)))
+              -- R23: samo skladišta čiji tip odgovara vrsti prenosa (MPR isti tip; PIV materijal -> VP; PVI VP -> materijal;
+              -- PVM VP -> MP; PMV MP -> VP)
+              AND rm_dokument_pkg.prenos_dozvoljen(:P331_VRSTA_SIFRA, coalesce(to_number(:P331_SKLADISTE_ID), to_number(:A_SKLADISTE_ID)), s.id) = 'Y'
             ORDER BY s.sifra
             ```
     }

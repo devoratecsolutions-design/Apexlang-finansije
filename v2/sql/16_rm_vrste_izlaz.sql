@@ -31,6 +31,13 @@
     R21 (robna i materijalna skladišta):
       FDK  Finansijsko doknjiženje        (mijenja samo vrijednost zaliha / prosječnu cijenu, ne količinu)
       ZSA  Zamjena šifara artikla         (izlaz jednog artikla i ulaz drugog po istoj prosječnoj cijeni)
+    R23 (maloprodajna robna skladišta):
+      NIVM Nivelacija cijena (maloprodaja) (promjena MPC zaliha: stara / nova MPC, razlika, PDV u razlici)
+    R23 prenosi između tipova skladišta (izlaz / prijem; isti tip skladišta ostaje MPR / MPP):
+      PIV / UIV  Prenos materijala u veleprodaju / Prijem materijala u veleprodaju
+      PVI / UVI  Prenos robe u skladište materijala / Prijem robe u skladište materijala
+      PVM / UVM  Prenos robe u maloprodaju / Prijem u maloprodaju (zaliha po MPC)
+      PMV / UMV  Povrat iz maloprodaje u veleprodaju / Prijem povrata iz maloprodaje
   Tip kretanja u šifarniku: PSI, RSR, RUM i RUV nemaju tip (ne mijenjaju stanje skladišta, samo zaduženje
   radnika); pravila su u RM_DOKUMENT_PKG.
   Vrsta se dodaje svakoj firmi koja već ima vrstu PRI (Prijemnica) u modulu MAT,
@@ -87,6 +94,16 @@ begin
     -- (dinamički: SIF možda nema pravo čitanja ACCOUNTING.OPERACIJE - tada se VSR ostavlja)
     dodaj('FDK', 'Finansijsko doknjiženje', 'Povećanje / smanjenje vrijednosti zaliha artikla bez promjene količine - mijenja prosječnu cijenu (v2)', null);
     dodaj('ZSA', 'Zamjena šifara artikla', 'Skidanje jednog artikla sa stanja i dodavanje drugog po istoj prosječnoj cijeni (v2)');
+    dodaj('NIVM', 'Nivelacija cijena', 'Zapisnik o nivelaciji maloprodajnih cijena: stara i nova MPC, razlika i PDV u razlici (v2)', null);
+    dodaj('PIV', 'Prenos materijala u veleprodaju', 'Izlaz sa skladišta materijala na veleprodajno skladište (v2)');
+    dodaj('UIV', 'Prijem materijala u veleprodaju', 'Prijem na veleprodajno skladište po prenosu sa skladišta materijala - nastaje preuzimanjem (v2)', 'U');
+    dodaj('PVI', 'Prenos robe u skladište materijala', 'Izlaz sa veleprodajnog skladišta na skladište materijala (v2)');
+    dodaj('UVI', 'Prijem robe u skladište materijala', 'Prijem na skladište materijala po prenosu sa veleprodaje - nastaje preuzimanjem (v2)', 'U');
+    dodaj('PVM', 'Prenos robe u maloprodaju', 'Izlaz sa veleprodajnog na maloprodajno skladište (v2)');
+    dodaj('UVM', 'Prijem u maloprodaju', 'Prijem na maloprodajno skladište po MPC iz cjenovnika - nastaje preuzimanjem prenosa iz veleprodaje (v2)', 'U');
+    dodaj('PMV', 'Povrat iz maloprodaje u veleprodaju', 'Izlaz sa maloprodajnog skladišta (po MPC) na veleprodajno skladište (v2)');
+    dodaj('PDB', 'Povrat dobavljaču', 'Vraćanje robe / materijala dobavljaču - izlaz po trenutnoj cijeni (prosječna / cjenovnik / MPC) (v2)');
+    dodaj('UMV', 'Prijem povrata iz maloprodaje', 'Prijem na veleprodajno skladište po prosječnoj cijeni - nastaje preuzimanjem povrata iz maloprodaje (v2)', 'U');
     begin
         execute immediate q'[update sif.vrste_dokumenata vd set vd.valid = 'N'
                               where vd.acc_modul_id = :1 and upper(vd.sifra) = 'VSR' and vd.valid = 'Y'
@@ -105,5 +122,6 @@ end;
 select vd.ooj_id, vd.sifra, vd.naziv, vd.tip_kretanja, vd.valid
   from sif.vrste_dokumenata vd
   join sif.acc_moduli m on m.id = vd.acc_modul_id and upper(m.sifra) = 'MAT'
- where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUM', 'RUV', 'FDK', 'ZSA')
+ where upper(vd.sifra) in ('IZD', 'IIN', 'IOS', 'ISI', 'MPR', 'MPP', 'REV', 'REVP', 'RSV', 'RSVP', 'RAS', 'RIV', 'RIM', 'PSI', 'RSZ', 'RSR', 'VSR', 'RUM', 'RUV', 'FDK', 'ZSA', 'NIVM',
+                             'PIV', 'UIV', 'PVI', 'UVI', 'PVM', 'UVM', 'PMV', 'UMV')
  order by vd.ooj_id, vd.sifra;
