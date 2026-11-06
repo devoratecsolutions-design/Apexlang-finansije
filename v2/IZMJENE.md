@@ -712,3 +712,157 @@ Odluke (korisnik, 05.11.2026): interna (materijalna) skladišta – prosječna c
 - **Lista dokumenata skladišta:** izbor vrste dokumenta je sada padajuća lista sa pretragom (isti izgled kao izbor skladišta; Enter bira prvi pronađeni); u izboru skladišta pretraga je uvijek vidljiva (ranije samo kod više od 7 skladišta).
 - **Baza:** vrsta PDB (16, SIF) i brojač (11); RM_DOKUMENT_PKG (tip kretanja, podržane vrste, provjera dobavljača).
 - **SQL (redom):** `16_rm_vrste_izlaz.sql` (SIF), pa kao ACCOUNTING `11_rm_model.sql`, `12_rm_pkg.sql`. Zatim import aplikacije.
+
+## Predaja posla – Robno i Materijalno (koraci R1–R25), stanje 06.11.2026
+
+Sažetak za agenta koji preuzima rad na modulima **Zalihe robe** (robna skladišta) i **Materijal i oprema** (materijalna skladišta). Detalji po koracima su u sekcijama R1–R25 iznad. Ovdje je pregled: šta postoji, gdje je, kako se pokreće, šta je provjereno i šta je ostalo.
+
+**Stanje repozitorija:** `main` = commit `a33437a`. Spojena su oba Pull Requesta: #1 (Materijalni modul R10–R21 i poslovni partneri, 05.11.) i #2 (Robni modul R22–R25, 06.11.). `v2/import/finansije-v2.zip` je regenerisan na `main` poslije R25. `RADNI_ZADACI.md` je prazan, nijedan fajl nije zauzet. Okruženje: DEV, aplikacija 1290, šema ACCOUNTING, test firma 219.
+
+### 1. Šta je urađeno
+
+**Zajedničko za oba modula**
+- Modul Robno-materijalno je podijeljen na dva modula u meniju i na početnoj stranici. Kontekst modula je `A_RM_MODUL` (ROB / MAT) i postavlja se AJAX-om (proces `RM_MODUL`). Skladište se pamti posebno po modulu (`A_SKL_ROB` / `A_SKL_MAT`), a izbornik skladišta (sa pretragom) je u traci naslova.
+- Vrste dokumenata dolaze iz `SIF.VRSTE_DOKUMENATA` (modul MAT). Statusi su: U pripremi, U kalkulaciji, Zaključen, Proknjižen, Storniran. Broj dokumenta se dodjeljuje po skladištu i godini (`IZD-000001/MAG1`, funkcija `RM_DOKUMENT_PKG.novi_broj`).
+- Količine:
+  - **stanje** = svi ulazi i izlazi;
+  - **obrađeno** = samo zaključeni dokumenti;
+  - **raspoloživo** = zaključeni ulazi − svi izlazi.
+- Pravila za datum: datum bira korisnik samo na prijemnici, ostali dokumenti dobijaju današnji datum. Nijedan dokument ne može imati datum prije posljednjeg popisa skladišta.
+- Storno izlaza pravi dokument iste vrste sa suprotnim predznakom. Storniran dokument i storno dokument se ne računaju nigdje.
+- Serijski brojevi se unose barkodom (Enter), QR opsegom, iz liste raspoloživih (pretraga i višestruki izbor) ili iz Excel / CSV fajla. Postoji i unos izlaza direktnim skeniranjem serijskog broja.
+- Poruke grešaka (`18_core_error_manager.sql`, CORE): poslovne poruke se prikazuju sa stvarnim tekstom, a sistemske greške dobijaju referentni broj `CORP-<id>`.
+- Zatvaranje bilo kog modalnog dijaloga osvježava formu ispod (`finansije-ui.js`, funkcija `finDijalogOsvjezi`).
+
+**Vrste dokumenata (ukupno)**
+
+| Grupa | Vrste |
+|---|---|
+| Ulaz | PRI prijemnica (zaključava je kalkulacija), MPP međuskladišni prijem, REVP / RSVP povrat reversa |
+| Izlaz – materijalno | IZD izdatnica, IIN investicija u toku, IOS osnovno sredstvo, ISI sitni inventar, RAS rashod, RSZ rashod SI sa zaliha |
+| Izlaz – oba modula | MPR međuskladišni prenos, PDB povrat dobavljaču |
+| Reversi (materijalno) | REV / REVP (radnik), RSV / RSVP (komitent) |
+| Sitni inventar kod radnika | PSI prezaduženje, RSR rashod kod radnika, RUM / RUV razlike popisa SI (VSR je deaktivirana) |
+| Popis | RIV višak (ulaz, cijenu unosi knjigovođa), RIM manjak (zaključen odmah) |
+| Vrijednost | FDK finansijsko doknjiženje, ZSA zamjena šifara artikla (i sa serijskim brojevima) |
+| Robno – cijene | NIVM nivelacija (automatski) |
+| Prenosi između tipova | PIV / UIV (M→V), PVI / UVI (V→M), PVM / UVM (V→MP), PMV / UMV (MP→V) |
+
+**Materijal i oprema (R1–R21)**
+- Dokumenti skladišta (p330 lista, p331 forma, p337 serijski brojevi), skladišta (p310 / p311 / p312) i stanje skladišta (p313).
+- Kalkulacija (p340 / p341):
+  - obuhvata više prijemnica istog skladišta; izvori troška su zaključene ulazne fakture i zavisni troškovi (sa fakturom ili bez nje);
+  - raspodjela se bira posebno za svaki izvor: ručno – ukupan iznos, ručno – jedinična cijena, ručno – cijena sa prijemnice, automatski po vrijednosti, po količini ili linearno;
+  - postoje poništavanje raspodjele i prikaz sastava nabavne cijene.
+- Mjesto troška (obavezno samo kod dvojnog knjigovodstva, koje se čita iz `CORE.FIRME`) i zaduženi radnik.
+- Popis zaliha (p364–p366, `RM_POPIS_PKG`) i popis sitnog inventara u upotrebi (p367–p369).
+- Izvještaji (p371), katalog sa interaktivnim izvještajima:
+  - stanje na dan, popisna lista, starost zaliha;
+  - kartica artikla, promet po artiklima, pregled dokumenata;
+  - potrošnja po mjestu troška, zaduženja, dokumenti na čekanju;
+  - grupa Sitni inventar, kartica serijskog broja.
+- Poslovni partneri (p10 / p11): više konta po partneru, jedno podrazumijevano po kontnoj grupi (`SEC_PARTNER_PKG`). Šablon za knjiženje je uklonjen iz forme.
+
+**Zalihe robe (R22–R25)**
+- Veleprodaja (cjenovnik tipa V) ima **jednu zajedničku prosječnu nabavnu cijenu za sva skladišta istog cjenovnika**. Zaključavanje kalkulacije računa novi prosjek, piše novi red cjenovnika (stari se deaktivira, `PRETHODNI_ID`) i usklađuje vrijednost svakog skladišta automatskim, zaključenim FDK dokumentom. Izlazi uzimaju cijenu iz cjenovnika.
+- Maloprodaja (cjenovnik tipa M) vodi zalihe **po MPC**, a stvarnu nabavnu cijenu čuva u `OPERACIJA_STAVKE.NABAVNA_MP` za kasniji obračun RUC-a. Promjena MPC (kalkulacijom ili ručno) automatski nivelira zalihe svih maloprodajnih skladišta tog cjenovnika (NIVM).
+- Kalkulacija u robnom modulu: unosi se jedno od marža %, marža KM, VPC ili MPC, a ostalo se izračuna. Prikazuju se prosjek u cjenovniku, novi prosjek i važeće VPC / MPC. Otključavanje (administrator) briše automatske FDK / NIVM i vraća cjenovnik, ali samo ako artikli u međuvremenu nisu izdavani.
+- Ručna izmjena cjenovnika (p26) ima napomenu, preračun marže i usklađivanje (FDK u veleprodaji, NIVM u maloprodaji). Ista izmjena služi i za početno usklađivanje skladišta.
+- Prijem u maloprodaju (UVM) za artikal bez MPC nastaje u pripremi sa statusom „Čeka MPC“. Unese se MPC, a „Zaključaj prijem“ je upisuje u cjenovnik.
+- Povrat dobavljaču (PDB) i pretraga u izboru vrste dokumenta i skladišta.
+
+### 2. Izmijenjeni fajlovi
+
+**APEX stranice (`v2/izvor/pages/`):** p00010, p00011 (partneri), p00026 (cjenovnik – artikal), p00300 (pregled modula), p00310, p00311, p00312, p00313 (skladišta), p00330, p00331, p00337 (dokumenti i serijski brojevi), p00340, p00341 (kalkulacija), p00364–p00369 (popisi), p00371 (izvještaji), p00000 (globalna – izbor skladišta), p00001, p00050 (izbor skladišta za izlazne fakture). Najčešće mijenjana je p00331 (18 commita od uvođenja Gita).
+
+**Dijeljene komponente:** `shared-components/lists.apx` (meni), `lovs.apx` (LOV-ovi `rm-*`), `breadcrumbs.apx`, `messages.apx` (prevodi APEXIR_*, poruke), `app-processes.apx` (RM_KONTEKST, RM_MODUL, RM_SKLADISTA, RM_SKLADISTE_IZBOR), `app-items.apx`, `application.apx` (verzija JS / CSS).
+
+**Statički fajlovi:** `static-files/js/finansije-ui.js` + `.min.js` (finIg, finRmKalk, finDijalogOsvjezi), `static-files/css/finansije-ui.css` + `.min.css`. Minifikacija se radi alatom `v2/docs/alati/minify_finansije_ui.py`.
+
+**Alati:** `v2/docs/alati/gen_p371_izvjestaji.py` generiše stranicu 371 sa **stalnim** identifikatorima sačuvanih izvještaja (tabela RID). Novi izvještaj dobija sljedeći slobodan broj, inače import javlja ORA-00001 (`WWV_FLOW_WORKSHEET_RPTS_UK`).
+
+**SQL skripte** (iste u `v2/sql/` i `v2/produkcija/`):
+
+| Skripta | Šema | Sadržaj |
+|---|---|---|
+| `11_rm_model.sql` | ACCOUNTING | kolone i indeksi OPERACIJE / OPERACIJA_STAVKE / POPISI / POPIS_STAVKE / CJENOVNIK_STAVKE, brojači vrsta |
+| `12_rm_pkg.sql` | ACCOUNTING | RM_DOKUMENT_PKG (dokumenti, zaključavanje, prenosi, reversi, SB, storno, SI, FDK, ZSA, PDB) |
+| `13_rm_views.sql` | ACCOUNTING | VW_RM_ARTIKLI, VW_RM_DOKUMENTI, VW_RM_DOKUMENT_STAVKE, VW_RM_SB(_STANJE), VW_RM_PRENOSI_CEKANJE, VW_RM_REVERS_PREOSTALO, VW_RM_SI_ZADUZENJA, VW_RM_SI_PROMET |
+| `14_rm_skladista.sql` | ACCOUNTING | RM_SKLADISTE_PKG, VW_RM_SKLADISTA, VW_RM_SKLADISTE_STANJE, VW_RM_KORISNIK_SKLADISTA |
+| `15_rm_kalkulacija.sql` | ACCOUNTING | RM_KALKULACIJA_PKG, KALKULACIJA_TROSKOVI / RASPODJELA, VW_RM_KALK* |
+| `16_rm_vrste_izlaz.sql` | **SIF** | vrste dokumenata za svaku firmu koja ima PRI |
+| `17_rm_izvjestaji.sql` | ACCOUNTING | VW_RM_PROMET, VW_RM_ZADUZENJA, VW_RM_NA_CEKANJU |
+| `18_core_error_manager.sql` (+ `_vracanje`) | **CORE** | F_APEX_ERROR_HANDLER (**mijenja postojeći paket**) |
+| `19_rm_popis.sql` | ACCOUNTING | RM_POPIS_PKG, VW_RM_POPIS* |
+| `20_partneri_konta.sql` | ACCOUNTING | SEC_KLIJENT_KONTA.PODRAZUMIJEVANO, SEC_PARTNER_PKG (**mijenja postojeću tabelu**) |
+| `21_rm_cjenovnik.sql` | ACCOUNTING | RM_CJENOVNIK_PKG, kolone i unique indeks CJENOVNIK_STAVKE (**mijenja postojeću tabelu, deaktivira duplikate**) |
+| `10_kuf_pkg.sql` | ACCOUNTING | KUF_PKG: faktura u kalkulaciji (i kao zavisni trošak) se ne briše |
+| `test_obrisi_skladiste_kuf_kalkulacije.sql` | ACCOUNTING | **samo DEV:** briše dokumente skladišta, UF i kalkulacije firme, vraća brojače |
+
+Uz to su ažurirani `v2/produkcija/UPUTSTVO.md`, `SPISAK_IZMJENA_BAZE.md` i ovaj fajl.
+
+### 3. Redoslijed pokretanja (cijeli modul, na DEV-u ili kod migracije)
+Preduslov: skripte 00–10 (`deploy_prod.sql` + `07` kao SIF). Skripte 11–21 se mogu ponovo pokretati.
+
+1. `16_rm_vrste_izlaz.sql` – kao **SIF**
+2. `18_core_error_manager.sql` – kao **CORE** (na produkciji prvo uporediti tijelo paketa, vidi tačku 5)
+3. Kao **ACCOUNTING**, redom:
+   1. `11_rm_model.sql`
+   2. `12_rm_pkg.sql`
+   3. `13_rm_views.sql`
+   4. `14_rm_skladista.sql`
+   5. `21_rm_cjenovnik.sql` (**obavezno prije 15**)
+   6. `15_rm_kalkulacija.sql`
+   7. `10_kuf_pkg.sql`
+   8. `17_rm_izvjestaji.sql`
+   9. `19_rm_popis.sql`
+   10. `20_partneri_konta.sql`
+4. Import aplikacije: `v2/import/finansije-v2.zip` (app 1290). Zatim se ponovo prijaviti.
+
+Za samo R22–R25 na bazi koja već ima R21: `16` (SIF) → `11` → `12` → `13` → `21` → `15` → `17` → `19` → import.
+
+### 4. Šta je testirano
+- **R9 (DEV, firma 219), kompletan prolaz materijalnog toka:**
+  - pregled i KPI po modulu;
+  - izbor modula i skladišta;
+  - nova prijemnica sa decimalnim količinama i cijenama, ugovor, serijski brojevi (Enter, odbijen duplikat);
+  - stanje / obrađeno / raspoloživo;
+  - kalkulacija od kreiranja do zaključavanja (faktura, raspodjela po vrijednosti, marža / VPC / MPC).
+  - Računica je provjerena ručno: 23,45 × 1.234,50 = 28.949,03; raspodjela 1.000 KM = 935,38 + 64,62. Pronađeno je i ispravljeno 11 grešaka.
+- **R16:** dorade po korisničkom testu R15 (kritično K1–K4, važno V5–V9, sitno S1–S17, novi zahtjevi N1–N3): poruke grešaka, raspodjela po vrijednosti, storno, datumi, izvještaji.
+- **R19 / R20:** dorade po testu R18 (PSI, RUM / RUV, osvježavanje dijaloga). Ispravke importa i grešaka ORA-01722 (MPP), ORA-04091 (zaključavanje), PLS-00103, ORA-00001 (p371).
+- **R21:** import je provjeren na DEV-u. Isti sadržaj je službeni zip od 05.11.
+- **R24:** u toku rada ispravljena je greška ERR-1002 `ZAMJENA_STAVKA_ID` pri snimanju stavki.
+- **R22–R25 (robni modul):** **u repozitorijumu nema zabilježenog kompletnog korisničkog testa.** Sljedeće nije potvrđeno testom: zajednički prosjek i automatski FDK, NIVM, prenosi PIV…UMV, UVM „Čeka MPC“, PDB i otključavanje robne kalkulacije.
+
+### 5. Otvoreno
+**Treba odlučiti ili uraditi**
+1. **Test robnog modula R22–R25 na DEV-u** (vidi tačku 6). Ovo je najvažnije.
+2. **Knjiženje dokumenata skladišta u glavnu knjigu nije dio v2.** Status „Proknjižen“ i zabrane postoje, ali stranice p334 / p335 (knjiženje dokumenata) nisu prerađene. Knjiženje treba da obuhvati i RUC / PDV razliku kod PMV / UMV i NIVM.
+3. **Obračun RUC u maloprodaji:** podatak se čuva (`NABAVNA_MP`, `MPC_STARA`), ali obračun i izvještaj ne postoje.
+4. **Konta partnera:** postojeće procedure knjiženja (van v2) i dalje traže tačno jedno konto u grupi. Treba ih prebaciti na `sec_partner_pkg.konto(partner, grupa)`.
+5. **Stare zalihe maloprodaje** su vođene po nabavnoj cijeni. Prije stvarnog rada treba ih jednom nivelisati: ručno snimiti MPC u cjenovniku i NIVM nastaje sam.
+6. **Ostali ulazi u veleprodaji** (višak iz popisa – RIV, povrati, ZSA) treba provjeriti da li ulaze u zajednički prosjek kroz isti mehanizam (sljedeći korak naveden u R22).
+7. **Robni modul – stare stranice:** robni izvještaji (p372), stari popis (p360–p363), stara nivelacija (p350–p352) i trebovanja (p320–p322) nisu prerađeni na v2 obrazac.
+8. **Štampa:** štampa kalkulacije nije urađena; štampa preko Jasper servera sa stare stranice izvještaja nije prenesena (sada se štampa kroz PDF / Excel). Uvoz / JCI, naknadni trošak, serije i rokovi upotrebe SI nisu rađeni (odluka).
+
+**Prije produkcije**
+- `deploy_prod.sql` pokreće samo 00–10. Skripte 11–21 se pokreću ručno, po UPUTSTVU, i treba ih dodati u deploy (ili napraviti poseban `deploy_rm.sql`).
+- `18_core_error_manager.sql` i `20` / `21` mijenjaju postojeće objekte. Treba ih uporediti sa produkcijom, a za CORE.ERROR_MANAGER uzeti izvor sa produkcije.
+- **`v2/sql/10_kuf_pkg.sql` i `v2/produkcija/10_kuf_pkg.sql` se razlikuju.** Razvojna verzija provjerava zaključan period u `provjeri_zaglavlje`, a produkcijska provjerava „datum prijema ne može biti prije datuma fakture“. Treba ih uskladiti prije migracije.
+- Produkcija je na APEX 24.2, pa se aplikacija prenosi klasičnim SQL exportom, ne APEXlang importom.
+
+### 6. Sljedeći korak (prijedlog)
+1. Korisnik na DEV-u pokreće skripte za R22–R25 (tačka 3) i importuje `finansije-v2.zip`.
+2. Agent sa korisnikom prolazi **test robnog modula**:
+   1. kalkulacija na veleprodajnom skladištu (provjeriti novi prosjek i FDK na ostalim skladištima cjenovnika);
+   2. izlaz po cijeni iz cjenovnika;
+   3. kalkulacija na maloprodajnom skladištu sa promjenom MPC (provjeriti NIVM);
+   4. prenos V→MP sa artiklom bez MPC (UVM „Čeka MPC“ → Zaključaj prijem);
+   5. povrat MP→V (PMV / UMV);
+   6. PDB, ZSA i FDK u robnom modulu;
+   7. otključavanje robne kalkulacije (vraćanje cjenovnika i brisanje FDK / NIVM).
+3. Nalaze upisati kao korak **R26** (kao R9 / R16).
+4. Zatim korisnik bira sljedeću temu: knjiženje dokumenata skladišta (sa RUC) ili prerada starih robnih stranica (p372, p350–p363).
+
+**Pravila za nastavak:** prije rada `git pull`. Zauzete fajlove i broj sljedeće SQL skripte (**22**) upisati u `RADNI_ZADACI.md`. Raditi na grani `claude/...`, a izmjene slati kroz PR. `finansije-v2.zip` se regeneriše samo na `main`. Na stranici 371 nove izvještaje dodavati samo preko `gen_p371_izvjestaji.py`.
