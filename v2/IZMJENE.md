@@ -866,3 +866,53 @@ Za samo R22–R25 na bazi koja već ima R21: `16` (SIF) → `11` → `12` → `1
 4. Zatim korisnik bira sljedeću temu: knjiženje dokumenata skladišta (sa RUC) ili prerada starih robnih stranica (p372, p350–p363).
 
 **Pravila za nastavak:** prije rada `git pull`. Zauzete fajlove i broj sljedeće SQL skripte (**22**) upisati u `RADNI_ZADACI.md`. Raditi na grani `claude/...`, a izmjene slati kroz PR. `finansije-v2.zip` se regeneriše samo na `main`. Na stranici 371 nove izvještaje dodavati samo preko `gen_p371_izvjestaji.py`.
+
+## Test Zalihe robe / Materijal i oprema – korak R26 (06.11. i 09.11.2026)
+Test na DEV 1290 (firma Đoris, korisnik djoris_admin), u pregledaču. Samo test – kod nije mijenjan; nalazi su za sljedeći korak ispravki.
+
+**Napomena o podacima:** DEV je između 06.11. i 09.11. očišćen (ostalo samo skladište VP001), pa su materijalni tokovi testirani 06.11. na skladištu TST26M (više ne postoji), a robni tokovi, narudžbenica, popis, izvještaji i izlazna faktura 09.11. na VP001. Na DEV-u su ostali test zapisi (opis „TEST R26“): PR/0002/2026/VP001, KALK/000002/2026/VP001, PDB-000001, FDK-000001, POP-000001 + RIM-000001, KIF/00003/2026 + OTP-000002 (sve VP001), stavka 000018 je obrisana čišćenjem.
+
+### Provjereno – radi ispravno
+- **Skladišta i stavke:** novo skladište, dodavanje korisnika, osvježavanje liste; nova stavka (prijedlog šifre); KPI vrijednosti zaliha = zbir skladišta (177.683 KM, odnosno 61.189 KM).
+- **Cjenovnik (ručno):** marža → VPC / MPC i MPC → VPC / marža (npr. MPC 15 → VPC 12,82, marža 28,20 %; MPC 18 → 15,38 / 28,17 %), snimanje u VP i MP cjenovnik.
+- **Prijemnica:** decimalna količina i cijena sa zarezom (100,5 × 2,35 = 236,18), zbir, broj po skladištu.
+- **Prijemnica iz narudžbenice (novo):** izbor dobavljača nudi njegove narudžbenice; region „Stavke ugovora / narudžbenice“ sa naručeno / primljeno / raspoloživo; djelimično preuzimanje (1 + 2 od 5) sa cijenom sa rabatom.
+- **Kalkulacija – materijalno:** red prijemnice se popunjava odmah, način „Ručno – cijena sa prijemnice“, zavisni trošak po vrijednosti (100 KM → 18,29 / 46,47 / 35,24), nabavne cijene (2,532 / 323,235 / 49,024), zaključavanje → stanje 1.391,18 KM.
+- **Kalkulacija – robno (VP):** nova zajednička prosječna (2 × 20.000 + 2 × 3.400) / 4 = 11.700, novi red cjenovnika „Kalkulacija KALK/000002“, VPC / MPC zadržani, stanje 4 × 11.700 = 46.800.
+- **Dokumenti:** IZD (cijena = prosječna, zaključavanje, storno → IZD-000002), RAS, MPR (količina veća od raspoložive → poruka i vraćeno na 0) → MPP preuzimanje (zaključen), REV i region „Preostalo za povrat“ na REVP, PDB (po cijeni iz cjenovnika), FDK (+300 mijenja vrijednost, ne količinu).
+- **Popis zaliha (novi, 364–366) i na robnom skladištu:** otvaranje za VP001, popisano, sažetak (višak / manjak), zaključavanje → RIM-000001 zaključen.
+- **Izvještaji 371 (svih 13):** učitavaju se bez greške; stanje na dan, promet po artiklima i kartica artikla se slažu sa dokumentima (licence: ulaz 47.100, izlaz 23.500, krajnje 23.600).
+- **Izlazna faktura → otpremnica (novo):** cijena = VPC 22.000, PDV 17 %, uz fakturu nastaje OTP-000002, zaključavanje fakture zaključuje otpremnicu i skida robu.
+
+### Greške – važne
+1. **Ručni FDK na veleprodajnom skladištu ne mijenja zajedničku prosječnu u cjenovniku.** Licence: poslije FDK +300 prosjek skladišta je 11.800, a cjenovnik ostaje 11.700. Izlazi uzimaju 11.700 (PDB, otpremnica), a RIM iz popisa 11.800. U tabeli dokumenta prije snimanja piše 11.800, poslije snimanja 11.700. Rezultat: na zalihi ostaje 1 komad vrijedan 11.900 umjesto 11.700 (razlika 200 KM). FDK u veleprodaji treba da prođe kroz isti mehanizam kao kalkulacija (novi red cjenovnika), a RIM u veleprodaji treba da koristi cijenu iz cjenovnika.
+2. **Prijemnica iz narudžbenice ne provjerava limit ni duplikat.** Drugo „Preuzmi označene“ dodaje isti artikal kao novu stavku i prima više od raspoloživog (4 kad je ostalo 3, ukupno 6 od 5 naručenih). Snimanje prolazi.
+3. **Poslije toga region narudžbenice i dalje pokazuje „Primljeno 2“** (ne 6) – drugi red se ne uračunava.
+4. **Poslovni partneri (p10):** u koloni partnera se vidi neobrađen šablon `{if PIB/} PIB … {endif/}`.
+5. **Robni izvještaji (stara stranica 372):** „Stanje skladišta na dan“ nema vrijednosti u kolonama Stanje i Saldo; „Kartica robe“ i „Pregled dokumenata“ nemaju tip kretanja za v2 vrste; četiri izvještaja (rezervisana roba, stanje po prodajnim mjestima, prodaja po prodajnim mjestima, trgovačka knjiga) ne prikazuju ništa, ni poruku „nema podataka“. Izvještaji 371 rade i za robna skladišta – meni Zalihe robe → Izvještaji i dalje vodi na 372.
+6. **Izlazne fakture (lista 50):** faktura u pripremi ima status „Za knjiženje“, a „U pripremi“ stoji u koloni Naplata.
+
+### Greške – sitnije / izgled
+7. Stavka (p22): polje Klasa prikazuje ID („70“) umjesto naziva za klasu iz grupe (IPHONE – Mobilni telefoni).
+8. Dvije stavke sa istom šifrom 000010 (stari podaci prije čišćenja) – šifra stavke nije jedinstvena.
+9. Izlazni dokumenti (IZD, RAS): „Mjesto troška *“ ima zvjezdicu i kad firma nije u dvojnom knjigovodstvu – dokument se snima i zaključava bez njega.
+10. Potvrda zaključavanja kalkulacije u materijalnom modulu govori o robi, robnom skladištu i cjenovniku.
+11. Izbor vrste dokumenta nudi „Višak sitnog inventara kod radnika“ (VSR), deaktiviranu u R19.
+12. FDK: kolona „Serijski br.“ je i dalje vidljiva (R24: bez SB); dvije kolone iznosa sa istom vrijednošću; u kartici artikla iznos FDK stoji u koloni Cijena.
+13. Robni meni: „Popis“ vodi na stari popis (360), a novi popis (364) radi i za robna skladišta; „Nivelacije cijena“ (350) je stara stranica.
+14. Narudžbenice (lista): kolona Ugovor prikazuje „:“ kad ugovora nema; lista ne prikazuje primljenu količinu; status ostaje „Otvorena“ i poslije djelimičnog prijema.
+15. Engleski tekstovi: naslov potvrde „Confirmation“, popup lista „Search“ / „Show More“, paginacija „row(s) 1 - 16 of 16“ (stavke, cjenovnici, narudžbenice).
+16. Format brojeva nije ujednačen: KPI 177.683 KM (tačka za hiljade), liste 15,937.50; cijena na listi prenosa 2,53, na dokumentu 2,532; sastav nabavne cijene 5 decimala (2,35005).
+17. Naslov novog dokumenta: „Nova izdatnica“ / „Nova prijemnica“, ali „Novi dokument: Rashod“, „Novi dokument: Međuskladišni prenos“.
+18. Novo skladište: kreator se ne dodaje automatski kao korisnik.
+19. Poruke uspjeha se ponavljaju („Cijena je snimljena.Cijena je snimljena u cjenovnik…“, „Kalkulacija je snimljena. Kalkulacija je zaključena…“).
+20. Datum unosa cijene u cjenovniku je u UTC (12:02 umjesto 13:02).
+21. Stanje skladišta (313): kolona Grupa je prazna. Cjenovnik: usluga bez nabavne cijene prikazuje prazno umjesto 0,00.
+22. Radnici (stara stranica 140): email prikazan sa velikim slovima („Rdjordjije.1991@Gmail.Com“), zaglavlje „Oraganizacione“.
+23. **Pitanje:** prijemnica prima 100,5 za JM Komad – da li komad smije biti decimalan?
+
+### Nije testirano (nema podataka poslije čišćenja DEV-a)
+Maloprodaja (NIVM, UVM „Čeka MPC“, PMV / UMV) – nema maloprodajnog skladišta; zajednički prosjek sa više VP skladišta (FDK usklađivanje); serijski brojevi; ZSA; IOS / ISI / PSI / popis SI; otključavanje kalkulacije. Za ove tokove na DEV-u treba otvoriti MP skladište, drugo VP skladište i materijalno skladište.
+
+### Prijedlog sljedećeg koraka (R27)
+Ispraviti 1–3 (vrijednost zaliha i limit narudžbenice), zatim 4–6, pa sitnije. Prije toga dogovoriti sa agentom za izlazne fakture ko ispravlja 6 i zajedničke fajlove (12_rm_pkg, 21_rm_cjenovnik, p331).
