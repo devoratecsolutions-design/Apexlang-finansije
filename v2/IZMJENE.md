@@ -957,3 +957,25 @@ Novi test zapisi: UVM-000001/MP26, NIVM-000001 i NIVM-000002/MP26, KIF/00007 (st
 35. Lista dokumenata pamti vrstu i kad se promijeni skladište (na MP26 ostaje izabrana „Prijem povrata iz maloprodaje“, vrsta samo za veleprodaju); „Processing completed.“ na engleskom u formi prijema.
 
 **Ispravljeno u međuvremenu (provjereno):** paginacija na našem jeziku („redovi 1 - 4 od 4“), kolona Grupa na stanju skladišta se popunjava.
+
+### R26 – dopuna 3 (09.11.2026): ugovori, narudžbenice i izlazne fakture – detaljnije
+Fiskalizacija i „Štampa i slanje“ nisu pokretani (šalju podatke van aplikacije).
+Novi test zapisi: UG/0002/2025 (ugovor sa dobavljačem DJORIS TRANSPORT, 10 licenci × 3.200 − 10 %) i aneks UG/0002-1/2025 (u pripremi), PR/0003/2026/VP001 (prijem 2 licence po ugovoru), ND-0002/2026 (otkazana), NK-0001/2026 (zatvorena), AV/0002/2026 + KIF/00009/2026 + AVZ/0002/2026.
+
+**Radi ispravno**
+- **Ugovor sa dobavljačem:** iznos 28.800 (10 × 3.200 − 10 %), zaključavanje → „Važi“; prijemnica po ugovoru preuzima stavke po cijeni sa rabatom (2.880), primljeno 2 / raspoloživo 8 se ažurira.
+- **Aneks:** „Novi aneks“ pravi UG/0002-1/2025 u pripremi, sa stavkama i podacima osnovnog ugovora.
+- **Narudžbenice:** nova kolona „Preuzeto / naručeno (kol.)“ (ND-0001: 3 / 6) i status „Djelimično realizovana“ – greška 21 je otklonjena; otključavanje, otkazivanje (ND-0002 → „Otkazana“) i zatvaranje (NK-0001 → „Zatvorena“, ostatak se otkazuje).
+- **Avansna faktura:** PDV indikator se sam postavlja na „primljeni avansi“ (B4), 300 + 17 % = 351, zaključena.
+- **Konačna faktura sa avansom:** usluga 10 × 50 − 10 % = 450 + PDV = 526,50; „Kupac ima raspoloživ avans: 351,00“, „Dodaj avans“ predlaže 351, „Za uplatu (umanjeno za avanse)“ 175,50; zaključavanje pravi AVZ/0002/2026; otključavanje i ponovno zaključavanje ne prave drugi AVZ.
+- **Knjižna obavijest:** izbor fakture na koju se odnosi, „Povrat robe na skladište“, količina se sama pretvara u negativnu (−1 × 22.000).
+- **Lista izlaznih faktura:** stornirana faktura sada ima status „Stornirana“ u koloni Status – greška 28 je otklonjena za storno.
+
+**Nove greške**
+36. **[VAŽNO] Aneks se ne može snimiti kad se promijene stavke:** izmjena količine (10 → 15) i „Snimi“ javlja „Session state protection violation … P71_IZNOS“ (provjereno i ručnim unosom u tabelu). Ista vrsta greške kao ranije na 312 – stavci P71_IZNOS (iznos koji se računa iz stavki) treba ukloniti zaštitu ili je računati u procesu.
+37. **[VAŽNO – podešavanje] Knjižna obavijest se ne može snimiti:** „Nije definisan brojač za vrstu KO u 2026. godini. Podesite numeraciju dokumenata.“ Poruka je jasna, ali skripta koja uvodi vrste izlaznih faktura treba da napravi brojače (KO, KZ …) za tekuću godinu, kao za ostale vrste. Vjerovatno isti uzrok kao greška 25 (ugovori dobijaju broj sa 2025): brojač UG postoji samo za 2025.
+38. Narudžbenica kupca NK-0001 (zaključena, sa storniranom fakturom) nema dugme „Otključaj“, a poruka na formi kaže „mijenja se poslije otključavanja“ – ili dodati dugme ili promijeniti tekst (navesti zašto se ne može otključati).
+39. Otkazana / zatvorena narudžbenica i dalje prikazuje pun „Ostatak KM“ (9.000 / 114.000) – ostatak je otkazan, pa bi trebalo 0 ili oznaka „otkazano“.
+40. Ugovor sa dobavljačem: „Fakturisano / Realizacija“ prati samo ulazne fakture – primljena roba po ugovoru (prijemnica 5.760) se ne vidi u realizaciji ugovora; dodati „Primljeno“.
+41. Engleski tekstovi: „Drag and Drop Files / Select or drop files here. / Choose Files“ (dokumentacija ugovora), čitaču ekrana „3 matches found“.
+42. Knjižna obavijest sa povratom robe: pomoćni tekst ispod stavki i dalje kaže „roba se razdužuje“ (treba „vraća na skladište“); stavke fakture na koju se odnosi se ne nude za preuzimanje.
