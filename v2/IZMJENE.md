@@ -916,3 +916,25 @@ Maloprodaja (NIVM, UVM „Čeka MPC“, PMV / UMV) – nema maloprodajnog skladi
 
 ### Prijedlog sljedećeg koraka (R27)
 Ispraviti 1–3 (vrijednost zaliha i limit narudžbenice), zatim 4–6, pa sitnije. Prije toga dogovoriti sa agentom za izlazne fakture ko ispravlja 6 i zajedničke fajlove (12_rm_pkg, 21_rm_cjenovnik, p331).
+
+### R26 – dopuna 09.11.2026: maloprodaja, izlazne fakture, ugovori i narudžbenice
+Novi test zapisi na DEV-u: cjenovnik TMP26 (maloprodajni), skladište MP26 – TEST R26 maloprodaja, PVM-000001/VP001 (licenca na MP26, čeka prijem), UG/0001/2025 (ugovor sa ESSCOM, 57.500 KM), NK-0001/2026 (narudžbenica kupca), KIF/00004 (stornirana storno fakturom KIF/00005), KIF/00006 (usluga po ugovoru, 200 KM).
+
+**Radi ispravno**
+- Novi maloprodajni cjenovnik i novo robno skladište sa njim (tip Robno → polje Cjenovnik).
+- Prenos robe u maloprodaju (PVM) sa VP001: cijena izlaza = preostala vrijednost (11.900 za zadnji komad), zaključen, „Čeka prijem na skladištu MP26“.
+- Ugovor sa kupcem: stavke (60.000 – 5 % = 57.000 + 10 × 50 = 57.500), zaključavanje → „Važi“; fakturisano se prati (200 KM, 0,3 %), KPI aktivnih ugovora.
+- Narudžbenica kupca po ugovoru: cijena i rabat iz ugovora, zaključavanje → „Otvorena“.
+- Izlazna faktura po narudžbenici / ugovoru: region „Stavke ugovora / narudžbenice“, preuzimanje, provjera „Po ugovoru je … raspoloživo još 1 – količina ne može biti veća“; uz fakturu nastaje otpremnica; zaključavanje i storno (storno faktura iste vrste, otpremnica stornirana, roba vraćena, fakturisano po ugovoru vraćeno na 0).
+
+**Greške – važne**
+24. **[BLOKIRA] Dodavanje korisnika skladišta (dijalog 312) ne radi:** „Session state protection violation … P312_KORISNIK_ID“. Novo skladište zato nema korisnika, ne pojavljuje se u izboru skladišta i na njemu se ne može raditi. Zbog toga nisu testirani prijem u maloprodaju (UVM, „Čeka MPC“), nivelacija (NIVM), maloprodajna kalkulacija, prodaja u maloprodaji (PMP) ni povrat MP → VP. Ispravka: stavci P312_KORISNIK_ID postaviti Session State Protection na „Unrestricted“ (ili je puniti u procesu, a ne iz JS-a).
+25. **Broj ugovora ima pogrešnu godinu:** ugovor sa početkom 09.11.2026 dobio je broj UG/0001/**2025** (brojač uzima pogrešnu godinu).
+26. **Narudžbenica kupca po ugovoru prima količinu veću od ugovorene** (2 kad ugovor ima 1) – snima se i zaključava bez upozorenja; tek faktura javlja da po ugovoru ima samo 1.
+
+**Greške – sitnije**
+27. Lista ugovora: KPI („Aktivni ugovori“, „Vrijednost aktivnih“) se ne osvježava kad se zatvori forma ugovora (prikazuje 0 dok se stranica ponovo ne učita).
+28. Lista izlaznih faktura: status fakture („Stornirana“, „U pripremi“) se vidi u koloni Naplata, a kolona Status za sve piše „Za knjiženje“ (i za storniranu i za onu u pripremi).
+29. Narudžbenica: poslije snimanja cijena se prikazuje kao „60000.00“ (bez razdvajanja hiljada), prije snimanja „60,000.00“; kurs na ugovoru „1.“.
+30. Izbor partnera u ugovoru prikazuje prefikse „O:“ / „K:“ bez objašnjenja.
+31. Dijalog „Dodaj korisnike“ ima dugme „Odustani“ (u ostalim dijalozima ukinuto u R19).
