@@ -938,3 +938,22 @@ Novi test zapisi na DEV-u: cjenovnik TMP26 (maloprodajni), skladište MP26 – T
 29. Narudžbenica: poslije snimanja cijena se prikazuje kao „60000.00“ (bez razdvajanja hiljada), prije snimanja „60,000.00“; kurs na ugovoru „1.“.
 30. Izbor partnera u ugovoru prikazuje prefikse „O:“ / „K:“ bez objašnjenja.
 31. Dijalog „Dodaj korisnike“ ima dugme „Odustani“ (u ostalim dijalozima ukinuto u R19).
+
+### R26 – dopuna 2 (09.11.2026, poslije ispravke dijaloga korisnika skladišta): maloprodaja na MP26
+Dodavanje korisnika skladišta (312) sada radi – greška 24 je otklonjena.
+Novi test zapisi: UVM-000001/MP26, NIVM-000001 i NIVM-000002/MP26, KIF/00007 (stornirana), PMP-000001, PMV-000001/MP26 → UMV-000001/VP001, PR/0001/2026/MP26 + KALK/000001/2026/MP26.
+
+**Radi ispravno**
+- **Prijem u maloprodaju (UVM)** za artikal bez MPC: status „Čeka MPC“, zaključavanje bez MPC javlja „… nema MPC – unesite MPC pa zaključite prijem“; unos MPC 16.380 → marža 17,65 % ((14.000 − 11.900) / 11.900); zaključavanje upisuje u cjenovnik red „MPC sa prijema UVM-000001“ (nabavna 11.900, VPC 14.000, MPC 16.380).
+- **Nivelacija (NIVM)** pri ručnoj promjeni MPC: 16.380 → 17.550 daje NIVM 1.170 KM; 18.720 → 17.550 na 2 komada daje stanje 2 × 17.550 = 35.100.
+- **Prodaja u maloprodaji:** faktura sa MP26 – cijena = MPC bez PDV-a (15.000 + 17 % = 17.550), PDV indikator A5 (gotovinski račun), uz fakturu nastaje PMP-000001, zaključavanje skida zalihu, storno je vraća (17.550).
+- **Povrat MP → VP:** PMV po MPC (17.550) → UMV na VP001 po prosjeku veleprodaje (11.700); razlika 5.850 je RUC / PDV za knjiženje (po dizajnu R23).
+- **Maloprodajna kalkulacija:** prijemnica 2 × 3.400 → zaliha po MPC (2 × 18.720 = 37.440), stvarna nabavna u cjenovniku (3.400), nova MPC 18.720 / VPC 16.000 upisana u cjenovnik.
+
+**Nove greške**
+32. **[VAŽNO] Forma cijene u cjenovniku (p26) pri otvaranju postojećeg reda prikazuje pogrešne cijene:** VPC i MPC = nabavna, marža 0 (npr. red sa nabavnom 11.700 / VPC 22.000 / MPC 25.740 otvara se kao 11.700 / 11.700 / 11.700; isto u maloprodaji). Ako korisnik otvori red i klikne „Ažuriraj“ (npr. samo da promijeni napomenu), VPC i MPC se prepisuju nabavnom cijenom, a u maloprodaji nastaje nivelacija na nabavnu. Vjerovatno uzrok: preračun marže / cijena (R24) se pokreće pri učitavanju forme.
+33. Potvrda pri preuzimanju prenosa u maloprodaju kaže „… odmah se zaključuje (bez mogućnosti izmjena)“, a prijem bez MPC ostaje „Čeka MPC“ – tekst treba prilagoditi.
+34. Poruka „Nivelacija zaliha na 1 maloprodajnih skladišta“ (gramatika) i dvostruka poruka uspjeha u cjenovniku.
+35. Lista dokumenata pamti vrstu i kad se promijeni skladište (na MP26 ostaje izabrana „Prijem povrata iz maloprodaje“, vrsta samo za veleprodaju); „Processing completed.“ na engleskom u formi prijema.
+
+**Ispravljeno u međuvremenu (provjereno):** paginacija na našem jeziku („redovi 1 - 4 od 4“), kolona Grupa na stanju skladišta se popunjava.
