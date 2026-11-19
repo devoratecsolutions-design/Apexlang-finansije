@@ -979,3 +979,37 @@ Novi test zapisi: UG/0002/2025 (ugovor sa dobavljačem DJORIS TRANSPORT, 10 lice
 40. Ugovor sa dobavljačem: „Fakturisano / Realizacija“ prati samo ulazne fakture – primljena roba po ugovoru (prijemnica 5.760) se ne vidi u realizaciji ugovora; dodati „Primljeno“.
 41. Engleski tekstovi: „Drag and Drop Files / Select or drop files here. / Choose Files“ (dokumentacija ugovora), čitaču ekrana „3 matches found“.
 42. Knjižna obavijest sa povratom robe: pomoćni tekst ispod stavki i dalje kaže „roba se razdužuje“ (treba „vraća na skladište“); stavke fakture na koju se odnosi se ne nude za preuzimanje.
+
+## Test Osnovna sredstva – dorada R36f (19.11.2026)
+Test na DEV 1290 (firma Đoris, korisnik djoris_admin), u pregledaču. Samo test – kod nije mijenjan. Test zapisi imaju opis „TEST R26“.
+
+**Test podaci na DEV-u:** OPS-0001/2026 (31.10.2026; A server 25.1.1-00005 NV 12.000 / IV 2.000, B stolica 29.1.1-00001 1.000 / 200, C laptop 25.1.2-00009 2.400 / 400, D monitor 25.1.3-00001 600 / 0), OPN-0001/2026 (A: 001 → 004, Ristanović → Test Test), OOT-0001/2026 (B), OPR-0001/2026 (C po KIF/00010, prodajna 2.500), OPP-0001/2026 (popis MT 001) → OMN-0001/2026 (D) i OVS-0001/2026 (višak „TEST R26 višak printer E“, 500 KM), OAM-0001/2026 (11/2026, 200,00), OOT-0002/2026 (A, u pripremi – vidi tačku 4).
+
+### Radi ispravno
+- **Početno stanje (OPS):** unos u tabeli, vijek iz grupe (60 / 108), inventurni broj automatski po klasi (25.1.1-00005 …), zbirovi 16.000 / 2.600 / 13.400, zaključavanje → registar.
+- **Prenos (OPN):** novo MT i radnik prikazani kao „staro → novo“, poslije zaključavanja registar pokazuje 004 / Test Test.
+- **Otpis (OOT) i prodaja (OPR):** vrijednosti iz analitike; „Rasporedi prodajnu vrijednost“ (2.500 → dobitak 500); poslije zaključavanja sredstva nema u popisu ni u obračunu.
+- **Popis (OPP):** lista iz registra po obuhvatu (prodato sredstvo C ispravno izostavljeno), „Označi nepopisane kao pronađene“ (5), „Nije pronađeno“ za D, „Dodaj višak“ (provjera naziva), zaključavanje pravi OMN i OVS u pripremi; OMN sa sredstvom D se zaključava.
+- **Amortizacija (OAM):** period 01.11.–30.11.2026 ponuđen sam; obračun 200,00 samo za A (12.000 / 60 × 1 mj.) na novom MT 004; sredstva iz ODS/OVS sa upotrebom od novembra počinju u decembru; zatvorena B/C/D nisu u obračunu; poslije OAM ispravka A = 2.200.
+
+### Greške – važne
+1. **Višak iz popisa se ne prenosi u OVS.** OVS-0001/2026 nastaje prazan (0 sredstava) – naziv, serijski broj i klasa upisani u popisu se ne preuzimaju; sredstvo se mora ponovo unijeti ručno.
+2. **OVS: inventurni broj je „6“** umjesto formata klase (25.1.1-00006) – i poslije zaključavanja (u OPS isti unos daje 25.1.1-00005).
+3. **Lista dokumenata za OPN:** kolona Stavki = 2 (jedno sredstvo), Nabavna / Ispravka = 0,00 (dokument ima 12.000 / 2.000) – lista broji i sabira knjiženja razduženja i zaduženja umjesto sredstava.
+4. **Zatvaranje poslije zaključene amortizacije za isti mjesec – nije završeno.** OOT-0002/2026 za A (datum 19.11., OAM 11/2026 zaključen): poslije „Snimi i zaključaj“ ništa se ne desi (nema ni poruke ni zaključavanja). Pravilo traži da se zaključavanje odbije uz jasnu poruku – treba provjeriti; test prekinut jer je veza sa pregledačem pukla.
+5. **OPR: obavezna „Izlazna faktura“ se ne provjerava pri „Dodaj“** – dokument se snima i bez nje (provjera je tek pri zaključavanju – nije provjereno bez fakture). Izbor fakture nudi sve KIF partnera bez obzira na sadržaj.
+
+### Greške – sitnije / izgled
+6. Otpis (OOT): kolona „Dobitak / gubitak“ prazna (očekivano −800 = sadašnja vrijednost).
+7. Lista dokumenata: za OOT / OPR / OMN vrijednosti su negativne (−1.000, −2.400, −600), a u zaglavlju dokumenta pozitivne – nedosljedno.
+8. Lista dokumenata se ne osvježava dok je dijalog dokumenta otvoren (OPN se ne vidi dok se stranica ne učita ponovo).
+9. Popis: obuhvat se prikazuje kao „001 - Direkcija za tehniku · · - · -“ (prazni separatori za neizabrane kriterije); na zaključenom popisu i dalje stoji uputstvo za unos.
+10. Vrsta dokumenta (p280): lista nema ODI (Donos – investicija u toku) ni OPP.
+11. Format broja dokumenta nije ujednačen: ODS-0003/2026 i ODS/0002/2026.
+12. Zaglavlje dokumenta 4.395,07 (zarez decimale), tabele i liste 4,395.07; „Report Total:“, „Confirmation“, „Grid in edit mode…“ na engleskom.
+13. „zaključio … 14:21“ – vrijeme u UTC (lokalno 15:21); „1 sredstava“ / „4 sredstava“ – gramatika.
+14. OPN: kolona „Prodajna vrijednost“ i „Dobitak / gubitak“ prikazane i kod prenosa (nemaju smisla).
+15. Klase (p116): podaci „34-34 rrtr - ztetet“ i stope 20,001 / 20,002 za vijek 5 god. (test podaci – očistiti).
+
+### Nije testirano
+Uvoz OPS iz Excel-a, ODF i ODI, demontaža (ODM), promjena statusa upotrebe (p290, U/DI/DN/NK/RK), storno i otključavanje (uključujući storno OOT/OPR poslije OAM), kartica (288), izvještaji (289), zajednički identifikatori (277). Nastavak kad se veza sa pregledačem vrati.
