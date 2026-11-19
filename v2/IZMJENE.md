@@ -995,6 +995,8 @@ Test na DEV 1290 (firma Đoris, korisnik djoris_admin), u pregledaču. Samo test
 - OPP-0001/2026: popis MT 001. Iz njega nastali OMN-0001/2026 (manjak D) i OVS-0001/2026 (višak E „TEST R26 višak printer E“, 25.1.1-00006, 500 KM, status „Revers kod korisnika“).
 - OAM-0001/2026: amortizacija 11/2026, iznos 200,00.
 - OOT-0002/2026: otpis A sa datumom 01.12.2026.
+- OPS-0002/2026 (uvoz iz Excel-a): G monitor 25.1.3-00002 (800 / 160) i I monitor 25.1.3-00050 (1.200 / 100,50).
+- ODF-0001/2026: laptop F po fakturi NABAVKA OPREME, 1.500 KM. Storniran sa ODF-0002/2026, pa je raspoloživo na fakturi ponovo 130.000.
 
 ### Radi ispravno
 - **Početno stanje (OPS):**
@@ -1024,48 +1026,76 @@ Test na DEV 1290 (firma Đoris, korisnik djoris_admin), u pregledaču. Samo test
   - probni obračun za 12/2026 (obrisan) nadoknađuje propušteni novembar za C (80 = 2 × 40);
   - brisanje obračuna u pripremi radi.
 - **Zatvaranje poslije OAM:** OOT za A sa datumom 01.12.2026 se zaključava, jer je amortizacija za novembar obračunata.
+- **Donos po ulaznoj fakturi (ODF):**
+  - izbor ulazne fakture sa raspoloživim iznosom;
+  - novo sredstvo sa raspodjelom iznosa iz fakture;
+  - zaključavanje;
+  - storno vraća raspoloživo na fakturi.
+- **Uvoz početnog stanja iz Excel-a:**
+  - ako bilo koji red ima grešku, ništa se ne upisuje i javlja se broj reda;
+  - prazan inventurni broj se dodjeljuje sam (25.1.3-00002);
+  - datum kao Excel datum i kao tekst, vijek, ispravka, rezidualna i zajednički identifikator se preuzimaju.
+- **Otključavanje amortizacije:** odbija se kad poslije postoji zaključen dokument („… koristite storno“).
+- **Zajednički identifikatori (277):**
+  - provjera geo koordinata;
+  - provjera duplikata šifre;
+  - nadređeni identifikator (sam sebe nije ponuđen);
+  - brisanje identifikatora bez sredstava.
 - **Promjena statusa (p290):**
   - za „Revers kod korisnika“ napomena je obavezna i poruka je jasna;
   - status, datum i napomena vide se u registru i u izvještaju.
 - **Kartica (288)** i **izvještaji (289)** (Registar na dan, Kretanje OS, Amortizacija za period, Rezultati popisa, Sredstva po statusu): učitavaju se, a iznosi se slažu sa dokumentima. Kretanje 01.01.–31.12.2026: nabavna 28.002,77 − 13.600 = 14.402,77, ispravka 2.600 + 200 − 2.400 = 400.
 
 ### Greške – važne
-1. **Zaključavanje zatvaranja koje pravilo odbija ne prikazuje poruku.**
-   - Primjer 1: OOT za A sa datumom 19.11., kad je OAM za 11/2026 već zaključen.
-   - Primjer 2: OOT za C sa datumom 01.12., kad C nema amortizaciju za novembar.
-   - U oba slučaja dokument ostaje „U pripremi“ bez ijedne poruke, i u konzoli nema greške. Korisnik ne zna zašto se dokument ne zaključava. Poruka iz provjere treba da dođe do ekrana.
+1. **Poruka o grešci nestaje nakon 1–2 sekunde.** Odnosi se na zaključavanje, otključavanje i uvoz. Poruka postoji i tačna je, na primjer:
+   - „Za sredstvo TEST R26 laptop C nije obračunata amortizacija zaključno sa 11.2026 – prvo obračunajte amortizaciju“;
+   - „Poslije ovog dokumenta zaključen je dokument OOT-0002/2026 … koristite storno“.
+
+   Ali se zatvori sama prije nego što korisnik stigne da je pročita, pa izgleda kao da se ništa nije desilo. Greška treba da ostane na ekranu dok je korisnik ne zatvori.
+   *(Ispravka ranijeg nalaza: provjera radi i poruka postoji, samo prebrzo nestaje.)*
 2. **Višak iz popisa se ne prenosi u OVS.** OVS-0001/2026 nastaje prazan (0 sredstava), pa se sredstvo mora ponovo unijeti ručno. Ni klasa upisana kod viška se ne čuva: u „Rezultatima popisa“ grupa je „-“.
-3. **Storno prodaje / otpisa je dozvoljen i kad je amortizacija za taj mjesec zaključena.** Poslije storna OPR-0001 OAM 11/2026 više ne odgovara stanju, jer C za novembar nema amortizaciju. Sljedeći obračun to nadoknađuje (80 umjesto 40), ali u novembru nedostaje 40 KM. Prijedlog: storno odbiti, ili tražiti otključavanje OAM.
-4. **Lista dokumenata za OPN:** kolona Stavki pokazuje 2 (sredstvo je jedno), a Nabavna / Ispravka 0,00 (dokument ima 12.000 / 2.000). Lista broji i sabira knjiženja umjesto sredstava.
-5. **OPR: obavezna „Izlazna faktura“ se ne provjerava kod „Dodaj“.** Dokument se snima bez nje. Izbor fakture nudi sve izlazne fakture, bez obzira na sadržaj.
+3. **Dokumenti unazad poslije zaključene amortizacije su dozvoljeni.**
+   - Storno OPR-0001 (prodaja u novembru) prošao je iako je OAM 11/2026 zaključen.
+   - Početno stanje OPS-0002 sa datumom 31.10. zaključeno je poslije OAM 11/2026.
+   - Posljedica: OAM 11/2026 više ne odgovara stanju, jer tim sredstvima nedostaje amortizacija za novembar. Sljedeći obračun to nadoknađuje (C: 80 umjesto 40), ali novembar ostaje pogrešan.
+   - Prijedlog: odbiti, ili tražiti da se OAM prvo otključa.
+4. **Uvoz iz Excel-a:**
+   - **Inventurni broj:** kolona A prima samo redni broj (50). Pun broj kakav se vidi u registru (25.1.3-00050) odbija se porukom „Neispravan broj: 25.1.3-00050“. Treba prihvatiti oba oblika, ili u uputstvu i poruci napisati da se upisuje samo redni broj.
+   - **Broj reda u poruci je veći za 1:** greška u 3. redu fajla prijavljuje se kao „Red 4“ (`l_red := x.line_number + 1`, a line_number već broji red naslova).
+5. **Lista dokumenata za OPN:** kolona Stavki pokazuje 2 (sredstvo je jedno), a Nabavna / Ispravka 0,00 (dokument ima 12.000 / 2.000).
+6. **OPR: obavezna „Izlazna faktura“ se ne provjerava kod „Dodaj“.** Dokument se snima bez nje. Izbor fakture nudi sve izlazne fakture.
 
 ### Greške – sitnije / izgled
-6. **Otpis (OOT):** kolona „Dobitak / gubitak“ je prazna (očekivano −800).
-7. **Predznak u listi dokumenata:** za OOT / OPR / OMN vrijednosti su negativne, a u zaglavlju dokumenta pozitivne.
-8. **Datum u budućnosti:** dokument sa budućim datumom (OOT 01.12.2026) se zaključava, a registar odmah pokazuje sredstvo kao „Zatvoreno“. Izvještaj „Registar na dan 19.11.“ ga, ispravno, prikazuje kao aktivno. Treba odlučiti da li je budući datum dozvoljen.
-9. **Obračun amortizacije, kolona „Mjeseci“:** kod nadoknade piše 1, iako je obračunato za 2 mjeseca (C: 80,00).
-10. **Rezultati popisa:**
+7. **Otpis (OOT):** kolona „Dobitak / gubitak“ je prazna (očekivano −800).
+8. **Predznak u listi dokumenata:** za OOT / OPR / OMN vrijednosti su negativne, a u zaglavlju dokumenta pozitivne.
+9. **Datum u budućnosti:** dokument sa budućim datumom (OOT 01.12.2026) se zaključava, a registar odmah pokazuje sredstvo kao „Zatvoreno“. Izvještaj „Registar na dan 19.11.“ ga, ispravno, prikazuje kao aktivno. Treba odlučiti da li je budući datum dozvoljen.
+10. **Obračun amortizacije, kolona „Mjeseci“:** kod nadoknade piše 1, iako je obračunato za 2 mjeseca (C: 80,00).
+11. **Rezultati popisa:**
     - za sredstvo sa manjkom piše „Status u registru: U upotrebi“ i sadašnja vrijednost 0,00 (u trenutku popisa bila je 600);
     - redovi nisu poredani po Rb. (5, 6, 1, 2 …).
-11. **Popis:**
+12. **Popis:**
     - obuhvat se prikazuje kao „001 - Direkcija za tehniku · · - · -“;
     - na zaključenom popisu i dalje stoji uputstvo za unos.
-12. **OVS:** u tabeli dokumenta inventurni broj se prikazuje kao „6“, a u registru je ispravno 25.1.1-00006.
-13. **Kartica:** red storna se zove „Prodaja OS“, bez oznake da je storno.
-14. **Lista dokumenata:** ne osvježava se dok je dijalog dokumenta otvoren.
-15. **Izbor vrste (p280):** nema ODI ni OPP.
-16. **Format broja dokumenta:** ODS-0003/2026 i ODS/0002/2026.
-17. **Prenos (OPN):** prikazuje kolone Prodajna vrijednost i Dobitak / gubitak, koje kod prenosa nemaju smisla.
-18. **Brojevi i jezik:**
+13. **OVS:** u tabeli dokumenta inventurni broj se prikazuje kao „6“, a u registru je ispravno 25.1.1-00006.
+14. **Kartica:** red storna se zove „Prodaja OS“, bez oznake da je storno.
+15. **Lista dokumenata:** ne osvježava se dok je dijalog dokumenta otvoren.
+16. **Izbor vrste (p280):** nema ODI ni OPP.
+17. **Format broja dokumenta:** ODS-0003/2026 i ODS/0002/2026.
+18. **Prenos (OPN):** prikazuje kolone Prodajna vrijednost i Dobitak / gubitak, koje kod prenosa nemaju smisla.
+19. **Brojevi i jezik:**
     - zaglavlje dokumenta piše 4.395,07, a tabele 4,395.07;
     - na engleskom ostalo: „Report Total:“, „Sum :“, „Confirmation“, „Grid in edit mode…“, „Help for …“.
-19. **Vrijeme i gramatika:** „zaključio … 14:21“ je vrijeme u UTC (lokalno 15:21); „1 sredstava“ / „4 sredstava“.
-20. **Klase (p116):** test podaci „34-34 rrtr - ztetet“ i stope 20,001 / 20,002 – očistiti.
+20. **Vrijeme i gramatika:** „zaključio … 14:21“ je vrijeme u UTC (lokalno 15:21); „1 sredstava“ / „4 sredstava“.
+21. **Klase (p116):** test podaci „34-34 rrtr - ztetet“ i stope 20,001 / 20,002 – očistiti.
+
+### Dodatno – sitnije (drugi dio testa)
+- **Prikaz inventurnog broja:** u tabeli dokumenta (OPS, OVS) prikazuje se samo redni broj („2“, „50“, „6“), a u registru pun broj (25.1.3-00002).
+- **Zaglavlje dokumenta se ne osvježava:** poslije uvoza iz Excel-a ili dodavanja sredstva u ODF zaglavlje i dalje piše „0 sredstava · nabavna 0,00“ dok se dokument ne snimi.
+- **Storniran ODF:** u redu fakture i dalje stoje akcije „Raspodijeli srazmjerno“ i „Ukloni“.
+- **Brojevi dokumenata:** obrisani dokument troši broj (OOT-0003 obrisan, sljedeći je OOT-0004), pa nastaju rupe u numeraciji.
+- **Identifikator:** poruka za geo širinu je na engleskom („must be a number between -90.0000000 and 90.0000000“); koordinate se prikazuju sa 7 decimala.
+- **Popisna lista:** za sredstvo sa manjkom (D) piše „Status u registru: U upotrebi“, a sredstvo je zatvoreno.
 
 ### Nije testirano
-- uvoz OPS iz Excel-a;
-- ODF (donos iz fakture) i ODI;
-- ODM za sredstvo nastalo iz skladišta (LAPTOP DELL iz ODS su podaci drugog testa – nisam ih dirao);
-- otključavanje OAM;
-- zajednički identifikatori (277);
-- Popisna lista (štampa).
+- ODI (preskočeno po dogovoru);
+- ODM za sredstvo nastalo iz skladišta: laptopi iz ODS su podaci drugog testa, nisam ih dirao.
